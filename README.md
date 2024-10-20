@@ -22,11 +22,14 @@ At `kmp-examples/` we host example Kotlin projects that can be compiled to diffe
 
 ### CLI Game Of Life
 
-This example is located at `kmp-examples/game_of_life`.
+This example is located at `kmp-examples/game_of_life-plain` (without tracing) and `kmp-examples/game_of_life-tracing` (with tracing enabled).
 Open the project in IntelliJ for development and refresh the Gradle cache.
-In `build.gradle.kts`, section `plugins`, one can disable the `at.ssw.k-perf-measure-plugin` compiler plugin by commenting out the respective line.
-If you want to apply the plugin, you first have to publish it to local Maven, see section _Plugin_.
 Gradle run tasks encompass `jvmRun`, `jsRun` and `runReleaseExecutableMingwX64` (and other native targets).
+
+*How does `kmp-examples/game_of_life-tracing` differ from `kmp-examples/game_of_life-plain`?*
+In `build.gradle.kts`, section `plugins`, the "tracing version" has a dependency on the `at.ssw.k-perf-measure-plugin` compiler plugin.
+Further, it has a dependency to `kotlinx-io` so that the plugin can write to file.
+If you want to use this version, you first have to publish the compiler plugin to local Maven, see section _Plugin_.
 
 ## License
 
