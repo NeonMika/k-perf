@@ -768,7 +768,7 @@ class PerfMeasureExtension2(
                         declaration.name.asString() == "_exit_main" ||
                         body == null ||
                         declaration.origin == ADAPTER_FOR_CALLABLE_REFERENCE ||
-                        // declaration.fqNameWhenAvailable?.asString()?.contains("<init>") != false ||
+                        declaration.fqNameWhenAvailable?.asString()?.contains("<init>") != false ||
                         declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false
                     ) {
                         // do not further transform this method, e.g., its statements are not transformed
