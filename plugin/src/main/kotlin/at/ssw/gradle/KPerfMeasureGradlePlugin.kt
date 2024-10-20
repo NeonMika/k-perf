@@ -54,5 +54,5 @@ class KPerfMeasureGradlePlugin : KotlinCompilerPluginSupportPlugin {
     // the name of the project that contains the compiler plugin
     // this will be looked up on maven
     override fun getPluginArtifact(): SubpluginArtifact =
-        SubpluginArtifact(groupId = "at.ssw", artifactId = "k-perf-measure", version = "0.0.1")
+        SubpluginArtifact(groupId = "at.ssw", artifactId = "k-perf-measure", version = "0.0.2")
 }
