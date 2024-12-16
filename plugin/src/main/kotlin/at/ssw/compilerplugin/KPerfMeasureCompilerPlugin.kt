@@ -331,7 +331,7 @@ class PerfMeasureExtension2(
         assert (rawSinkClass == (pluginContext.referenceClass(ClassId.fromString("kotlinx/io/RawSink"))!!))
 
         // Watch out, Path does not use constructors but functions to build
-        val pathConstructionFunc = pluginContext.findFunction("kotlinx.io.files.Path(String)")
+        val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(String)")
         assert(pathConstructionFunc == pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io.files"),
@@ -340,7 +340,7 @@ class PerfMeasureExtension2(
         ).single { it.owner.valueParameters.size == 1 })
 
         // Wish: findProperty("kotlinx/io/files/SystemFileSystem")
-        val systemFileSystem = pluginContext.findProperty("kotlinx.io.files/SystemFileSystem")
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
         assert(systemFileSystem == pluginContext.referenceProperties(
             CallableId(
                 FqName("kotlinx.io.files"),
@@ -350,7 +350,7 @@ class PerfMeasureExtension2(
 
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
-        val bufferedFunc = pluginContext.findFunction("kotlinx.io.buffered(): kotlinx.io.Sink")
+        val bufferedFunc = pluginContext.findFunction("kotlinx/io/buffered(): kotlinx/io/Sink")
         assert(bufferedFunc == (pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -367,7 +367,7 @@ class PerfMeasureExtension2(
         ).joinToString(";") { it.owner.valueParameters.joinToString(",") { it.type.classFqName.toString() } })
 
         // Wish: findFunction("kotlinx.io/writeString(String,Int,Int)")
-        val writeStringFunc = pluginContext.findFunction("kotlinx.io/writeString(String, Int, Int)")
+        val writeStringFunc = pluginContext.findFunction("kotlinx/io/writeString(String, Int, Int)")
         assert (writeStringFunc == pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -380,7 +380,7 @@ class PerfMeasureExtension2(
                     it.owner.valueParameters[2].type == pluginContext.irBuiltIns.intType
         })
 
-        val flushFunc = pluginContext.findFunction("kotlinx.io.Sink.flush")
+        val flushFunc = pluginContext.findFunction("kotlinx/io/Sink.flush")
         assert(flushFunc == pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -390,7 +390,7 @@ class PerfMeasureExtension2(
         ).single())
 
         debugFile.appendText("2")
-        val toStringFunc = pluginContext.findFunction("kotlin.toString()")
+        val toStringFunc = pluginContext.findFunction("kotlin/toString()")
         assert (toStringFunc == pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlin"),
@@ -454,7 +454,7 @@ class PerfMeasureExtension2(
         val randomDefaultObjectClass = pluginContext.findClass("kotlin/random/Random.Default")
         assert (randomDefaultObjectClass == pluginContext.referenceClass(ClassId.fromString("kotlin/random/Random.Default"))!!)
 
-        val nextIntFunc = pluginContext.findFunction("kotlin.random/Random.Default/nextInt()")
+        val nextIntFunc = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()")
         assert(nextIntFunc == pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlin.random"),
@@ -596,7 +596,7 @@ class PerfMeasureExtension2(
 
             /* val funMarkNowViaClass = classMonotonic.functions.find { it.owner.name.asString() == "markNow" }!! */
 
-            val funMarkNow = pluginContext.findFunction("kotlin.time/TimeSource.Monotonic/markNow")
+            val funMarkNow = pluginContext.findFunction("kotlin/time/TimeSource.Monotonic.markNow")
             assert (funMarkNow == (pluginContext.referenceFunctions(
                 CallableId(
                     FqName("kotlin.time"),
@@ -1058,39 +1058,41 @@ class PerfMeasureExtension2(
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrPluginContext.findClass(name: String): IrClassSymbol {
-    fun getType(typeName: String): IrClassSymbol? {
-        val classId = ClassId.fromString(typeName)
-        return this.referenceClass(classId) ?: this.referenceTypeAlias(classId)?.owner?.expandedType?.classOrNull
-    }
-
-    // ☼ Todo: Should all variations be tested or can a specific search be made for packages, classes, methods or properties?
-    return getType(name) ?: getType(name.replace('/', '.')) ?: getType(name.replace('.', '/')) as IrClassSymbol
+    val classId = ClassId.fromString(name)
+    return this.referenceClass(classId) ?: this.referenceTypeAlias(classId)?.owner?.expandedType?.classOrFail!!
 }
 
 private val regexProp = Regex("(?:((?:[a-zA-Z]\\w*[\\.\\/])*[a-zA-Z]\\w*)[\\.\\/])?([a-zA-Z][\\w<>]*)");
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrPluginContext.findProperty(name: String): IrPropertySymbol {
-    val match = regexProp.matchEntire(name)
-    if (match != null && match.groups.size >= 3) {
-        val identifier = match.groups[2]?.value
-        if (!identifier.isNullOrEmpty()) {
-            val id = Name.identifier(identifier);
-            val fqName = match.groups[1]?.value
+    val match = regexFun.matchEntire(name)
+    if (match != null && match.groups.size >= groupMethod) {
+        val nameProperty = match.groups[groupMethod]?.value
+        if (!nameProperty.isNullOrEmpty()) {
+            val identifierProperty = Name.identifier(nameProperty);
+            val namePackage = match.groups[groupPackage]?.value?.replace('/', '.')
 
-            val ci = if (fqName.isNullOrEmpty()) {
-                CallableId(id)
+            val ci = if (namePackage.isNullOrEmpty()) {
+                CallableId(identifierProperty)
             } else {
-                CallableId(FqName(fqName), id)
+                CallableId(FqName(namePackage), identifierProperty)
             }
 
             return this.referenceProperties(ci).single()
         }
     }
 
-    throw Exception("properties not found: $name")
+    throw Exception("properties not found, format incorrect: $name")
 }
 
-private val regexFun = Regex("(?:((?:[a-zA-Z]\\w*[\\.\\/])*[a-zA-Z]\\w*)[\\.\\/])?([a-zA-Z][\\w<>]*)(?:[(]([\\w<>\\.\\/]+\\??(?:,\\s*[\\w<>\\.\\/]+\\??)*)*[)](?:\\s*:\\s*((?:(?:(?:[a-zA-Z]\\w*[\\.\\/])*[a-zA-Z]\\w*)[\\.\\/])?(?:[a-zA-Z][\\w<>]*)))?)?")
+private const val groupFqMethod = 1
+private const val groupPackage = 2
+private const val groupClass = 3
+private const val groupMethod = 4
+private const val groupParameters = 5
+private const val groupReturnType = 6
+private val regexFun = Regex("((?:((?:[a-zA-Z]\\w*\\/)*[a-zA-Z]\\w*)\\/)?(?:((?:[a-zA-Z]\\w*\\.)*[a-zA-Z]\\w*)\\.)?([a-zA-Z][\\w<>]*))(?:[(]([\\w<>\\.\\/]+\\??(?:,\\s*[\\w<>\\.\\/]+\\??)*)*[)](?:\\s*:\\s*((?:(?:(?:[a-zA-Z]\\w*[\\.\\/])*[a-zA-Z]\\w*)[\\.\\/])?(?:[a-zA-Z][\\w<>]*)))?)?")
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun IrPluginContext.getIrTypeFromName(parameterType: String): IrType {
@@ -1132,41 +1134,34 @@ private fun IrPluginContext.getIrTypeFromName(parameterType: String): IrType {
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrPluginContext.findFunction(name: String): IrSimpleFunctionSymbol {
     val match = regexFun.matchEntire(name)
-    if (match != null && match.groups.size >= 4) {
-        val identifier = match.groups[2]?.value
-        if (!identifier.isNullOrEmpty()) {
-            val id = Name.identifier(identifier);
-            val fqName = match.groups[1]?.value
-
+    if (match != null && match.groups.size >= groupMethod) {
+        val methodName = match.groups[groupMethod]?.value
+        if (!methodName.isNullOrEmpty()) {
             val referenceFunctions: Sequence<IrSimpleFunctionSymbol>
-            if (fqName.isNullOrEmpty()) {
-                referenceFunctions = this.referenceFunctions(CallableId(id)).asSequence()
-            } else {
-                fun getClass(fqName: String): Sequence<IrSimpleFunctionSymbol>? {
-                    val func = this.referenceFunctions(CallableId(FqName(fqName.replace('/', '.')), id))
-                    if (func.any()) {
-                        return func.asSequence()
-                    } else {
-                        // In JVM, StringBuilder is a type alias (see https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.text/-string-builder/)
-                        val classId = ClassId.fromString(fqName)
-                        return (this.referenceClass(classId) ?: this.referenceTypeAlias(classId)?.owner?.expandedType?.classOrNull)?.functions?.filter { it.owner.name.asString() == identifier }
-                    }
-                }
+            val packageName = match.groups[groupPackage]?.value
 
-                var classes = getClass(fqName)
-                if (classes == null || !classes.any()) {
-                    classes = getClass(fqName.replace('/', '.'))
-                    if (classes == null || !classes.any()) {
-                        classes = getClass(fqName.replace('.', '/'))
-                    }
+            val className = match.groups[groupClass]?.value
+            val fqNameClass = if (className == null) null else FqName(className)
+
+            val identifierMethod = Name.identifier(methodName)
+            if (packageName.isNullOrEmpty()) {
+                referenceFunctions = this.referenceFunctions(CallableId(identifierMethod)).asSequence()
+            } else {
+                val functions = this.referenceFunctions(CallableId(FqName(packageName.replace('/', '.')), fqNameClass, identifierMethod))
+                if (functions.any()) {
+                    referenceFunctions = functions.asSequence()
+                } else {
+                    val fullMethodName = match.groups[groupFqMethod]!!.value
+                    val classIdPackage = ClassId.fromString(fullMethodName)
+                    referenceFunctions = (this.referenceClass(classIdPackage) ?: this.referenceTypeAlias(classIdPackage)?.owner?.expandedType?.classOrNull)?.functions?.filter { it.owner.name.asString() == methodName }!!
+                    // ☼ Todo: extension methods?
                 }
-                referenceFunctions = classes!!
             }
 
             /// is function[s] found?
             if (referenceFunctions.any()) {
                 val requiredTypes =
-                    match.groups[3]?.value?.split(Regex("[\\s,]+"))?.map { typeName -> this.getIrTypeFromName(typeName) }
+                    match.groups[groupParameters]?.value?.split(Regex("[\\s,]+"))?.map { typeName -> this.getIrTypeFromName(typeName) }
                         ?: listOf()
 
                 val nix = this.irBuiltIns.anyNType
@@ -1181,13 +1176,11 @@ fun IrPluginContext.findFunction(name: String): IrSimpleFunctionSymbol {
                     }
                 }
 
-                if (match.groups.size >= 5) {
-                    val returnTypeName = match.groups[4]?.value
+                if (match.groups.size >= groupReturnType) {
+                    val returnTypeName = match.groups[groupReturnType]?.value
                     if (!returnTypeName.isNullOrEmpty()) {
                         val returnType = this.findClass(returnTypeName)
-                        result = result.filter {
-                            it.owner.returnType == returnType.defaultType
-                        }
+                        result = result.filter { it.owner.returnType == returnType.defaultType }
                     }
                 }
 
