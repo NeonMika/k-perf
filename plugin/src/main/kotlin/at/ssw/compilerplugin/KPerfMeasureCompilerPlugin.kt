@@ -276,10 +276,10 @@ class PerfMeasureExtension2(
         }
         */
 
-        val stringBuilderConstructor = pluginContext.findConstructor("kotlin/text/StringBuilder()")
-        val stringBuilderAppendIntFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(Int)")
-        val stringBuilderAppendLongFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(Long)")
-        val stringBuilderAppendStringFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(String?)")
+        val stringBuilderConstructor = pluginContext.findConstructor("kotlin/text/StringBuilder()", stringBuilderClass)
+        val stringBuilderAppendIntFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(Int)", stringBuilderClass)
+        val stringBuilderAppendLongFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(Long)", stringBuilderClass)
+        val stringBuilderAppendStringFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(String?)", stringBuilderClass)
         val printlnFunc = pluginContext.findFunction("kotlin/io/println(String)")
 
         // Wish:  findFunction("kotlin/io/MyClass.fooFunc(kotlin/text/StringBuilder,Int?)")
@@ -299,7 +299,6 @@ class PerfMeasureExtension2(
 //        val pathClass =
 //            pluginContext.referenceClass(ClassId.fromString("kotlinx/io/files/Path"))!!
         val rawSinkClass = pluginContext.findClass("kotlinx/io/RawSink")
-        assert (rawSinkClass == (pluginContext.referenceClass(ClassId.fromString("kotlinx/io/RawSink"))!!))
 
         // Watch out, Path does not use constructors but functions to build
         val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(String)")
@@ -1000,13 +999,7 @@ fun IrPluginContext.findProperty(name: String): IrPropertySymbol {
         if (!nameProperty.isNullOrEmpty()) {
             val identifierProperty = Name.identifier(nameProperty);
             val namePackage = match.groups[groupPackage]?.value?.replace('/', '.')
-
-            val ci = if (namePackage.isNullOrEmpty()) {
-                CallableId(identifierProperty)
-            } else {
-                CallableId(FqName(namePackage), identifierProperty)
-            }
-
+            val ci = if (namePackage.isNullOrEmpty()) CallableId(identifierProperty) else CallableId(FqName(namePackage), identifierProperty)
             return this.referenceProperties(ci).single()
         }
     }
@@ -1053,38 +1046,40 @@ private fun IrPluginContext.tryFindIrType(parameterType: String): IrType {
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private fun IrPluginContext.find(name: String, callFun: (CallableId) -> Collection<IrFunctionSymbol>, selector: (IrClassSymbol?) -> Sequence<IrFunctionSymbol>?): IrFunctionSymbol {
+private fun findReferences(context: IrPluginContext, match: MatchResult, methodName: String, callFun: (CallableId) -> Collection<IrFunctionSymbol>, selector: (IrClassSymbol?) -> Sequence<IrFunctionSymbol>?): Sequence<IrFunctionSymbol> {
+    val packageName = match.groups[groupPackage]?.value
+
+    val className = match.groups[groupClass]?.value
+    val fqNameClass = if (className == null) null else FqName(className)
+
+    val identifierMethod = Name.identifier(methodName)
+
+    if (packageName.isNullOrEmpty()) {
+        return callFun(CallableId(identifierMethod)).asSequence()
+    } else {
+        val functions = callFun(CallableId(FqName(packageName.replace('/', '.')), fqNameClass, identifierMethod))
+        if (functions.any()) {
+            return functions.asSequence()
+        } else {
+            val fullMethodName = match.groups[groupFqMethod]!!.value
+            return selector(context.findClass(fullMethodName))?.filter { it.owner.name.asString() == methodName }!!
+            // ☼ Todo: extension methods?
+        }
+    }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun find(context: IrPluginContext, name: String, findReferences: (match: MatchResult, methodName: String) -> Sequence<IrFunctionSymbol>): IrFunctionSymbol {
     val match = regexFun.matchEntire(name)
     if (match != null && match.groups.size >= groupMethod) {
         val methodName = match.groups[groupMethod]?.value
         if (!methodName.isNullOrEmpty()) {
-            val references: Sequence<IrFunctionSymbol>
-            val packageName = match.groups[groupPackage]?.value
-
-            val className = match.groups[groupClass]?.value
-            val fqNameClass = if (className == null) null else FqName(className)
-
-            val identifierMethod = Name.identifier(methodName)
-
-            if (packageName.isNullOrEmpty()) {
-                references = callFun(CallableId(identifierMethod)).asSequence()
-            } else {
-                val functions = callFun(CallableId(FqName(packageName.replace('/', '.')), fqNameClass, identifierMethod))
-                if (functions.any()) {
-                    references = functions.asSequence()
-                } else {
-                    val fullMethodName = match.groups[groupFqMethod]!!.value
-                    references = selector(this.findClass(fullMethodName))?.filter { it.owner.name.asString() == methodName }!!
-                    // ☼ Todo: extension methods?
-                }
-            }
+            val references: Sequence<IrFunctionSymbol> = findReferences(match, methodName)
 
             if (references.any()) {
-                val requiredTypes =
-                    match.groups[groupParameters]?.value?.split(Regex("[\\s,]+"))?.map { typeName -> this.tryFindIrType(typeName) }
-                        ?: listOf()
+                val requiredTypes = match.groups[groupParameters]?.value?.split(Regex("[\\s,]+"))?.map { typeName -> context.tryFindIrType(typeName) } ?: listOf()
 
-                val nix = this.irBuiltIns.anyNType
+                val nix = context.irBuiltIns.anyNType
                 var result = references.filter {
                     val valueParameters = it.owner.valueParameters
                     valueParameters.size == requiredTypes.size && valueParameters.run {
@@ -1099,7 +1094,7 @@ private fun IrPluginContext.find(name: String, callFun: (CallableId) -> Collecti
                 if (match.groups.size >= groupReturnType) {
                     val returnTypeName = match.groups[groupReturnType]?.value
                     if (!returnTypeName.isNullOrEmpty()) {
-                        val returnType = this.findClass(returnTypeName).defaultType
+                        val returnType = context.findClass(returnTypeName).defaultType
                         result = result.filter { it.owner.returnType == returnType }
                     }
                 }
@@ -1121,11 +1116,24 @@ private fun IrPluginContext.find(name: String, callFun: (CallableId) -> Collecti
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
+private val selectorFunctions: (IrClassSymbol?) -> Sequence<IrFunctionSymbol>? = { classSymbol -> classSymbol?.functions}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private val selectorConstructors: (IrClassSymbol?) -> Sequence<IrFunctionSymbol>? = { classSymbol -> classSymbol?.constructors}
+
 fun IrPluginContext.findFunction(name: String): IrSimpleFunctionSymbol {
-    return this.find(name, { callableId -> this.referenceFunctions(callableId) }, { classSymbol -> classSymbol?.functions}) as IrSimpleFunctionSymbol
+    return find(this, name) { match, methodName -> findReferences(this, match, methodName, { callableId -> this.referenceFunctions(callableId) }, selectorFunctions) } as IrSimpleFunctionSymbol
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrPluginContext.findFunction(name: String, clazz: IrClassSymbol): IrSimpleFunctionSymbol {
+    return find(this, name) { _, methodName -> selectorFunctions(clazz)?.filter { it.owner.name.asString() == methodName }!! } as IrSimpleFunctionSymbol
+}
+
 fun IrPluginContext.findConstructor(name: String): IrConstructorSymbol {
-    return this.find(name, { callableId -> this.referenceConstructors(ClassId.fromString(callableId.toString())) }, { classSymbol -> classSymbol?.constructors}) as IrConstructorSymbol
+    return find(this, name) { match, methodName -> findReferences(this, match, methodName, { callableId -> this.referenceConstructors(ClassId.fromString(callableId.toString())) }, selectorConstructors) } as IrConstructorSymbol
+}
+
+fun IrPluginContext.findConstructor(name: String, clazz: IrClassSymbol): IrConstructorSymbol {
+    return find(this, name) { _, _ -> selectorConstructors(clazz)!! } as IrConstructorSymbol
 }
