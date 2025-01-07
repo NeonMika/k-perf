@@ -6,10 +6,7 @@ import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.backend.common.lower.irCatch
-import org.jetbrains.kotlin.backend.common.lower.irThrow
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.compiler.plugin.*
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -19,10 +16,11 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
 import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
-import org.jetbrains.kotlin.ir.builders.declarations.buildVariable
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.ADAPTER_FOR_CALLABLE_REFERENCE
-import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.IrBody
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.addArgument
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
@@ -33,9 +31,7 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.presentableDescription
 import java.io.File
-import java.nio.file.Paths
 import kotlin.collections.set
-import kotlin.io.path.absolutePathString
 import kotlin.time.ExperimentalTime
 
 object ExampleConfigurationKeys {
@@ -251,14 +247,21 @@ Backend plugin
 class PerfMeasureExtension2(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
+
+    val STRINGBUILDER_MODE = false
+
+    val debugFile = File("./DEBUG.txt")
+
+    init {
+        debugFile.delete()
+    }
+
+    fun appendToDebugFile(str: String) {
+        debugFile.appendText(str)
+    }
+
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        println("PerfMeasureExtension2.generate")
-        messageCollector.report(
-            CompilerMessageSeverity.STRONG_WARNING,
-            "PerfMeasureExtension2.generate"
-        )
-
         val timeMarkClass: IrClassSymbol =
             pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeMark"))!!
 
@@ -283,10 +286,6 @@ class PerfMeasureExtension2(
                 it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
             }
 
-        val debugFile = File("./DEBUG.txt")
-        debugFile.delete()
-//        val pathClass =
-//            pluginContext.referenceClass(ClassId.fromString("kotlinx/io/files/Path"))!!
         val rawSinkClass =
             pluginContext.referenceClass(ClassId.fromString("kotlinx/io/RawSink"))!!
 
@@ -312,13 +311,17 @@ class PerfMeasureExtension2(
                 Name.identifier("buffered")
             )
         ).single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
-        debugFile.appendText("1")
-        debugFile.appendText(pluginContext.referenceFunctions(
-            CallableId(
-                FqName("kotlinx.io"),
-                Name.identifier("writeString")
-            )
-        ).joinToString(";") { it.owner.valueParameters.joinToString(",") { it.type.classFqName.toString() } })
+        appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
+        appendToDebugFile(
+            pluginContext.referenceFunctions(
+                CallableId(
+                    FqName("kotlinx.io"),
+                    Name.identifier("writeString")
+                )
+            ).joinToString("\n") { func ->
+                "kotlinx.io.writeString(${func.owner.valueParameters.joinToString(",") { param -> param.type.classFqName.toString() }})"
+            }
+        )
         val writeStringFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -346,37 +349,7 @@ class PerfMeasureExtension2(
         ).single()
         debugFile.appendText("3")
 
-        val STRINGBUILDER_MODE = false
-
-        /*
-        val repeatFunc = pluginContext.referenceFunctions(
-            CallableId(
-                FqName("kotlin.text"),
-                null,
-                Name.identifier("repeat")
-            )
-        ).first()
-
-         */
-
         val firstFile = moduleFragment.files[0]
-
-        /*
-        val depth: IrField = pluginContext.irFactory.buildField {
-            name = Name.identifier("_depth")
-            type = pluginContext.irBuiltIns.intType
-            isFinal = false
-            isStatic = true
-        }.apply {
-            this.initializer =
-                DeclarationIrBuilder(pluginContext, firstFile.symbol).irExprBody(
-                    IrConstImpl.int(0, 0, pluginContext.irBuiltIns.intType, 0)
-                )
-        }
-        firstFile.declarations.add(depth)
-        depth.parent = firstFile
-
-         */
 
         val stringBuilder: IrField = pluginContext.irFactory.buildField {
             name = Name.identifier("_stringBuilder")
@@ -394,9 +367,6 @@ class PerfMeasureExtension2(
         }
         firstFile.declarations.add(stringBuilder)
         stringBuilder.parent = firstFile
-
-
-        val currentMillis = System.currentTimeMillis()
 
         val randomDefaultObjectClass =
             pluginContext.referenceClass(ClassId.fromString("kotlin/random/Random.Default"))!!
@@ -511,27 +481,21 @@ class PerfMeasureExtension2(
         val methodMap = mutableMapOf<String, IrFunction>()
         val methodIdMap = mutableMapOf<String, Int>()
         var currMethodId = 0
+        moduleFragment.files.forEach { file ->
+            file.transform(object : IrElementTransformerVoidWithContext() {
+                override fun visitFunctionNew(declaration: IrFunction): IrStatement {
+                    methodMap[declaration.kotlinFqName.asString()] = declaration
+                    methodIdMap[declaration.kotlinFqName.asString()] = currMethodId++
+                    // do not transform at all
+                    // we just use a transformer because it correctly descends recursively
+                    return super.visitFunctionNew(declaration)
+                }
+            }, null)
+        }
 
-        fun buildEnterMethodFunction(): IrFunction {
+        fun buildEnterFunction(): IrFunction {
             val timeSourceMonotonicClass: IrClassSymbol =
                 pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeSource.Monotonic"))!!
-
-            /*
-            classMonotonic.functions.forEach {
-                println("${classMonotonic.defaultType.classFqName} | ${classMonotonic.owner.name}.${it.owner.name.asString()}")
-            }
-            */
-
-            // abstract method
-            /*
-            val abstractFunMarkNow =
-                pluginContext.referenceFunctions(
-                    CallableId(
-                        FqName("kotlin.time"),
-                        FqName("TimeSource"),
-                        Name.identifier("markNow")
-                    )
-                ).single() */
 
             /* val funMarkNowViaClass = classMonotonic.functions.find { it.owner.name.asString() == "markNow" }!! */
 
@@ -565,36 +529,6 @@ class PerfMeasureExtension2(
                     startOffset,
                     endOffset
                 ).irBlockBody {
-                    /*
-                    +irSetField(null, depth, irCall(pluginContext.irBuiltIns.intPlusSymbol).apply {
-                        dispatchReceiver = irGetField(null, depth)
-                        putValueArgument(0, irInt(1))
-                    }) */
-                    /*
-                    +irCall(printlnFunc).apply {
-                        putValueArgument(0, irConcat().apply {
-                            addArgument(irCall(repeatFunc).apply {
-                                extensionReceiver = irString("-")
-                                putValueArgument(0, irGetField(null, depth))
-                            })
-                            addArgument(irString("> "))
-                            addArgument(irGet(valueParameters[0]))
-                        })
-                    }
-                    */
-                    /*
-                +irCall(stringBuilderAppendStringFunc).apply {
-                    dispatchReceiver = irGetField(null, stringBuilder)
-                    putValueArgument(0, irConcat().apply {
-                        addArgument(irCall(repeatFunc).apply {
-                            extensionReceiver = irString("-")
-                            putValueArgument(0, irGetField(null, depth))
-                        })
-                        addArgument(irString("> "))
-                        addArgument(irGet(valueParameters[0]))
-                    })
-                }
-                */
                     if (STRINGBUILDER_MODE) {
                         +irCall(stringBuilderAppendStringFunc).apply {
                             dispatchReceiver = irGetField(null, stringBuilder)
@@ -625,7 +559,11 @@ class PerfMeasureExtension2(
             }
         }
 
-        fun buildExitMethodFunction(): IrFunction {
+        val enterFunc = buildEnterFunction()
+        firstFile.declarations.add(enterFunc)
+        enterFunc.parent = firstFile
+
+        fun buildGeneralExitFunction(): IrFunction {
             val funElapsedNow =
                 pluginContext.referenceFunctions(
                     CallableId(
@@ -667,33 +605,6 @@ class PerfMeasureExtension2(
                         dispatchReceiver = irGet(elapsedDuration)
                     })
 
-                    /*
-                    val concat = irConcat()
-                    concat.addArgument(irCall(repeatFunc).apply {
-                        extensionReceiver = irString("-")
-                        putValueArgument(0, irGetField(null, depth))
-                    })
-                    concat.addArgument(irString("< "))
-                    concat.addArgument(irGet(valueParameters[0]))
-                    concat.addArgument(irString(" after "))
-                    concat.addArgument(irGet(elapsedMicros))
-                    concat.addArgument(irString("us"))
-                    */
-                    /*
-                    concat.addArgument(irString(" with "))
-                    concat.addArgument(irGet(valueParameters[2]))
-                    */
-                    /*
-                    +irCall(printlnFunc).apply {
-                        putValueArgument(0, concat)
-                    }
-                    */
-                    /*
-                    +irCall(stringBuilderAppendStringFunc).apply {
-                        dispatchReceiver = irGetField(null, stringBuilder)
-                        putValueArgument(0, concat)
-                    }*/
-
                     if (STRINGBUILDER_MODE) {
                         +irCall(stringBuilderAppendStringFunc).apply {
                             dispatchReceiver = irGetField(null, stringBuilder)
@@ -727,105 +638,22 @@ class PerfMeasureExtension2(
                             })
                         }
                     }
-                    /*
-                    +irSetField(null, depth, irCall(pluginContext.irBuiltIns.intPlusSymbol).apply {
-                        dispatchReceiver = irGetField(null, depth)
-                        putValueArgument(0, irInt(-1))
-                    })
-                     */
                 }
             }
         }
 
-        val enterFunc = buildEnterMethodFunction()
-        firstFile.declarations.add(enterFunc)
-        enterFunc.parent = firstFile
-
-        val exitFunc = buildExitMethodFunction()
+        val exitFunc = buildGeneralExitFunction()
         firstFile.declarations.add(exitFunc)
         exitFunc.parent = firstFile
 
-        fun buildMainFinally(func: IrFunction): IrContainerExpression {
-            /*
-            if (pluginContext.platform.isJvm()) {
-                val fileClass = pluginContext.referenceClass(ClassId.fromString("java/io/File"))!!
-                val fileConstructor =
-                    fileClass.constructors.single { it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
-                val writeTextExtensionFunc =
-                    pluginContext.referenceFunctions(
-                        CallableId(
-                            FqName("kotlin.io"),
-                            Name.identifier("writeText")
-                        )
-                    ).single()
-
-                val toStringFunc =
-                    pluginContext.referenceFunctions(
-                        CallableId(
-                            FqName("kotlin"),
-                            Name.identifier("toString")
-                        )
-                    ).single()
-
-                irBlock {
-                    +irCall(writeTextExtensionFunc).apply {
-                        // same as irCallConstructor(fileConstructor, listOf())
-                        extensionReceiver = irCall(fileConstructor).apply {
-                            putValueArgument(
-                                0,
-                                irString("./${pluginContext.platform!!.presentableDescription}_trace_${currentMillis}.txt")
-                            )
-                        }
-                        putValueArgument(0, irCall(toStringFunc).apply {
-                            extensionReceiver = irGetField(null, stringBuilder)
-                        })
-                    }
-                    +irCall(writeTextExtensionFunc).apply {
-                        // same as irCallConstructor(fileConstructor, listOf())
-                        extensionReceiver = irCall(fileConstructor).apply {
-                            putValueArgument(
-                                0,
-                                irString("./${pluginContext.platform!!.presentableDescription}_symbols_${currentMillis}.txt")
-                            )
-                        }
-                        putValueArgument(
-                            0,
-                            irString("{ " + methodIdMap.map { (name, id) -> id to name }
-                                .sortedBy { (id, _) -> id }
-                                .joinToString("\n") { (id, name) -> "\"$id\": \"$name\"" } + " }"))
-                    }
-                    +irCall(printlnFunc).apply {
-                        putValueArgument(0, irConcat().apply {
-                            addArgument(
-                                irString(
-                                    Paths.get("./${pluginContext.platform!!.presentableDescription}_trace_${currentMillis}.txt")
-                                        .absolutePathString()
-                                )
-                            )
-                        })
-                    }
-                }
-            } else {*/
-            return DeclarationIrBuilder(pluginContext, func.symbol).irBlock {
-                +irCall(printlnFunc).apply {
-                    putValueArgument(0, irGetField(null, bufferedTraceFileName))
-                }
-                if (STRINGBUILDER_MODE) {
-                    +irCall(writeStringFunc).apply {
-                        extensionReceiver = irGetField(null, bufferedTraceFileSink)
-                        putValueArgument(0, irCall(toStringFunc).apply {
-                            extensionReceiver = irGetField(null, stringBuilder)
-                        })
-                    }
-                }
+        fun buildMainExitFunction(): IrSimpleFunction {
+            fun IrBlockBodyBuilder.flushTraceFile() {
                 +irCall(flushFunc).apply {
                     dispatchReceiver = irGetField(null, bufferedTraceFileSink)
                 }
-                +irCall(printlnFunc).apply {
-                    putValueArgument(
-                        0, irGetField(null, bufferedSymbolsFileName)
-                    )
-                }
+            }
+
+            fun IrBlockBodyBuilder.writeAndFlushSymbolsFile() {
                 +irCall(writeStringFunc).apply {
                     extensionReceiver = irGetField(null, bufferedSymbolsFileSink)
                     putValueArgument(0, irString("{ " + methodIdMap.map { (name, id) -> id to name }
@@ -836,111 +664,93 @@ class PerfMeasureExtension2(
                     dispatchReceiver = irGetField(null, bufferedSymbolsFileSink)
                 }
             }
-        }
 
-        fun buildBodyWithMeasureCode(func: IrFunction): IrBody {
-            fun IrBlockBodyBuilder.irCallEnterFunc(enterFunc: IrFunction, from: IrFunction) =
-                irCall(enterFunc).apply {
-                    /*
+            fun IrBlockBodyBuilder.printFileNamesToStdout() {
+                +irCall(printlnFunc).apply {
+                    putValueArgument(0, irGetField(null, bufferedTraceFileName))
+                }
+                +irCall(printlnFunc).apply {
                     putValueArgument(
-                        0, irString(buildString {
-                            append(from.fqNameWhenAvailable?.asString() ?: from.name)
-                            append("(")
-                            append(from.valueParameters.joinToString(", ") {
-                                it.type.classFqName?.asString() ?: "???"
-                            })
-                            append(")")
-                            append(" - ")
-                            append(from.origin)
-                        })
-                    )*/
-                    putValueArgument(
-                        0,
-                        methodIdMap[from.kotlinFqName.asString()]!!.toIrConst(pluginContext.irBuiltIns.intType)
+                        0, irGetField(null, bufferedSymbolsFileName)
                     )
                 }
-
-            fun IrBlockBuilder.irCallExitFunc(
-                exitFunc: IrFunction,
-                from: IrFunction,
-                startTime: IrVariable  //, result: IrExpression = irNull(from.returnType)
-            ) = irCall(exitFunc).apply {
-                /*
-                putValueArgument(0, irString(buildString {
-                    append(from.fqNameWhenAvailable?.asString() ?: from.name)
-                    append("(")
-                    append(from.valueParameters.joinToString(", ") {
-                        it.type.classFqName?.asString() ?: "???"
-                    })
-                    append(")")
-                }))*/
-                putValueArgument(
-                    0,
-                    methodIdMap[from.kotlinFqName.asString()]!!.toIrConst(pluginContext.irBuiltIns.intType)
-                )
-                putValueArgument(1, irGet(startTime))
-                // putValueArgument(2, result)
             }
 
-            println("Wrapping body of ${func.name} (origin: ${func.origin})")
+            return pluginContext.irFactory.buildFun {
+                name = Name.identifier("_exit_main")
+                returnType = pluginContext.irBuiltIns.unitType
+            }.apply {
+                addValueParameter {
+                    name = Name.identifier("startTime")
+                    type = timeMarkClass.defaultType
+                } /*
+                addValueParameter {
+                    name = Name.identifier("result")
+                    type = pluginContext.irBuiltIns.anyNType
+                } */
+
+                body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
+                    flushTraceFile()
+
+                    +irCall(exitFunc).apply {
+                        putValueArgument(
+                            0,
+                            methodIdMap["main"]!!.toIrConst(pluginContext.irBuiltIns.intType)
+                        )
+                        putValueArgument(1, irGet(valueParameters[0]))
+                    }
+
+                    if (STRINGBUILDER_MODE) {
+                        +irCall(writeStringFunc).apply {
+                            extensionReceiver = irGetField(null, bufferedTraceFileSink)
+                            putValueArgument(0, irCall(toStringFunc).apply {
+                                extensionReceiver = irGetField(null, stringBuilder)
+                            })
+                        }
+                    }
+
+                    writeAndFlushSymbolsFile()
+
+                    flushTraceFile()
+
+                    printFileNamesToStdout()
+                }
+            }
+        }
+
+        val exitMainFunc = buildMainExitFunction()
+        firstFile.declarations.add(exitMainFunc)
+        exitMainFunc.parent = firstFile
+
+        fun buildBodyWithMeasureCode(func: IrFunction): IrBody {
+
+            println("# Wrapping body of ${func.name} (origin: ${func.origin})")
             return DeclarationIrBuilder(pluginContext, func.symbol).irBlockBody {
-                /*
-                val enterFunc = file.declarations.filterIsInstance<IrFunction>().single {
-                    it.getNameWithAssert().asString() == "_enter_method"
-                }
-                val exitFunc = file.declarations.filterIsInstance<IrFunction>().single {
-                    it.getNameWithAssert().asString() == "_exit_method"
-                }
-                */
                 // no +needed on irTemporary as it is automatically added to the builder
-                val startTime = irTemporary(irCallEnterFunc(enterFunc, func))
+                val startTime = irTemporary(irCall(enterFunc).apply {
+                    putValueArgument(
+                        0,
+                        methodIdMap[func.kotlinFqName.asString()]!!.toIrConst(pluginContext.irBuiltIns.intType)
+                    )
+                })
 
                 val tryBlock: IrExpression = irBlock(resultType = func.returnType) {
-                    for (statement in func.body?.statements ?: listOf()) {
-                        +(statement.transform(object : IrElementTransformerVoidWithContext() {
-                            override fun visitReturn(expression: IrReturn): IrExpression {
-                                if (expression.returnTargetSymbol == func.symbol) {
-                                    return DeclarationIrBuilder(pluginContext, func.symbol).irBlock {
-                                        val returnExpression = irTemporary(expression.value)
-                                        +irCallExitFunc(exitFunc, func, startTime)//, irGet(returnExpression))
-                                        +expression.apply {
-                                            // do not calculate expression again but use value from the temporary
-                                            value = irGet(returnExpression)
-                                        }
-                                    }
-
-
-                                }
-                                return super.visitReturn(expression) as IrReturn
-                            }
-                        }, null) as IrStatement)
-                    }
-                    if (func.returnType == pluginContext.irBuiltIns.unitType) {
-                        +irCallExitFunc(exitFunc, func, startTime)
-                    }
+                    for (statement in func.body?.statements ?: listOf()) +statement
                 }
-                //+tryBlock
 
-                val catchVar = buildVariable(
-                    scope.getLocalDeclarationParent(),
-                    startOffset,
-                    endOffset,
-                    IrDeclarationOrigin.CATCH_PARAMETER,
-                    Name.identifier("t"),
-                    pluginContext.irBuiltIns.throwableType
-                )
                 +irTry(
                     tryBlock.type,
                     tryBlock,
-                    listOf(
-                        irCatch(catchVar,
-                            irBlock {
-                                +irCallExitFunc(exitFunc, func, startTime) //, irGet(catchVar))
-                                +irThrow(irGet(catchVar))
-                            })
-                    ),
-                    if (func.name.asString() == "main") buildMainFinally(func)
-                    else null
+                    listOf(),
+                    if (func.name.asString() == "main") irCall(exitMainFunc).apply {
+                        putValueArgument(0, irGet(startTime))
+                    } else irCall(exitFunc).apply {
+                        putValueArgument(
+                            0,
+                            methodIdMap[func.kotlinFqName.asString()]!!.toIrConst(pluginContext.irBuiltIns.intType)
+                        )
+                        putValueArgument(1, irGet(startTime))
+                    }
                 )
             }
         }
@@ -952,28 +762,17 @@ class PerfMeasureExtension2(
         moduleFragment.files.forEach { file ->
             file.transform(object : IrElementTransformerVoidWithContext() {
                 override fun visitFunctionNew(declaration: IrFunction): IrStatement {
-                    methodMap[declaration.kotlinFqName.asString()] = declaration
-                    methodIdMap[declaration.kotlinFqName.asString()] = currMethodId++
-                    // do not transform at all
-                    // we just use a transformer because it correctly descends recursively
-                    return super.visitFunctionNew(declaration)
-                }
-            }, null)
-        }
-
-        moduleFragment.files.forEach { file ->
-            file.transform(object : IrElementTransformerVoidWithContext() {
-                override fun visitFunctionNew(declaration: IrFunction): IrStatement {
                     val body = declaration.body
                     if (declaration.name.asString() == "_enter_method" ||
                         declaration.name.asString() == "_exit_method" ||
+                        declaration.name.asString() == "_exit_main" ||
                         body == null ||
                         declaration.origin == ADAPTER_FOR_CALLABLE_REFERENCE ||
                         declaration.fqNameWhenAvailable?.asString()?.contains("<init>") != false ||
                         declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false
                     ) {
                         // do not further transform this method, e.g., its statements are not transformed
-                        println("Do not wrap body of ${declaration.name} (${declaration.fqNameWhenAvailable?.asString()}):\n${declaration.dump()}")
+                        println("# Do not wrap body of ${declaration.name} (${declaration.fqNameWhenAvailable?.asString()}):\n${declaration.dump()}")
                         return declaration
                     }
                     declaration.body = buildBodyWithMeasureCode(declaration)
@@ -981,7 +780,7 @@ class PerfMeasureExtension2(
                     return super.visitFunctionNew(declaration)
                 }
             }, null)
-            println(file.name)
+            println("---${file.name}---")
             println(file.dump())
         }
     }
