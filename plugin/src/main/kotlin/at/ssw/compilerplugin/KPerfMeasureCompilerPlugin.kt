@@ -256,6 +256,13 @@ class PerfMeasureExtension2(
             "PerfMeasureExtension2.generate"
         )
 
+        fun findClass(name: String): IrClassSymbol = pluginContext.findClass(name)
+        fun findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name)
+        fun IrClassSymbol.findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name, this)
+        fun IrClass.findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name, this.symbol)
+        fun IrClassSymbol.findConstructor(name: String): IrConstructorSymbol = pluginContext.findConstructor(name, this)
+        fun IrClass.findConstructor(name: String): IrConstructorSymbol = pluginContext.findConstructor(name, this.symbol)
+
         val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark")
         // In JVM, StringBuilder is a type alias (see https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.text/-string-builder/)
         // In native and JS, StringBuilder is a class
@@ -276,10 +283,10 @@ class PerfMeasureExtension2(
         }
         */
 
-        val stringBuilderConstructor = pluginContext.findConstructor("kotlin/text/StringBuilder()", stringBuilderClass)
-        val stringBuilderAppendIntFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(Int)", stringBuilderClass)
-        val stringBuilderAppendLongFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(Long)", stringBuilderClass)
-        val stringBuilderAppendStringFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(String?)", stringBuilderClass)
+        val stringBuilderConstructor = stringBuilderClass.findConstructor("kotlin/text/StringBuilder()")
+        val stringBuilderAppendIntFunc = stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(Int)")
+        val stringBuilderAppendLongFunc = stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(Long)")
+        val stringBuilderAppendStringFunc = stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(String?)")
         val printlnFunc = pluginContext.findFunction("kotlin/io/println(String)")
 
         // Wish:  findFunction("kotlin/io/MyClass.fooFunc(kotlin/text/StringBuilder,Int?)")
@@ -983,28 +990,13 @@ class PerfMeasureExtension2(
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrPluginContext.findClass(name: String): IrClassSymbol {
     val classId = ClassId.fromString(name)
-    return this.referenceClass(classId) ?: this.referenceTypeAlias(classId)?.owner?.expandedType?.classOrFail!!
+    return this.referenceClass(classId) ?: this.referenceTypeAlias(classId)?.owner?.expandedType?.classOrNull ?: error("class not found: $name")
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun IrPluginContext.findIrType(name: String): IrType {
     val classId = ClassId.fromString(name)
     return (this.referenceClass(classId) ?: this.referenceTypeAlias(classId)?.owner?.expandedType) as IrType
-}
-
-fun IrPluginContext.findProperty(name: String): IrPropertySymbol {
-    val match = regexFun.matchEntire(name)
-    if (match != null && match.groups.size >= groupMethod) {
-        val nameProperty = match.groups[groupMethod]?.value
-        if (!nameProperty.isNullOrEmpty()) {
-            val identifierProperty = Name.identifier(nameProperty);
-            val namePackage = match.groups[groupPackage]?.value?.replace('/', '.')
-            val ci = if (namePackage.isNullOrEmpty()) CallableId(identifierProperty) else CallableId(FqName(namePackage), identifierProperty)
-            return this.referenceProperties(ci).single()
-        }
-    }
-
-    throw Exception("properties not found, format incorrect: $name")
 }
 
 private const val groupFqMethod = 1
@@ -1112,7 +1104,7 @@ private fun find(context: IrPluginContext, name: String, findReferences: (match:
         }
     }
 
-    throw Exception("function not found: $name")
+    error("function not found: $name")
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -1137,3 +1129,24 @@ fun IrPluginContext.findConstructor(name: String): IrConstructorSymbol {
 fun IrPluginContext.findConstructor(name: String, clazz: IrClassSymbol): IrConstructorSymbol {
     return find(this, name) { _, _ -> selectorConstructors(clazz)!! } as IrConstructorSymbol
 }
+
+fun IrPluginContext.findProperty(name: String): IrPropertySymbol {
+    val match = regexFun.matchEntire(name)
+    if (match != null && match.groups.size >= groupMethod) {
+        val nameProperty = match.groups[groupMethod]?.value
+        if (!nameProperty.isNullOrEmpty()) {
+            val identifierProperty = Name.identifier(nameProperty);
+            val namePackage = match.groups[groupPackage]?.value?.replace('/', '.')
+            val ci = if (namePackage.isNullOrEmpty()) CallableId(identifierProperty) else CallableId(FqName(namePackage), identifierProperty)
+            return this.referenceProperties(ci).single()
+        }
+    }
+
+    error("property not found: $name")
+}
+
+@UnsafeDuringIrConstructionAPI
+fun IrClass.findProperty(name: String): IrPropertySymbol = this.properties.single { it.name.asString() == name }.symbol
+
+@UnsafeDuringIrConstructionAPI
+fun IrClassSymbol.findProperty(name: String): IrPropertySymbol = this.owner.findProperty(name)
