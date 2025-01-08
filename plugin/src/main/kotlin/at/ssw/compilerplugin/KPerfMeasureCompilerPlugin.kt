@@ -303,6 +303,27 @@ class PerfMeasureExtension2(
 
         val debugFile = File("./DEBUG.txt")
         debugFile.delete()
+
+        fun printReceiverOfFun(func: IrSimpleFunctionSymbol) {
+            if(func.owner.extensionReceiverParameter != null) {
+                debugFile.appendText(func.owner.dump())
+                debugFile.appendText("is an extension function of ")
+                debugFile.appendText(func.owner.extensionReceiverParameter!!.type.classFqName!!.asString())
+                debugFile.appendText("\n\n")
+            } else if (func.owner.dispatchReceiverParameter != null) {
+                debugFile.appendText(func.owner.dump())
+                debugFile.appendText("is an normal function of ")
+                debugFile.appendText(func.owner.dispatchReceiverParameter!!.type.classFqName!!.asString())
+                debugFile.appendText("\n\n")
+            } else {
+                debugFile.appendText(func.owner.dump() + "\n")
+                debugFile.appendText("is a standalone function without this")
+                debugFile.appendText("\n\n")
+            }
+        }
+
+        val readLinesExtFunc = findFunction("kotlin/io/readLines")
+
 //        val pathClass =
 //            pluginContext.referenceClass(ClassId.fromString("kotlinx/io/files/Path"))!!
         val rawSinkClass = pluginContext.findClass("kotlinx/io/RawSink")
@@ -314,6 +335,10 @@ class PerfMeasureExtension2(
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
         val bufferedFunc = pluginContext.findFunction("kotlinx/io/buffered(): kotlinx/io/Sink")
+
+        printReceiverOfFun(pathConstructionFunc)
+        printReceiverOfFun(sinkFunc)
+        printReceiverOfFun(bufferedFunc)
 
         debugFile.appendText("1")
         debugFile.appendText(pluginContext.referenceFunctions(
