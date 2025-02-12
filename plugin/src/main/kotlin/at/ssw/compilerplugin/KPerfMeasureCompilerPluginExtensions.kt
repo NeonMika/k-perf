@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
-import org.jetbrains.kotlin.ir.expressions.impl.IrStringConcatenationImpl
+import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
@@ -179,64 +179,69 @@ fun IrClassSymbol.findProperty(name: String): IrPropertySymbol = this.owner.find
 //#endregion
 
 //#region call
-fun IrBuilderWithScope.convert(context: IrPluginContext, parameter : Any?) : IrExpression? {
+fun IrBuilderWithScope.convert(pluginContext: IrPluginContext, parameter : Any?) : IrExpression? {
     if (parameter == null) {
         return null
     }
 
     val c: IrType
     when (parameter) {
-        is Boolean -> c = context.irBuiltIns.booleanType
-        is Byte -> c = context.irBuiltIns.byteType
-        is Short -> c = context.irBuiltIns.shortType
-        is Int -> c = context.irBuiltIns.intType
-        is Long -> c = context.irBuiltIns.longType
-        is Float -> c = context.irBuiltIns.floatType
-        is Double -> c = context.irBuiltIns.doubleType
-        is Char -> c = context.irBuiltIns.charType
+        is Boolean -> c = pluginContext.irBuiltIns.booleanType
+        is Byte -> c = pluginContext.irBuiltIns.byteType
+        is Short -> c = pluginContext.irBuiltIns.shortType
+        is Int -> c = pluginContext.irBuiltIns.intType
+        is Long -> c = pluginContext.irBuiltIns.longType
+        is Float -> c = pluginContext.irBuiltIns.floatType
+        is Double -> c = pluginContext.irBuiltIns.doubleType
+        is Char -> c = pluginContext.irBuiltIns.charType
+
         is String -> return irString(parameter)
+
+        is IrCallImpl -> return parameter
+
         is IrCall -> return irCall(parameter.symbol)
         is IrFunction -> return irCall(parameter)
-        is IrField -> return irGetField(null, parameter)
         is IrProperty -> return irCall(parameter.getter!!)
+        is IrField -> return irGetField(null, parameter)
+        is IrValueParameter -> return irGet(parameter)
+        is IrVariable -> return irGet(parameter)
         is IrClassSymbol -> return irGetObject(parameter)
+
+        is IrStringConcatenation -> return parameter
+        is IrFunctionAccessExpression -> return parameter
+        is IrGetObjectValue -> return parameter
+        is IrGetField -> return parameter
+        is IrConst<*> -> return parameter
+
         else -> throw NotImplementedError("for $parameter")
     }
 
     return parameter.toIrConst(c)
 }
 
-fun IrBuilderWithScope.call(context: IrPluginContext, function: IrFunction, receiver : Any?, vararg parameters : Any?): IrFunctionAccessExpression {
-    val valueParameters = function.valueParameters
-    if (valueParameters.size != parameters.size) {
-        throw IllegalArgumentException("parameter count (${parameters.size}) is not equal to function parameter size (${valueParameters.size})")
-    }
+fun IrBuilderWithScope.call(pluginContext: IrPluginContext, function: IrFunction, receiver : Any?, vararg parameters : Any?): IrFunctionAccessExpression {
+    val expectedValueParameters = function.valueParameters
+    assert(expectedValueParameters.size == parameters.size || (parameters.size <= expectedValueParameters.size && parameters.size >= (expectedValueParameters.size - expectedValueParameters.count { p -> p.defaultValue != null })), { "parameter count (${parameters.size}) is not equal to function parameter size (${expectedValueParameters.size})" })
 
     return irCall(function).apply {
-        var index = valueArgumentsCount
-        for ((parameter, irValueParameter) in parameters.zip(valueParameters)) {
-            val pType = if (parameter == null) Any::class else parameter::class
-            val typeName = pType.qualifiedName
-            val vType = irValueParameter.type
-
-            if (vType.classFqName?.asString() == typeName) {
-                putValueArgument(index++, convert(context, parameter))
-            } else {
-                throw IllegalArgumentException("parameter type (${typeName}) is not equal to function parameter type (${vType})")
-            }
+        var index = 0
+        for (actualParameter in parameters) {
+            putValueArgument(index++, convert(pluginContext, actualParameter))
         }
 
         if (function.dispatchReceiverParameter != null) {
-            dispatchReceiver = convert(context, receiver)
+            dispatchReceiver = convert(pluginContext, receiver)
         } else if (function.extensionReceiverParameter != null) {
-            extensionReceiver = convert(context, receiver)
+            extensionReceiver = convert(pluginContext, receiver)
         }
     }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrBuilderWithScope.call(context: IrPluginContext, functionSymbol : IrFunctionSymbol, receiver : Any?, vararg parameters : Any?) = call(context, functionSymbol.owner, receiver, *parameters)
+//#endregion
 
+//#region concat
 fun IrBuilderWithScope.irConcat(context: IrPluginContext, vararg parameters: Any?): IrStringConcatenationImpl {
     return irConcat().apply {
         for (parameter in parameters) {
