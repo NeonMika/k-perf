@@ -225,8 +225,21 @@ fun IrBuilderWithScope.call(pluginContext: IrPluginContext, function: IrFunction
 
     return irCall(function).apply {
         var index = 0
-        for (actualParameter in parameters) {
+        for ((actualParameter, expectedIrValueParameter) in parameters.zip(expectedValueParameters)) {
             putValueArgument(index++, convert(pluginContext, actualParameter))
+            continue
+
+            // Todo:
+            // In the case of optional parameters, search for suitable method signatures.
+            val actualType = if (actualParameter == null) Any::class else actualParameter::class
+            val actualTypeName = actualType.qualifiedName
+            val expectedType = expectedIrValueParameter.type.classFqName?.asString()
+
+            if (expectedType == actualTypeName || actualType == expectedIrValueParameter::class) {
+                putValueArgument(index++, convert(pluginContext, actualParameter))
+            } else {
+                throw IllegalArgumentException("parameter type (${actualTypeName}) is not equal to function parameter type (${expectedType})")
+            }
         }
 
         if (function.dispatchReceiverParameter != null) {
