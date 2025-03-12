@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.addArgument
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
@@ -286,6 +287,9 @@ class PerfMeasureExtension2(
                 it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
             }
 
+        val printlnFuncNew = pluginContext.findFunction("kotlin.io/println(any?)")
+        compareFunctionSymbols(printlnFunc, printlnFuncNew)
+
         val rawSinkClass =
             pluginContext.referenceClass(ClassId.fromString("kotlinx/io/RawSink"))!!
 
@@ -297,6 +301,9 @@ class PerfMeasureExtension2(
             )
         ).single { it.owner.valueParameters.size == 1 }
 
+        val pathConstructionFuncNew = pluginContext.findFunction("kotlinx.io.files/Path(string)")
+        compareFunctionSymbols(pathConstructionFunc, pathConstructionFuncNew)
+
         val systemFileSystem = pluginContext.referenceProperties(
             CallableId(
                 FqName("kotlinx.io.files"),
@@ -305,13 +312,18 @@ class PerfMeasureExtension2(
         ).single()
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
-        val bufferedFunc = pluginContext.referenceFunctions(
+        val bufferedFuncs = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
                 Name.identifier("buffered")
             )
-        ).single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
-        appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
+        )
+        val bufferedFunc = bufferedFuncs.single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
+
+        val bufferedFuncNew = pluginContext.findFunction("kotlinx.io/buffered()", sinkFunc.owner.returnType)
+        compareFunctionSymbols(bufferedFunc, bufferedFuncNew)
+
+        /*appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
         appendToDebugFile(
             pluginContext.referenceFunctions(
                 CallableId(
@@ -321,7 +333,7 @@ class PerfMeasureExtension2(
             ).joinToString("\n") { func ->
                 "kotlinx.io.writeString(${func.owner.valueParameters.joinToString(",") { param -> param.type.classFqName.toString() }})"
             }
-        )
+        )*/
         val writeStringFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -333,6 +345,10 @@ class PerfMeasureExtension2(
                     it.owner.valueParameters[1].type == pluginContext.irBuiltIns.intType &&
                     it.owner.valueParameters[2].type == pluginContext.irBuiltIns.intType
         }
+
+        val writeStringFuncNew = pluginContext.findFunction("kotlinx.io/writeString(string,int,int)")
+        compareFunctionSymbols(writeStringFunc, writeStringFuncNew)
+
         val flushFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -340,14 +356,22 @@ class PerfMeasureExtension2(
                 Name.identifier("flush")
             )
         ).single()
-        debugFile.appendText("2")
+
+        val flushFuncNew = pluginContext.findFunction("kotlinx.io.Sink/flush()")
+        compareFunctionSymbols(flushFunc, flushFuncNew)
+
+        //debugFile.appendText("2")
         val toStringFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlin"),
                 Name.identifier("toString")
             )
         ).single()
-        debugFile.appendText("3")
+
+        val toStringFuncNew = pluginContext.findFunction("kotlin/toString()")
+        compareFunctionSymbols(toStringFunc, toStringFuncNew)
+
+        //debugFile.appendText("3")
 
         val firstFile = moduleFragment.files[0]
 
@@ -357,6 +381,7 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
+            //val sb = ....
             this.initializer =
                 DeclarationIrBuilder(pluginContext, firstFile.symbol).irExprBody(
                     DeclarationIrBuilder(pluginContext, firstFile.symbol).irCallConstructor(
@@ -379,6 +404,9 @@ class PerfMeasureExtension2(
         ).single {
             it.owner.valueParameters.isEmpty()
         }
+
+        val nextIntFuncNew = pluginContext.findFunction("kotlin.random.Random.Default/nextInt()")
+        compareFunctionSymbols(nextIntFunc, nextIntFuncNew)
 
         val randomNumber = pluginContext.irFactory.buildField {
             name = Name.identifier("_randNumber")
@@ -420,6 +448,7 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
+            // _bufferedTraceFileSink = SystemFileSystem.sink(Path(bufferedTraceFileName)).buffered()
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 irExprBody(irCall(bufferedFunc).apply {
                     extensionReceiver = irCall(sinkFunc).apply {
@@ -508,6 +537,9 @@ class PerfMeasureExtension2(
                     )
                 ).single()
 
+            val funMarkNowNew = pluginContext.findFunction("kotlin.time.TimeSource.Monotonic/markNow()")
+            compareFunctionSymbols(funMarkNow, funMarkNowNew)
+
             // assertion: funMarkNowViaClass == funMarkNow
 
             return pluginContext.irFactory.buildFun {
@@ -572,6 +604,9 @@ class PerfMeasureExtension2(
                         Name.identifier("elapsedNow")
                     )
                 ).single()
+
+            val funElapsedNowNew = pluginContext.findFunction("kotlin.time.TimeMark/elapsedNow()")
+            compareFunctionSymbols(funElapsedNow, funElapsedNowNew)
 
             return pluginContext.irFactory.buildFun {
                 name = Name.identifier("_exit_method")
@@ -783,5 +818,23 @@ class PerfMeasureExtension2(
             println("---${file.name}---")
             println(file.dump())
         }
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //helper functions
+
+    private fun compareFunctionSymbols(original: IrSimpleFunctionSymbol, new: IrSimpleFunctionSymbol?) {
+        if (new == null) {
+            appendToDebugFile("New method returned null for ${original.owner.name}\n")
+            return
+        }
+
+        val matches = original == new
+        appendToDebugFile("Function ${original.owner.name}: ${if (matches) "MATCH" else "MISMATCH"}\n")
+        if (!matches) {
+            appendToDebugFile("  Original: ${original.owner.kotlinFqName}\n")
+            appendToDebugFile("  New: ${new.owner.kotlinFqName}\n")
+        }
+        appendToDebugFile("\n")
     }
 }

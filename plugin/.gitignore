@@ -181,3 +181,7 @@ gradle-app.setting
 *.hprof
 
 # End of https://www.toptal.com/developers/gitignore/api/intellij,gradle,java,kotlin
+
+# Trace and Symbol files
+plugin/symbols_JVM (1.8)_-*.txt
+plugin/trace_JVM (1.8)_-*.txt
