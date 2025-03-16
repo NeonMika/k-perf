@@ -287,6 +287,29 @@ class PerfMeasureExtension2(
                 it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
             }
 
+        //negative example:
+        val nonExistingFunc = pluginContext.findFunction("kotlin/io/blabliblup()")
+        appendToDebugFile("NonExistingTest: $nonExistingFunc \n\n")
+
+        //no parenthesis test (this should fail):
+        runCatching {
+            val noParenthesisFunc = pluginContext.findFunction("kotlin/io/println")
+        }.onFailure { e ->
+            appendToDebugFile("NoParenthesisTest failed succesfully \n\n")
+        }.onSuccess {
+            appendToDebugFile("ERROR: NoParenthesisTest did not fail! \n\n")
+        }
+
+        //only package test (this should fail):
+        runCatching {
+            val onlyPackageFunc = pluginContext.findFunction("kotlin/io/")
+        }.onFailure { e ->
+            appendToDebugFile("onlyPackageTest failed succesfully \n\n")
+        }.onSuccess {
+            appendToDebugFile("ERROR: onlyPackageTest did not fail! \n\n")
+        }
+
+
         val printlnFuncNew = pluginContext.findFunction("kotlin/io/println(any?)")
         compareFunctionSymbols(printlnFunc, printlnFuncNew)
 

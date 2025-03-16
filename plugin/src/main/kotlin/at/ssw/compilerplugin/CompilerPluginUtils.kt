@@ -21,7 +21,7 @@ data class ParsedSignature(
     init {
         require(packageName.isNotBlank()) { "packageName must not be blank" }
         require(functionName != null || className != null || propertyName != null) {
-            "At least one of functionName, className, or propertyName must be provided"
+            "At least one of functionName, className, or propertyName must be provided. \nIf you think you provided at least one of those, double check your signature!\nSignature in this style: path/to/package/Class?.Name?.functionName(param1?, param2?, ...)?"
         }
     }
 }
@@ -100,9 +100,18 @@ private fun parseSignature(pluginContext: IrPluginContext, signature: String): P
     val parts = signature.split('/')
     val functionParts = parts.last().split('.')
     val packageName = parts.dropLast(1).joinToString(".")
-    val className = functionParts.dropLast(1).joinToString(".").takeIf { it.isNotBlank() }
     val functionName = functionParts.last().substringBefore("(").takeIf { it.isNotBlank() }
     val paramsString = functionParts.last().substringAfter("(").substringBefore(")")
+    val className = if(functionParts.last().contains('(')) {
+        functionParts.dropLast(1).joinToString(".").takeIf { it.isNotBlank() }
+    } else {
+        functionParts.joinToString(".").takeIf { it.isNotBlank() }
+    }
+
+    //functions must have parenthesis
+    if(functionName != null) {
+        require(functionParts.last().contains('('))
+    }
 
     //parse parameters
     val params = if (paramsString.isBlank()) {
