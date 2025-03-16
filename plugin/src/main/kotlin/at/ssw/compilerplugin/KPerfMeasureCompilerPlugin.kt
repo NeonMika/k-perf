@@ -287,7 +287,7 @@ class PerfMeasureExtension2(
                 it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
             }
 
-        val printlnFuncNew = pluginContext.findFunction("kotlin.io/println(any?)")
+        val printlnFuncNew = pluginContext.findFunction("kotlin/io/println(any?)")
         compareFunctionSymbols(printlnFunc, printlnFuncNew)
 
         val rawSinkClass =
@@ -301,7 +301,7 @@ class PerfMeasureExtension2(
             )
         ).single { it.owner.valueParameters.size == 1 }
 
-        val pathConstructionFuncNew = pluginContext.findFunction("kotlinx.io.files/Path(string)")
+        val pathConstructionFuncNew = pluginContext.findFunction("kotlinx/io/files/Path(string)")
         compareFunctionSymbols(pathConstructionFunc, pathConstructionFuncNew)
 
         val systemFileSystem = pluginContext.referenceProperties(
@@ -320,7 +320,7 @@ class PerfMeasureExtension2(
         )
         val bufferedFunc = bufferedFuncs.single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
 
-        val bufferedFuncNew = pluginContext.findFunction("kotlinx.io/buffered()", sinkFunc.owner.returnType)
+        val bufferedFuncNew = pluginContext.findFunction("kotlinx/io/buffered()", sinkFunc.owner.returnType)
         compareFunctionSymbols(bufferedFunc, bufferedFuncNew)
 
         /*appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
@@ -346,7 +346,7 @@ class PerfMeasureExtension2(
                     it.owner.valueParameters[2].type == pluginContext.irBuiltIns.intType
         }
 
-        val writeStringFuncNew = pluginContext.findFunction("kotlinx.io/writeString(string,int,int)")
+        val writeStringFuncNew = pluginContext.findFunction("kotlinx/io/writeString(string,int,int)")
         compareFunctionSymbols(writeStringFunc, writeStringFuncNew)
 
         val flushFunc = pluginContext.referenceFunctions(
@@ -357,7 +357,7 @@ class PerfMeasureExtension2(
             )
         ).single()
 
-        val flushFuncNew = pluginContext.findFunction("kotlinx.io.Sink/flush()")
+        val flushFuncNew = pluginContext.findFunction("kotlinx/io/Sink.flush()")
         compareFunctionSymbols(flushFunc, flushFuncNew)
 
         //debugFile.appendText("2")
@@ -405,7 +405,7 @@ class PerfMeasureExtension2(
             it.owner.valueParameters.isEmpty()
         }
 
-        val nextIntFuncNew = pluginContext.findFunction("kotlin.random.Random.Default/nextInt()")
+        val nextIntFuncNew = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()")
         compareFunctionSymbols(nextIntFunc, nextIntFuncNew)
 
         val randomNumber = pluginContext.irFactory.buildField {
@@ -537,7 +537,7 @@ class PerfMeasureExtension2(
                     )
                 ).single()
 
-            val funMarkNowNew = pluginContext.findFunction("kotlin.time.TimeSource.Monotonic/markNow()")
+            val funMarkNowNew = pluginContext.findFunction("kotlin/time/TimeSource.Monotonic.markNow()")
             compareFunctionSymbols(funMarkNow, funMarkNowNew)
 
             // assertion: funMarkNowViaClass == funMarkNow
@@ -605,7 +605,7 @@ class PerfMeasureExtension2(
                     )
                 ).single()
 
-            val funElapsedNowNew = pluginContext.findFunction("kotlin.time.TimeMark/elapsedNow()")
+            val funElapsedNowNew = pluginContext.findFunction("kotlin/time/TimeMark.elapsedNow()")
             compareFunctionSymbols(funElapsedNow, funElapsedNowNew)
 
             return pluginContext.irFactory.buildFun {
@@ -823,6 +823,7 @@ class PerfMeasureExtension2(
     //------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //helper functions
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun compareFunctionSymbols(original: IrSimpleFunctionSymbol, new: IrSimpleFunctionSymbol?) {
         if (new == null) {
             appendToDebugFile("New method returned null for ${original.owner.name}\n")
