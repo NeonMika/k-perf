@@ -288,10 +288,22 @@ class PerfMeasureExtension2(
         val stringBuilderAppendStringFunc =
             stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
 
+        val stringBuilderAppendIntFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(int)")
+        compareFunctionSymbols(stringBuilderAppendIntFunc, stringBuilderAppendIntFuncNew, true)
+
+        val stringBuilderAppendLongFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(long)")
+        compareFunctionSymbols(stringBuilderAppendLongFunc, stringBuilderAppendLongFuncNew, true)
+
+        val stringBuilderAppendStringFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(string?)")
+        compareFunctionSymbols(stringBuilderAppendStringFunc, stringBuilderAppendStringFuncNew, true)
+
         val printlnFunc =
             pluginContext.referenceFunctions(CallableId(FqName("kotlin.io"), Name.identifier("println"))).single {
                 it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
             }
+
+        val printlnFuncNew = pluginContext.findFunction("kotlin/io/println(any?)")
+        compareFunctionSymbols(printlnFunc, printlnFuncNew)
 
         //negative example for function:
         val nonExistingFunc = pluginContext.findFunction("kotlin/io/blabliblup()")
@@ -327,10 +339,6 @@ class PerfMeasureExtension2(
         }.onSuccess {
             appendToDebugFile("ERROR: onlyPackageTest for class did not fail! \n\n")
         }
-
-
-        val printlnFuncNew = pluginContext.findFunction("kotlin/io/println(any?)")
-        compareFunctionSymbols(printlnFunc, printlnFuncNew)
 
         val rawSinkClass =
             pluginContext.referenceClass(ClassId.fromString("kotlinx/io/RawSink"))!!
@@ -876,9 +884,11 @@ class PerfMeasureExtension2(
     //helper functions
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun compareFunctionSymbols(original: IrSimpleFunctionSymbol, new: IrSimpleFunctionSymbol?) {
+    private fun compareFunctionSymbols(original: IrSimpleFunctionSymbol, new: IrSimpleFunctionSymbol?, classCall: Boolean = false) {
+        if (classCall) appendToDebugFile("IrClassSymbol.findFunction call:\n")
+
         if (new == null) {
-            appendToDebugFile("New method returned null for ${original.owner.name}\n")
+            appendToDebugFile("New method returned null for ${original.owner.name}\n\n")
             return
         }
 

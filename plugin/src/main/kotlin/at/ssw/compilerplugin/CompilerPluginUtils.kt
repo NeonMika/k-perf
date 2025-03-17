@@ -34,6 +34,7 @@ fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrTyp
     val packageForFindClass = packageName.replace(".", "/")
     val className = functionParts.dropLast(1).joinToString(".")
     val functionName = functionPart.substringBefore('(')
+    val params = parseFunctionSignature(this, functionPart).second.filterNotNull()
 
     val classSymbol = if (className.isNotBlank()) {
         findClass("$packageForFindClass/$className")
@@ -44,7 +45,7 @@ fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrTyp
     return classSymbol?.findFunction(this, functionParts.last(), extensionReceiverType)
         ?: referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName)))
             .singleOrNull { func ->
-                checkMethodSignature(func, parseFunctionSignature(this, functionPart).second.filterNotNull()) &&
+                checkMethodSignature(func, params) &&
                         checkExtensionFunctionReceiverType(func, extensionReceiverType)
             }
 }
