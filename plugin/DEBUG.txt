@@ -1,10 +1,20 @@
-NonExistingTest: null 
+Class kotlin.time.TimeMark: MATCH
 
-NoParenthesisTest failed succesfully 
+Class java.lang.StringBuilder: MATCH
 
-onlyPackageTest failed succesfully 
+NonExistingTest for function: null 
+
+NoParenthesisTest for function failed succesfully 
+
+ERROR: onlyPackageTest for function did not fail! 
+
+NonExistingTest for class: null 
+
+onlyPackageTest for class failed succesfully 
 
 Function println: MATCH
+
+Class kotlinx.io.RawSink: MATCH
 
 Function Path: MATCH
 
@@ -16,7 +26,11 @@ Function flush: MATCH
 
 Function toString: MATCH
 
+Class kotlin.random.Random.Default: MATCH
+
 Function nextInt: MATCH
+
+Class kotlin.time.TimeSource.Monotonic: MATCH
 
 Function markNow: MATCH
 
