@@ -27,6 +27,17 @@ Class kotlinx.io.RawSink: MATCH
 
 Function Path: MATCH
 
+Property kotlinx.io.files.SystemFileSystem: MATCH
+
+Property java.util.ArrayList.size: MATCH
+
+IrClassSymbol.findProperty call:
+Property java.util.ArrayList.size: MATCH
+
+FunctionCallTest for property (null): null
+
+NonExistingTest for property: null 
+
 Function buffered: MATCH
 
 Function writeString: MATCH

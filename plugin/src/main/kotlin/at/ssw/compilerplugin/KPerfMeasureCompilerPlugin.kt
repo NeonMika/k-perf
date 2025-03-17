@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.addArgument
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.symbols.IrPropertySymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
@@ -311,8 +312,8 @@ class PerfMeasureExtension2(
 
         //no parenthesis test for function (this should fail):
         runCatching {
-            val noParenthesisFunc = pluginContext.findFunction("kotlin/io/println")
-        }.onFailure { e ->
+            pluginContext.findFunction("kotlin/io/println")
+        }.onFailure { _ ->
             appendToDebugFile("NoParenthesisTest for function failed succesfully \n\n")
         }.onSuccess {
             appendToDebugFile("ERROR: NoParenthesisTest for function did not fail! \n\n")
@@ -320,8 +321,8 @@ class PerfMeasureExtension2(
 
         //only package test for function (this should fail):
         runCatching {
-            val onlyPackageFunc = pluginContext.findFunction("kotlin/io/")
-        }.onFailure { e ->
+            pluginContext.findFunction("kotlin/io/")
+        }.onFailure { _ ->
             appendToDebugFile("onlyPackageTest for function failed succesfully \n\n")
         }.onSuccess {
             appendToDebugFile("ERROR: onlyPackageTest for function did not fail! \n\n")
@@ -333,8 +334,8 @@ class PerfMeasureExtension2(
 
         //only package test for class (this should fail):
         runCatching {
-            val onlyPackageClass = pluginContext.findClass("kotlin/text/")
-        }.onFailure { e ->
+            pluginContext.findClass("kotlin/text/")
+        }.onFailure { _ ->
             appendToDebugFile("onlyPackageTest for class failed succesfully \n\n")
         }.onSuccess {
             appendToDebugFile("ERROR: onlyPackageTest for class did not fail! \n\n")
@@ -363,6 +364,35 @@ class PerfMeasureExtension2(
                 Name.identifier("SystemFileSystem")
             )
         ).single()
+
+        //Test findProperty toplevel
+        val systemFileSystemNew = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        comparePropertySymbols(systemFileSystem, systemFileSystemNew)
+
+        //Test findProperty inside class
+        val sizeProperty = pluginContext.referenceProperties(
+            CallableId(
+                FqName("kotlin.collections"),
+                FqName("ArrayList"),
+                Name.identifier("size")
+            )
+        ).single()
+        val sizePropertyNew = pluginContext.findProperty("kotlin/collections/ArrayList.size")
+        comparePropertySymbols(sizeProperty, sizePropertyNew)
+
+        //Test findProperty on IrClass
+        val arrayListClass = pluginContext.findClass("kotlin/collections/ArrayList")
+        val sizePropertyNewClass = arrayListClass?.findProperty("size")
+        comparePropertySymbols(sizePropertyNewClass!!, sizeProperty, true)
+
+        //Test findProperty with function call
+        val functionCallTest = arrayListClass.findProperty("size()")
+        appendToDebugFile("FunctionCallTest for property (null): $functionCallTest\n\n")
+
+        //negative example for property:
+        val nonExistingProperty = pluginContext.findProperty("kotlin/io/Blabliblup")
+        appendToDebugFile("NonExistingTest for property: $nonExistingProperty \n\n")
+
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
         val bufferedFuncs = pluginContext.referenceFunctions(
@@ -904,7 +934,7 @@ class PerfMeasureExtension2(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun compareClassSymbols(original: IrClassSymbol, new: IrClassSymbol?) {
         if (new == null) {
-            appendToDebugFile("New class returned null for ${original.owner.kotlinFqName}\n")
+            appendToDebugFile("New class returned null for ${original.owner.kotlinFqName}\n\n")
             return
         }
 
@@ -913,6 +943,25 @@ class PerfMeasureExtension2(
         if (!matches) {
             appendToDebugFile("  Original: ${original.owner.kotlinFqName}\n")
             appendToDebugFile("  New: ${new.owner.kotlinFqName}\n")
+        }
+        appendToDebugFile("\n")
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun comparePropertySymbols(original: IrPropertySymbol, new: IrPropertySymbol?, classCall: Boolean = false) {
+        if (classCall) appendToDebugFile("IrClassSymbol.findProperty call:\n")
+
+        if (new == null) {
+            appendToDebugFile("New property returned null for ${original.owner.name}\n\n")
+            return
+        }
+
+        val matches = original == new
+        val propertyFqName = "${original.owner.parent.kotlinFqName}.${original.owner.name}"
+        appendToDebugFile("Property $propertyFqName: ${if (matches) "MATCH" else "MISMATCH"}\n")
+        if (!matches) {
+            appendToDebugFile("  Original: $propertyFqName\n")
+            appendToDebugFile("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
         }
         appendToDebugFile("\n")
     }
