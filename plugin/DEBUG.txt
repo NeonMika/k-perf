@@ -1,4 +1,29 @@
+Class kotlin.time.TimeMark: MATCH
+
+Class java.lang.StringBuilder: MATCH
+
+IrClassSymbol.findFunction call:
+Function append: MATCH
+
+IrClassSymbol.findFunction call:
+Function append: MATCH
+
+IrClassSymbol.findFunction call:
+Function append: MATCH
+
 Function println: MATCH
+
+NonExistingTest for function: null 
+
+NoParenthesisTest for function failed succesfully 
+
+onlyPackageTest for function failed succesfully 
+
+NonExistingTest for class: null 
+
+onlyPackageTest for class failed succesfully 
+
+Class kotlinx.io.RawSink: MATCH
 
 Function Path: MATCH
 
@@ -10,7 +35,11 @@ Function flush: MATCH
 
 Function toString: MATCH
 
+Class kotlin.random.Random.Default: MATCH
+
 Function nextInt: MATCH
+
+Class kotlin.time.TimeSource.Monotonic: MATCH
 
 Function markNow: MATCH
 

@@ -266,11 +266,17 @@ class PerfMeasureExtension2(
         val timeMarkClass: IrClassSymbol =
             pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeMark"))!!
 
+        val timeMarkClassNew = pluginContext.findClass("kotlin/time/TimeMark")
+        compareClassSymbols(timeMarkClass, timeMarkClassNew)
+
         val stringBuilderClassId = ClassId.fromString("kotlin/text/StringBuilder")
         // In JVM, StringBuilder is a type alias (see https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.text/-string-builder/)
         val stringBuilderTypeAlias = pluginContext.referenceTypeAlias(stringBuilderClassId)
         val stringBuilderClass = stringBuilderTypeAlias?.owner?.expandedType?.classOrFail
             ?: pluginContext.referenceClass(stringBuilderClassId)!! // In native and JS, StringBuilder is a class
+
+        val stringBuilderClassNew = pluginContext.findClass("kotlin/text/StringBuilder")
+        compareClassSymbols(stringBuilderClass, stringBuilderClassNew)
 
 
         val stringBuilderConstructor =
@@ -282,16 +288,63 @@ class PerfMeasureExtension2(
         val stringBuilderAppendStringFunc =
             stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
 
+        val stringBuilderAppendIntFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(int)")
+        compareFunctionSymbols(stringBuilderAppendIntFunc, stringBuilderAppendIntFuncNew, true)
+
+        val stringBuilderAppendLongFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(long)")
+        compareFunctionSymbols(stringBuilderAppendLongFunc, stringBuilderAppendLongFuncNew, true)
+
+        val stringBuilderAppendStringFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(string?)")
+        compareFunctionSymbols(stringBuilderAppendStringFunc, stringBuilderAppendStringFuncNew, true)
+
         val printlnFunc =
             pluginContext.referenceFunctions(CallableId(FqName("kotlin.io"), Name.identifier("println"))).single {
                 it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
             }
 
-        val printlnFuncNew = pluginContext.findFunction("kotlin.io/println(any?)")
+        val printlnFuncNew = pluginContext.findFunction("kotlin/io/println(any?)")
         compareFunctionSymbols(printlnFunc, printlnFuncNew)
+
+        //negative example for function:
+        val nonExistingFunc = pluginContext.findFunction("kotlin/io/blabliblup()")
+        appendToDebugFile("NonExistingTest for function: $nonExistingFunc \n\n")
+
+        //no parenthesis test for function (this should fail):
+        runCatching {
+            val noParenthesisFunc = pluginContext.findFunction("kotlin/io/println")
+        }.onFailure { e ->
+            appendToDebugFile("NoParenthesisTest for function failed succesfully \n\n")
+        }.onSuccess {
+            appendToDebugFile("ERROR: NoParenthesisTest for function did not fail! \n\n")
+        }
+
+        //only package test for function (this should fail):
+        runCatching {
+            val onlyPackageFunc = pluginContext.findFunction("kotlin/io/")
+        }.onFailure { e ->
+            appendToDebugFile("onlyPackageTest for function failed succesfully \n\n")
+        }.onSuccess {
+            appendToDebugFile("ERROR: onlyPackageTest for function did not fail! \n\n")
+        }
+
+        //negative example for class:
+        val nonExistingClass = pluginContext.findClass("kotlin/io/Blabliblup")
+        appendToDebugFile("NonExistingTest for class: $nonExistingClass \n\n")
+
+        //only package test for class (this should fail):
+        runCatching {
+            val onlyPackageClass = pluginContext.findClass("kotlin/text/")
+        }.onFailure { e ->
+            appendToDebugFile("onlyPackageTest for class failed succesfully \n\n")
+        }.onSuccess {
+            appendToDebugFile("ERROR: onlyPackageTest for class did not fail! \n\n")
+        }
 
         val rawSinkClass =
             pluginContext.referenceClass(ClassId.fromString("kotlinx/io/RawSink"))!!
+
+        val rawSinkClassNew = pluginContext.findClass("kotlinx/io/RawSink")
+        compareClassSymbols(rawSinkClass, rawSinkClassNew)
 
         // Watch out, Path does not use constructors but functions to build
         val pathConstructionFunc = pluginContext.referenceFunctions(
@@ -301,7 +354,7 @@ class PerfMeasureExtension2(
             )
         ).single { it.owner.valueParameters.size == 1 }
 
-        val pathConstructionFuncNew = pluginContext.findFunction("kotlinx.io.files/Path(string)")
+        val pathConstructionFuncNew = pluginContext.findFunction("kotlinx/io/files/Path(string)")
         compareFunctionSymbols(pathConstructionFunc, pathConstructionFuncNew)
 
         val systemFileSystem = pluginContext.referenceProperties(
@@ -320,7 +373,7 @@ class PerfMeasureExtension2(
         )
         val bufferedFunc = bufferedFuncs.single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
 
-        val bufferedFuncNew = pluginContext.findFunction("kotlinx.io/buffered()", sinkFunc.owner.returnType)
+        val bufferedFuncNew = pluginContext.findFunction("kotlinx/io/buffered()", sinkFunc.owner.returnType)
         compareFunctionSymbols(bufferedFunc, bufferedFuncNew)
 
         /*appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
@@ -346,7 +399,7 @@ class PerfMeasureExtension2(
                     it.owner.valueParameters[2].type == pluginContext.irBuiltIns.intType
         }
 
-        val writeStringFuncNew = pluginContext.findFunction("kotlinx.io/writeString(string,int,int)")
+        val writeStringFuncNew = pluginContext.findFunction("kotlinx/io/writeString(string,int,int)")
         compareFunctionSymbols(writeStringFunc, writeStringFuncNew)
 
         val flushFunc = pluginContext.referenceFunctions(
@@ -357,7 +410,7 @@ class PerfMeasureExtension2(
             )
         ).single()
 
-        val flushFuncNew = pluginContext.findFunction("kotlinx.io.Sink/flush()")
+        val flushFuncNew = pluginContext.findFunction("kotlinx/io/Sink.flush()")
         compareFunctionSymbols(flushFunc, flushFuncNew)
 
         //debugFile.appendText("2")
@@ -395,6 +448,10 @@ class PerfMeasureExtension2(
 
         val randomDefaultObjectClass =
             pluginContext.referenceClass(ClassId.fromString("kotlin/random/Random.Default"))!!
+
+        val randomDefaultObjectClassNew = pluginContext.findClass("kotlin/random/Random.Default")
+        compareClassSymbols(randomDefaultObjectClass, randomDefaultObjectClassNew)
+
         val nextIntFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlin.random"),
@@ -405,7 +462,7 @@ class PerfMeasureExtension2(
             it.owner.valueParameters.isEmpty()
         }
 
-        val nextIntFuncNew = pluginContext.findFunction("kotlin.random.Random.Default/nextInt()")
+        val nextIntFuncNew = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()")
         compareFunctionSymbols(nextIntFunc, nextIntFuncNew)
 
         val randomNumber = pluginContext.irFactory.buildField {
@@ -526,6 +583,9 @@ class PerfMeasureExtension2(
             val timeSourceMonotonicClass: IrClassSymbol =
                 pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeSource.Monotonic"))!!
 
+            val timeSourceMonotonicClassNew = pluginContext.findClass("kotlin/time/TimeSource.Monotonic")
+            compareClassSymbols(timeSourceMonotonicClass, timeSourceMonotonicClassNew)
+
             /* val funMarkNowViaClass = classMonotonic.functions.find { it.owner.name.asString() == "markNow" }!! */
 
             val funMarkNow =
@@ -537,7 +597,7 @@ class PerfMeasureExtension2(
                     )
                 ).single()
 
-            val funMarkNowNew = pluginContext.findFunction("kotlin.time.TimeSource.Monotonic/markNow()")
+            val funMarkNowNew = pluginContext.findFunction("kotlin/time/TimeSource.Monotonic.markNow()")
             compareFunctionSymbols(funMarkNow, funMarkNowNew)
 
             // assertion: funMarkNowViaClass == funMarkNow
@@ -605,7 +665,7 @@ class PerfMeasureExtension2(
                     )
                 ).single()
 
-            val funElapsedNowNew = pluginContext.findFunction("kotlin.time.TimeMark/elapsedNow()")
+            val funElapsedNowNew = pluginContext.findFunction("kotlin/time/TimeMark.elapsedNow()")
             compareFunctionSymbols(funElapsedNow, funElapsedNowNew)
 
             return pluginContext.irFactory.buildFun {
@@ -823,14 +883,33 @@ class PerfMeasureExtension2(
     //------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //helper functions
 
-    private fun compareFunctionSymbols(original: IrSimpleFunctionSymbol, new: IrSimpleFunctionSymbol?) {
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun compareFunctionSymbols(original: IrSimpleFunctionSymbol, new: IrSimpleFunctionSymbol?, classCall: Boolean = false) {
+        if (classCall) appendToDebugFile("IrClassSymbol.findFunction call:\n")
+
         if (new == null) {
-            appendToDebugFile("New method returned null for ${original.owner.name}\n")
+            appendToDebugFile("New method returned null for ${original.owner.name}\n\n")
             return
         }
 
         val matches = original == new
         appendToDebugFile("Function ${original.owner.name}: ${if (matches) "MATCH" else "MISMATCH"}\n")
+        if (!matches) {
+            appendToDebugFile("  Original: ${original.owner.kotlinFqName}\n")
+            appendToDebugFile("  New: ${new.owner.kotlinFqName}\n")
+        }
+        appendToDebugFile("\n")
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun compareClassSymbols(original: IrClassSymbol, new: IrClassSymbol?) {
+        if (new == null) {
+            appendToDebugFile("New class returned null for ${original.owner.kotlinFqName}\n")
+            return
+        }
+
+        val matches = original == new
+        appendToDebugFile("Class ${original.owner.kotlinFqName}: ${if (matches) "MATCH" else "MISMATCH"}\n")
         if (!matches) {
             appendToDebugFile("  Original: ${original.owner.kotlinFqName}\n")
             appendToDebugFile("  New: ${new.owner.kotlinFqName}\n")

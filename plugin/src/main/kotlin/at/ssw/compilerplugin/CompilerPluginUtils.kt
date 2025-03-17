@@ -1,26 +1,68 @@
 package at.ssw.compilerplugin
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
+import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
-    validateSignature(signature)
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
+    //TODO ohne pluginContext
+    val (functionName, params) = parseFunctionSignature(pluginContext, signature)
 
-    val (fqName, functionName, paramTypes) = parseSignature(signature)
-
-    val callableId = buildCallableId(fqName, functionName)
-
-    return this.referenceFunctions(callableId)
+    return this.functions
         .singleOrNull { func ->
-            checkMethodSignature(this, func, paramTypes) && checkExtensionFunctionReceiverType(func, extensionReceiverType)
+            func.owner.name.asString() == functionName && checkMethodSignature(func, params.filterNotNull()) && checkExtensionFunctionReceiverType(func, extensionReceiverType)
         }
+}
+
+fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
+    require(signature.contains('/')) {"Package path must be included in findFunction signature"}
+    val parts = signature.split('/')
+    val functionParts = parts.last().split('.')
+    val functionPart = functionParts.last()
+    val packageName = parts.dropLast(1).joinToString(".")
+    val packageForFindClass = packageName.replace(".", "/")
+    val className = functionParts.dropLast(1).joinToString(".")
+    val functionName = functionPart.substringBefore('(')
+    val params = parseFunctionSignature(this, functionPart).second.filterNotNull()
+
+    val classSymbol = if (className.isNotBlank()) {
+        findClass("$packageForFindClass/$className")
+    } else {
+        null
+    }
+
+    return classSymbol?.findFunction(this, functionParts.last(), extensionReceiverType)
+        ?: referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName)))
+            .singleOrNull { func ->
+                checkMethodSignature(func, params) &&
+                        checkExtensionFunctionReceiverType(func, extensionReceiverType)
+            }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
+    //check signature
+    require(signature.contains('/')) {"Package path must be included in findClass signature"}
+    val classId = ClassId.fromString(signature)
+
+    //try to resolve type alias since it's more specific
+    val typeAlias = referenceTypeAlias(classId)
+    if (typeAlias != null) {
+        return typeAlias.owner.expandedType.classOrNull
+    }
+
+    return referenceClass(classId)
 }
 
 fun IrPluginContext.getIrType(typeString: String): IrType? {
@@ -59,9 +101,7 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
 
         //user defined types: (must contain package)
         else -> {
-            //TODO: replace with find class
-            val classId = ClassId.fromString(baseType)
-            this.referenceClass(classId)?.defaultType ?: return null
+            this.findClass(normalizedType)?.defaultType ?: return null
         }
     }
 
@@ -69,69 +109,33 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
     return if (isNullable) type.makeNullable() else type
 }
 
-private fun buildCallableId(path: String, functionName: String): CallableId {
-    val parts = path.split('.')
-
-    //find start of classes
-    val classStartIndex = parts.indexOfFirst { it.first().isUpperCase() }
-
-    //create Id for cases class exist or dont exist
-    return if (classStartIndex != -1) {
-        val packageName = parts.take(classStartIndex).joinToString(".")
-        val className = parts.drop(classStartIndex).joinToString(".")
-
-        CallableId(
-            FqName(packageName),
-            FqName(className),
-            Name.identifier(functionName)
-        )
-    } else {
-        CallableId(
-            FqName(path),
-            Name.identifier(functionName)
-        )
-    }
-}
-
-private fun checkMethodSignature(pluginContext: IrPluginContext, func: IrSimpleFunctionSymbol, paramTypes: List<String>): Boolean {
-    try {
-        //check params count
-        if (func.owner.valueParameters.size != paramTypes.size) {
-            return false
-        }
-
-        //check parameter types
-        val paramsMatch = func.owner.valueParameters.zip(paramTypes).all { (param, expectedTypeStr) ->
-            val expectedType = pluginContext.getIrType(expectedTypeStr.trim())
-            param.type == expectedType
-        }
-
-        return paramsMatch
-    } catch (e: Exception) {
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun checkMethodSignature(func: IrSimpleFunctionSymbol, paramTypes: List<IrType>): Boolean {
+    //check params count
+    if (func.owner.valueParameters.size != paramTypes.size) {
         return false
     }
+
+    //check parameter types
+    return func.owner.valueParameters.zip(paramTypes).all { (param, expectedType) -> param.type == expectedType }
 }
 
-private fun checkExtensionFunctionReceiverType(func: IrSimpleFunctionSymbol, extentionRecieverType: IrType? = null) = if (extentionRecieverType != null) func.owner.extensionReceiverParameter?.type == extentionRecieverType else true
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+private fun checkExtensionFunctionReceiverType(func: IrSimpleFunctionSymbol, extensionReceiverType: IrType? = null) = extensionReceiverType?.let { func.owner.extensionReceiverParameter?.type == it } ?: true
 
-private fun parseSignature(signature: String): Triple<String, String, List<String>> {
-    val functionPath = signature.substringBeforeLast("/")
-    val functionPart = signature.substringAfterLast("/")
-    val functionName = functionPart.substringBefore("(")
-    val paramsString = functionPart.substringAfter("(").substringBefore(")")
+private fun parseFunctionSignature(pluginContext: IrPluginContext, signature: String): Pair<String, List<IrType?>> {
+    //functions must have parenthesis
+    require(signature.contains('('))
+
+    val functionName = signature.substringBefore("(")
+    val paramsString = signature.substringAfter("(").substringBefore(")")
 
     //parse parameters
     val params = if (paramsString.isBlank()) {
         emptyList()
     } else {
-        paramsString.split(",").map { it.trim() }
+        paramsString.split(",").map { it.trim() }.mapNotNull  { pluginContext.getIrType(it) }
     }
 
-    return Triple(functionPath, functionName, params)
-}
-
-private fun validateSignature(signature: String) {
-    require(signature.contains("/")) { "Signature must contain package separator '/'" }
-    require(signature.contains("(")) { "Signature must contain parameter start '('" }
-    require(signature.contains(")")) { "Signature must contain parameter end ')'" }
+    return Pair(functionName, params)
 }
