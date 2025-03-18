@@ -1,14 +1,9 @@
 package at.ssw.compilerplugin
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
-import org.jetbrains.kotlin.ir.symbols.IrPropertySymbol
-import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
-import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.classOrNull
-import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.makeNullable
+import org.jetbrains.kotlin.ir.symbols.*
+import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.CallableId
@@ -84,10 +79,23 @@ fun IrPluginContext.findProperty(signature: String): IrPropertySymbol? {
             .singleOrNull()
 }
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: String? = "()"): IrConstructorSymbol? {
+    val (_, expectedParams) = parseFunctionParameters(pluginContext, "<init>$signature")
+
+    return this.constructors.singleOrNull { constructor ->
+        constructor.owner.valueParameters.size == expectedParams.size &&
+                constructor.owner.valueParameters.zip(expectedParams).all { (param, expectedType) ->
+                    areTypesEquivalent(param.type, expectedType)
+                }
+    }
+}
+
 fun IrPluginContext.getIrType(typeString: String): IrType? {
     val isNullable = typeString.endsWith("?", ignoreCase = true)
     val baseType = if (isNullable) typeString.removeSuffix("?") else typeString
     val normalizedType = baseType.lowercase()
+    this.irBuiltIns.intType.classifierOrFail
 
     val type = when (normalizedType) {
         "int" -> this.irBuiltIns.intType
@@ -136,11 +144,13 @@ private fun checkMethodSignature(func: IrSimpleFunctionSymbol, paramTypes: List<
     }
 
     //check parameter types
-    return func.owner.valueParameters.zip(paramTypes).all { (param, expectedType) -> param.type == expectedType }
+    return func.owner.valueParameters.zip(paramTypes).all { (param, expectedType) -> areTypesEquivalent(param.type, expectedType) }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private fun checkExtensionFunctionReceiverType(func: IrSimpleFunctionSymbol, extensionReceiverType: IrType? = null) = extensionReceiverType?.let { func.owner.extensionReceiverParameter?.type == it } ?: true
+private fun checkExtensionFunctionReceiverType(func: IrSimpleFunctionSymbol, extensionReceiverType: IrType? = null) = extensionReceiverType?.let {
+    func.owner.extensionReceiverParameter?.type?.let { it1 -> areTypesEquivalent(it1, it)
+} } ?: true
 
 private fun parseSignature(signature: String): SignatureParts {
     require(signature.contains('/')) { "Package path must be included in signature" }
@@ -170,4 +180,15 @@ private fun parseFunctionParameters(pluginContext: IrPluginContext, signature: S
     }
 
     return Pair(functionName, params)
+}
+
+private fun areTypesEquivalent(expected: IrType, actual: IrType): Boolean {
+    val expectedClassifier = expected.classifierOrNull
+    val actualClassifier = actual.classifierOrNull
+    return if (expectedClassifier != null && actualClassifier != null) {
+        expectedClassifier == actualClassifier
+    } else {
+        //fallback for dynamic types(JS)
+        expected == actual
+    }
 }

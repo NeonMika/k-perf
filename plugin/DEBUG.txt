@@ -2,6 +2,14 @@ Class kotlin.time.TimeMark: MATCH
 
 Class java.lang.StringBuilder: MATCH
 
+Constructor java.lang.StringBuilder.<init>: MATCH
+
+Constructor java.io.File.<init>: MATCH
+
+Constructor kotlin.text.Regex.<init>: MATCH
+
+NonExistingTest for constructor (should be null): null 
+
 IrClassSymbol.findFunction call:
 Function append: MATCH
 
@@ -15,13 +23,13 @@ Function println: MATCH
 
 NonExistingTest for function: null 
 
-NoParenthesisTest for function failed succesfully 
+NoParenthesisTest for function failed successfully 
 
-onlyPackageTest for function failed succesfully 
+onlyPackageTest for function failed successfully 
 
 NonExistingTest for class: null 
 
-onlyPackageTest for class failed succesfully 
+onlyPackageTest for class failed successfully 
 
 Class kotlinx.io.RawSink: MATCH
 
