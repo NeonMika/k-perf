@@ -21,9 +21,7 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.ADAPTE
 import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.addArgument
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
-import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
-import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.CallableId
@@ -288,6 +286,33 @@ class PerfMeasureExtension2(
         val stringBuilderAppendStringFunc =
             stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
 
+        //basic constructor test
+        val stringBuilderConstructorNew = stringBuilderClassNew?.findConstructor(pluginContext)
+        compareConstructorSymbols(stringBuilderConstructor, stringBuilderConstructorNew)
+
+        //multiple parameter constructor test with java class
+        val fileClassNew = pluginContext.findClass("java/io/File")
+        val fileConstructor = fileClassNew?.constructors?.singleOrNull() { it.owner.valueParameters.size == 2 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() && it.owner.valueParameters[1].type == pluginContext.irBuiltIns.stringType.makeNullable() }
+        val fileConstructorNew = fileClassNew?.findConstructor(pluginContext, "(String?, String?)")
+        compareConstructorSymbols(fileConstructor!!, fileConstructorNew)
+
+        /*single parameter constructor test
+        PROBLEM!! Interoperability types between java and kotlin -> Stringbuilder is java class here in kotlin we dont know if the type is nullable or not -> findConstructor uses better type comparison function so the constructor is found but with simply comparing by == it is not found
+        val stringBuilderConstructor2 = stringBuilderClass.constructors.singleOrNull { it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType}
+        val stringBuilderConstructorNew2 = stringBuilderClass.findConstructor(pluginContext, "(String)")
+        compareConstructorSymbols(stringBuilderConstructor2!!, stringBuilderConstructorNew2)
+        */
+
+        //single parameter test with kotlin class
+        val regexClass = pluginContext.findClass("kotlin/text/Regex")!!
+        val regexConstructor = regexClass.constructors.singleOrNull { it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType }
+        val regexConstructorNew = regexClass.findConstructor(pluginContext, "(String)")
+        compareConstructorSymbols(regexConstructor!!, regexConstructorNew)
+
+        //non existin constructor test
+        val nonExistentConstructorNew = stringBuilderClassNew?.findConstructor(pluginContext, "(Boolean, String)")
+        appendToDebugFile("NonExistingTest for constructor (should be null): $nonExistentConstructorNew \n\n")
+
         val stringBuilderAppendIntFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(int)")
         compareFunctionSymbols(stringBuilderAppendIntFunc, stringBuilderAppendIntFuncNew, true)
 
@@ -311,18 +336,18 @@ class PerfMeasureExtension2(
 
         //no parenthesis test for function (this should fail):
         runCatching {
-            val noParenthesisFunc = pluginContext.findFunction("kotlin/io/println")
-        }.onFailure { e ->
-            appendToDebugFile("NoParenthesisTest for function failed succesfully \n\n")
+            pluginContext.findFunction("kotlin/io/println")
+        }.onFailure { _ ->
+            appendToDebugFile("NoParenthesisTest for function failed successfully \n\n")
         }.onSuccess {
             appendToDebugFile("ERROR: NoParenthesisTest for function did not fail! \n\n")
         }
 
         //only package test for function (this should fail):
         runCatching {
-            val onlyPackageFunc = pluginContext.findFunction("kotlin/io/")
-        }.onFailure { e ->
-            appendToDebugFile("onlyPackageTest for function failed succesfully \n\n")
+            pluginContext.findFunction("kotlin/io/")
+        }.onFailure { _ ->
+            appendToDebugFile("onlyPackageTest for function failed successfully \n\n")
         }.onSuccess {
             appendToDebugFile("ERROR: onlyPackageTest for function did not fail! \n\n")
         }
@@ -333,9 +358,9 @@ class PerfMeasureExtension2(
 
         //only package test for class (this should fail):
         runCatching {
-            val onlyPackageClass = pluginContext.findClass("kotlin/text/")
-        }.onFailure { e ->
-            appendToDebugFile("onlyPackageTest for class failed succesfully \n\n")
+            pluginContext.findClass("kotlin/text/")
+        }.onFailure { _ ->
+            appendToDebugFile("onlyPackageTest for class failed successfully \n\n")
         }.onSuccess {
             appendToDebugFile("ERROR: onlyPackageTest for class did not fail! \n\n")
         }
@@ -363,6 +388,35 @@ class PerfMeasureExtension2(
                 Name.identifier("SystemFileSystem")
             )
         ).single()
+
+        //Test findProperty toplevel
+        val systemFileSystemNew = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        comparePropertySymbols(systemFileSystem, systemFileSystemNew)
+
+        //Test findProperty inside class
+        val sizeProperty = pluginContext.referenceProperties(
+            CallableId(
+                FqName("kotlin.collections"),
+                FqName("ArrayList"),
+                Name.identifier("size")
+            )
+        ).single()
+        val sizePropertyNew = pluginContext.findProperty("kotlin/collections/ArrayList.size")
+        comparePropertySymbols(sizeProperty, sizePropertyNew)
+
+        //Test findProperty on IrClass
+        val arrayListClass = pluginContext.findClass("kotlin/collections/ArrayList")
+        val sizePropertyNewClass = arrayListClass?.findProperty("size")
+        comparePropertySymbols(sizePropertyNewClass!!, sizeProperty, true)
+
+        //Test findProperty with function call
+        val functionCallTest = arrayListClass.findProperty("size()")
+        appendToDebugFile("FunctionCallTest for property (null): $functionCallTest\n\n")
+
+        //negative example for property:
+        val nonExistingProperty = pluginContext.findProperty("kotlin/io/Blabliblup")
+        appendToDebugFile("NonExistingTest for property: $nonExistingProperty \n\n")
+
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
         val bufferedFuncs = pluginContext.referenceFunctions(
@@ -904,7 +958,7 @@ class PerfMeasureExtension2(
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun compareClassSymbols(original: IrClassSymbol, new: IrClassSymbol?) {
         if (new == null) {
-            appendToDebugFile("New class returned null for ${original.owner.kotlinFqName}\n")
+            appendToDebugFile("New class returned null for ${original.owner.kotlinFqName}\n\n")
             return
         }
 
@@ -913,6 +967,40 @@ class PerfMeasureExtension2(
         if (!matches) {
             appendToDebugFile("  Original: ${original.owner.kotlinFqName}\n")
             appendToDebugFile("  New: ${new.owner.kotlinFqName}\n")
+        }
+        appendToDebugFile("\n")
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun comparePropertySymbols(original: IrPropertySymbol, new: IrPropertySymbol?, classCall: Boolean = false) {
+        if (classCall) appendToDebugFile("IrClassSymbol.findProperty call:\n")
+
+        if (new == null) {
+            appendToDebugFile("New property returned null for ${original.owner.name}\n\n")
+            return
+        }
+
+        val matches = original == new
+        val propertyFqName = "${original.owner.parent.kotlinFqName}.${original.owner.name}"
+        appendToDebugFile("Property $propertyFqName: ${if (matches) "MATCH" else "MISMATCH"}\n")
+        if (!matches) {
+            appendToDebugFile("  Original: $propertyFqName\n")
+            appendToDebugFile("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
+        }
+        appendToDebugFile("\n")
+    }
+
+    private fun compareConstructorSymbols(original: IrConstructorSymbol, new: IrConstructorSymbol?) {
+        if (new == null) {
+            appendToDebugFile("New constructor returned null for ${original.owner.parent.kotlinFqName}\n\n")
+            return
+        }
+        val matches = original == new
+        val constructorFqName = "${original.owner.parent.kotlinFqName}.${original.owner.name}"
+        appendToDebugFile("Constructor $constructorFqName: ${if (matches) "MATCH" else "MISMATCH"}\n")
+        if (!matches) {
+            appendToDebugFile("  Original: $constructorFqName\n")
+            appendToDebugFile("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
         }
         appendToDebugFile("\n")
     }

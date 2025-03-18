@@ -1,54 +1,22 @@
 package at.ssw.compilerplugin
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
-import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
-import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.classOrNull
-import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.makeNullable
+import org.jetbrains.kotlin.ir.symbols.*
+import org.jetbrains.kotlin.ir.types.*
+import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.functions
+import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
-    //TODO ohne pluginContext
-    val (functionName, params) = parseFunctionSignature(pluginContext, signature)
-
-    return this.functions
-        .singleOrNull { func ->
-            func.owner.name.asString() == functionName && checkMethodSignature(func, params.filterNotNull()) && checkExtensionFunctionReceiverType(func, extensionReceiverType)
-        }
-}
-
-fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
-    require(signature.contains('/')) {"Package path must be included in findFunction signature"}
-    val parts = signature.split('/')
-    val functionParts = parts.last().split('.')
-    val functionPart = functionParts.last()
-    val packageName = parts.dropLast(1).joinToString(".")
-    val packageForFindClass = packageName.replace(".", "/")
-    val className = functionParts.dropLast(1).joinToString(".")
-    val functionName = functionPart.substringBefore('(')
-    val params = parseFunctionSignature(this, functionPart).second.filterNotNull()
-
-    val classSymbol = if (className.isNotBlank()) {
-        findClass("$packageForFindClass/$className")
-    } else {
-        null
-    }
-
-    return classSymbol?.findFunction(this, functionParts.last(), extensionReceiverType)
-        ?: referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName)))
-            .singleOrNull { func ->
-                checkMethodSignature(func, params) &&
-                        checkExtensionFunctionReceiverType(func, extensionReceiverType)
-            }
-}
+private data class SignatureParts(
+    val packageName: String,
+    val className: String,
+    val memberName: String,
+    val packageForFindClass: String
+)
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
@@ -65,10 +33,69 @@ fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
     return referenceClass(classId)
 }
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
+    //TODO ohne pluginContext
+    val (functionName, params) = parseFunctionParameters(pluginContext, signature)
+
+    return this.functions
+        .singleOrNull { func ->
+            func.owner.name.asString() == functionName && checkMethodSignature(func, params) && checkExtensionFunctionReceiverType(func, extensionReceiverType)
+        }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrClassSymbol.findProperty(signature: String): IrPropertySymbol? = this.owner.properties.find { it.name.asString().lowercase() == signature.lowercase() }?.symbol
+
+fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
+    val (packageName, className, functionPart, packageForFindClass) = parseSignature(signature)
+    val (functionName, params) = parseFunctionParameters(this, functionPart)
+
+    val classSymbol = if (className.isNotBlank()) {
+        findClass("$packageForFindClass/$className")
+    } else {
+        null
+    }
+
+    return classSymbol?.findFunction(this, functionPart, extensionReceiverType)
+        ?: referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName)))
+            .singleOrNull { func ->
+                checkMethodSignature(func, params) &&
+                        checkExtensionFunctionReceiverType(func, extensionReceiverType)
+            }
+}
+
+fun IrPluginContext.findProperty(signature: String): IrPropertySymbol? {
+    val parts = parseSignature(signature)
+
+    val classSymbol = if (parts.className.isNotBlank()) {
+        findClass("${parts.packageForFindClass}/${parts.className}")
+    } else {
+        null
+    }
+
+    return classSymbol?.findProperty(parts.memberName)
+        ?: referenceProperties(CallableId(FqName(parts.packageName), Name.identifier(parts.memberName)))
+            .singleOrNull()
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: String? = "()"): IrConstructorSymbol? {
+    val (_, expectedParams) = parseFunctionParameters(pluginContext, "<init>$signature")
+
+    return this.constructors.singleOrNull { constructor ->
+        constructor.owner.valueParameters.size == expectedParams.size &&
+                constructor.owner.valueParameters.zip(expectedParams).all { (param, expectedType) ->
+                    areTypesEquivalent(param.type, expectedType)
+                }
+    }
+}
+
 fun IrPluginContext.getIrType(typeString: String): IrType? {
     val isNullable = typeString.endsWith("?", ignoreCase = true)
     val baseType = if (isNullable) typeString.removeSuffix("?") else typeString
     val normalizedType = baseType.lowercase()
+    this.irBuiltIns.intType.classifierOrFail
 
     val type = when (normalizedType) {
         "int" -> this.irBuiltIns.intType
@@ -117,13 +144,28 @@ private fun checkMethodSignature(func: IrSimpleFunctionSymbol, paramTypes: List<
     }
 
     //check parameter types
-    return func.owner.valueParameters.zip(paramTypes).all { (param, expectedType) -> param.type == expectedType }
+    return func.owner.valueParameters.zip(paramTypes).all { (param, expectedType) -> areTypesEquivalent(param.type, expectedType) }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private fun checkExtensionFunctionReceiverType(func: IrSimpleFunctionSymbol, extensionReceiverType: IrType? = null) = extensionReceiverType?.let { func.owner.extensionReceiverParameter?.type == it } ?: true
+private fun checkExtensionFunctionReceiverType(func: IrSimpleFunctionSymbol, extensionReceiverType: IrType? = null) = extensionReceiverType?.let {
+    func.owner.extensionReceiverParameter?.type?.let { it1 -> areTypesEquivalent(it1, it)
+} } ?: true
 
-private fun parseFunctionSignature(pluginContext: IrPluginContext, signature: String): Pair<String, List<IrType?>> {
+private fun parseSignature(signature: String): SignatureParts {
+    require(signature.contains('/')) { "Package path must be included in signature" }
+
+    val parts = signature.split('/')
+    val memberParts = parts.last().split('.')
+    val memberName = memberParts.last()
+    val packageName = parts.dropLast(1).joinToString(".")
+    val packageForFindClass = packageName.replace(".", "/")
+    val className = memberParts.dropLast(1).joinToString(".")
+
+    return SignatureParts(packageName, className, memberName, packageForFindClass)
+}
+
+private fun parseFunctionParameters(pluginContext: IrPluginContext, signature: String): Pair<String, List<IrType>> {
     //functions must have parenthesis
     require(signature.contains('('))
 
@@ -138,4 +180,15 @@ private fun parseFunctionSignature(pluginContext: IrPluginContext, signature: St
     }
 
     return Pair(functionName, params)
+}
+
+private fun areTypesEquivalent(expected: IrType, actual: IrType): Boolean {
+    val expectedClassifier = expected.classifierOrNull
+    val actualClassifier = actual.classifierOrNull
+    return if (expectedClassifier != null && actualClassifier != null) {
+        expectedClassifier == actualClassifier
+    } else {
+        //fallback for dynamic types(JS)
+        expected == actual
+    }
 }
