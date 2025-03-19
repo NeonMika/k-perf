@@ -86,7 +86,7 @@ fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: Str
     return this.constructors.singleOrNull { constructor ->
         constructor.owner.valueParameters.size == expectedParams.size &&
                 constructor.owner.valueParameters.zip(expectedParams).all { (param, expectedType) ->
-                    areTypesEquivalent(param.type, expectedType)
+                    param.type.equalsIgnorePlatform(expectedType)
                 }
     }
 }
@@ -161,14 +161,57 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
 }
 
 private fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, List<IrType?>> {
-    require(signature.contains('<')) { "Generic parameter string must start with '<'" }
+    // If no generic parameters, return early
+    if (!signature.contains("<")) {
+        return Pair(signature, emptyList())
+    }
+
+    require(signature.count { it == '<' } == signature.count { it == '>' }) {
+        "Generic parameter string must have matching '<' and '>'"
+    }
+
+    val mainType = signature.substringBefore("<")
+    val genericPart = signature.substring(
+        signature.indexOf('<') + 1,
+        signature.lastIndexOf('>')
+    )
+
+    // If generic part is empty, return without parameters
+    if (genericPart.isBlank()) {
+        return Pair(mainType, emptyList())
+    }
 
     val params = mutableListOf<IrType?>()
-    val mainType = signature.substringBefore("<")
-    val paramStrings = signature.substringAfter("<").substringBefore(">").split(",")
+    var currentParam = StringBuilder()
+    var nestedLevel = 0
 
-    for (paramString in paramStrings) {
-        params.add(getIrType(paramString))
+    // Parse considering nested generic parameters
+    for (char in genericPart) {
+        when (char) {
+            '<' -> {
+                nestedLevel++
+                currentParam.append(char)
+            }
+            '>' -> {
+                nestedLevel--
+                currentParam.append(char)
+            }
+            ',' -> {
+                if (nestedLevel == 0) {
+                    // Only split at top level
+                    params.add(getIrType(currentParam.toString().trim()))
+                    currentParam = StringBuilder()
+                } else {
+                    currentParam.append(char)
+                }
+            }
+            else -> currentParam.append(char)
+        }
+    }
+
+    // Add the last parameter
+    if (currentParam.isNotEmpty()) {
+        params.add(getIrType(currentParam.toString().trim()))
     }
 
     return Pair(mainType, params)
@@ -182,12 +225,12 @@ private fun checkMethodSignature(func: IrSimpleFunctionSymbol, paramTypes: List<
     }
 
     //check parameter types
-    return func.owner.valueParameters.zip(paramTypes).all { (param, expectedType) -> areTypesEquivalent(param.type, expectedType) }
+    return func.owner.valueParameters.zip(paramTypes).all { (param, expectedType) -> param.type.equalsIgnorePlatform(expectedType) }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private fun checkExtensionFunctionReceiverType(func: IrSimpleFunctionSymbol, extensionReceiverType: IrType? = null) = extensionReceiverType?.let {
-    func.owner.extensionReceiverParameter?.type?.let { it1 -> areTypesEquivalent(it1, it)
+    func.owner.extensionReceiverParameter?.type?.let { it1 -> it1.equalsIgnorePlatform(it)
 } } ?: true
 
 private fun parseSignature(signature: String): SignatureParts {
@@ -220,14 +263,28 @@ private fun parseFunctionParameters(pluginContext: IrPluginContext, signature: S
     return Pair(functionName, params)
 }
 
-private fun areTypesEquivalent(expected: IrType, actual: IrType): Boolean {
-    val expectedClassifier = expected.classifierOrNull
-    val actualClassifier = actual.classifierOrNull
-    return if (expectedClassifier != null && actualClassifier != null) {
-        expectedClassifier == actualClassifier
-    } else {
-        //fallback for dynamic types(JS)
-        expected == actual
+fun IrType.equalsIgnorePlatform(type2: IrType): Boolean {
+    // Handle platform types
+    if (this.isPlatformType() || type2.isPlatformType()) {
+        // For platform types, compare the types ignoring nullability
+        return this.erasedUpperBound() == type2.erasedUpperBound()
+    }
+
+    // Regular type comparison for non-platform types
+    return this == type2
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrType.isPlatformType(): Boolean {
+    return this is IrSimpleType && annotations.any {
+        it.symbol.owner.name.asString() == "PlatformType"
+    }
+}
+
+fun IrType.erasedUpperBound(): IrType {
+    return when {
+        this is IrSimpleType -> makeNotNull()
+        else -> this
     }
 }
 
