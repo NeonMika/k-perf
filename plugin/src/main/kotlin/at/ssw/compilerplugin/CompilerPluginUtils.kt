@@ -161,7 +161,7 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
 }
 
 private fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, List<IrType?>> {
-    // If no generic parameters, return early
+    //no generic part in string
     if (!signature.contains("<")) {
         return Pair(signature, emptyList())
     }
@@ -176,7 +176,7 @@ private fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, L
         signature.lastIndexOf('>')
     )
 
-    // If generic part is empty, return without parameters
+    //no generic parameters
     if (genericPart.isBlank()) {
         return Pair(mainType, emptyList())
     }
@@ -185,7 +185,7 @@ private fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, L
     var currentParam = StringBuilder()
     var nestedLevel = 0
 
-    // Parse considering nested generic parameters
+    //parse nested parameters
     for (char in genericPart) {
         when (char) {
             '<' -> {
@@ -198,7 +198,7 @@ private fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, L
             }
             ',' -> {
                 if (nestedLevel == 0) {
-                    // Only split at top level
+                    //only split outer most level
                     params.add(getIrType(currentParam.toString().trim()))
                     currentParam = StringBuilder()
                 } else {
@@ -209,7 +209,6 @@ private fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, L
         }
     }
 
-    // Add the last parameter
     if (currentParam.isNotEmpty()) {
         params.add(getIrType(currentParam.toString().trim()))
     }
@@ -264,13 +263,13 @@ private fun parseFunctionParameters(pluginContext: IrPluginContext, signature: S
 }
 
 fun IrType.equalsIgnorePlatform(type2: IrType): Boolean {
-    // Handle platform types
+    //handle platform types
     if (this.isPlatformType() || type2.isPlatformType()) {
-        // For platform types, compare the types ignoring nullability
+        //for platform types ignore nullability
         return this.erasedUpperBound() == type2.erasedUpperBound()
     }
 
-    // Regular type comparison for non-platform types
+    //regular comparison
     return this == type2
 }
 
