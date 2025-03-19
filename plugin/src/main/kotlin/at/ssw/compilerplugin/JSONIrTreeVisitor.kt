@@ -8,10 +8,12 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 import org.jetbrains.kotlin.ir.IrFileEntry
+import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
 import org.jetbrains.kotlin.ir.backend.js.utils.asString
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
@@ -37,13 +39,111 @@ class JSONIrTreeVisitor(
 
     override fun visitModuleFragment(declaration: IrModuleFragment, data: Unit): JsonElement {
         val caption = declaration.name.asString()
-        return jsonWithDefault("Module Fragment", caption, declaration)
+        val jsonObj = jsonWithDefault("Module Fragment", caption, declaration)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.asString()))
+        return jsonObj
     }
 
     override fun visitFile(declaration: IrFile, data: Unit): JsonElement {
         val caption = declaration.name
         val jsonObj = jsonWithDefault("File", caption, declaration)
+        jsonObj.add("Name", JsonPrimitive(declaration.name))
+        jsonObj.add("Path", JsonPrimitive(declaration.path))
         return jsonObj
+    }
+
+    override fun visitSimpleFunction(declaration: IrSimpleFunction, data: Unit): JsonElement {
+        val caption = declaration.name.toString()
+        val jsonObj = jsonWithDefault("Function", caption, declaration)
+        jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
+        jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
+        jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
+        return jsonObj
+    }
+
+    override fun visitBlockBody(body: IrBlockBody, data: Unit): JsonElement {
+        return jsonWithDefault("Block Body", "", body)
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitCall(expression: IrCall, data: Unit): JsonElement {
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Call", caption, expression)
+        jsonObj.add("FunctionName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("ReturnType", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitConst(expression: IrConst<*>, data: Unit): JsonElement {
+        val caption = "${expression.kind.asString}"
+        val jsonObj = jsonWithDefault("Constant", caption, expression)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Kind", JsonPrimitive(expression.kind.asString))
+        jsonObj.add("Value", JsonPrimitive(expression.value.toString()))
+        return jsonObj
+    }
+
+    override fun visitTypeOperator(expression: IrTypeOperatorCall, data: Unit): JsonElement {
+        val jsonObj = jsonWithDefault("Type Operator", "", expression)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("TypeOperand", JsonPrimitive(expression.typeOperand.render()))
+        jsonObj.add("Operator", JsonPrimitive(expression.operator.name))
+        return jsonObj
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitGetValue(expression: IrGetValue, data: Unit): JsonElement {
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Get Value", caption, expression)
+        jsonObj.add("VariableName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitBlock(expression: IrBlock, data: Unit): JsonElement {
+        val name = when (expression) {
+            is IrReturnableBlock -> "Returnable Block"
+            is IrInlinedFunctionBlock -> "Inlined Block"
+            else -> "Block"
+        }
+        val jsonObj = jsonWithDefault(name, "", expression)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitWhen(expression: IrWhen, data: Unit): JsonElement {
+        val jsonObj = jsonWithDefault("When", "", expression)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitBranch(branch: IrBranch, data: Unit): JsonElement {
+        return jsonWithDefault("Branch", "", branch)
+    }
+
+    override fun visitExpressionBody(body: IrExpressionBody, data: Unit): JsonElement {
+        return jsonWithDefault("ExpressionBody", "", body)
+    }
+
+    override fun visitValueParameter(declaration: IrValueParameter, data: Unit): JsonElement {
+        val caption = declaration.name.toString()
+        val jsonObj = jsonWithDefault("Value Parameter", caption, declaration)
+        jsonObj.add("Type", JsonPrimitive(declaration.type.render()))
+        jsonObj.add("Name", JsonPrimitive(declaration.name.asString()))
+        jsonObj.add("Index", JsonPrimitive(declaration.index))
+        return jsonObj
+    }
+
+    override fun visitStringConcatenation(expression: IrStringConcatenation, data: Unit): JsonElement {
+        val jsonObj = jsonWithDefault("String Concatenation", "", expression)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------
+    override fun visitDeclaration(declaration: IrDeclarationBase, data: Unit): JsonElement {
+        val caption = declaration::class.java.simpleName
+        return jsonWithDefault("Declaration", caption, declaration)
     }
 
     override fun visitFunction(declaration: IrFunction, data: Unit): JsonElement {
@@ -52,28 +152,10 @@ class JSONIrTreeVisitor(
         return jsonObj
     }
 
-    override fun visitBlockBody(body: IrBlockBody, data: Unit): JsonElement {
-        return jsonWithDefault("Block Body", "", body)
-    }
-
-
-
-    //-------------------------------------------------------------------------------------
-    override fun visitDeclaration(declaration: IrDeclarationBase, data: Unit): JsonElement {
-        val caption = declaration::class.java.simpleName
-        return jsonWithDefault("Declaration", caption, declaration)
-    }
-
-
-
     override fun visitExternalPackageFragment(declaration: IrExternalPackageFragment, data: Unit): JsonElement {
         val caption = declaration.packageFqName.toString()
         return jsonWithDefault("ExternalPackageFragment", caption, declaration)
     }
-
-
-
-
 
     override fun visitScript(declaration: IrScript, data: Unit): JsonElement {
         return jsonWithDefault("Script", "Script", declaration)
@@ -123,11 +205,6 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("TypeParameter", caption, declaration)
     }
 
-    override fun visitValueParameter(declaration: IrValueParameter, data: Unit): JsonElement {
-        val caption = declaration.name.toString()
-        return jsonWithDefault("ValueParameter", caption, declaration)
-    }
-
     override fun visitLocalDelegatedProperty(declaration: IrLocalDelegatedProperty, data: Unit): JsonElement {
         val caption = declaration.name.toString()
         return jsonWithDefault("LocalDelegatedProperty", caption, declaration)
@@ -136,10 +213,6 @@ class JSONIrTreeVisitor(
     override fun visitTypeAlias(declaration: IrTypeAlias, data: Unit): JsonElement {
         val caption = declaration.name.toString()
         return jsonWithDefault("TypeAlias", caption, declaration)
-    }
-
-    override fun visitExpressionBody(body: IrExpressionBody, data: Unit): JsonElement {
-        return jsonWithDefault("ExpressionBody", "ExpressionBody", body)
     }
 
     override fun visitSyntheticBody(body: IrSyntheticBody, data: Unit): JsonElement {
@@ -152,11 +225,6 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("Expression", caption, expression)
     }
 
-    override fun visitConst(expression: IrConst<*>, data: Unit): JsonElement {
-        val caption = "${expression.kind.asString}\n${expression.value}"
-        return jsonWithDefault("Const", caption, expression)
-    }
-
     override fun visitVararg(expression: IrVararg, data: Unit): JsonElement {
         val caption = "type: ${expression.type.render()}, varargElementType: ${expression.varargElementType.render()}"
         return jsonWithDefault("Vararg", caption, expression)
@@ -164,16 +232,6 @@ class JSONIrTreeVisitor(
 
     override fun visitSpreadElement(spread: IrSpreadElement, data: Unit): JsonElement {
         return jsonWithDefault("SpreadElement", "SpreadElement", spread)
-    }
-
-    override fun visitBlock(expression: IrBlock, data: Unit): JsonElement {
-        val prefix = when (expression) {
-            is IrReturnableBlock -> "Returnable"
-            is IrInlinedFunctionBlock -> "Inlined"
-            else -> "Block"
-        }
-        val caption = "$prefix: type=${expression.type.render()}, origin=${expression.origin}"
-        return jsonWithDefault("Block", caption, expression)
     }
 
     override fun visitComposite(expression: IrComposite, data: Unit): JsonElement {
@@ -184,12 +242,6 @@ class JSONIrTreeVisitor(
     override fun visitReturn(expression: IrReturn, data: Unit): JsonElement {
         val caption = ""
         return jsonWithDefault("Return", caption, expression)
-    }
-
-    override fun visitCall(expression: IrCall, data: Unit): JsonElement {
-        val jsonObj = jsonWithDefault("Call", expression.symbol.owner.name.asString(), expression)
-
-        return jsonObj
     }
 
     override fun visitConstructorCall(expression: IrConstructorCall, data: Unit): JsonElement {
@@ -211,11 +263,6 @@ class JSONIrTreeVisitor(
     override fun visitInstanceInitializerCall(expression: IrInstanceInitializerCall, data: Unit): JsonElement {
         val caption = ""
         return jsonWithDefault("InstanceInitializerCall", caption, expression)
-    }
-
-    override fun visitGetValue(expression: IrGetValue, data: Unit): JsonElement {
-        val caption = "var: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
-        return jsonWithDefault("GetValue", caption, expression)
     }
 
     override fun visitSetValue(expression: IrSetValue, data: Unit): JsonElement {
@@ -252,25 +299,6 @@ class JSONIrTreeVisitor(
     override fun visitGetEnumValue(expression: IrGetEnumValue, data: Unit): JsonElement {
         val caption = "enum: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
         return jsonWithDefault("GetEnumValue", caption, expression)
-    }
-
-    override fun visitStringConcatenation(expression: IrStringConcatenation, data: Unit): JsonElement {
-        val caption = "type: ${expression.type.render()}"
-        return jsonWithDefault("StringConcatenation", caption, expression)
-    }
-
-    override fun visitTypeOperator(expression: IrTypeOperatorCall, data: Unit): JsonElement {
-        val caption = "operator: ${expression.operator}, typeOperand: ${expression.typeOperand.render()}"
-        return jsonWithDefault("TypeOperator", caption, expression)
-    }
-
-    override fun visitWhen(expression: IrWhen, data: Unit): JsonElement {
-        val caption = "type: ${expression.type.render()}, origin: ${expression.origin}"
-        return jsonWithDefault("When", caption, expression)
-    }
-
-    override fun visitBranch(branch: IrBranch, data: Unit): JsonElement {
-        return jsonWithDefault("Branch", "Branch", branch)
     }
 
     override fun visitWhileLoop(loop: IrWhileLoop, data: Unit): JsonElement {
@@ -319,11 +347,11 @@ class JSONIrTreeVisitor(
 
     fun jsonWithDefault(typeName: String, caption: String, element: IrElement): JsonObject {
         val jsonObj = JsonObject().apply {
-            add("nodeType", JsonPrimitive(element::class.simpleName))
-            add("typeName", JsonPrimitive(typeName))
-            add("caption", JsonPrimitive(caption))
-            add("render", JsonPrimitive(element.accept(renderVisitor, null)))
-            add("children", JsonArray().also { childrenArray ->
+            add("NodeType", JsonPrimitive(element::class.simpleName))
+            add("NodeName", JsonPrimitive(typeName))
+            add("Caption", JsonPrimitive(caption))
+            add("Dump", JsonPrimitive(element.accept(renderVisitor, null)))
+            add("Children", JsonArray().also { childrenArray ->
                 element.acceptChildren(object : IrElementVisitor<Unit, Unit> {
                     override fun visitElement(child: IrElement, data: Unit) {
                         childrenArray.add(child.accept(this@JSONIrTreeVisitor, Unit))
@@ -333,5 +361,6 @@ class JSONIrTreeVisitor(
         }
         return jsonObj
     }
+
 
 }
