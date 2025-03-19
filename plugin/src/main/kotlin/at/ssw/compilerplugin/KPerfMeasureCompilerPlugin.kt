@@ -276,6 +276,14 @@ class PerfMeasureExtension2(
         val stringBuilderClassNew = pluginContext.findClass("kotlin/text/StringBuilder")
         compareClassSymbols(stringBuilderClass, stringBuilderClassNew)
 
+        //irNode test
+        val pairNodeNew = pluginContext.getIrType("Pair<String, Pair<Int, Int>>")
+        val intType = pluginContext.irBuiltIns.intType
+        val stringType = pluginContext.irBuiltIns.stringType
+        val pairClass = pluginContext.referenceClass(ClassId.fromString("kotlin/Pair"))!!
+        val innerPair = pairClass.typeWith(intType, intType)
+        val pairNode = pairClass.typeWith(stringType, innerPair)
+        appendToDebugFile("Pair types are equal: ${pairNodeNew == pairNode}\n\n")
 
         val stringBuilderConstructor =
             stringBuilderClass.constructors.single { it.owner.valueParameters.isEmpty() }
