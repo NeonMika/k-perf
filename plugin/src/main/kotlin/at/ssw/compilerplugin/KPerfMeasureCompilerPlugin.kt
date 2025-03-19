@@ -304,6 +304,7 @@ class PerfMeasureExtension2(
         val fileConstructorNew = fileClassNew?.findConstructor(pluginContext, "(String?, String?)")
         compareConstructorSymbols(fileConstructor!!, fileConstructorNew)
 
+        //TODO allow all permutations in find function so no nullability check
         /*single parameter constructor test
         PROBLEM!! Interoperability types between java and kotlin -> Stringbuilder is java class here in kotlin we dont know if the type is nullable or not -> findConstructor uses better type comparison function so the constructor is found but with simply comparing by == it is not found
         val stringBuilderConstructor2 = stringBuilderClass.constructors.singleOrNull { it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType}
@@ -752,6 +753,8 @@ class PerfMeasureExtension2(
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     // Duration
+                    //TODO MS3 simplify temp var creation like this:
+                    //val temp0 = secondParam.elapsedNow()
                     val elapsedDuration = irTemporary(irCall(funElapsedNow).apply {
                         dispatchReceiver = irGet(valueParameters[1])
                     })

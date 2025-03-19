@@ -47,6 +47,7 @@ fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrClassSymbol.findProperty(signature: String): IrPropertySymbol? = this.owner.properties.find { it.name.asString().lowercase() == signature.lowercase() }?.symbol
 
+//TODO allow default paramets without mentioning them in signature
 fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
     val (packageName, className, functionPart, packageForFindClass) = parseSignature(signature)
     val (functionName, params) = parseFunctionParameters(this, functionPart)
@@ -129,6 +130,7 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
             val fqName = getTypePackage(normalizedType)
 
             val classSymbol = findClass(fqName) ?: return null
+            //TODO use classSymbol.owner.typeParameters.size
 
             //validate number of parameters
             when (normalizedType) {
