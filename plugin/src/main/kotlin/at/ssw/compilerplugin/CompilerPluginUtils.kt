@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.CallableId
@@ -20,9 +21,18 @@ private data class SignatureParts(
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
-    //check signature
-    require(signature.contains('/')) {"Package path must be included in findClass signature"}
-    val classId = ClassId.fromString(signature)
+    val packageSearch = getTypePackage(signature.lowercase())
+    val searchString = if (signature.contains('/')) {
+        //check signature
+        signature
+    } else {
+        if (packageSearch != signature) {
+            packageSearch
+        } else {
+            error("Package path must be included in findClass signature")
+        }
+    }
+    val classId = ClassId.fromString(searchString)
 
     //try to resolve type alias since it's more specific
     val typeAlias = referenceTypeAlias(classId)
@@ -34,21 +44,43 @@ fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
+fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
     //TODO ohne pluginContext
     val (functionName, params) = parseFunctionParameters(pluginContext, signature)
 
     return this.functions
-        .singleOrNull { func ->
-            func.owner.name.asString() == functionName && checkMethodSignature(func, params) && checkExtensionFunctionReceiverType(func, extensionReceiverType)
+        .firstOrNull() { func ->
+            func.owner.name.asString() == functionName && checkMethodSignature(func, params, ignoreNullability) && checkExtensionFunctionReceiverType(func, extensionReceiverType)
         }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrClassSymbol.findProperty(signature: String): IrPropertySymbol? = this.owner.properties.find { it.name.asString().lowercase() == signature.lowercase() }?.symbol
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: String = "()", ignoreNullability: Boolean = false): IrConstructorSymbol? {
+    val (_, expectedParams) = parseFunctionParameters(pluginContext, "<init>$signature")
+
+    return this.constructors.firstOrNull { constructor ->
+        checkMethodSignature(constructor, expectedParams, ignoreNullability)
+    }
+}
+
+fun IrPluginContext.findConstructor(signature: String, ignoreNullability: Boolean = false): IrConstructorSymbol? {
+    val (_, outerClasses, constructorPart, packageForFindClass) = parseSignature(signature)
+    val (className, _) = parseFunctionParameters(this, constructorPart)
+
+    val classSymbol = if (className.isNotBlank()) {
+        findClass("$packageForFindClass/$outerClasses.$className")
+    } else {
+        null
+    }
+
+    return classSymbol?.findConstructor(this, "(" +constructorPart.substringAfter("("), ignoreNullability)
+}
+
 //TODO allow default paramets without mentioning them in signature
-fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null): IrSimpleFunctionSymbol? {
+fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
     val (packageName, className, functionPart, packageForFindClass) = parseSignature(signature)
     val (functionName, params) = parseFunctionParameters(this, functionPart)
 
@@ -58,10 +90,10 @@ fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrTyp
         null
     }
 
-    return classSymbol?.findFunction(this, functionPart, extensionReceiverType)
+    return classSymbol?.findFunction(this, functionPart, extensionReceiverType, ignoreNullability)
         ?: referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName)))
-            .singleOrNull { func ->
-                checkMethodSignature(func, params) &&
+            .firstOrNull { func ->
+                checkMethodSignature(func, params, ignoreNullability) &&
                         checkExtensionFunctionReceiverType(func, extensionReceiverType)
             }
 }
@@ -81,17 +113,6 @@ fun IrPluginContext.findProperty(signature: String): IrPropertySymbol? {
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: String? = "()"): IrConstructorSymbol? {
-    val (_, expectedParams) = parseFunctionParameters(pluginContext, "<init>$signature")
-
-    return this.constructors.singleOrNull { constructor ->
-        constructor.owner.valueParameters.size == expectedParams.size &&
-                constructor.owner.valueParameters.zip(expectedParams).all { (param, expectedType) ->
-                    param.type.equalsIgnorePlatform(expectedType)
-                }
-    }
-}
-
 fun IrPluginContext.getIrType(typeString: String): IrType? {
     val isNullable = typeString.endsWith("?", ignoreCase = true)
     val baseType = if (isNullable) typeString.removeSuffix("?") else typeString
@@ -130,20 +151,11 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
             val fqName = getTypePackage(normalizedType)
 
             val classSymbol = findClass(fqName) ?: return null
-            //TODO use classSymbol.owner.typeParameters.size
 
             //validate number of parameters
-            when (normalizedType) {
-                "pair", "tuple2", "map", "mutablemap", "hashmap", "linkedhashmap" -> {
-                    if (typeArguments.size != 2) {
-                        return null
-                    }
-                }
-                "triple", "tuple3" -> {
-                    if (typeArguments.size != 3) {
-                        return null
-                    }
-                }
+            val expectedParamCount = classSymbol.owner.typeParameters.size
+            if (typeArguments.size != expectedParamCount) {
+                return null
             }
 
             //apply type arguments if present
@@ -219,14 +231,37 @@ private fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, L
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-private fun checkMethodSignature(func: IrSimpleFunctionSymbol, paramTypes: List<IrType>): Boolean {
-    //check params count
-    if (func.owner.valueParameters.size != paramTypes.size) {
-        return false
+private fun checkMethodSignature(
+    func: IrFunctionSymbol,
+    paramTypes: List<IrType>,
+    ignoreNullability: Boolean = false
+): Boolean {
+    val parameters = func.owner.valueParameters
+
+    //try exact match first
+    if (parameters.size == paramTypes.size) {
+        val matches = parameters.zip(paramTypes).all { (param, expectedType) ->
+            if (ignoreNullability) {
+                param.type.makeNotNull().equalsIgnorePlatform(expectedType.makeNotNull())
+            } else {
+                param.type.equalsIgnorePlatform(expectedType)
+            }
+        }
+        if (matches) return true
     }
 
-    //check parameter types
-    return func.owner.valueParameters.zip(paramTypes).all { (param, expectedType) -> param.type.equalsIgnorePlatform(expectedType) }
+    //try again, ignore default parameters
+    if (parameters.size >= paramTypes.size) {
+        return paramTypes.withIndex().all { (index, expectedType) ->
+            if (ignoreNullability) {
+                parameters[index].type.makeNotNull().equalsIgnorePlatform(expectedType.makeNotNull())
+            } else {
+                parameters[index].type.equalsIgnorePlatform(expectedType)
+            }
+        }
+    }
+
+    return false
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -264,11 +299,22 @@ private fun parseFunctionParameters(pluginContext: IrPluginContext, signature: S
     return Pair(functionName, params)
 }
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrType.equalsIgnorePlatform(type2: IrType): Boolean {
     //handle platform types
     if (this.isPlatformType() || type2.isPlatformType()) {
         //for platform types ignore nullability
         return this.erasedUpperBound() == type2.erasedUpperBound()
+    }
+
+    //TODO finish
+
+    //compare only classifiers if possible --> skips all platform differences
+    val thisClassifier = (this.classifierOrNull as? IrClassSymbol)?.owner
+    val type2Classifier = (type2.classifierOrNull as? IrClassSymbol)?.owner
+
+    if (thisClassifier != null && type2Classifier != null && thisClassifier.fqNameWhenAvailable == type2Classifier.fqNameWhenAvailable) {
+        return true
     }
 
     //regular comparison
@@ -297,6 +343,21 @@ private fun getTypePackage(typeString: String) = when (typeString) {
     "exception" -> "java/lang/Exception"
     "runtimeexception" -> "java/lang/RuntimeException"
     "error" -> "java/lang/Error"
+    "int" -> "kotlin/Int"
+    "long" -> "kotlin/Long"
+    "short" -> "kotlin/Short"
+    "byte" -> "kotlin/Byte"
+    "float" -> "kotlin/Float"
+    "double" -> "kotlin/Double"
+    "boolean" -> "kotlin/Boolean"
+    "char" -> "kotlin/Char"
+    "unit" -> "kotlin/Unit"
+    "nothing" -> "kotlin/Nothing"
+    "any" -> "kotlin/Any"
+    "number" -> "kotlin/Number"
+    "charsequence" -> "java/lang/CharSequence"
+    "stringbuilder" -> "java/lang/StringBuilder"
+    "stringbuffer" -> "java/lang/StringBuffer"
 
     //kotlin collections
     "list" -> "kotlin/collections/List"
@@ -330,6 +391,10 @@ private fun getTypePackage(typeString: String) = when (typeString) {
     "concurrentlinkedqueue" -> "java/util/concurrent/ConcurrentLinkedQueue"
     "blockingqueue" -> "java/util/concurrent/BlockingQueue"
     "linkedblockingqueue" -> "java/util/concurrent/LinkedBlockingQueue"
+
+    //collections utilities
+    "collections" -> "java/util/Collections"
+    "arrays" -> "java/util/Arrays"
 
     //kotlin specific
     "sequence" -> "kotlin/sequences/Sequence"
@@ -387,5 +452,6 @@ private fun getTypePackage(typeString: String) = when (typeString) {
     "future" -> "java/util/concurrent/Future"
     "completablefuture" -> "java/util/concurrent/CompletableFuture"
     "executorservice" -> "java/util/concurrent/ExecutorService"
+
     else -> typeString //here we assume we have fully qualified name
 }
