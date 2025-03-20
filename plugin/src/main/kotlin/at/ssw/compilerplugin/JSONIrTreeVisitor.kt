@@ -58,6 +58,7 @@ class JSONIrTreeVisitor(
         jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
         jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
         jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(declaration.symbol.owner)))
         return jsonObj
     }
 
@@ -66,11 +67,11 @@ class JSONIrTreeVisitor(
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitCall(expression: IrCall, data: Unit): JsonElement {
-        val caption = expression.symbol.owner.name.asString()
+    override fun visitCall(expression: IrCall, data: Unit): JsonElement { val caption = expression.symbol.owner.name.asString()
         val jsonObj = jsonWithDefault("Call", caption, expression)
         jsonObj.add("FunctionName", JsonPrimitive(expression.symbol.owner.name.asString()))
         jsonObj.add("ReturnType", JsonPrimitive(expression.type.render()))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(expression.symbol.owner)))
         return jsonObj
     }
 
