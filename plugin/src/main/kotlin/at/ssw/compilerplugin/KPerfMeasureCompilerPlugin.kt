@@ -267,7 +267,6 @@ class PerfMeasureExtension2(
 
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        //appendToDebugFile(moduleFragment.dump())
         val jsonTree = moduleFragment.accept(JSONIrTreeVisitor(), Unit)
         val jsonString = GsonBuilder().setPrettyPrinting().create().toJson(jsonTree)
 

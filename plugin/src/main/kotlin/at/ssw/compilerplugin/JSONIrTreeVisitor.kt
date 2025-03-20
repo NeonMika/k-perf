@@ -52,9 +52,11 @@ class JSONIrTreeVisitor(
         return jsonObj
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitSimpleFunction(declaration: IrSimpleFunction, data: Unit): JsonElement {
         val caption = declaration.name.toString()
         val jsonObj = jsonWithDefault("Function", caption, declaration)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
         jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
         jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
         jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
@@ -76,7 +78,7 @@ class JSONIrTreeVisitor(
     }
 
     override fun visitConst(expression: IrConst<*>, data: Unit): JsonElement {
-        val caption = "${expression.kind.asString}"
+        val caption = expression.kind.asString
         val jsonObj = jsonWithDefault("Constant", caption, expression)
         jsonObj.add("Type", JsonPrimitive(expression.type.render()))
         jsonObj.add("Kind", JsonPrimitive(expression.kind.asString))
@@ -141,6 +143,51 @@ class JSONIrTreeVisitor(
         return jsonObj
     }
 
+    override fun visitConstructor(declaration: IrConstructor, data: Unit): JsonElement {
+        val caption = declaration.name.toString()
+        val jsonObj = jsonWithDefault("Constructor", caption, declaration)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
+        jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(declaration.symbol.owner)))
+        return jsonObj
+    }
+
+    override fun visitProperty(declaration: IrProperty, data: Unit): JsonElement {
+        val caption = declaration.name.toString()
+        val jsonObj = jsonWithDefault("Property", caption, declaration)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
+        jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
+        return jsonObj
+    }
+
+    override fun visitField(declaration: IrField, data: Unit): JsonElement {
+        val caption = declaration.name.toString()
+        val jsonObj = jsonWithDefault("Field", caption, declaration)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
+        jsonObj.add("Type", JsonPrimitive(declaration.type.render()))
+        return jsonObj
+    }
+
+    override fun visitClass(declaration: IrClass, data: Unit): JsonElement {
+        val caption = declaration.name.toString()
+        val jsonObj = jsonWithDefault("Class", caption, declaration)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
+        jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
+        return jsonObj
+    }
+
+    override fun visitGetField(expression: IrGetField, data: Unit): JsonElement {
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Get Field", caption, expression)
+        jsonObj.add("VariableName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
     //-----------------------------------------------------------------------------------------------------------------------------------
     override fun visitDeclaration(declaration: IrDeclarationBase, data: Unit): JsonElement {
         val caption = declaration::class.java.simpleName
@@ -163,27 +210,6 @@ class JSONIrTreeVisitor(
     }
 
 // (Helper renderValueParameterTypes() is used only for string-based rendering so we omit it in JSON mode)
-
-    override fun visitConstructor(declaration: IrConstructor, data: Unit): JsonElement {
-        // Constructors often don’t have a “name” beyond "<init>", so we use that.
-        val caption = declaration.name.toString()
-        return jsonWithDefault("Constructor", caption, declaration)
-    }
-
-    override fun visitProperty(declaration: IrProperty, data: Unit): JsonElement {
-        val caption = declaration.name.toString()
-        return jsonWithDefault("Property", caption, declaration)
-    }
-
-    override fun visitField(declaration: IrField, data: Unit): JsonElement {
-        val caption = declaration.name.toString()
-        return jsonWithDefault("Field", caption, declaration)
-    }
-
-    override fun visitClass(declaration: IrClass, data: Unit): JsonElement {
-        val caption = declaration.name.toString()
-        return jsonWithDefault("Class", caption, declaration)
-    }
 
     override fun visitVariable(declaration: IrVariable, data: Unit): JsonElement {
         // Assuming normalizedName(variableNameData) gives a proper name string.
@@ -269,17 +295,6 @@ class JSONIrTreeVisitor(
     override fun visitSetValue(expression: IrSetValue, data: Unit): JsonElement {
         val caption = "var: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
         return jsonWithDefault("SetValue", caption, expression)
-    }
-
-    override fun visitGetField(expression: IrGetField, data: Unit): JsonElement {
-        val captionBuilder = StringBuilder()
-        captionBuilder.append("field: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}")
-        expression.superQualifierSymbol?.let {
-            // Here we render the super qualifier’s owner (for example, its name).
-            captionBuilder.append(" superQualifier: ${it.owner.name}")
-        }
-        captionBuilder.append(" origin: ${expression.origin}")
-        return jsonWithDefault("GetField", captionBuilder.toString(), expression)
     }
 
     override fun visitSetField(expression: IrSetField, data: Unit): JsonElement {
