@@ -323,6 +323,7 @@ class PerfMeasureExtension2(
 
         val findFunctionDefaultTestWithout = pluginContext.findFunction("kotlin/collections/joinToString()")
         val findFunctionDefaultTestWith1 = pluginContext.findFunction("kotlin/collections/joinToString(charsequence)")
+        compareFunctionSymbols(findFunctionDefaultTestWithout!!, findFunctionDefaultTestWith1)
 
         //non existin constructor test
         val nonExistentConstructorNew = stringBuilderClassNew?.findConstructor(pluginContext, "(Boolean, String)")

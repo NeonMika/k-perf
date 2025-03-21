@@ -307,18 +307,14 @@ fun IrType.equalsIgnorePlatform(type2: IrType): Boolean {
         return this.erasedUpperBound() == type2.erasedUpperBound()
     }
 
-    //TODO finish
-
-    //compare only classifiers if possible --> skips all platform differences
-    val thisClassifier = (this.classifierOrNull as? IrClassSymbol)?.owner
-    val type2Classifier = (type2.classifierOrNull as? IrClassSymbol)?.owner
-
-    if (thisClassifier != null && type2Classifier != null && thisClassifier.fqNameWhenAvailable == type2Classifier.fqNameWhenAvailable) {
-        return true
+    return if (this == type2) {
+        true
+    } else {
+        //compare only classifier names --> skips all platform differences
+        val thisClassifier = (this.classifierOrNull as? IrClassSymbol)?.owner
+        val type2Classifier = (type2.classifierOrNull as? IrClassSymbol)?.owner
+        thisClassifier != null && type2Classifier != null && thisClassifier.fqNameWhenAvailable.toString().substringAfterLast(".") == type2Classifier.fqNameWhenAvailable.toString().substringAfterLast(".")
     }
-
-    //regular comparison
-    return this == type2
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
