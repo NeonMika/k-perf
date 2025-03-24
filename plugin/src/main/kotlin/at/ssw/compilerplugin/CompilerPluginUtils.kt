@@ -40,7 +40,14 @@ fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
         return typeAlias.owner.expandedType.classOrNull
     }
 
-    return referenceClass(classId)
+    val result = referenceClass(classId)
+
+    //if not found try again and check if it's a java type
+    if (result == null && !signature.contains('/') && !signature.startsWith("java")) {
+        return findClass("java$signature")
+    }
+
+    return result
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -307,14 +314,7 @@ fun IrType.equalsIgnorePlatform(type2: IrType): Boolean {
         return this.erasedUpperBound() == type2.erasedUpperBound()
     }
 
-    return if (this == type2) {
-        true
-    } else {
-        //compare only classifier names --> skips all platform differences
-        val thisClassifier = (this.classifierOrNull as? IrClassSymbol)?.owner
-        val type2Classifier = (type2.classifierOrNull as? IrClassSymbol)?.owner
-        thisClassifier != null && type2Classifier != null && thisClassifier.fqNameWhenAvailable.toString().substringAfterLast(".") == type2Classifier.fqNameWhenAvailable.toString().substringAfterLast(".")
-    }
+    return this == type2
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -334,37 +334,44 @@ fun IrType.erasedUpperBound(): IrType {
 private fun getTypePackage(typeString: String) = when (typeString) {
     //basic types
     "string" -> "kotlin/String"
+    "javastring" -> "java/lang/String"
     "array" -> "kotlin/Array"
+    "javaarray" -> "java/lang/Array"
     "throwable" -> "kotlin/Throwable"
-    "exception" -> "java/lang/Exception"
-    "runtimeexception" -> "java/lang/RuntimeException"
-    "error" -> "java/lang/Error"
-    "int" -> "kotlin/Int"
-    "long" -> "kotlin/Long"
-    "short" -> "kotlin/Short"
-    "byte" -> "kotlin/Byte"
-    "float" -> "kotlin/Float"
-    "double" -> "kotlin/Double"
-    "boolean" -> "kotlin/Boolean"
+    "javathrowable" -> "java/lang/Throwable"
+    "exception" -> "kotlin/Exception"
+    "javaexception" -> "java/lang/Exception"
+    "runtimeexception" -> "kotlin/RuntimeException"
+    "javaruntimeexception" -> "java/lang/RuntimeException"
+    "error" -> "kotlin/Error"
+    "javaerror" -> "java/lang/Error"
+
+    //char related
     "char" -> "kotlin/Char"
-    "unit" -> "kotlin/Unit"
-    "nothing" -> "kotlin/Nothing"
-    "any" -> "kotlin/Any"
-    "number" -> "kotlin/Number"
-    "charsequence" -> "java/lang/CharSequence"
-    "stringbuilder" -> "java/lang/StringBuilder"
+    "javachar" -> "java/lang/Character"
+    "charsequence" -> "kotlin/CharSequence"
+    "javacharsequence" -> "java/lang/CharSequence"
+    "chararray" -> "kotlin/CharArray"
+    "javachararray" -> "java/lang/CharArray"
+    "stringbuilder" -> "kotlin/text/StringBuilder"
+    "javastringbuilder" -> "java/lang/StringBuilder"
     "stringbuffer" -> "java/lang/StringBuffer"
 
     //kotlin collections
     "list" -> "kotlin/collections/List"
+    "javalist" -> "java/util/List"
     "mutablelist" -> "kotlin/collections/MutableList"
     "set" -> "kotlin/collections/Set"
+    "javaset" -> "java/util/Set"
     "mutableset" -> "kotlin/collections/MutableSet"
     "map" -> "kotlin/collections/Map"
+    "javamap" -> "java/util/Map"
     "mutablemap" -> "kotlin/collections/MutableMap"
     "collection" -> "kotlin/collections/Collection"
+    "javacollection" -> "java/util/Collection"
     "mutablecollection" -> "kotlin/collections/MutableCollection"
     "iterable" -> "kotlin/collections/Iterable"
+    "javaiterable" -> "java/lang/Iterable"
     "mutableiterable" -> "kotlin/collections/MutableIterable"
 
     //java collections
@@ -388,15 +395,14 @@ private fun getTypePackage(typeString: String) = when (typeString) {
     "blockingqueue" -> "java/util/concurrent/BlockingQueue"
     "linkedblockingqueue" -> "java/util/concurrent/LinkedBlockingQueue"
 
-    //collections utilities
-    "collections" -> "java/util/Collections"
-    "arrays" -> "java/util/Arrays"
-
     //kotlin specific
     "sequence" -> "kotlin/sequences/Sequence"
     "mutablesequence" -> "kotlin/sequences/MutableSequence"
     "pair", "tuple2" -> "kotlin/Pair"
     "triple", "tuple3" -> "kotlin/Triple"
+    "range" -> "kotlin/ranges/Range"
+    "progression" -> "kotlin/ranges/Progression"
+    "regex" -> "kotlin/text/Regex"
 
     //java utilities
     "optional" -> "java/util/Optional"
@@ -414,6 +420,7 @@ private fun getTypePackage(typeString: String) = when (typeString) {
     "zoneddatetime" -> "java/time/ZonedDateTime"
     "instant" -> "java/time/Instant"
     "duration" -> "java/time/Duration"
+    "kotlinduration" -> "kotlin/time/Duration"
     "period" -> "java/time/Period"
 
     //java IO
@@ -422,12 +429,33 @@ private fun getTypePackage(typeString: String) = when (typeString) {
     "outputstream" -> "java/io/OutputStream"
     "reader" -> "java/io/Reader"
     "writer" -> "java/io/Writer"
+    "bufferedreader" -> "java/io/BufferedReader"
+    "bufferedwriter" -> "java/io/BufferedWriter"
+    "printwriter" -> "java/io/PrintWriter"
+    "printstream" -> "java/io/PrintStream"
 
     //java NIO
     "path" -> "java/nio/file/Path"
     "files" -> "java/nio/file/Files"
     "channel" -> "java/nio/channels/Channel"
     "bytebuffer" -> "java/nio/ByteBuffer"
+    "charbuffer" -> "java/nio/CharBuffer"
+
+    //primitive types and their wrappers
+    "boolean" -> "kotlin/Boolean"
+    "javaboolean" -> "java/lang/Boolean"
+    "byte" -> "kotlin/Byte"
+    "javabyte" -> "java/lang/Byte"
+    "short" -> "kotlin/Short"
+    "javashort" -> "java/lang/Short"
+    "int" -> "kotlin/Int"
+    "javaint" -> "java/lang/Integer"
+    "long" -> "kotlin/Long"
+    "javalong" -> "java/lang/Long"
+    "float" -> "kotlin/Float"
+    "javafloat" -> "java/lang/Float"
+    "double" -> "kotlin/Double"
+    "javadouble" -> "java/lang/Double"
 
     //further java types
     "biginteger" -> "java/math/BigInteger"
@@ -436,14 +464,20 @@ private fun getTypePackage(typeString: String) = when (typeString) {
     "matcher" -> "java/util/regex/Matcher"
 
     //reflection
-    "class" -> "java/lang/Class"
-    "method" -> "java/lang/reflect/Method"
-    "field" -> "java/lang/reflect/Field"
-    "constructor" -> "java/lang/reflect/Constructor"
+    "class" -> "kotlin/reflect/KClass"
+    "javaclass" -> "java/lang/Class"
+    "method" -> "kotlin/reflect/KFunction"
+    "javamethod" -> "java/lang/reflect/Method"
+    "field" -> "kotlin/reflect/KProperty"
+    "javafield" -> "java/lang/reflect/Field"
+    "constructor" -> "kotlin/reflect/KFunction"
+    "javaconstructor" -> "java/lang/reflect/Constructor"
 
     //thread related
-    "thread" -> "java/lang/Thread"
-    "runnable" -> "java/lang/Runnable"
+    "thread" -> "kotlin/concurrent/Thread"
+    "javathread" -> "java/lang/Thread"
+    "runnable" -> "kotlin/Runnable"
+    "javarunnable" -> "java/lang/Runnable"
     "callable" -> "java/util/concurrent/Callable"
     "future" -> "java/util/concurrent/Future"
     "completablefuture" -> "java/util/concurrent/CompletableFuture"
