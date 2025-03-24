@@ -18,9 +18,7 @@ import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.ADAPTER_FOR_CALLABLE_REFERENCE
-import org.jetbrains.kotlin.ir.expressions.IrBody
-import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.addArgument
+import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
@@ -513,6 +511,17 @@ class PerfMeasureExtension2(
                     )
                 )
         }
+
+        val stringBuilderNew: IrField = pluginContext.irFactory.buildField {
+            name = Name.identifier("_stringBuilder2")
+            type = stringBuilderClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            this.initializer = stringBuilderConstructor(pluginContext, firstFile.symbol)
+        }
+        compareIrFields(stringBuilder, stringBuilderNew)
+
         firstFile.declarations.add(stringBuilder)
         stringBuilder.parent = firstFile
 
@@ -1021,5 +1030,121 @@ class PerfMeasureExtension2(
             appendToDebugFile("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
         }
         appendToDebugFile("\n")
+    }
+
+    private fun compareIrFields(original: IrField, new: IrField?) {
+        if (new == null) {
+            appendToDebugFile("New Field is null\n\n")
+            return
+        }
+        var matches = original.type == new.type &&
+                original.isFinal == new.isFinal &&
+                original.isStatic == new.isStatic &&
+                original.visibility == new.visibility
+
+        if (original.initializer != null && new.initializer != null) {
+            matches = matches && compareIrExpressions(original.initializer!!.expression, new.initializer!!.expression)
+        }
+
+        if (!matches) {
+            appendToDebugFile("  Original:\n")
+            appendToDebugFile("    Name: ${original.name}\n")
+            appendToDebugFile("    Type: ${original.type}\n")
+            appendToDebugFile("    Visibility: ${original.visibility}\n")
+            appendToDebugFile("    Is Final: ${original.isFinal}\n")
+            appendToDebugFile("    Is Static: ${original.isStatic}\n")
+            appendToDebugFile("    Is External: ${original.isExternal}\n")
+
+            appendToDebugFile("  New:\n")
+            appendToDebugFile("    Name: ${new.name}\n")
+            appendToDebugFile("    Type: ${new.type}\n")
+            appendToDebugFile("    Visibility: ${new.visibility}\n")
+            appendToDebugFile("    Is Final: ${new.isFinal}\n")
+            appendToDebugFile("    Is Static: ${new.isStatic}\n")
+            appendToDebugFile("    Is External: ${new.isExternal}\n")
+        } else {
+            appendToDebugFile("Field ${original.name.asString()} matches ${new.name.asString()}\n")
+        }
+        appendToDebugFile("\n")
+    }
+
+    fun compareIrExpressions(expr1: IrExpression, expr2: IrExpression): Boolean {
+        // Check if the expressions are of the same type
+        if (expr1::class != expr2::class) return false
+
+        when (expr1) {
+            is IrConst<*> -> {
+                // Compare constant value expressions
+                if (expr2 !is IrConst<*>) return false
+                return expr1.value == expr2.value
+            }
+            is IrGetField -> {
+                // Compare field accesses
+                if (expr2 !is IrGetField) return false
+                return expr1.symbol == expr2.symbol
+            }
+            is IrCall -> {
+                // Compare function or constructor calls
+                if (expr2 !is IrCall) return false
+                if (expr1.symbol != expr2.symbol) return false
+
+                // Compare value arguments
+                val argCount1 = expr1.valueArgumentsCount
+                val argCount2 = expr2.valueArgumentsCount
+                if (argCount1 != argCount2) return false
+
+                for (i in 0 until argCount1) {
+                    val arg1 = expr1.getValueArgument(i)
+                    val arg2 = expr2.getValueArgument(i)
+                    if (!compareIrExpressions(arg1 ?: return false, arg2 ?: return false)) {
+                        return false
+                    }
+                }
+                return true
+            }
+            is IrConstructorCall -> {
+                // Compare constructor calls
+                if (expr2 !is IrConstructorCall) return false
+                if (expr1.symbol != expr2.symbol) return false
+
+                // Compare value arguments
+                val argCount1 = expr1.valueArgumentsCount
+                val argCount2 = expr2.valueArgumentsCount
+                if (argCount1 != argCount2) return false
+
+                for (i in 0 until argCount1) {
+                    val arg1 = expr1.getValueArgument(i)
+                    val arg2 = expr2.getValueArgument(i)
+                    if (!compareIrExpressions(arg1 ?: return false, arg2 ?: return false)) {
+                        return false
+                    }
+                }
+                return true
+            }
+            is IrGetValue -> {
+                // Compare variable or parameter references
+                if (expr2 !is IrGetValue) return false
+                return expr1.symbol == expr2.symbol
+            }
+            is IrTypeOperatorCall -> {
+                // Compare type operations (e.g., casts)
+                if (expr2 !is IrTypeOperatorCall) return false
+                return expr1.operator == expr2.operator &&
+                        expr1.typeOperand == expr2.typeOperand &&
+                        compareIrExpressions(expr1.argument, expr2.argument)
+            }
+            is IrComposite -> {
+                // Compare composite expressions
+                if (expr2 !is IrComposite) return false
+                if (expr1.statements.size != expr2.statements.size) return false
+                return expr1.statements.zip(expr2.statements).all { (stmt1, stmt2) ->
+                    stmt1 is IrExpression && stmt2 is IrExpression && compareIrExpressions(stmt1, stmt2)
+                }
+            }
+            else -> {
+                // Fallback: unhandled types
+                error("Unsupported IR Expression type: ${expr1::class}")
+            }
+        }
     }
 }
