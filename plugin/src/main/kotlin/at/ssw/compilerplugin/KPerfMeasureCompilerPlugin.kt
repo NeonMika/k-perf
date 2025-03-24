@@ -276,6 +276,10 @@ class PerfMeasureExtension2(
         val stringBuilderClassNew = pluginContext.findClass("kotlin/text/StringBuilder")
         compareClassSymbols(stringBuilderClass, stringBuilderClassNew)
 
+        //TODO: this works! but should it?
+        val stringClass = pluginContext.findClass("string")
+        val stringEqualsFunc = stringClass?.findFunction(pluginContext, "equals()")
+
         //irNode test
         val pairNodeNew = pluginContext.getIrType("Pair<String, Pair<Int, Int>>")
         val intType = pluginContext.irBuiltIns.intType
@@ -304,19 +308,22 @@ class PerfMeasureExtension2(
         val fileConstructorNew = fileClassNew?.findConstructor(pluginContext, "(String?, String?)")
         compareConstructorSymbols(fileConstructor!!, fileConstructorNew)
 
-        //TODO allow all permutations in find function so no nullability check
-        /*single parameter constructor test
-        PROBLEM!! Interoperability types between java and kotlin -> Stringbuilder is java class here in kotlin we dont know if the type is nullable or not -> findConstructor uses better type comparison function so the constructor is found but with simply comparing by == it is not found
-        val stringBuilderConstructor2 = stringBuilderClass.constructors.singleOrNull { it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType}
-        val stringBuilderConstructorNew2 = stringBuilderClass.findConstructor(pluginContext, "(String)")
-        compareConstructorSymbols(stringBuilderConstructor2!!, stringBuilderConstructorNew2)
-        */
-
         //single parameter test with kotlin class
         val regexClass = pluginContext.findClass("kotlin/text/Regex")!!
         val regexConstructor = regexClass.constructors.singleOrNull { it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType }
         val regexConstructorNew = regexClass.findConstructor(pluginContext, "(String)")
         compareConstructorSymbols(regexConstructor!!, regexConstructorNew)
+
+        //subclass constructor test
+        val defaultClass = pluginContext.findClass("kotlin/random/Random.Default")
+        val defaultClassConstructor = defaultClass?.findConstructor(pluginContext)
+
+        val defaultClassConstructorDirect = pluginContext.findConstructor("kotlin/random/Random.Default()")
+        compareConstructorSymbols(defaultClassConstructor!!, defaultClassConstructorDirect)
+
+        val findFunctionDefaultTestWithout = pluginContext.findFunction("kotlin/collections/joinToString()")
+        val findFunctionDefaultTestWith1 = pluginContext.findFunction("kotlin/collections/joinToString(charsequence)")
+        compareFunctionSymbols(findFunctionDefaultTestWithout!!, findFunctionDefaultTestWith1)
 
         //non existin constructor test
         val nonExistentConstructorNew = stringBuilderClassNew?.findConstructor(pluginContext, "(Boolean, String)")

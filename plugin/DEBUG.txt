@@ -10,6 +10,10 @@ Constructor java.io.File.<init>: MATCH
 
 Constructor kotlin.text.Regex.<init>: MATCH
 
+Constructor kotlin.random.Random.Default.<init>: MATCH
+
+Function joinToString: MATCH
+
 NonExistingTest for constructor (should be null): null 
 
 IrClassSymbol.findFunction call:
