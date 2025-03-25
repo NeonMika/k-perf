@@ -1,3 +1,14 @@
+package game.gol
+
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlin.time.TimeSource
+
 class GameOfLife(
     private val width: Int = 100,
     private val height: Int = 100,
@@ -70,14 +81,49 @@ class GameOfLife(
 
     // Print the current state of the game to the console
     fun print() {
-        for (row in field) {
-            println(row.map { if (it) liveChar else emptyChar }.joinToString(""))
+        val text = buildString {
+            for (row in field) {
+                appendLine(row.map { if (it) liveChar else emptyChar }.joinToString(""))
+            }
         }
+        CoroutineScope(Dispatchers.Default).launch {
+            val client = HttpClient()
+            print(client.request("https://echo.zuplo.io/") {
+                method = HttpMethod.Post
+                setBody(text)
+            }.body<String>())
+        }
+        println(text)
         println()
+
     }
 
     // Helper function to check if a position is valid
     private fun isValidPosition(row: Int, col: Int): Boolean {
         return row in 0 until height && col in 0 until width
     }
+
+}
+
+fun play() {
+    val start = TimeSource.Monotonic.markNow()
+    val game = GameOfLife(width = 20, height = 20)
+
+    // Add some initial seeds (glider pattern)
+    game.addSeed(1, 2)
+    game.addSeed(2, 3)
+    game.addSeed(3, 1)
+    game.addSeed(3, 2)
+    game.addSeed(3, 3)
+
+    println("Initial state:")
+    game.print()
+
+    repeat(500) {
+        game.step()
+    }
+
+    println("State after 500 steps:")
+    game.print()
+    println("### Elapsed time: ${start.elapsedNow().inWholeMicroseconds}")
 }

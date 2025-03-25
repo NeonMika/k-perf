@@ -3,12 +3,12 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithHostTests
 
 plugins {
-    kotlin("multiplatform") version "2.0.20"
+    kotlin("multiplatform") version "2.1.20"
     id("at.ssw.k-perf-measure-plugin") version "0.0.2" // dependency on the k-perf-measure-plugin plugin
 }
 
 group = "at.ssw"
-version = "0.0.1"
+version = "0.0.2"
 
 repositories {
     mavenCentral()
@@ -19,7 +19,6 @@ kotlin {
     jvm {
 
         compilations.all { }
-        withJava()
         /*
         testRuns["test"].executionTask.configure {
             useJUnitPlatform()
@@ -128,13 +127,13 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 // Because ktor client is using suspend functions
-                // implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
                 // To perform network requests
-                // implementation("io.ktor:ktor-client-core:2.3.12")
+                implementation("io.ktor:ktor-client-core:2.3.12")
                 // To parse HTML
                 // implementation("com.fleeksoft.ksoup:ksoup:0.1.2")
                 // To be able to create files in the compiler plugin
-                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.5.3")
+                // implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.5.3")
             }
         }
         val commonTest by getting {
@@ -144,20 +143,20 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                // implementation("io.ktor:ktor-client-cio:2.3.12")
+                implementation("io.ktor:ktor-client-cio:2.3.12")
             }
         }
         val jvmTest by getting
         val jsMain by getting {
             dependencies {
-                // implementation("io.ktor:ktor-client-js:2.3.12")
+                implementation("io.ktor:ktor-client-js:2.3.12")
             }
         }
         val jsTest by getting
 
         val mingwX64Main by getting {
             dependencies {
-                // implementation("io.ktor:ktor-client-winhttp:2.3.12")
+                implementation("io.ktor:ktor-client-winhttp:2.3.12")
             }
         }
         val mingwX64Test by getting
