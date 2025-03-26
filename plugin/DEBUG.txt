@@ -60,15 +60,45 @@ Function flush: MATCH
 
 Function toString: MATCH
 
-Field _stringBuilder matches _stringBuilder2
-
 Class kotlin.random.Random.Default: MATCH
 
 Function nextInt: MATCH
 
+EXPRESSION_BODY
+  CALL 'public final fun buffered (): kotlinx.io.Sink declared in kotlinx.io' type=kotlinx.io.Sink origin=null
+    $receiver: CALL 'public abstract fun sink (path: kotlinx.io.files.Path, append: kotlin.Boolean): kotlinx.io.RawSink declared in kotlinx.io.files.FileSystem' type=kotlinx.io.RawSink origin=null
+      $this: CALL 'public final fun <get-SystemFileSystem> (): kotlinx.io.files.FileSystem declared in kotlinx.io.files' type=kotlinx.io.files.FileSystem origin=null
+      path: CALL 'public final fun Path (path: kotlin.String): kotlinx.io.files.Path declared in kotlinx.io.files' type=kotlinx.io.files.Path origin=null
+        path: GET_FIELD 'FIELD name:_bufferedTraceFileName type:kotlin.String visibility:public [static] declared in <root>' type=kotlin.String origin=null
+CALL 'public final fun Path (path: kotlin.String): kotlinx.io.files.Path declared in kotlinx.io.files' type=kotlinx.io.files.Path origin=null
+  $this: CALL 'public final fun Path (path: kotlin.String): kotlinx.io.files.Path declared in kotlinx.io.files' type=kotlinx.io.files.Path origin=null
+  path: GET_FIELD 'FIELD name:_bufferedTraceFileName type:kotlin.String visibility:public [static] declared in <root>' type=kotlin.String origin=null
+CALL 'public final fun Path (path: kotlin.String): kotlinx.io.files.Path declared in kotlinx.io.files' type=kotlinx.io.files.Path origin=null
+  $this: CALL 'public final fun Path (path: kotlin.String): kotlinx.io.files.Path declared in kotlinx.io.files' type=kotlinx.io.files.Path origin=null
+  path: GET_FIELD 'FIELD name:_bufferedTraceFileName type:kotlin.String visibility:public [static] declared in <root>' type=kotlin.String origin=null
+CALL 'public abstract fun sink (path: kotlinx.io.files.Path, append: kotlin.Boolean): kotlinx.io.RawSink declared in kotlinx.io.files.FileSystem' type=kotlinx.io.RawSink origin=null
+  $this: CALL 'public final fun <get-SystemFileSystem> (): kotlinx.io.files.FileSystem declared in kotlinx.io.files' type=kotlinx.io.files.FileSystem origin=null
+  path: CALL 'public final fun Path (path: kotlin.String): kotlinx.io.files.Path declared in kotlinx.io.files' type=kotlinx.io.files.Path origin=null
+    $this: CALL 'public final fun Path (path: kotlin.String): kotlinx.io.files.Path declared in kotlinx.io.files' type=kotlinx.io.files.Path origin=null
+    path: GET_FIELD 'FIELD name:_bufferedTraceFileName type:kotlin.String visibility:public [static] declared in <root>' type=kotlin.String origin=null
+EXPRESSION_BODY
+  CALL 'public final fun buffered (): kotlinx.io.Sink declared in kotlinx.io' type=kotlinx.io.Sink origin=null
+    $receiver: CALL 'public abstract fun sink (path: kotlinx.io.files.Path, append: kotlin.Boolean): kotlinx.io.RawSink declared in kotlinx.io.files.FileSystem' type=kotlinx.io.RawSink origin=null
+      $this: CALL 'public final fun <get-SystemFileSystem> (): kotlinx.io.files.FileSystem declared in kotlinx.io.files' type=kotlinx.io.files.FileSystem origin=null
+      path: CALL 'public final fun Path (path: kotlin.String): kotlinx.io.files.Path declared in kotlinx.io.files' type=kotlinx.io.files.Path origin=null
+        $this: CALL 'public final fun Path (path: kotlin.String): kotlinx.io.files.Path declared in kotlinx.io.files' type=kotlinx.io.files.Path origin=null
+        path: GET_FIELD 'FIELD name:_bufferedTraceFileName type:kotlin.String visibility:public [static] declared in <root>' type=kotlin.String origin=null
 Class kotlin.time.TimeSource.Monotonic: MATCH
 
 Function markNow: MATCH
 
-Function elapsedNow: MATCH
+CALL 'public final fun writeString (string: kotlin.String, startIndex: kotlin.Int, endIndex: kotlin.Int): kotlin.Unit declared in kotlinx.io' type=kotlin.Unit origin=null
+  $this: GET_FIELD 'FIELD name:_bufferedTraceFileSink type:kotlinx.io.RawSink visibility:public [static] declared in <root>' type=kotlinx.io.RawSink origin=null
+  string: STRING_CONCATENATION type=kotlin.String
+    CONST String type=kotlin.String value=">;"
+    GET_VAR 'methodId: kotlin.Int declared in <no parent>._enter_method_new' type=kotlin.Int origin=null
+    CONST String type=kotlin.String value="\n"
+CALL 'public open fun markNow (): kotlin.time.TimeSource.Monotonic.ValueTimeMark declared in kotlin.time.TimeSource.Monotonic' type=kotlin.time.TimeSource.Monotonic.ValueTimeMark origin=null
+  $this: CALL 'public open fun markNow (): kotlin.time.TimeSource.Monotonic.ValueTimeMark declared in kotlin.time.TimeSource.Monotonic' type=kotlin.time.TimeSource.Monotonic.ValueTimeMark origin=null
+Functions _enter_method and _enter_method_new have different number of statementsFunction elapsedNow: MATCH
 
