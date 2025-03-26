@@ -518,7 +518,7 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            this.initializer = stringBuilderConstructor(pluginContext, firstFile.symbol)
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callHelper { new(stringBuilderClass) }
         }
         compareIrFields(stringBuilder, stringBuilderNew)
 
@@ -586,7 +586,7 @@ class PerfMeasureExtension2(
         }.apply {
             // _bufferedTraceFileSink = SystemFileSystem.sink(Path(bufferedTraceFileName)).buffered()
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                irExprBody(irCall(bufferedFunc).apply {
+                val temp = irExprBody(irCall(bufferedFunc).apply {
                     extensionReceiver = irCall(sinkFunc).apply {
                         dispatchReceiver = irCall(systemFileSystem.owner.getter!!)
                         putValueArgument(
@@ -596,8 +596,45 @@ class PerfMeasureExtension2(
                             })
                     }
                 })
+                appendToDebugFile(temp.dump())
+                temp
             }
         }
+
+        val test = pluginContext.irFactory.buildField {
+            name = Name.identifier("tt")
+            type = rawSinkClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
+                callHelper {
+                    pathConstructionFunc({test: String -> appendToDebugFile(test)}, bufferedTraceFileName).build()
+                }
+            }
+        }
+
+        firstFile.declarations.add(test)
+        test.parent = firstFile
+
+        val bufferedTraceFileSink2 = pluginContext.irFactory.buildField {
+            name = Name.identifier("_bufferedTraceFileSink2")
+            type = rawSinkClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
+                val temp2 = callHelper {
+                    systemFileSystem.call(sinkFunc, {test: String -> appendToDebugFile(test)}, pathConstructionFunc({test: String -> appendToDebugFile(test)}, irGetField(null, bufferedTraceFileName)))
+                        .chain(bufferedFunc)
+                        .build()
+                }
+                appendToDebugFile(temp2.dump())
+                temp2
+            }
+        }
+        compareIrFields(bufferedTraceFileSink, bufferedTraceFileSink2)
+
         firstFile.declarations.add(bufferedTraceFileSink)
         bufferedTraceFileSink.parent = firstFile
 
@@ -681,7 +718,7 @@ class PerfMeasureExtension2(
 
             // assertion: funMarkNowViaClass == funMarkNow
 
-            return pluginContext.irFactory.buildFun {
+            val enterMethod = pluginContext.irFactory.buildFun {
                 name = Name.identifier("_enter_method")
                 returnType = timeMarkClass.defaultType
             }.apply {
@@ -728,6 +765,42 @@ class PerfMeasureExtension2(
                     })
                 }
             }
+
+            val enterMethodNew = pluginContext.irFactory.buildFun {
+                name = Name.identifier("_enter_method_new")
+                returnType = timeMarkClass.defaultType
+            }.apply {
+                addValueParameter {
+                    name = Name.identifier("methodId")
+                    type = pluginContext.irBuiltIns.intType
+                }
+
+                body = DeclarationIrBuilder(
+                    pluginContext,
+                    symbol,
+                    startOffset,
+                    endOffset
+                ).irBlockBody {
+                    +callHelper {
+                        if (STRINGBUILDER_MODE) {
+                            stringBuilderClass.call(stringBuilderAppendStringFunc, {test: String -> appendToDebugFile(test)}, ">;")
+                                .chain(stringBuilderAppendIntFunc, valueParameters[0])
+                                .chain(stringBuilderAppendStringFunc, "\n")
+                                .build()
+                        } else {
+                            bufferedTraceFileSink.call(writeStringFunc, {test: String -> appendToDebugFile(test)}, irConcat().apply {
+                                addArgument(irString(">;"))
+                                addArgument(irGet(valueParameters[0]))
+                                addArgument(irString("\n"))
+                            })
+                                .build()
+                        }
+                        funMarkNow({test: String -> appendToDebugFile(test)},).buildReturn()
+                    }
+                }
+            }
+            compareFunctions(enterMethod, enterMethodNew)
+            return enterMethod
         }
 
         val enterFunc = buildEnterFunction()
@@ -1017,6 +1090,7 @@ class PerfMeasureExtension2(
         appendToDebugFile("\n")
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun compareConstructorSymbols(original: IrConstructorSymbol, new: IrConstructorSymbol?) {
         if (new == null) {
             appendToDebugFile("New constructor returned null for ${original.owner.parent.kotlinFqName}\n\n")
@@ -1032,119 +1106,82 @@ class PerfMeasureExtension2(
         appendToDebugFile("\n")
     }
 
-    private fun compareIrFields(original: IrField, new: IrField?) {
-        if (new == null) {
-            appendToDebugFile("New Field is null\n\n")
-            return
+    private fun compareIrFields(field1: IrField, field2: IrField): Boolean {
+        if (field1.type != field2.type || field1.isFinal != field2.isFinal || field1.isStatic != field2.isStatic) {
+            return false
         }
-        var matches = original.type == new.type &&
-                original.isFinal == new.isFinal &&
-                original.isStatic == new.isStatic &&
-                original.visibility == new.visibility
-
-        if (original.initializer != null && new.initializer != null) {
-            matches = matches && compareIrExpressions(original.initializer!!.expression, new.initializer!!.expression)
-        }
-
-        if (!matches) {
-            appendToDebugFile("  Original:\n")
-            appendToDebugFile("    Name: ${original.name}\n")
-            appendToDebugFile("    Type: ${original.type}\n")
-            appendToDebugFile("    Visibility: ${original.visibility}\n")
-            appendToDebugFile("    Is Final: ${original.isFinal}\n")
-            appendToDebugFile("    Is Static: ${original.isStatic}\n")
-            appendToDebugFile("    Is External: ${original.isExternal}\n")
-
-            appendToDebugFile("  New:\n")
-            appendToDebugFile("    Name: ${new.name}\n")
-            appendToDebugFile("    Type: ${new.type}\n")
-            appendToDebugFile("    Visibility: ${new.visibility}\n")
-            appendToDebugFile("    Is Final: ${new.isFinal}\n")
-            appendToDebugFile("    Is Static: ${new.isStatic}\n")
-            appendToDebugFile("    Is External: ${new.isExternal}\n")
-        } else {
-            appendToDebugFile("Field ${original.name.asString()} matches ${new.name.asString()}\n")
-        }
-        appendToDebugFile("\n")
+        return areInitializersEquivalent(field1.initializer?.expression, field2.initializer?.expression)
     }
 
-    fun compareIrExpressions(expr1: IrExpression, expr2: IrExpression): Boolean {
-        // Check if the expressions are of the same type
+    private fun areInitializersEquivalent(expr1: IrExpression?, expr2: IrExpression?): Boolean {
+        if (expr1 == null || expr2 == null) return expr1 == expr2
         if (expr1::class != expr2::class) return false
 
-        when (expr1) {
-            is IrConst<*> -> {
-                // Compare constant value expressions
-                if (expr2 !is IrConst<*>) return false
-                return expr1.value == expr2.value
-            }
-            is IrGetField -> {
-                // Compare field accesses
-                if (expr2 !is IrGetField) return false
-                return expr1.symbol == expr2.symbol
-            }
-            is IrCall -> {
-                // Compare function or constructor calls
-                if (expr2 !is IrCall) return false
-                if (expr1.symbol != expr2.symbol) return false
+        return when (expr1) {
+            is IrCall -> expr2 is IrCall && areIrCallsEquivalent(expr1, expr2)
+            is IrGetField -> expr2 is IrGetField && expr1.symbol == expr2.symbol
+            else -> expr1 == expr2 // Fallback for simple cases
+        }
+    }
 
-                // Compare value arguments
-                val argCount1 = expr1.valueArgumentsCount
-                val argCount2 = expr2.valueArgumentsCount
-                if (argCount1 != argCount2) return false
+    private fun areIrCallsEquivalent(call1: IrCall, call2: IrCall): Boolean {
+        if (call1.symbol != call2.symbol) return false
+        if (!areInitializersEquivalent(call1.extensionReceiver, call2.extensionReceiver)) return false
+        if (!areInitializersEquivalent(call1.dispatchReceiver, call2.dispatchReceiver)) return false
+        if (call1.valueArgumentsCount != call2.valueArgumentsCount) return false
 
-                for (i in 0 until argCount1) {
-                    val arg1 = expr1.getValueArgument(i)
-                    val arg2 = expr2.getValueArgument(i)
-                    if (!compareIrExpressions(arg1 ?: return false, arg2 ?: return false)) {
-                        return false
+        for (i in 0 until call1.valueArgumentsCount) {
+            if (!areInitializersEquivalent(call1.getValueArgument(i), call2.getValueArgument(i))) return false
+        }
+
+        return true
+    }
+
+    private fun compareFunctions(f1: IrFunction, f2: IrFunction) {
+        if (f1.valueParameters.size == f2.valueParameters.size) {
+            if (f1.returnType == f2.returnType) {
+                if (f1.body != null && f2.body != null) {
+                    val body1 = f1.body!!
+                    val body2 = f2.body!!
+
+                    if (body1.statements.size == body2.statements.size) {
+                        var equal = true
+                        for (i in body1.statements.indices) {
+                            val statement1 = body1.statements[i]
+                            val statement2 = body2.statements[i]
+
+                            if (statement1 !is IrCall && statement2 is IrCall) {
+                                equal = false
+                                break
+                            }
+
+                            if (statement1 !is IrReturn && statement2 is IrReturn) {
+                                equal = false
+                                break
+                            }
+
+                            if (statement1 is IrReturn && statement2 is IrReturn) {
+                                if (statement1.value !is IrCall && statement2.value is IrCall) {
+                                    equal = false
+                                    break
+                                }
+                            }
+                        }
+
+                        if (!equal) {
+                            appendToDebugFile("Functions ${f1.name} and ${f2.name} are not equal")
+                        }
+                    } else {
+                        appendToDebugFile("Functions ${f1.name} and ${f2.name} have different number of statements")
                     }
+                } else {
+                    appendToDebugFile("Functions ${f1.name} and ${f2.name} have different number of bodies")
                 }
-                return true
+            } else {
+                appendToDebugFile("Functions ${f1.name} and ${f2.name} have different return types")
             }
-            is IrConstructorCall -> {
-                // Compare constructor calls
-                if (expr2 !is IrConstructorCall) return false
-                if (expr1.symbol != expr2.symbol) return false
-
-                // Compare value arguments
-                val argCount1 = expr1.valueArgumentsCount
-                val argCount2 = expr2.valueArgumentsCount
-                if (argCount1 != argCount2) return false
-
-                for (i in 0 until argCount1) {
-                    val arg1 = expr1.getValueArgument(i)
-                    val arg2 = expr2.getValueArgument(i)
-                    if (!compareIrExpressions(arg1 ?: return false, arg2 ?: return false)) {
-                        return false
-                    }
-                }
-                return true
-            }
-            is IrGetValue -> {
-                // Compare variable or parameter references
-                if (expr2 !is IrGetValue) return false
-                return expr1.symbol == expr2.symbol
-            }
-            is IrTypeOperatorCall -> {
-                // Compare type operations (e.g., casts)
-                if (expr2 !is IrTypeOperatorCall) return false
-                return expr1.operator == expr2.operator &&
-                        expr1.typeOperand == expr2.typeOperand &&
-                        compareIrExpressions(expr1.argument, expr2.argument)
-            }
-            is IrComposite -> {
-                // Compare composite expressions
-                if (expr2 !is IrComposite) return false
-                if (expr1.statements.size != expr2.statements.size) return false
-                return expr1.statements.zip(expr2.statements).all { (stmt1, stmt2) ->
-                    stmt1 is IrExpression && stmt2 is IrExpression && compareIrExpressions(stmt1, stmt2)
-                }
-            }
-            else -> {
-                // Fallback: unhandled types
-                error("Unsupported IR Expression type: ${expr1::class}")
-            }
+        } else {
+            appendToDebugFile("Functions ${f1.name} and ${f2.name} have different number of parameters")
         }
     }
 }

@@ -180,7 +180,7 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
     return if (isNullable) type.makeNullable() else type
 }
 
-private fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, List<IrType?>> {
+fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, List<IrType?>> {
     //no generic part in string
     if (!signature.contains("<")) {
         return Pair(signature, emptyList())
