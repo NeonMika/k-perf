@@ -518,7 +518,7 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callHelper { new(stringBuilderClass) }
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callHelper { stringBuilderConstructor().build() }
         }
         compareIrFields(stringBuilder, stringBuilderNew)
 
@@ -586,7 +586,7 @@ class PerfMeasureExtension2(
         }.apply {
             // _bufferedTraceFileSink = SystemFileSystem.sink(Path(bufferedTraceFileName)).buffered()
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                val temp = irExprBody(irCall(bufferedFunc).apply {
+                irExprBody(irCall(bufferedFunc).apply {
                     extensionReceiver = irCall(sinkFunc).apply {
                         dispatchReceiver = irCall(systemFileSystem.owner.getter!!)
                         putValueArgument(
@@ -596,20 +596,23 @@ class PerfMeasureExtension2(
                             })
                     }
                 })
-                appendToDebugFile(temp.dump())
-                temp
             }
         }
 
+        firstFile.declarations.add(bufferedTraceFileSink)
+        bufferedTraceFileSink.parent = firstFile
+
         val test = pluginContext.irFactory.buildField {
             name = Name.identifier("tt")
-            type = rawSinkClass.defaultType
+            type = sinkFunc.owner.returnType
             isFinal = false
             isStatic = true
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 callHelper {
-                    pathConstructionFunc({test: String -> appendToDebugFile(test)}, bufferedTraceFileName).build()
+                    sinkFunc(pathConstructionFunc(bufferedTraceFileName))
+                        .withDispatchReceiver(irCall(systemFileSystem.owner.getter!!))
+                        .build()
                 }
             }
         }
@@ -624,19 +627,18 @@ class PerfMeasureExtension2(
             isStatic = true
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                val temp2 = callHelper {
-                    systemFileSystem.call(sinkFunc, {test: String -> appendToDebugFile(test)}, pathConstructionFunc({test: String -> appendToDebugFile(test)}, irGetField(null, bufferedTraceFileName)))
-                        .chain(bufferedFunc)
-                        .build()
-                }
-                appendToDebugFile(temp2.dump())
-                temp2
+                irExprBody(irCall(bufferedFunc).apply {
+                    extensionReceiver = innerCallHelper {
+                        systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
+                            .build()
+                    }
+                })
             }
         }
         compareIrFields(bufferedTraceFileSink, bufferedTraceFileSink2)
 
-        firstFile.declarations.add(bufferedTraceFileSink)
-        bufferedTraceFileSink.parent = firstFile
+        /*firstFile.declarations.add(bufferedTraceFileSink2)
+        bufferedTraceFileSink2.parent = firstFile*/
 
         val bufferedSymbolsFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileName")
@@ -766,7 +768,7 @@ class PerfMeasureExtension2(
                 }
             }
 
-            val enterMethodNew = pluginContext.irFactory.buildFun {
+            /*val enterMethodNew = pluginContext.irFactory.buildFun {
                 name = Name.identifier("_enter_method_new")
                 returnType = timeMarkClass.defaultType
             }.apply {
@@ -799,7 +801,7 @@ class PerfMeasureExtension2(
                     }
                 }
             }
-            compareFunctions(enterMethod, enterMethodNew)
+            compareFunctions(enterMethod, enterMethodNew)*/
             return enterMethod
         }
 
