@@ -1,20 +1,30 @@
 package at.ssw.compilerplugin
 
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrReturnImpl
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.util.*
 
-
 /**
- * Extension function to create a helper DSL scope for building IR expressions.
+ * A helper function for building an IR block body using a DSL scope.
+ *
+ * This function creates an instance of `IrCallDsl` and applies the provided
+ * block of code to it. The DSL scope allows for building IR call expressions
+ * in a fluent manner. After executing the block, it constructs the body of the
+ * IR block using the statements accumulated in the DSL.
+ *
+ * @receiver The `IrBlockBodyBuilder` that constructs the IR block body.
+ * @param block A lambda with a receiver of type `IrCallDsl` used to define
+ *              the IR call expressions to be included in the block body.
  */
-fun IrBuilderWithScope.callHelper(block: IrCallDsl.() -> IrExpression): IrExpression {
-    return IrCallDsl(this).block()
+fun IrBlockBodyBuilder.functionBodyHelper(block: IrCallDsl.() -> Unit) {
+    val helper = IrCallDsl(this)
+    helper.block()
+    helper.buildBody(this)
 }
 
 /**
@@ -25,9 +35,18 @@ fun DeclarationIrBuilder.callHelper(block: IrCallDsl.() -> IrExpression): IrExpr
 }
 
 /**
- * DSL for building IR call expressions with a fluent interface.
+ * A DSL scope for building IR call expressions in a fluent manner.
+ *
+ * This class is used by the [functionBodyHelper] and [callHelper] functions to
+ * allow for building IR call expressions in a fluent manner. The DSL scope is
+ * used to accumulate the IR call expressions, and when the block is executed, the
+ * accumulated expressions are used to construct the IR block body.
+ *
+ * @property builder The IrBuilderWithScope used to construct the IR call
+ *                    expressions.
  */
 class IrCallDsl(private val builder: IrBuilderWithScope) {
+    private val statements: MutableList<IrStatement> = mutableListOf()
     /**
      * Call a function on a property or other symbol.
      *
@@ -115,6 +134,38 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
     operator fun IrFunctionSymbol.invoke(vararg args: Any) : ChainableCall = this.call(this, *args)
 
     /**
+     * Constructs the body of an IR block by adding the accumulated statements.
+     *
+     * This function iterates over the statements that have been collected in
+     * the DSL and adds each one to the provided `IrBlockBodyBuilder`. The
+     * `IrBlockBodyBuilder` is then responsible for constructing the IR block
+     * body using these statements.
+     *
+     * @param irBlockBodyBuilder The builder used to create the IR block body.
+     */
+    fun buildBody(irBlockBodyBuilder: IrBlockBodyBuilder) {
+        irBlockBodyBuilder.run {
+            statements.forEach {
+                +it
+            }
+        }
+    }
+
+    /**
+     * Builds an IR expression representing a string concatenation of the given params.
+     *
+     * @param params The variable number of arguments to be concatenated.
+     * @return An IR expression representing a string concatenation of the given params.
+     */
+    fun irConcat(vararg params: Any): IrStringConcatenation {
+        val concat = builder.irConcat()
+        for (param in params) {
+            concat.addArgument(builder.convertToIrExpression(param))
+        }
+        return concat
+    }
+
+    /**
      * Chainable call class that allows fluid method chaining.
      */
     inner class ChainableCall(
@@ -158,11 +209,23 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
         }
 
         /**
-         * Builds an IR return expression for the current chainable call.
+         * Adds the built function call to the IR expression chain.
          *
-         * @return An IrReturnImpl expression representing the return of the built function call.
+         * This function will take the current chainable call and build an IR function call expression.
+         * The resulting expression will then be added to the IR expression chain.
          */
-        fun buildReturn(): IrReturnImpl = builder.irReturn(this.build())
+        operator fun unaryPlus() {
+            statements.add(this.build())
+        }
+
+
+        /**
+         * Builds an IR return expression for the current chainable call and adds it to the statements list.
+         *
+         * This function constructs an IR return expression using the current chainable call and appends
+         * it to the list of statements. The resulting expression represents the return of the built function call.
+         */
+        fun buildReturn() = statements.add(builder.irReturn(this.build()))
     }
 }
 

@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.backend.common.lower.irBlockBody
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.compiler.plugin.*
@@ -765,7 +766,7 @@ class PerfMeasureExtension2(
                 }
             }
 
-            /*val enterMethodNew = pluginContext.irFactory.buildFun {
+            val enterMethodNew = pluginContext.irFactory.buildFun {
                 name = Name.identifier("_enter_method_new")
                 returnType = timeMarkClass.defaultType
             }.apply {
@@ -779,26 +780,20 @@ class PerfMeasureExtension2(
                     symbol,
                     startOffset,
                     endOffset
-                ).irBlockBody {
-                    +callHelper {
+                ).irBlockBody{
+                    functionBodyHelper {
                         if (STRINGBUILDER_MODE) {
-                            stringBuilderClass.call(stringBuilderAppendStringFunc, ">;")
-                                .chain(stringBuilderAppendIntFunc, valueParameters[0])
-                                .chain(stringBuilderAppendStringFunc, "\n")
-                                .build()
+                            +stringBuilderClass.call(stringBuilderAppendStringFunc, ">;")
+                            +stringBuilderClass.call(stringBuilderAppendIntFunc, valueParameters[0])
+                            +stringBuilderClass.call(stringBuilderAppendStringFunc, "\n")
                         } else {
-                            bufferedTraceFileSink.call(writeStringFunc, irConcat().apply {
-                                addArgument(irString(">;"))
-                                addArgument(irGet(valueParameters[0]))
-                                addArgument(irString("\n"))
-                            })
-                                .build()
+                            +bufferedTraceFileSink.call(writeStringFunc, irConcat(">;", valueParameters[0], "\n"))
                         }
                         timeSourceMonotonicClass.call(funMarkNow).buildReturn()
                     }
                 }
             }
-            compareFunctions(enterMethod, enterMethodNew)*/
+            compareFieldDumps(enterMethod.dump(), enterMethodNew.dump(), "_enter_method")
             return enterMethod
         }
 
@@ -839,7 +834,7 @@ class PerfMeasureExtension2(
                     type = pluginContext.irBuiltIns.anyNType
                 } */
 
-                body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
+                val oldBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     // Duration
                     //TODO MS3 simplify temp var creation like this:
                     //val temp0 = secondParam.elapsedNow()
@@ -887,6 +882,31 @@ class PerfMeasureExtension2(
                         }
                     }
                 }
+                body = oldBody
+                val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
+                    functionBodyHelper {
+                        val elapsedDuration = irTemporary(irCall(funElapsedNow).apply {
+                            dispatchReceiver = irGet(valueParameters[1])
+                        })
+                        val elapsedMicrosProp: IrProperty =
+                            elapsedDuration.type.getClass()!!.properties.single { it.name.asString() == "inWholeMicroseconds" }
+
+                        val elapsedMicros = irTemporary(irCall(elapsedMicrosProp.getter!!).apply {
+                            dispatchReceiver = irGet(elapsedDuration)
+                        })
+
+                        if (STRINGBUILDER_MODE) {
+                            +stringBuilder.call(stringBuilderAppendStringFunc, "<;")
+                            +stringBuilder.call(stringBuilderAppendIntFunc, valueParameters[0])
+                            +stringBuilder.call(stringBuilderAppendStringFunc, ";")
+                            +stringBuilder.call(stringBuilderAppendLongFunc, elapsedMicros)
+                            +stringBuilder.call(stringBuilderAppendStringFunc, "\n")
+                        } else {
+                            +bufferedTraceFileSink.call(writeStringFunc, irConcat("<;", valueParameters[0], ";", elapsedMicros, "\n"))
+                        }
+                    }
+                }
+                compareFieldDumps(oldBody.dump(), newBody.dump(), "testBodyWithTempVar")
             }
         }
 
@@ -1105,25 +1125,24 @@ class PerfMeasureExtension2(
         appendToDebugFile("\n")
     }
 
-    private fun compareFieldDumps(dump1: String, dump2: String, name: String) {
-        fun normalizeDump(dump: String): String {
-            val lines = dump.lines()
-            return buildString {
-                for (line in lines) {
-                    if (!line.trim().startsWith("FIELD name:")) {
-                        appendLine(line.trim()) // String without leading/trailing spaces
-                    }
-                }
-            }.trim()
-        }
+    private fun compareFieldDumps(dump1: String, dump2: String, variableName: String) {
 
-        val normalizedDump1 = normalizeDump(dump1)
-        val normalizedDump2 = normalizeDump(dump2)
+        val normalizedDump1 = dump1.lines()
+        val normalizedDump2 = dump2.lines()
 
-        if (normalizedDump1 == normalizedDump2) {
-            appendToDebugFile("fields $name match\n\n")
+        if (normalizedDump1.size != normalizedDump2.size) {
+            appendToDebugFile("fields $variableName do not match\n\n")
+            return
         } else {
-            appendToDebugFile("fields $name do not match\n\n")
+            for (i in normalizedDump1.indices) {
+                val line1 = normalizedDump1[i].trim().split(" ").filter { !it.contains(variableName) }.joinToString(" ")
+                val line2 = normalizedDump1[i].trim().split(" ").filter { !it.contains(variableName) }.joinToString(" ")
+                if (line1 != line2) {
+                    appendToDebugFile("fields $variableName do not match\n\n")
+                    return
+                }
+            }
+            appendToDebugFile("fields $variableName match\n\n")
         }
     }
 }
