@@ -74,7 +74,9 @@ Class kotlin.time.TimeSource.Monotonic: MATCH
 
 Function markNow: MATCH
 
-fields _enter_method do not match
+fields _enter_method match
 
 Function elapsedNow: MATCH
+
+fields testBodyWithTempVar match
 
