@@ -1,59 +1,99 @@
-function createDotSourceAndNodeDict(jsonObject) {
-  const dotBuilder = [];
-  const nodeDict = {};
+function assignNodeIds(root) {
   let idCount = 0;
 
-  // Begin the DOT graph
+  function traverse(node) {
+    node.nodeID = "node" + (idCount++);
+    node.visible = true;
+    if (Array.isArray(node.Children)) {
+      for (const child of node.Children) {
+        traverse(child);
+      }
+    }
+  }
+
+  traverse(root);
+}
+
+function createDotSource(root) {
+  const dotBuilder = [];
+
   dotBuilder.push(
-`digraph KotlinIR {
+      `digraph KotlinIR {
     rankdir=TB;      // Top-to-bottom layout
     nodesep=1;       // Horizontal spacing
     ranksep=0.75;    // Vertical spacing
 `
   );
 
-  // Recursive function that processes each node, appending to dotBuilder and nodeDict
-  function processNode(node) {
-    // Create a unique ID for this node
-    const currentId = "node" + (idCount++);
-
-    // --- DOT building ---
+  function traverse(node) {
     const typeName = node.NodeName || "";
     const caption = node.Caption || "";
-    dotBuilder.push(`    ${currentId} [label="${typeName}\\n${caption}"];`);
 
-    // --- Node dictionary building ---
-    // Copy all fields except "Children" into a dictionary entry
+    if(node.visible){
+      dotBuilder.push(`    ${node.nodeID} [label="${typeName}\\n${caption}"];`);
+
+      if (Array.isArray(node.Children)) {
+        for (const child of node.Children) {
+          if(child.visible){
+            dotBuilder.push(`    ${node.nodeID} -> ${child.nodeID};`);
+            traverse(child);
+          }
+        }
+      }
+    }
+  }
+
+  traverse(root);
+  dotBuilder.push("}\n");
+  return dotBuilder.join("\n");
+}
+
+function createNodeDict(root) {
+  const nodeDict = {};
+
+  function traverse(node) {
     const nodeCopy = {};
     for (const [key, value] of Object.entries(node)) {
       if (key !== "Children") {
         nodeCopy[key] = value;
       }
     }
-    nodeDict[currentId] = nodeCopy;
 
-    // --- Recurse through children ---
+    nodeDict[node.nodeID] = nodeCopy;
+
     if (Array.isArray(node.Children)) {
       for (const child of node.Children) {
-        const childId = processNode(child);
-        dotBuilder.push(`    ${currentId} -> ${childId};`);
+        traverse(child);
+      }
+    }
+  }
+
+  traverse(root);
+  return nodeDict;
+}
+
+function filterTree(root, key, filterValue) {
+  function visit(node) {
+    let currentNodeVisible = false;
+
+    if (typeof node[key] === "string" && node[key].includes(filterValue)) {
+      currentNodeVisible = true;
+    }
+
+    if (Array.isArray(node.Children)) {
+      for (const child of node.Children) {
+        const childVisible = visit(child);
+        if (childVisible) {
+          currentNodeVisible = true;
+        }
       }
     }
 
-    return currentId;
+    node.visible = currentNodeVisible;
+    return currentNodeVisible;
   }
 
-  // Process the root node
-  processNode(jsonObject);
-
-  // Close the DOT graph
-  dotBuilder.push("}\n");
-
-  // Return both the DOT source and the node dictionary
-  return {
-    dotSource: dotBuilder.join("\n"),
-    nodeDict
-  };
+  visit(root);
 }
 
 function getJSON() {
