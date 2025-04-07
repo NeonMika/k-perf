@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrReturnImpl
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.util.*
 
@@ -23,10 +24,6 @@ fun DeclarationIrBuilder.callHelper(block: IrCallDsl.() -> IrExpression): IrExpr
     return irExprBody(IrCallDsl(this).block())
 }
 
-fun DeclarationIrBuilder.innerCallHelper(block: IrCallDsl.() -> IrExpression): IrExpression {
-    return IrCallDsl(this).block()
-}
-
 /**
  * DSL for building IR call expressions with a fluent interface.
  */
@@ -41,7 +38,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun IrSymbol.call(func: IrFunctionSymbol, vararg args: Any): ChainableCall {
 
-        /*val receiver = when (this) {
+        val receiver = when (this) {
             is IrPropertySymbol -> {
                 val getter = owner.getter
                     ?: throw IllegalArgumentException("IrCallHelper: Property ${this.owner.name} does not have a getter")
@@ -57,7 +54,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             is IrValueSymbol -> builder.irGet(owner)
             is IrClassSymbol -> builder.irGetObject(this)
             else -> null
-        }*/
+        }
 
         val nonDefaultParameters = func.owner.valueParameters.filter { !it.hasDefaultValue() }
         if(nonDefaultParameters.size != args.size) {
@@ -66,7 +63,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
 
         val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
 
-        /*val dispatchReceiver = if (func.owner.extensionReceiverParameter == null && func.owner.dispatchReceiverParameter != null) {
+        val dispatchReceiver = if (func.owner.extensionReceiverParameter == null && func.owner.dispatchReceiverParameter != null) {
             receiver
         } else {
             null
@@ -78,8 +75,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             null
         }
 
-        return ChainableCall(builder, func, dispatchReceiver, extensionReceiver, newArgs)*/
-        return ChainableCall(builder, func, null, null, newArgs)
+        return ChainableCall(builder, func, dispatchReceiver, extensionReceiver, newArgs)
     }
 
     /**
@@ -143,11 +139,6 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             return ChainableCall(builder, func, null, receiver, newArgs)
         }
 
-        fun withDispatchReceiver(receiver: IrExpression): ChainableCall {
-            this.dispatchReceiver = receiver
-            return this
-        }
-
         /**
          * Builds an IR function call expression for the current chainable call.
          *
@@ -155,8 +146,8 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
          */
         fun build(): IrFunctionAccessExpression {
             val call = builder.irCall(callee).apply {
-                dispatchReceiver = this.dispatchReceiver
-                extensionReceiver = this.extensionReceiver
+                this.dispatchReceiver = this@ChainableCall.dispatchReceiver
+                this.extensionReceiver = this@ChainableCall.extensionReceiver
             }
 
             args.forEachIndexed { index, value ->
@@ -169,9 +160,9 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
         /**
          * Builds an IR return expression for the current chainable call.
          *
-         * @return An IrReturn expression representing the return of the built function call.
+         * @return An IrReturnImpl expression representing the return of the built function call.
          */
-        fun buildReturn(): IrReturn = builder.irReturn(this.build())
+        fun buildReturn(): IrReturnImpl = builder.irReturn(this.build())
     }
 }
 
