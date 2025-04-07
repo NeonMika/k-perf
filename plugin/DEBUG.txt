@@ -60,13 +60,21 @@ Function flush: MATCH
 
 Function toString: MATCH
 
+fields stringBuilder match
+
 Class kotlin.random.Random.Default: MATCH
 
 Function nextInt: MATCH
 
+fields randomNumber match
+
+fields bufferedTraceFileSink match
+
 Class kotlin.time.TimeSource.Monotonic: MATCH
 
 Function markNow: MATCH
+
+fields _enter_method do not match
 
 Function elapsedNow: MATCH
 
