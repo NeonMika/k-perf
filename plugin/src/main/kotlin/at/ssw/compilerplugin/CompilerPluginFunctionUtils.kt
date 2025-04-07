@@ -12,11 +12,6 @@ import org.jetbrains.kotlin.ir.util.*
 /**
  * A helper function for building an IR block body using a DSL scope.
  *
- * This function creates an instance of `IrCallDsl` and applies the provided
- * block of code to it. The DSL scope allows for building IR call expressions
- * in a fluent manner. After executing the block, it constructs the body of the
- * IR block using the statements accumulated in the DSL.
- *
  * @receiver The `IrBlockBodyBuilder` that constructs the IR block body.
  * @param block A lambda with a receiver of type `IrCallDsl` used to define
  *              the IR call expressions to be included in the block body.
@@ -27,8 +22,14 @@ fun IrBlockBodyBuilder.functionBodyHelper(block: IrCallDsl.() -> Unit) {
     helper.buildBody(this)
 }
 
+
 /**
- * Extension function for DeclarationIrBuilder to create a helper DSL scope.
+ * A helper function for constructing an IR expression body using a DSL scope.
+ *
+ * @receiver The `DeclarationIrBuilder` used to build the IR expression.
+ * @param block A lambda with a receiver of type `IrCallDsl` used to define
+ *              the IR call expression to be included in the expression body.
+ * @return An `IrExpressionBody` containing the constructed IR expression.
  */
 fun DeclarationIrBuilder.callHelper(block: IrCallDsl.() -> IrExpression): IrExpressionBody {
     return irExprBody(IrCallDsl(this).block())
@@ -36,11 +37,6 @@ fun DeclarationIrBuilder.callHelper(block: IrCallDsl.() -> IrExpression): IrExpr
 
 /**
  * A DSL scope for building IR call expressions in a fluent manner.
- *
- * This class is used by the [functionBodyHelper] and [callHelper] functions to
- * allow for building IR call expressions in a fluent manner. The DSL scope is
- * used to accumulate the IR call expressions, and when the block is executed, the
- * accumulated expressions are used to construct the IR block body.
  *
  * @property builder The IrBuilderWithScope used to construct the IR call
  *                    expressions.
@@ -52,6 +48,9 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      *
      * @param func The function symbol to call
      * @param args Variable number of arguments to pass to the function
+     * @throws IllegalArgumentException if the number of arguments does not match the number of parameters
+     * @throws IllegalArgumentException if the property does not have a getter
+     * @throws IllegalStateException if the field is not a top-level field
      * @return A ChainableCall that can be further chained
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -137,7 +136,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * Constructs the body of an IR block by adding the accumulated statements.
      *
      * This function iterates over the statements that have been collected in
-     * the DSL and adds each one to the provided `IrBlockBodyBuilder`. The
+     * the DSL by unary plus operators and adds each one to the provided `IrBlockBodyBuilder`. The
      * `IrBlockBodyBuilder` is then responsible for constructing the IR block
      * body using these statements.
      *
@@ -247,7 +246,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
          * - IrStringConcatenation
          * - IrConst<*>
          *
-         * If the given value is not supported, an error will be thrown.
+         * @throws error if the given value is not supported.
          */
 fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
     if (value == null) return irNull()
