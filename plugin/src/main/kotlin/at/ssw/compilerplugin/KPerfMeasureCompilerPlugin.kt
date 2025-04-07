@@ -270,7 +270,7 @@ class PerfMeasureExtension2(
         val jsonTree = moduleFragment.accept(JSONIrTreeVisitor(), Unit)
         val jsonString = GsonBuilder().setPrettyPrinting().create().toJson(jsonTree)
 
-        val outputFile = File("./output.json")
+        val outputFile = File("./website/output.json")
         outputFile.writeText(jsonString)
     }
 }

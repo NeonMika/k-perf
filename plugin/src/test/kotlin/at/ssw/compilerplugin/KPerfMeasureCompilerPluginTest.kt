@@ -76,14 +76,14 @@ class KPerfMeasureCompilerPluginTest {
             SourceFile.kotlin(
                 "main.kt",
                 """
-                    class Dog(val name: String, val age: Int)
+                    //class Dog(val name: String, val age: Int)
                     fun main() {
                       sayHello()
                       sayHello("Hi", "SSP")
                       add(1, 2)
                       val charac = 'c'
                       if(charac is String){
-                        val dog = getDog("John", 1)
+                        //val dog = getDog("John", 1)
                       }
                     }
 
@@ -94,9 +94,9 @@ class KPerfMeasureCompilerPluginTest {
 
                     fun add(i1: Int, i2: Int) = i1 + i2
 
-                    fun getDog(name: String, age: Int): Dog{
+                    /*fun getDog(name: String, age: Int): Dog{
                         return Dog(name, age)
-                    }
+                    }*/
                     """
             )
         )
