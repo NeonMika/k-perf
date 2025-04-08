@@ -29,8 +29,21 @@ function createDotSource(root) {
     const typeName = node.NodeName || "";
     const caption = node.Caption || "";
 
+    let label=typeName;
+    if(caption){
+      label+="\\n"+caption;
+    }
+    if(hasInvisibleChild(node)){
+      label+="\\n➕";
+    }else{
+      label+="\\n➖";
+    }
+
+
     if(node.visible){
-      dotBuilder.push(`    ${node.nodeID} [label="${typeName}\\n${caption}"];`);
+      dotBuilder.push(`    ${node.nodeID} [id="${node.nodeID}", label="${label}"];`);
+
+      //dotBuilder.push(`    ${node.nodeID} [id="${node.nodeID}", label=${cell}];`);
 
       if (Array.isArray(node.Children)) {
         for (const child of node.Children) {
@@ -59,7 +72,9 @@ function createNodeDict(root) {
       }
     }
 
+    nodeCopy.original = node;
     nodeDict[node.nodeID] = nodeCopy;
+
 
     if (Array.isArray(node.Children)) {
       for (const child of node.Children) {
@@ -94,6 +109,26 @@ function filterTree(root, key, filterValue) {
   }
 
   visit(root);
+}
+
+function toggleChildren(node, visibility){
+  if (Array.isArray(node.Children)) {
+    for (const child of node.Children) {
+      child.visible = visibility;
+      toggleChildren(child, visibility);
+    }
+  }
+}
+
+function hasInvisibleChild(node){
+  if (Array.isArray(node.Children)) {
+    for (const child of node.Children) {
+      if(!child.visible){
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 function getJSON() {

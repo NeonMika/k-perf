@@ -4,9 +4,10 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Kotlin Compiler IR Visualizer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-graphviz/5.0.2/d3-graphviz.min.js"></script>
     <script src="visualizer.js"></script>
+    <script src="helper.js"></script>
     <link rel="stylesheet" href="visualizer.css">
 </head>
 <body>
@@ -26,256 +27,170 @@
 </div>
 
 <script>
-	const jsonString = getJSON();
-	const obj = JSON.parse(jsonString);
+    const jsonString = getJSON();
+    const obj = JSON.parse(jsonString);
     assignNodeIds(obj);
     const nodeDict = createNodeDict(obj);
     let dotSource = createDotSource(obj);
 
-    // Global transform state for pan and zoom
-    let transform = { x: 0, y: 0, scale: 1 };
-    let isDragging = false;
-    let startDragOffset = { x: 0, y: 0 };
 
-    async function renderGraph() {
-        const viz = new Viz();
+    // Global variable to store the graphviz instance
+    let graphvizInstance;
+    let selectedNodeId;
+
+    // Initialize the graphviz instance (call this once during setup)
+    function initGraphviz() {
+        const container = document.getElementById("graph-container");
+        graphvizInstance = d3.select(container)
+            .graphviz({useWorker: false})
+            .width("100%")
+            .height("100%")
+            .fit(true)
+            .zoom(true);
+
+        // Initial rendering
+        renderGraph(dotSource);
+    }
+
+    // Render graph initially
+    function renderGraph(dotSource) {
         try {
-            const result = await viz.renderSVGElement(dotSource);
             const container = document.getElementById("graph-container");
-            container.innerHTML = "";
-            container.appendChild(result);
 
-            const svg = container.querySelector("svg");
-            svg.style.width = "100%";
-            svg.style.height = "100%";
-            svg.style.transformOrigin = "0 0";
-            svg.dataset.originalViewBox = svg.getAttribute("viewBox");
+            // Render with graphviz
+            graphvizInstance
+                .transition(function () {
+                    return d3.transition()
+                        .duration(750)
+                        .ease(d3.easeLinear);
+                })
+                .renderDot(dotSource)
+                .on("end", function () {
+                    // After rendering is complete
+                    const svg = container.querySelector("svg");
+                    svg.dataset.originalViewBox = svg.getAttribute("viewBox");
 
-            svg.addEventListener("contextmenu", function(event) {
-                event.preventDefault();
-            });
+                    svg.addEventListener("contextmenu", function (event) {
+                        //event.preventDefault();
+                    });
 
-            addNodeClickHandlers(svg);
+                    addNodeClickHandlers(svg);
 
-            document.getElementById("download-svg").addEventListener("click", function() {
-                const svgData = new XMLSerializer().serializeToString(svg);
-                const blob = new Blob([svgData], { type: "image/svg+xml" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "dot_graph.svg";
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-            setupPanAndZoom(container, svg);
+                    setUpDownloadButton(svg);
+
+                    if (selectedNodeId) {
+                        markSelected(svg, selectedNodeId);
+                        selectedNodeGroup = getNodeByNodeId(selectedNodeId);
+                        drawAllDottedLines(selectedNodeGroup)
+                    }
+
+                    d3.select(container).select("svg").on("dblclick.zoom", null);
+                });
         } catch (error) {
             console.error(error);
             document.getElementById("graph-container").innerHTML =
                 `<div style="color: red; padding: 20px;">
-            Error rendering graph: ${error.message}
-          </div>`;
+                Error rendering graph: ${error.message}
+            </div>`;
         }
     }
 
-
-
-    function setupPanAndZoom(container, svg) {
-        transform = { x: 0, y: 0, scale: 1 };
-        isDragging = false;
-        startDragOffset = { x: 0, y: 0 };
-        container.addEventListener("mousedown", function(e) {
-            isDragging = true;
-            startDragOffset.x = e.clientX - transform.x;
-            startDragOffset.y = e.clientY - transform.y;
-        });
-        document.addEventListener("mousemove", function(e) {
-            if (isDragging) {
-                transform.x = e.clientX - startDragOffset.x;
-                transform.y = e.clientY - startDragOffset.y;
-                updateTransform(svg);
+    // Update the graph with a new dot source and animate the transition
+    function updateGraph() {
+        dotSource = createDotSource(obj);
+        try {
+            if (!graphvizInstance) {
+                console.error("Graphviz instance not initialized. Call initGraphviz() first.");
+                return;
             }
-        });
-        document.addEventListener("mouseup", function() {
-            isDragging = false;
-        });
 
-        container.addEventListener("wheel", function(e) {
-            e.preventDefault();
-            const rect = container.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
 
-            const zoomSensitivity = 0.01;
-            const factor = Math.exp(-e.deltaY * zoomSensitivity);
+            removeAllDottedLines()
 
-            const graphX = (mouseX - transform.x) / transform.scale;
-            const graphY = (mouseY - transform.y) / transform.scale;
+            // Configure the transition
+            graphvizInstance
+                .transition(function () {
+                    return d3.transition()
+                        .duration(750)  // Duration of transition in milliseconds
+                        .ease(d3.easeLinear);
+                })
+                .tweenShapes(true)      // Enable shape tweening
+                .tweenPaths(true)       // Enable path tweening
+                .convertEqualSidedPolygons(true)  // Helps with smoother transitions
+                .growEnteringEdges(true)  // Animate new edges growing
+                .renderDot(dotSource);
 
-            transform.scale *= factor;
-
-            transform.x = mouseX - graphX * transform.scale;
-            transform.y = mouseY - graphY * transform.scale;
-
-            updateTransform(svg);
-        });
+        } catch (error) {
+            console.error("Error updating graph:", error);
+            document.getElementById("graph-container").innerHTML =
+                `<div style="color: red; padding: 20px;">
+                Error updating graph: ${error.message}
+            </div>`;
+        }
     }
 
-    function updateTransform(svg) {
-        svg.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`;
+    // Helper function to set up the download button
+    function setUpDownloadButton(svg) {
+        document.getElementById("download-svg").addEventListener("click", function () {
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const blob = new Blob([svgData], {type: "image/svg+xml"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "dot_graph.svg";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
     }
 
     function addNodeClickHandlers(svg) {
         const nodeGroups = svg.querySelectorAll(".node");
         nodeGroups.forEach(nodeGroup => {
             nodeGroup.style.cursor = "pointer";
+            if (!nodeGroup.handlersAdded) {
 
-            nodeGroup.addEventListener("mouseover", function() {
-                const shape = nodeGroup.querySelector("ellipse, polygon, path, rect");
-                if (shape) {
-                    shape.setAttribute("stroke-width",
-                        parseFloat(shape.getAttribute("stroke-width") || 1) + 1);
-                }
-            });
-
-            nodeGroup.addEventListener("mouseout", function() {
-                const shape = nodeGroup.querySelector("ellipse, polygon, path, rect");
-                if (shape) {
-                    shape.setAttribute("stroke-width",
-                        Math.max(1, parseFloat(shape.getAttribute("stroke-width") || 2) - 1));
-                }
-            });
-
-            nodeGroup.addEventListener("click", function() {
-                svg.querySelectorAll(".dotted-line").forEach(line => {line.remove()})
-
-
-                const nodeId = nodeGroup.querySelector("title").textContent.trim();
-                const nodeData = nodeDict[nodeId];
-                const infoDiv = document.getElementById("selected-node-info");
-
-                infoDiv.innerHTML = "";
-
-                const header = document.createElement("h3");
-                header.textContent = `Selected Node: ${nodeData.NodeName}`;
-                infoDiv.appendChild(header);
-
-                for (const [key, value] of Object.entries(nodeData)) {
-                    if(["nodeID","NodeName", "Caption", "Dump", "FunctionIdentity"].includes(key)) continue;
-                    const p = document.createElement("p");
-                    const strong = document.createElement("strong");
-                    strong.textContent = insertSpaceBeforeCaps(key);
-                    p.append(strong);
-                    p.appendChild(document.createTextNode(`: ${value}`));
-                    infoDiv.appendChild(p);
-                }
-
-                const dumpParagraph = document.createElement("p");
-                const dumpStrong = document.createElement("strong");
-                dumpStrong.textContent = "Dump";
-                dumpParagraph.append(dumpStrong);
-                dumpParagraph.appendChild(document.createTextNode(`: ${nodeData.Dump}`));
-                infoDiv.appendChild(dumpParagraph);
-
-                function insertSpaceBeforeCaps(str) {
-                    return str.replace(/(?!^)([A-Z])/g, ' $1');
-                }
-
-                svg.querySelectorAll(".node-selected").forEach(el => {
-                    el.classList.remove("node-selected");
-                    const shape = el.querySelector("ellipse, polygon, path, rect");
+                nodeGroup.addEventListener("mouseover", function () {
+                    const shape = nodeGroup.querySelector("ellipse, polygon, path, rect");
                     if (shape) {
-                        shape.setAttribute("stroke", shape.getAttribute("data-original-stroke") || "#000");
+                        shape.setAttribute("stroke-width",
+                            parseFloat(shape.getAttribute("stroke-width") || 1) + 1);
                     }
                 });
 
-                nodeGroup.classList.add("node-selected");
-                const shape = nodeGroup.querySelector("ellipse, polygon, path, rect");
-                if (shape) {
-                    if (!shape.hasAttribute("data-original-stroke")) {
-                        shape.setAttribute("data-original-stroke", shape.getAttribute("stroke") || "#000");
+                nodeGroup.addEventListener("mouseout", function () {
+                    const shape = nodeGroup.querySelector("ellipse, polygon, path, rect");
+                    if (shape) {
+                        shape.setAttribute("stroke-width",
+                            Math.max(1, parseFloat(shape.getAttribute("stroke-width") || 2) - 1));
                     }
-                    shape.setAttribute("stroke", "#FF5722");
-                }
+                });
 
-                if(nodeData.NodeName==="Call"){
-                    for (const [key, value] of Object.entries(nodeDict)) {
-                        if(value.NodeName==="Function"){
-                            if(value.FunctionIdentity==nodeData.FunctionIdentity){
-                                var nodeNumber=parseInt(key.replace("node",""))+1
-                                var functionNode= svg.querySelector("#node"+nodeNumber)
-                                drawDottedLine(nodeGroup, functionNode)
-                            }
-                        }
-                    }
-                }
+                nodeGroup.addEventListener("dblclick", function () {
+                    const nodeId = nodeGroup.querySelector("title").textContent.trim();
+                    const nodeData = nodeDict[nodeId];
+                    toggleChildren(nodeData.original, hasInvisibleChild(nodeData.original))
+                    updateGraph()
+                });
 
-                if(nodeData.NodeName==="Function"){
-                    for (const [key, value] of Object.entries(nodeDict)) {
-                        if(value.NodeName==="Call"){
-                            if(value.FunctionIdentity==nodeData.FunctionIdentity){
-                                var nodeNumber=parseInt(key.replace("node",""))+1
-                                var functionNode= svg.querySelector("#node"+nodeNumber)
-                                drawDottedLine(nodeGroup, functionNode)
-                            }
-                        }
-                    }
-                }
+                nodeGroup.addEventListener("click", function () {
+                    const nodeId = nodeGroup.querySelector("title").textContent.trim();
 
-            });
+                    setInfoDiv(nodeGroup)
 
-            function drawDottedLine(node1, node2) {
-                const bbox1 = node1.getBBox();
-                const bbox2 = node2.getBBox();
+                    unmarkSelected(svg);
+                    selectedNodeId = nodeId;
+                    markSelected(svg, selectedNodeId);
 
-                const center1 = { x: bbox1.x + bbox1.width / 2, y: bbox1.y + bbox1.height / 2 };
-                const center2 = { x: bbox2.x + bbox2.width / 2, y: bbox2.y + bbox2.height / 2 };
-
-                function getEdgeMidpoints(bbox) {
-                    return [
-                        { x: bbox.x + bbox.width / 2, y: bbox.y },                    // Top
-                        { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height },        // Bottom
-                        { x: bbox.x,               y: bbox.y + bbox.height / 2 },       // Left
-                        { x: bbox.x + bbox.width,  y: bbox.y + bbox.height / 2 }        // Right
-                    ];
-                }
-
-                function getNearestMidpoint(midpoints, target) {
-                    let nearest = midpoints[0];
-                    let minDist = Math.hypot(midpoints[0].x - target.x, midpoints[0].y - target.y);
-                    midpoints.forEach(point => {
-                        const dist = Math.hypot(point.x - target.x, point.y - target.y);
-                        if (dist < minDist) {
-                            minDist = dist;
-                            nearest = point;
-                        }
-                    });
-                    return nearest;
-                }
-
-                const midpoints1 = getEdgeMidpoints(bbox1);
-                const midpoints2 = getEdgeMidpoints(bbox2);
-
-                const point1 = getNearestMidpoint(midpoints1, center2);
-                const point2 = getNearestMidpoint(midpoints2, center1);
-
-
-                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                line.setAttribute("x1", point1.x);
-                line.setAttribute("y1", point1.y);
-                line.setAttribute("x2", point2.x);
-                line.setAttribute("y2", point2.y);
-                line.setAttribute("stroke", "#000");
-                line.setAttribute("stroke-dasharray", "5,5");
-                line.setAttribute("stroke-width", "2");
-                line.classList.add("dotted-line");
-
-                const graph = svg.querySelector(".graph");
-                graph.appendChild(line);
+                    removeAllDottedLines()
+                    drawAllDottedLines(nodeGroup)
+                });
+                nodeGroup.handlersAdded = true;
             }
 
         });
+
     }
 
     const input = document.getElementById('filter-word');
@@ -283,12 +198,12 @@
     input.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
             filterTree(obj, "NodeType", input.value)
-            dotSource = createDotSource(obj);
-            renderGraph()
+            updateGraph()
         }
     });
 
-    window.addEventListener("load", renderGraph);
+    initGraphviz();
+    //window.addEventListener("load", initGraphviz);
 </script>
 </body>
 </html>
