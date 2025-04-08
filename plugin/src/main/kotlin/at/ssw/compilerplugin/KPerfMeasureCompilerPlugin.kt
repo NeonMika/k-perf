@@ -18,9 +18,7 @@ import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.ADAPTER_FOR_CALLABLE_REFERENCE
-import org.jetbrains.kotlin.ir.expressions.IrBody
-import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.addArgument
+import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
@@ -513,6 +511,17 @@ class PerfMeasureExtension2(
                     )
                 )
         }
+
+        val stringBuilderNew: IrField = pluginContext.irFactory.buildField {
+            name = Name.identifier("_stringBuilder2")
+            type = stringBuilderClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callHelper { stringBuilderConstructor() }
+        }
+        compareFieldDumps(stringBuilder.dump(), stringBuilderNew.dump(), "stringBuilder")
+
         firstFile.declarations.add(stringBuilder)
         stringBuilder.parent = firstFile
 
@@ -549,6 +558,22 @@ class PerfMeasureExtension2(
         }
         firstFile.declarations.add(randomNumber)
         randomNumber.parent = firstFile
+
+        val randomNumber2 = pluginContext.irFactory.buildField {
+            name = Name.identifier("_randNumber2")
+            type = pluginContext.irBuiltIns.intType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
+                callHelper {
+                    randomDefaultObjectClass.call(nextIntFunc)
+                }
+            }
+        }
+        compareFieldDumps(randomNumber.dump(), randomNumber2.dump(), "randomNumber")
+        firstFile.declarations.add(randomNumber2)
+        randomNumber2.parent = firstFile
 
         val bufferedTraceFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileName")
@@ -589,8 +614,27 @@ class PerfMeasureExtension2(
                 })
             }
         }
+
         firstFile.declarations.add(bufferedTraceFileSink)
         bufferedTraceFileSink.parent = firstFile
+
+        val bufferedTraceFileSink2 = pluginContext.irFactory.buildField {
+            name = Name.identifier("_bufferedTraceFileSink2")
+            type = rawSinkClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
+                callHelper {
+                    systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
+                        .chain(bufferedFunc)
+                }
+            }
+        }
+        compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink2.dump(), "bufferedTraceFileSink")
+
+        firstFile.declarations.add(bufferedTraceFileSink2)
+        bufferedTraceFileSink2.parent = firstFile
 
         val bufferedSymbolsFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileName")
@@ -672,7 +716,7 @@ class PerfMeasureExtension2(
 
             // assertion: funMarkNowViaClass == funMarkNow
 
-            return pluginContext.irFactory.buildFun {
+            val enterMethod = pluginContext.irFactory.buildFun {
                 name = Name.identifier("_enter_method")
                 returnType = timeMarkClass.defaultType
             }.apply {
@@ -719,6 +763,36 @@ class PerfMeasureExtension2(
                     })
                 }
             }
+
+            val enterMethodNew = pluginContext.irFactory.buildFun {
+                name = Name.identifier("_enter_method_new")
+                returnType = timeMarkClass.defaultType
+            }.apply {
+                addValueParameter {
+                    name = Name.identifier("methodId")
+                    type = pluginContext.irBuiltIns.intType
+                }
+
+                body = DeclarationIrBuilder(
+                    pluginContext,
+                    symbol,
+                    startOffset,
+                    endOffset
+                ).irBlockBody{
+                    functionBodyHelper {
+                        if (STRINGBUILDER_MODE) {
+                            +stringBuilderClass.call(stringBuilderAppendStringFunc, ">;")
+                            +stringBuilderClass.call(stringBuilderAppendIntFunc, valueParameters[0])
+                            +stringBuilderClass.call(stringBuilderAppendStringFunc, "\n")
+                        } else {
+                            +bufferedTraceFileSink.call(writeStringFunc, irConcat(">;", valueParameters[0], "\n"))
+                        }
+                        timeSourceMonotonicClass.call(funMarkNow).buildReturn()
+                    }
+                }
+            }
+            compareFieldDumps(enterMethod.dump(), enterMethodNew.dump(), "_enter_method")
+            return enterMethod
         }
 
         val enterFunc = buildEnterFunction()
@@ -758,7 +832,7 @@ class PerfMeasureExtension2(
                     type = pluginContext.irBuiltIns.anyNType
                 } */
 
-                body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
+                val oldBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     // Duration
                     //TODO MS3 simplify temp var creation like this:
                     //val temp0 = secondParam.elapsedNow()
@@ -806,6 +880,25 @@ class PerfMeasureExtension2(
                         }
                     }
                 }
+                body = oldBody
+                val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
+                    functionBodyHelper {
+                        val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow).build())
+                        val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
+                        val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp).build())
+
+                        if (STRINGBUILDER_MODE) {
+                            +stringBuilder.call(stringBuilderAppendStringFunc, "<;")
+                            +stringBuilder.call(stringBuilderAppendIntFunc, valueParameters[0])
+                            +stringBuilder.call(stringBuilderAppendStringFunc, ";")
+                            +stringBuilder.call(stringBuilderAppendLongFunc, elapsedMicros)
+                            +stringBuilder.call(stringBuilderAppendStringFunc, "\n")
+                        } else {
+                            +bufferedTraceFileSink.call(writeStringFunc, irConcat("<;", valueParameters[0], ";", elapsedMicros, "\n"))
+                        }
+                    }
+                }
+                compareFieldDumps(oldBody.dump(), newBody.dump(), "testBodyWithTempVar")
             }
         }
 
@@ -1008,6 +1101,7 @@ class PerfMeasureExtension2(
         appendToDebugFile("\n")
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun compareConstructorSymbols(original: IrConstructorSymbol, new: IrConstructorSymbol?) {
         if (new == null) {
             appendToDebugFile("New constructor returned null for ${original.owner.parent.kotlinFqName}\n\n")
@@ -1021,5 +1115,26 @@ class PerfMeasureExtension2(
             appendToDebugFile("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
         }
         appendToDebugFile("\n")
+    }
+
+    private fun compareFieldDumps(dump1: String, dump2: String, variableName: String) {
+
+        val normalizedDump1 = dump1.lines()
+        val normalizedDump2 = dump2.lines()
+
+        if (normalizedDump1.size != normalizedDump2.size) {
+            appendToDebugFile("fields $variableName do not match\n\n")
+            return
+        } else {
+            for (i in normalizedDump1.indices) {
+                val line1 = normalizedDump1[i].trim().split(" ").filter { !it.contains(variableName) }.joinToString(" ")
+                val line2 = normalizedDump1[i].trim().split(" ").filter { !it.contains(variableName) }.joinToString(" ")
+                if (line1 != line2) {
+                    appendToDebugFile("fields $variableName do not match\n\n")
+                    return
+                }
+            }
+            appendToDebugFile("fields $variableName match\n\n")
+        }
     }
 }
