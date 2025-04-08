@@ -1,6 +1,8 @@
 package at.ssw.compilerplugin
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.constructors
@@ -82,7 +84,6 @@ fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
  * @return The found function or null if it was not found.
  */
 fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
-    //TODO ohne pluginContext
     val (functionName, params) = parseFunctionParameters(pluginContext, signature)
 
     return this.functions
@@ -118,6 +119,25 @@ fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: Str
 }
 
     /**
+     * Returns the class type of the variable if the type is a class type.
+     *
+     * @throws IllegalArgumentException if the type is not a class type.
+     * @return The class type of the variable.
+     */
+fun IrVariable.getTypeClass() = this.type.getClass() ?: throw IllegalArgumentException("Type is not a class")
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+    /**
+     * Finds a property by its name in the class type of the variable.
+     *
+     * @param name The name of the property to find.
+     * @throws IllegalArgumentException if the property is not found.
+     * @return The found property if it exists.
+     */
+fun IrVariable.findProperty(name: String): IrProperty = this.getTypeClass().properties.firstOrNull() { it.name.asString().lowercase() == name.lowercase() } ?: throw IllegalArgumentException("Property $name not found")
+
+
+    /**
      * Finds a constructor by its signature in the given package or class.
      *
      * @param signature The signature of the constructor to find. It should be in the format
@@ -151,7 +171,7 @@ fun IrPluginContext.findConstructor(signature: String, ignoreNullability: Boolea
      * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
      * @return The found function symbol or null if it was not found.
      */
-    //TODO allow default paramets without mentioning them in signature
+    //TODO allow default parameters without mentioning them in signature
 fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
     val (packageName, className, functionPart, packageForFindClass) = parseSignature(signature)
     val (functionName, params) = parseFunctionParameters(this, functionPart)

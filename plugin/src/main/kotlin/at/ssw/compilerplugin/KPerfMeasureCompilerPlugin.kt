@@ -6,7 +6,6 @@ import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.backend.common.lower.irBlockBody
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.compiler.plugin.*
@@ -519,7 +518,7 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callHelper { stringBuilderConstructor().build() }
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callHelper { stringBuilderConstructor() }
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNew.dump(), "stringBuilder")
 
@@ -568,7 +567,7 @@ class PerfMeasureExtension2(
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 callHelper {
-                    randomDefaultObjectClass.call(nextIntFunc).build()
+                    randomDefaultObjectClass.call(nextIntFunc)
                 }
             }
         }
@@ -629,7 +628,6 @@ class PerfMeasureExtension2(
                 callHelper {
                     systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
                         .chain(bufferedFunc)
-                        .build()
                 }
             }
         }
@@ -885,15 +883,9 @@ class PerfMeasureExtension2(
                 body = oldBody
                 val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     functionBodyHelper {
-                        val elapsedDuration = irTemporary(irCall(funElapsedNow).apply {
-                            dispatchReceiver = irGet(valueParameters[1])
-                        })
-                        val elapsedMicrosProp: IrProperty =
-                            elapsedDuration.type.getClass()!!.properties.single { it.name.asString() == "inWholeMicroseconds" }
-
-                        val elapsedMicros = irTemporary(irCall(elapsedMicrosProp.getter!!).apply {
-                            dispatchReceiver = irGet(elapsedDuration)
-                        })
+                        val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow).build())
+                        val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
+                        val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp).build())
 
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.call(stringBuilderAppendStringFunc, "<;")

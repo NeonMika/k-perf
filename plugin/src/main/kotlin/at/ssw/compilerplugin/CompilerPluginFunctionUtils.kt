@@ -31,8 +31,9 @@ fun IrBlockBodyBuilder.functionBodyHelper(block: IrCallDsl.() -> Unit) {
  *              the IR call expression to be included in the expression body.
  * @return An `IrExpressionBody` containing the constructed IR expression.
  */
-fun DeclarationIrBuilder.callHelper(block: IrCallDsl.() -> IrExpression): IrExpressionBody {
-    return irExprBody(IrCallDsl(this).block())
+fun DeclarationIrBuilder.callHelper(block: IrCallDsl.() -> IrCallDsl.ChainableCall): IrExpressionBody {
+    val helper = IrCallDsl(this)
+    return irExprBody(helper.block().build())
 }
 
 /**
@@ -46,20 +47,37 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
     /**
      * Call a function on a property or other symbol.
      *
-     * @param func The function symbol to call
+     * @param func The function to call. Can be a property, then the getter is called
      * @param args Variable number of arguments to pass to the function
      * @throws IllegalArgumentException if the number of arguments does not match the number of parameters
      * @throws IllegalArgumentException if the property does not have a getter
+     * @throws IllegalArgumentException if the provided function to call is not callable (no property or function(symbol))
      * @throws IllegalStateException if the field is not a top-level field
      * @return A ChainableCall that can be further chained
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun IrSymbol.call(func: IrFunctionSymbol, vararg args: Any): ChainableCall {
+    fun IrSymbol.call(func: Any, vararg args: Any): ChainableCall {
+        //TODO: restrict?
+        val functionCall : IrFunctionSymbol = when (func) {
+            is IrFunctionSymbol -> func
+            is IrFunction -> func.symbol
+            is IrProperty -> {
+                val getter = func.getter
+                    ?: throw IllegalArgumentException("IrCallHelper: Property ${func.name} does not have a getter")
+                getter.symbol
+            }
+            is IrPropertySymbol -> {
+                val getter = func.owner.getter
+                    ?: throw IllegalArgumentException("IrCallHelper: Property ${func.owner.name} does not have a getter")
+                getter.symbol
+            }
+            else -> throw IllegalArgumentException("IrCallHelper: Unsupported function type: ${func::class.simpleName}")
+        }
 
         val receiver = when (this) {
             is IrPropertySymbol -> {
                 val getter = owner.getter
-                    ?: throw IllegalArgumentException("IrCallHelper: Property ${this.owner.name} does not have a getter")
+                    ?: throw IllegalArgumentException("IrCallHelper: Property ${owner.name} does not have a getter")
                 builder.irCall(getter)
             }
             is IrFieldSymbol -> {
@@ -71,29 +89,30 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             }
             is IrValueSymbol -> builder.irGet(owner)
             is IrClassSymbol -> builder.irGetObject(this)
+            is IrVariableSymbol -> builder.irGet(owner)
             else -> null
         }
 
-        val nonDefaultParameters = func.owner.valueParameters.filter { !it.hasDefaultValue() }
+        val nonDefaultParameters = functionCall.owner.valueParameters.filter { !it.hasDefaultValue() }
         if(nonDefaultParameters.size != args.size) {
             throw IllegalArgumentException("Expected ${nonDefaultParameters.size} arguments, got ${args.size}")
         }
 
         val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
 
-        val dispatchReceiver = if (func.owner.extensionReceiverParameter == null && func.owner.dispatchReceiverParameter != null) {
+        val dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
             receiver
         } else {
             null
         }
 
-        val extensionReceiver = if (func.owner.extensionReceiverParameter != null) {
+        val extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
             receiver
         } else {
             null
         }
 
-        return ChainableCall(builder, func, dispatchReceiver, extensionReceiver, newArgs)
+        return ChainableCall(builder, functionCall, dispatchReceiver, extensionReceiver, newArgs)
     }
 
     /**
@@ -103,7 +122,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return A ChainableCall that can be further chained
      */
-    fun IrProperty.call(func: IrFunctionSymbol, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    fun IrProperty.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
 
     /**
      * Calls a function on this field with the given arguments.
@@ -112,7 +131,34 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return A ChainableCall that can be further chained
      */
-    fun IrField.call(func: IrFunctionSymbol, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    fun IrField.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+
+    /**
+     * Calls a function on this value parameter with the given arguments.
+     *
+     * @param func The function symbol to call
+     * @param args The arguments to be passed to the function
+     * @return A ChainableCall that can be further chained
+     */
+    fun IrValueParameter.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+
+    /**
+     * Calls a function on this class with the given arguments.
+     *
+     * @param func The function symbol to call
+     * @param args The arguments to be passed to the function
+     * @return A ChainableCall that can be further chained
+     */
+    fun IrClass.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+
+    /**
+     * Calls a function on this variable with the given arguments.
+     *
+     * @param func The function symbol to call
+     * @param args The arguments to be passed to the function
+     * @return A ChainableCall that can be further chained
+     */
+    fun IrVariable.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
 
     /**
      * Calls this function with the given arguments and returns a ChainableCall to continue building
