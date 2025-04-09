@@ -171,7 +171,7 @@ fun IrPluginContext.findConstructor(signature: String, ignoreNullability: Boolea
      * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
      * @return The found function symbol or null if it was not found.
      */
-    //TODO allow default parameters without mentioning them in signature
+    //TODO: should only find something if non default parameters match
 fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
     val (packageName, className, functionPart, packageForFindClass) = parseSignature(signature)
     val (functionName, params) = parseFunctionParameters(this, functionPart)

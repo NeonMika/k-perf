@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.ir.util.*
  * @param block A lambda with a receiver of type `IrCallDsl` used to define
  *              the IR call expressions to be included in the block body.
  */
-fun IrBlockBodyBuilder.functionBodyHelper(block: IrCallDsl.() -> Unit) {
+fun IrBlockBodyBuilder.enableCallDSL(block: IrCallDsl.() -> Unit) {
     val helper = IrCallDsl(this)
     helper.block()
     helper.buildBody(this)
@@ -31,7 +31,7 @@ fun IrBlockBodyBuilder.functionBodyHelper(block: IrCallDsl.() -> Unit) {
  *              the IR call expression to be included in the expression body.
  * @return An `IrExpressionBody` containing the constructed IR expression.
  */
-fun DeclarationIrBuilder.callHelper(block: IrCallDsl.() -> IrCallDsl.ChainableCall): IrExpressionBody {
+fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrCallDsl.ChainableCall): IrExpressionBody {
     val helper = IrCallDsl(this)
     return irExprBody(helper.block().build())
 }
@@ -57,7 +57,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun IrSymbol.call(func: Any, vararg args: Any): ChainableCall {
-        //TODO: restrict?
+        //TODO: restrict - yes probably with generics
         val functionCall : IrFunctionSymbol = when (func) {
             is IrFunctionSymbol -> func
             is IrFunction -> func.symbol
@@ -90,6 +90,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             is IrValueSymbol -> builder.irGet(owner)
             is IrClassSymbol -> builder.irGetObject(this)
             is IrVariableSymbol -> builder.irGet(owner)
+            is IrCall -> this
             else -> null
         }
 
@@ -190,6 +191,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      */
     fun buildBody(irBlockBodyBuilder: IrBlockBodyBuilder) {
         irBlockBodyBuilder.run {
+            //TODO: reihenfolge. Direkt in BlockBodyStatements einfügen und brutal casten
             statements.forEach {
                 +it
             }
@@ -228,6 +230,8 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
          * @param args The arguments to be passed to the function.
          * @return A new ChainableCall instance representing the chained function call.
          */
+        //TODO replace ChainableCall
+        //TODO func type
         fun chain(func: IrFunctionSymbol, vararg args: Any): ChainableCall {
             val receiver = this.build()
             val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
