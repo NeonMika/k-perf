@@ -467,6 +467,8 @@ class PerfMeasureExtension2(
                     it.owner.valueParameters[2].type == pluginContext.irBuiltIns.intType
         }
 
+        //TODO check find function in different versions (generics, default parameters all given, none given, ...)
+        //TODO find functions with java functions have to be perfect match
         val writeStringFuncNew = pluginContext.findFunction("kotlinx/io/writeString(string,int,int)")
         compareFunctionSymbols(writeStringFunc, writeStringFuncNew)
 
@@ -512,13 +514,15 @@ class PerfMeasureExtension2(
                 )
         }
 
+        //TODO simplify field creation
         val stringBuilderNew: IrField = pluginContext.irFactory.buildField {
             name = Name.identifier("_stringBuilder2")
             type = stringBuilderClass.defaultType
             isFinal = false
             isStatic = true
         }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callHelper { stringBuilderConstructor() }
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { stringBuilderConstructor() }
+            //TODO: this.initializer = pluginContext.buildIn(firstFile.symbol)
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNew.dump(), "stringBuilder")
 
@@ -566,7 +570,7 @@ class PerfMeasureExtension2(
             isStatic = true
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callHelper {
+                callExpression {
                     randomDefaultObjectClass.call(nextIntFunc)
                 }
             }
@@ -625,7 +629,8 @@ class PerfMeasureExtension2(
             isStatic = true
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callHelper {
+                callExpression {
+                    //TODO: support function path search by searching for sink in systemFileSystem
                     systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
                         .chain(bufferedFunc)
                 }
@@ -779,7 +784,7 @@ class PerfMeasureExtension2(
                     startOffset,
                     endOffset
                 ).irBlockBody{
-                    functionBodyHelper {
+                    enableCallDSL {
                         if (STRINGBUILDER_MODE) {
                             +stringBuilderClass.call(stringBuilderAppendStringFunc, ">;")
                             +stringBuilderClass.call(stringBuilderAppendIntFunc, valueParameters[0])
@@ -882,7 +887,7 @@ class PerfMeasureExtension2(
                 }
                 body = oldBody
                 val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
-                    functionBodyHelper {
+                    enableCallDSL {
                         val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow).build())
                         val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp).build())
