@@ -38,7 +38,7 @@ function createDotSource(root) {
         fillcolor="${clusterColor}"`);
     }
 
-    let label=typeName;
+    let label=typeName+"\n"+node.NodeType;
     if(caption){
       label+="\\n"+caption;
     }

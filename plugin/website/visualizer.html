@@ -71,13 +71,11 @@
     let dotSource = createDotSource(obj);
 
 
-    // Global variable to store the graphviz instance
     let graphvizInstance;
     let selectedNodeId;
 
     const activeFilters = [];
 
-    // Initialize the graphviz instance (call this once during setup)
     function initGraphviz() {
         const container = document.getElementById("graph-container");
         graphvizInstance = d3.select(container)
@@ -87,16 +85,13 @@
             .fit(true)
             .zoom(true);
 
-        // Initial rendering
         renderGraph(dotSource);
     }
 
-    // Render graph initially
     function renderGraph(dotSource) {
         try {
             const container = document.getElementById("graph-container");
 
-            // Render with graphviz
             graphvizInstance
                 .transition(function () {
                     return d3.transition()
@@ -105,12 +100,11 @@
                 })
                 .renderDot(dotSource)
                 .on("end", function () {
-                    // After rendering is complete
                     const svg = container.querySelector("svg");
                     svg.dataset.originalViewBox = svg.getAttribute("viewBox");
 
                     svg.addEventListener("contextmenu", function (event) {
-                        //event.preventDefault();
+                        event.preventDefault();
                     });
 
                     addNodeClickHandlers(svg);
@@ -134,7 +128,6 @@
         }
     }
 
-    // Update the graph with a new dot source and animate the transition
     function updateGraph() {
         dotSource = createDotSource(obj);
         try {
@@ -146,7 +139,6 @@
 
             removeAllDottedLines()
 
-            // Configure the transition
             graphvizInstance
                 .transition(function () {
                     return d3.transition()
@@ -168,7 +160,6 @@
         }
     }
 
-    // Helper function to set up the download button
     function setUpDownloadButton(svg) {
         document.getElementById("download-svg").addEventListener("click", function () {
             const svgData = new XMLSerializer().serializeToString(svg);
