@@ -143,3 +143,29 @@ function drawDottedLine(node1, node2, svg) {
     const graph = svg.querySelector(".graph");
     graph.appendChild(line);
 }
+
+function getClusterColor(type){
+    if(document.getElementById('disable-clustering').checked){
+        return "";
+    }
+    switch (type) {
+        case "IrFileImpl": return "#e3f2fd";
+        case "IrFunctionImpl": return "#e8f5e9";
+        case "IrBlockBodyImpl": return "#fff8e1";
+        case "IrClassImpl":  return "#ffebee";
+    }
+    return "";
+}
+
+function getNodeShape(type){
+    if(document.getElementById('disable-clustering').checked){
+        return "";
+    }
+    switch (type) {
+        case "IrFileImpl": return "tra";
+        case "IrFunctionImpl": return "diamond";
+        case "IrBlockBodyImpl": return "hexagon";
+        case "IrClassImpl":  return "trapezium";
+    }
+    return "ellipse";
+}

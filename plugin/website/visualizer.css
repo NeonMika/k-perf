@@ -43,6 +43,12 @@ h1, h2 {
     word-wrap: break-word;
 }
 
+#leftCol {
+    flex: 2;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
 #top{
     display: flex;
     flex-direction: row;
@@ -50,19 +56,49 @@ h1, h2 {
 
 button {
     background-color: #4CAF50;
-    border: none;
     color: white;
     padding: 8px 16px;
     text-align: center;
-    text-decoration: none;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     font-size: 14px;
     margin-left: 20px;
     cursor: pointer;
     border-radius: 4px;
     height: 40px;
     align-self: center;
+    border: 1px solid #ccc;
+    gap: 5px;
 }
+
+button:hover {
+    background-color: #e0e0e0;
+}
+
+button:disabled {
+    background-color: #d3d3d3;
+    cursor: default;
+}
+
+button:disabled:hover {
+    background-color: #d3d3d3;
+}
+
+.horizontal {
+    display: flex;
+    flex-direction: row;
+}
+
+.vertical {
+    display: flex;
+    flex-direction: column;
+}
+
+.spacebetween{
+    justify-content: space-between;
+}
+
+
 
 label {
     text-align: center;
@@ -76,14 +112,72 @@ label {
     margin-right: 10px;
 }
 
-input {
-    height: 40px;
-    align-self: center;
-}
-
 .no-select {
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+}
+
+.filter-popup {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    width: 320px;
+}
+
+.filter-popup h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.filter-popup button{
+    height: 33px;
+    width: 100px;
+    display:table-cell;
+}
+
+.filter-row {
+    display: flex;
+    gap: 10px;
+    height: 40px;
+}
+
+.filter-row select, .filter-row input {
+    padding: 5px;
+    flex: 1;
+}
+
+.filter-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+.active-filters {
+    margin-top: 15px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #e9f5ff;
+    border-radius: 4px;
+    padding: 5px 10px;
+    margin: 3px;
+    font-size: 14px;
+}
+
+.filter-tag-close {
+    margin-left: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #555;
 }

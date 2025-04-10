@@ -1,17 +1,17 @@
 function assignNodeIds(root) {
   let idCount = 0;
 
-  function traverse(node) {
+  function traverse(node, depth) {
     node.nodeID = "node" + (idCount++);
-    node.visible = true;
     if (Array.isArray(node.Children)) {
       for (const child of node.Children) {
-        traverse(child);
+        traverse(child, depth+1);
       }
     }
   }
 
-  traverse(root);
+  traverse(root, 0);
+  collapseByDepth(root, 3)
 }
 
 function createDotSource(root) {
@@ -29,6 +29,15 @@ function createDotSource(root) {
     const typeName = node.NodeName || "";
     const caption = node.Caption || "";
 
+    const clusterColor = getClusterColor(node.NodeType)
+
+    if(clusterColor){
+      dotBuilder.push(`subgraph cluster_${node.nodeID} {
+        style="filled,rounded";
+        color="${clusterColor}";
+        fillcolor="${clusterColor}"`);
+    }
+
     let label=typeName;
     if(caption){
       label+="\\n"+caption;
@@ -39,11 +48,10 @@ function createDotSource(root) {
       label+="\\n➖";
     }
 
-
+    const shape=getNodeShape(node.NodeType)
     if(node.visible){
-      dotBuilder.push(`    ${node.nodeID} [id="${node.nodeID}", label="${label}"];`);
+      dotBuilder.push(`    ${node.nodeID} [id="${node.nodeID}", label="${label}", shape="${shape}"];`);
 
-      //dotBuilder.push(`    ${node.nodeID} [id="${node.nodeID}", label=${cell}];`);
 
       if (Array.isArray(node.Children)) {
         for (const child of node.Children) {
@@ -53,6 +61,9 @@ function createDotSource(root) {
           }
         }
       }
+    }
+    if(clusterColor){
+      dotBuilder.push(`}`);
     }
   }
 
@@ -87,11 +98,11 @@ function createNodeDict(root) {
   return nodeDict;
 }
 
-function filterTree(root, key, filterValue) {
+function filterTree(root, filters) {
   function visit(node) {
     let currentNodeVisible = false;
 
-    if (typeof node[key] === "string" && node[key].includes(filterValue)) {
+    if (isFiltered(node, filters)) {
       currentNodeVisible = true;
     }
 
@@ -108,14 +119,74 @@ function filterTree(root, key, filterValue) {
     return currentNodeVisible;
   }
 
-  visit(root);
+  if(filters.length>0){
+    visit(root);
+  }else{
+    collapseByDepth(root, 3)
+  }
+}
+
+function isFiltered(node, filters) {
+  const filtersByType = {};
+  for (const filter of filters) {
+    const { type, value } = filter;
+    if (!filtersByType[type]) {
+      filtersByType[type] = [];
+    }
+    filtersByType[type].push(value);
+  }
+
+  for (const type in filtersByType) {
+    const values = filtersByType[type];
+    let typeMatched = false;
+
+    for (const value of values) {
+      if (typeof node[type] === "string" && node[type].includes(value)) {
+        typeMatched = true;
+        break;
+      }
+    }
+
+    if (!typeMatched) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function collapseByDepth(root, maxDepth) {
+  let idCount = 0;
+
+  function traverse(node, depth) {
+    if(depth<maxDepth){
+      node.visible = true;
+    }else{
+      node.visible = false;
+    }
+    if (Array.isArray(node.Children)) {
+      for (const child of node.Children) {
+        traverse(child, depth+1);
+      }
+    }
+  }
+
+  traverse(root, 0);
 }
 
 function toggleChildren(node, visibility){
   if (Array.isArray(node.Children)) {
     for (const child of node.Children) {
       child.visible = visibility;
-      toggleChildren(child, visibility);
+    }
+  }
+}
+
+function expandAll(node){
+  if (Array.isArray(node.Children)) {
+    for (const child of node.Children) {
+      child.visible = true;
+      expandAll(child);
     }
   }
 }

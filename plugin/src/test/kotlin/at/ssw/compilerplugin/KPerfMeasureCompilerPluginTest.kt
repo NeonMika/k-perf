@@ -292,33 +292,6 @@ fun <T : Comparable<T>> TDArray<T>.max(): T? {
 fun main() {
     // Persons have a name (identifying property), a hobby (delegated to a FileStorage) and an age (delegated to an FileStorage)
 // hobby and age are null by default
-    val markus = Person("Markus")
-    val daniel = Person("Daniel")
-    val sandra = Person("Sandra")
-    // If everything is implemented correct, this prints null hobbies and null ages on the first run, but markus should start completely initialized on a second program run
-    println(markus)
-    println(daniel)
-    println(sandra)
-    // Set all properties, this writes to six files (and creates them if not existing)
-    markus.age = 29
-    daniel.age = 24
-    sandra.age = 27
-    markus.hobby = "Board gaming"
-    daniel.hobby = "Geocaching"
-    sandra.hobby = "Breakdance"
-    println(markus)
-    println(daniel)
-    println(sandra)
-    // Deletes the two property files
-    daniel.age = null
-    sandra.hobby = null
-
-// Two properties show as null (daniel's age and sandra's hobby)
-    println(markus)
-    println(daniel)
-    println(sandra)
-
-
     val arr: TDArray<Int> = TDArray(15 to 10) { r, c -> (r + 1) * (c + 1) }
     /*
     1 2 3 4 5 6 7 8 9 10

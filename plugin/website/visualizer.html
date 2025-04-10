@@ -4,7 +4,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Kotlin Compiler IR Visualizer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-graphviz/5.0.2/d3-graphviz.min.js"></script>
     <script src="visualizer.js"></script>
     <script src="helper.js"></script>
@@ -14,19 +14,56 @@
 <div class="container">
     <div id="top">
         <h1>Kotlin Compiler IR Visualization</h1>
-        <label for="filter-word">Filter:</label>
-        <input type="text" id="filter-word"></input>
+        <button id="open-filter" class="filter-button">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 2H1L7 9.5V14L9 15V9.5L15 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Filters
+            <span id="filter-count" style="background: #ddd; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; justify-content: center; align-items: center; font-size: 12px;">0</span>
+        </button>
         <button id="download-svg">Download SVG</button>
+        <label for="disable-clustering">Disable Clustering:</label>
+        <input type="checkbox" id="disable-clustering">
     </div>
+
+    <div id="filter-popup" class="filter-popup">
+        <h3>Filter Nodes</h3>
+        <div class="filter-row">
+            <select id="filter-type">
+                <option value="NodeType">Node Type</option>
+                <option value="Name">Name</option>
+            </select>
+            <input type="text" id="filter-value" placeholder="Filter value">
+        </div>
+        <div class="filter-buttons">
+            <button id="add-filter">Add Filter</button>
+        </div>
+        <div class="active-filters">
+            <div class="horizontal spacebetween">
+                <h4>Active Filters</h4>
+                <button id="clear-filters">Clear All</button>
+            </div>
+            <div id="active-filter-tags"></div>
+        </div>
+    </div>
+
     <div class="content-wrapper">
         <div id="graph-container" class="graph-container no-select"></div>
-        <div id="selected-node-info">
-            <h3>Click on any node to see details here</h3>
+        <div id="leftCol" class="spacebetween vertical">
+            <div id="selected-node-info">
+                <h3>Click on any node to see details here</h3>
+            </div>
+            <button disabled="true" id="expandAllChildren">Expand All Children</button>
         </div>
+
     </div>
 </div>
 
 <script>
+    const checkbox = document.getElementById('disable-clustering');
+    const expandBtn = document.getElementById('expandAllChildren');
+
+
     const jsonString = getJSON();
     const obj = JSON.parse(jsonString);
     assignNodeIds(obj);
@@ -37,6 +74,8 @@
     // Global variable to store the graphviz instance
     let graphvizInstance;
     let selectedNodeId;
+
+    const activeFilters = [];
 
     // Initialize the graphviz instance (call this once during setup)
     function initGraphviz() {
@@ -115,7 +154,7 @@
                         .ease(d3.easeLinear);
                 })
                 .tweenShapes(true)      // Enable shape tweening
-                .tweenPaths(true)       // Enable path tweening
+                .tweenPaths(false)       // Enable path tweening
                 .convertEqualSidedPolygons(true)  // Helps with smoother transitions
                 .growEnteringEdges(true)  // Animate new edges growing
                 .renderDot(dotSource);
@@ -171,10 +210,13 @@
                     const nodeId = nodeGroup.querySelector("title").textContent.trim();
                     const nodeData = nodeDict[nodeId];
                     toggleChildren(nodeData.original, hasInvisibleChild(nodeData.original))
+
                     updateGraph()
                 });
 
                 nodeGroup.addEventListener("click", function () {
+                    expandBtn.disabled=false;
+
                     const nodeId = nodeGroup.querySelector("title").textContent.trim();
 
                     setInfoDiv(nodeGroup)
@@ -193,17 +235,106 @@
 
     }
 
-    const input = document.getElementById('filter-word');
 
-    input.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            filterTree(obj, "NodeType", input.value)
-            updateGraph()
+    checkbox.addEventListener('change', function (event) {
+        updateGraph();
+    });
+
+    expandBtn.addEventListener('click', function (event) {
+        expandAll(nodeDict[selectedNodeId].original);
+        updateGraph();
+    });
+
+    const filterButton = document.getElementById('open-filter');
+    const filterPopup = document.getElementById('filter-popup');
+    const addFilterBtn = document.getElementById('add-filter');
+    const clearFiltersBtn = document.getElementById('clear-filters');
+    const filterType = document.getElementById('filter-type');
+    const filterValue = document.getElementById('filter-value');
+    const activeFilterTags = document.getElementById('active-filter-tags');
+    const filterCount = document.getElementById('filter-count');
+
+    filterButton.addEventListener('click', function() {
+        if (filterPopup.style.display === 'block') {
+            filterPopup.style.display = 'none';
+        } else {
+            filterPopup.style.display = 'block';
+            const rect = filterButton.getBoundingClientRect();
+            filterPopup.style.top = `${rect.bottom + 5}px`;
+            filterPopup.style.left = `${rect.left}px`;
+            filterValue.focus();
         }
     });
 
+    document.addEventListener('click', function(event) {
+        if (!filterPopup.contains(event.target) && event.target !== filterButton && event.target.className!=="filter-tag-close") {
+            filterPopup.style.display = 'none';
+        }
+    });
+
+    addFilterBtn.addEventListener('click', function() {
+        if (filterValue.value.trim() === '') return;
+
+        const filter = {
+            type: filterType.value,
+            value: filterValue.value.trim()
+        };
+
+        const existingFilter = activeFilters.find(f =>
+            f.type === filter.type && f.value === filter.value
+        );
+
+        if (!existingFilter) {
+            activeFilters.push(filter);
+            updateFilterTags();
+            filterValue.value = '';
+            updateFilterCount();
+            updateGraph();
+        }
+    });
+
+    filterValue.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            addFilterBtn.click();
+        }
+    });
+
+    clearFiltersBtn.addEventListener('click', function() {
+        activeFilters.length = 0;
+        updateFilterTags();
+        updateFilterCount();
+        updateGraph();
+    });
+
+    function updateFilterTags() {
+        filterTree(obj, activeFilters)
+        activeFilterTags.innerHTML = '';
+        activeFilters.forEach((filter, index) => {
+            const tag = document.createElement('span');
+            tag.className = 'filter-tag';
+            tag.innerHTML = `
+                ${filter.type}: ${filter.value}
+                <span class="filter-tag-close" data-index="${index}">×</span>
+            `;
+            activeFilterTags.appendChild(tag);
+        });
+
+        document.querySelectorAll('.filter-tag-close').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                activeFilters.splice(index, 1);
+                updateFilterTags();
+                updateFilterCount();
+                updateGraph();
+            });
+        });
+    }
+
+    function updateFilterCount() {
+        filterCount.textContent = activeFilters.length;
+    }
+
     initGraphviz();
-    //window.addEventListener("load", initGraphviz);
 </script>
 </body>
 </html>
