@@ -266,6 +266,7 @@ class PerfMeasureExtension2(
 
         fun IrBuilderWithScope.call(function: IrFunction, receiver : Any?, vararg parameters: Any?) = this.call(pluginContext, function, receiver, *parameters)
         fun IrBuilderWithScope.call(function: IrSimpleFunctionSymbol, receiver : Any?, vararg parameters: Any?) = this.call(pluginContext, function, receiver, *parameters)
+        fun IrBuilderWithScope.call(function: String, receiver : Any?, vararg parameters: Any?) = this.call(pluginContext, findFunction(function), receiver, *parameters)
         fun IrBuilderWithScope.concat(vararg parameters: Any?) = this.irConcat(pluginContext, *parameters)
         // #endregion local shortcuts
 
@@ -302,7 +303,7 @@ class PerfMeasureExtension2(
 
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.findFunction("sink(*)") // Test Case 120
-        val bufferedFunc = findFunction("kotlinx/io/buffered") // Test Case 112
+        val bufferedFunc = findFunction("kotlinx/io/buffered: kotlinx/io/Sink") // Test Case 112
 
         debugFile.appendText("1")
         debugFile.appendText(pluginContext.referenceFunctions(
@@ -539,9 +540,7 @@ class PerfMeasureExtension2(
                         +call(writeStringFunc, bufferedTraceFileSink, concat(">;", valueParameters[0], "\n"))
                     }
 
-                    +irReturn(irCall(funMarkNow).also { call ->
-                        call.dispatchReceiver = irGetObject(timeSourceMonotonicClass)
-                    })
+                    +irReturn(call(funMarkNow, timeSourceMonotonicClass))
                 }
             }
         }
