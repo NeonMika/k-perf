@@ -17,9 +17,7 @@ import org.jetbrains.kotlin.ir.util.*
  *              the IR call expressions to be included in the block body.
  */
 fun IrBlockBodyBuilder.enableCallDSL(block: IrCallDsl.() -> Unit) {
-    val helper = IrCallDsl(this)
-    helper.block()
-    helper.buildBody(this)
+    IrCallDsl(this).block()
 }
 
 
@@ -31,9 +29,8 @@ fun IrBlockBodyBuilder.enableCallDSL(block: IrCallDsl.() -> Unit) {
  *              the IR call expression to be included in the expression body.
  * @return An `IrExpressionBody` containing the constructed IR expression.
  */
-fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrCallDsl.ChainableCall): IrExpressionBody {
-    val helper = IrCallDsl(this)
-    return irExprBody(helper.block().build())
+fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrFunctionAccessExpression): IrExpressionBody {
+    return irExprBody(IrCallDsl(this).block())
 }
 
 /**
@@ -56,7 +53,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @return A ChainableCall that can be further chained
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun IrSymbol.call(func: Any, vararg args: Any): ChainableCall {
+    fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
         //TODO: restrict - yes probably with generics
         val functionCall : IrFunctionSymbol = when (func) {
             is IrFunctionSymbol -> func
@@ -101,19 +98,19 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
 
         val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
 
-        val dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
-            receiver
-        } else {
-            null
+        return builder.irCall(functionCall).apply {
+            dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
+                receiver
+            } else {
+                null
+            }
+            extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
+                receiver
+            } else {
+                null
+            }
+            newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
         }
-
-        val extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
-            receiver
-        } else {
-            null
-        }
-
-        return ChainableCall(builder, functionCall, dispatchReceiver, extensionReceiver, newArgs)
     }
 
     /**
@@ -123,7 +120,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return A ChainableCall that can be further chained
      */
-    fun IrProperty.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    fun IrProperty.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
     /**
      * Calls a function on this field with the given arguments.
@@ -132,7 +129,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return A ChainableCall that can be further chained
      */
-    fun IrField.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    fun IrField.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
     /**
      * Calls a function on this value parameter with the given arguments.
@@ -141,7 +138,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return A ChainableCall that can be further chained
      */
-    fun IrValueParameter.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    fun IrValueParameter.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
     /**
      * Calls a function on this class with the given arguments.
@@ -150,7 +147,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return A ChainableCall that can be further chained
      */
-    fun IrClass.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    fun IrClass.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
     /**
      * Calls a function on this variable with the given arguments.
@@ -159,7 +156,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return A ChainableCall that can be further chained
      */
-    fun IrVariable.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    fun IrVariable.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
     /**
      * Calls this function with the given arguments and returns a ChainableCall to continue building
@@ -168,7 +165,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return A ChainableCall that can be further chained
      */
-    operator fun IrFunction.invoke(vararg args: Any): ChainableCall = this.symbol.call(this.symbol, *args)
+    operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this.symbol.call(this.symbol, *args)
 
     /**
      * Calls this function with the given arguments and returns a ChainableCall to continue building
@@ -177,24 +174,13 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return A ChainableCall that can be further chained
      */
-    operator fun IrFunctionSymbol.invoke(vararg args: Any) : ChainableCall = this.call(this, *args)
+    operator fun IrFunctionSymbol.invoke(vararg args: Any) : IrFunctionAccessExpression = this.call(this, *args)
 
-    /**
-     * Constructs the body of an IR block by adding the accumulated statements.
-     *
-     * This function iterates over the statements that have been collected in
-     * the DSL by unary plus operators and adds each one to the provided `IrBlockBodyBuilder`. The
-     * `IrBlockBodyBuilder` is then responsible for constructing the IR block
-     * body using these statements.
-     *
-     * @param irBlockBodyBuilder The builder used to create the IR block body.
-     */
-    fun buildBody(irBlockBodyBuilder: IrBlockBodyBuilder) {
-        irBlockBodyBuilder.run {
-            //TODO: reihenfolge. Direkt in BlockBodyStatements einfügen und brutal casten
-            statements.forEach {
-                +it
-            }
+    fun IrFunctionAccessExpression.chain(func: IrFunctionSymbol, vararg args: Any): IrFunctionAccessExpression {
+        val newArgs = args.map { builder.convertToIrExpression(it) }
+        return builder.irCall(func).apply {
+            extensionReceiver = this@chain
+            newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
         }
     }
 
@@ -210,71 +196,6 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             concat.addArgument(builder.convertToIrExpression(param))
         }
         return concat
-    }
-
-    /**
-     * Chainable call class that allows fluid method chaining.
-     */
-    inner class ChainableCall(
-        private val builder: IrBuilderWithScope,
-        private val callee: IrFunctionSymbol,
-        private var dispatchReceiver: IrExpression? = null,
-        private var extensionReceiver: IrExpression? = null,
-        private val args: MutableList<IrExpression> = mutableListOf()
-    ) {
-
-        /**
-         * Chains another function call to the current IR expression chain.
-         *
-         * @param func The function symbol representing the function to be called.
-         * @param args The arguments to be passed to the function.
-         * @return A new ChainableCall instance representing the chained function call.
-         */
-        //TODO replace ChainableCall
-        //TODO func type
-        fun chain(func: IrFunctionSymbol, vararg args: Any): ChainableCall {
-            val receiver = this.build()
-            val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
-
-            return ChainableCall(builder, func, null, receiver, newArgs)
-        }
-
-        /**
-         * Builds an IR function call expression for the current chainable call.
-         *
-         * @return An IrFunctionAccessExpression representing the built function call.
-         */
-        fun build(): IrFunctionAccessExpression {
-            val call = builder.irCall(callee).apply {
-                this.dispatchReceiver = this@ChainableCall.dispatchReceiver
-                this.extensionReceiver = this@ChainableCall.extensionReceiver
-            }
-
-            args.forEachIndexed { index, value ->
-                call.putValueArgument(index, value)
-            }
-
-            return call
-        }
-
-        /**
-         * Adds the built function call to the IR expression chain.
-         *
-         * This function will take the current chainable call and build an IR function call expression.
-         * The resulting expression will then be added to the IR expression chain.
-         */
-        operator fun unaryPlus() {
-            statements.add(this.build())
-        }
-
-
-        /**
-         * Builds an IR return expression for the current chainable call and adds it to the statements list.
-         *
-         * This function constructs an IR return expression using the current chainable call and appends
-         * it to the list of statements. The resulting expression represents the return of the built function call.
-         */
-        fun buildReturn() = statements.add(builder.irReturn(this.build()))
     }
 }
 
@@ -316,7 +237,6 @@ fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
         is IrCall -> irCall(value.symbol)
         is IrExpression -> value
         is IrFunctionAccessExpression -> value
-        is IrCallDsl.ChainableCall -> value.build()
         is IrFunction -> irCall(value)
         is IrProperty -> irCall(value.getter ?: error("IrCallHelper-convertToIrExpression: Property has no getter"))
         is IrField -> irGetField(null, value)
