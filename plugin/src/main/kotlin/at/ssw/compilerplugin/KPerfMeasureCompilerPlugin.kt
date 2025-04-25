@@ -792,7 +792,7 @@ class PerfMeasureExtension2(
                         } else {
                             +bufferedTraceFileSink.call(writeStringFunc, irConcat(">;", valueParameters[0], "\n"))
                         }
-                        timeSourceMonotonicClass.call(funMarkNow).buildReturn()
+                        +irReturn(timeSourceMonotonicClass.call(funMarkNow))
                     }
                 }
             }
@@ -888,9 +888,9 @@ class PerfMeasureExtension2(
                 body = oldBody
                 val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL {
-                        val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow).build())
+                        val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow))
                         val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
-                        val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp).build())
+                        val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
 
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.call(stringBuilderAppendStringFunc, "<;")
