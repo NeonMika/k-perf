@@ -1,16 +1,17 @@
 function assignNodeIds(root) {
   let idCount = 0;
 
-  function traverse(node, depth) {
+  function traverse(node, parent) {
     node.nodeID = "node" + (idCount++);
+    node.parent = parent;
     if (Array.isArray(node.Children)) {
       for (const child of node.Children) {
-        traverse(child, depth+1);
+        traverse(child, node);
       }
     }
   }
 
-  traverse(root, 0);
+  traverse(root, null);
   collapseByDepth(root, 3)
 }
 
@@ -34,7 +35,8 @@ function createDotSource(root) {
     if(clusterColor){
       dotBuilder.push(`subgraph cluster_${node.nodeID} {
         style="filled,rounded";
-        color="${clusterColor}";
+        color="grey";
+        margin=25;
         fillcolor="${clusterColor}"`);
     }
 
@@ -200,6 +202,20 @@ function hasInvisibleChild(node){
     }
   }
   return false;
+}
+
+function getSourceCodeOfNode(node){
+  if (!("StartOffset" in node && "EndOffset" in node) ){
+    return null;
+  }
+  let fileNode = node;
+  while(fileNode!=null && fileNode.NodeType!=="IrFileImpl"){
+    fileNode=fileNode.parent;
+  }
+  if(fileNode==null){
+    return null;
+  }
+  return fileNode.Content.substring(node.StartOffset, node.EndOffset);
 }
 
 function getJSON() {

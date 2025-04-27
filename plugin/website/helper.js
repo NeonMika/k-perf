@@ -34,7 +34,7 @@ function setInfoDiv(nodeGroup){
     infoDiv.appendChild(header);
 
     for (const [key, value] of Object.entries(nodeData)) {
-        if (["nodeID", "NodeName", "Caption", "Dump", "FunctionIdentity", "original", "visible"].includes(key)) continue;
+        if (["nodeID", "NodeName", "Caption", "Dump", "FunctionIdentity", "original", "visible", "Content", "StartOffset", "EndOffset", "parent"].includes(key)) continue;
         const p = document.createElement("p");
         const strong = document.createElement("strong");
         strong.textContent = insertSpaceBeforeCaps(key);
@@ -49,6 +49,19 @@ function setInfoDiv(nodeGroup){
     dumpParagraph.append(dumpStrong);
     dumpParagraph.appendChild(document.createTextNode(`: ${nodeData.Dump}`));
     infoDiv.appendChild(dumpParagraph);
+
+    const dumpButton = document.createElement("button");
+    dumpButton.textContent = "Show Sourcecode";
+    dumpButton.onclick = () => {
+        const popup = document.getElementById('fullscreen-popup');
+        popup.classList.add('active');
+        const codeHeading = popup.querySelector("#codeHeading");
+        codeHeading.textContent ="Original Source Code of "+nodeData.NodeType+" "+nodeData.Caption;
+        const codeParagraph = popup.querySelector("#codeParagraph");
+        codeParagraph.textContent = getSourceCodeOfNode(nodeData) ?? 'Source Code not found';
+    };
+    infoDiv.appendChild(dumpButton);
+
 
     function insertSpaceBeforeCaps(str) {
         return str.replace(/(?!^)([A-Z])/g, ' $1');
@@ -158,9 +171,6 @@ function getClusterColor(type){
 }
 
 function getNodeShape(type){
-    if(document.getElementById('disable-clustering').checked){
-        return "";
-    }
     switch (type) {
         case "IrFileImpl": return "tra";
         case "IrFunctionImpl": return "diamond";

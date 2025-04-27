@@ -43,6 +43,10 @@ h1, h2 {
     word-wrap: break-word;
 }
 
+#selected-node-info button{
+    margin-left: 0;
+}
+
 #leftCol {
     flex: 2;
     overflow: hidden;

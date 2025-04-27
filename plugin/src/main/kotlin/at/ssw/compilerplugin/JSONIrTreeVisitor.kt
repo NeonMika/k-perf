@@ -17,6 +17,8 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
+import org.jetbrains.kotlin.psi
+import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.utils.Printer
 import java.io.File
 
@@ -49,6 +51,7 @@ class JSONIrTreeVisitor(
         val jsonObj = jsonWithDefault("File", caption, declaration)
         jsonObj.add("Name", JsonPrimitive(declaration.name))
         jsonObj.add("Path", JsonPrimitive(declaration.path))
+        jsonObj.add("Content", JsonPrimitive(File(declaration.path).readText()))
         return jsonObj
     }
 
@@ -61,6 +64,7 @@ class JSONIrTreeVisitor(
         jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
         jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
         jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(declaration.symbol.owner)))
+
         return jsonObj
     }
 
@@ -367,6 +371,8 @@ class JSONIrTreeVisitor(
             add("NodeName", JsonPrimitive(typeName))
             add("Caption", JsonPrimitive(caption))
             add("Dump", JsonPrimitive(element.accept(renderVisitor, null)))
+            add("StartOffset", JsonPrimitive(element.sourceElement()?.startOffset?:-1))
+            add("EndOffset", JsonPrimitive(element.sourceElement()?.endOffset?:-1))
             add("Children", JsonArray().also { childrenArray ->
                 element.acceptChildren(object : IrElementVisitor<Unit, Unit> {
                     override fun visitElement(child: IrElement, data: Unit) {

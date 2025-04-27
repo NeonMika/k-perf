@@ -112,7 +112,7 @@ class KPerfMeasureCompilerPluginTest {
             SourceFile.kotlin(
                 "main.kt",
                 """
-                    class TDArray<T>(
+class TDArray<T>(
     val dimension: Pair<Int, Int>, // the number of rows and columns
     initFn: (row: Int, col: Int) -> T // init function to initialize each cell
 ) {

@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Kotlin Compiler IR Visualizer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-graphviz/5.0.2/d3-graphviz.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-graphviz/5.6.0/d3-graphviz.min.js"></script>
     <script src="visualizer.js"></script>
     <script src="helper.js"></script>
     <link rel="stylesheet" href="visualizer.css">
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
 <div class="container">
@@ -55,7 +56,14 @@
             </div>
             <button disabled="true" id="expandAllChildren">Expand All Children</button>
         </div>
+    </div>
+</div>
 
+<div id="fullscreen-popup">
+    <div class="popup-box">
+        <button class="close-btn" aria-label="Close">×</button>
+        <h1 id="codeHeading"></h1>
+        <pre id="codeParagraph" class="code-block"></pre>
     </div>
 </div>
 
@@ -104,7 +112,7 @@
                     svg.dataset.originalViewBox = svg.getAttribute("viewBox");
 
                     svg.addEventListener("contextmenu", function (event) {
-                        event.preventDefault();
+                        //event.preventDefault();
                     });
 
                     addNodeClickHandlers(svg);
@@ -146,6 +154,7 @@
                         .ease(d3.easeLinear);
                 })
                 .tweenShapes(true)      // Enable shape tweening
+                //s.tweenPrecision(20)
                 .tweenPaths(false)       // Enable path tweening
                 .convertEqualSidedPolygons(true)  // Helps with smoother transitions
                 .growEnteringEdges(true)  // Animate new edges growing
@@ -295,6 +304,19 @@
         updateFilterTags();
         updateFilterCount();
         updateGraph();
+    });
+
+    const popup = document.getElementById('fullscreen-popup');
+    const closeBtn = popup.querySelector('.close-btn');
+
+    closeBtn.addEventListener('click', () => {
+        popup.classList.remove('active');
+    });
+
+    popup.addEventListener('click', (e) => {
+        if (e.target === popup) {
+            popup.classList.remove('active');
+        }
     });
 
     function updateFilterTags() {
