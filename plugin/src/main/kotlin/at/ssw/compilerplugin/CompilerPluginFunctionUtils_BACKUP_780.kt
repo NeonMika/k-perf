@@ -72,6 +72,9 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
+<<<<<<< HEAD
+        //TODO: restrict - yes probably with generics
+=======
         //restrict - yes probably with generics -> the best way to do this in kotlin
         require(
             this is IrPropertySymbol || this is IrFieldSymbol || this is IrValueSymbol ||
@@ -79,6 +82,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
         ) {
             "IrCallHelper: Unsupported symbol type: ${this::class.simpleName}"
         }
+>>>>>>> 3a9784e (- removed ChainableCall)
         val functionCall : IrFunctionSymbol = when (func) {
             is IrFunctionSymbol -> func
             is IrFunction -> func.symbol
@@ -121,17 +125,20 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
 
         val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
 
-        val dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
-            receiver
-        } else {
-            null
-        }
-
-        val extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
-            receiver
-        } else {
-            null
-        }
+        return builder.irCall(functionCall).apply {
+            dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
+                receiver
+            } else {
+                null
+            }
+            extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
+                receiver
+            } else {
+                null
+            }
+<<<<<<< HEAD
+            newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
+=======
 
         return builder.irCall(functionCall).apply {
             this.dispatchReceiver = dispatchReceiver
@@ -139,6 +146,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             newArgs.forEachIndexed { index, arg ->
                 putValueArgument(index, arg)
             }
+>>>>>>> 3a9784e (- removed ChainableCall)
         }
     }
 
@@ -204,6 +212,17 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @return An IrCall that can be further chained
      */
     operator fun IrFunctionSymbol.invoke(vararg args: Any) : IrFunctionAccessExpression = this.call(this, *args)
+<<<<<<< HEAD
+
+    fun IrFunctionAccessExpression.chain(func: IrFunctionSymbol, vararg args: Any): IrFunctionAccessExpression {
+        val newArgs = args.map { builder.convertToIrExpression(it) }
+        return builder.irCall(func).apply {
+            extensionReceiver = this@chain
+            newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
+        }
+    }
+=======
+>>>>>>> 3a9784e (- removed ChainableCall)
 
     /**
      * Builds an IR expression representing a string concatenation of the given params.
@@ -221,24 +240,24 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
 }
 
 /**
- * Converts the given value into an IrExpression. This will be used as a function argument.
- *
- * Supports the following types:
- * - Primitive types
- * - String
- * - IrCall
- * - IrFunction
- * - IrProperty
- * - IrField
- * - IrValueParameter
- * - IrVariable
- * - IrClassSymbol
- * - IrValueDeclaration
- * - IrStringConcatenation
- * - IrConst<*>
- *
- * @throws error if the given value is not supported.
- */
+         * Converts the given value into an IrExpression. This will be used as a function argument.
+         *
+         * Supports the following types:
+         * - Primitive types
+         * - String
+         * - IrCall
+         * - IrFunction
+         * - IrProperty
+         * - IrField
+         * - IrValueParameter
+         * - IrVariable
+         * - IrClassSymbol
+         * - IrValueDeclaration
+         * - IrStringConcatenation
+         * - IrConst<*>
+         *
+         * @throws error if the given value is not supported.
+         */
 fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
     if (value == null) return irNull()
 

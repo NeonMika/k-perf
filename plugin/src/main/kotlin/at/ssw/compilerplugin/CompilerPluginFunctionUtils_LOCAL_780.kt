@@ -1,6 +1,7 @@
 package at.ssw.compilerplugin
 
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
@@ -39,26 +40,7 @@ fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrFunctionAccessE
  *                    expressions.
  */
 class IrCallDsl(private val builder: IrBuilderWithScope) {
-
-    /**
-     * Chains a function call to the current `IrFunctionAccessExpression` and returns the resulting expression.
-     *
-     * @param func The `IrFunctionSymbol` representing the function to be called.
-     * @param args A variable number of arguments to be passed to the function.
-     * @return A new `IrFunctionAccessExpression` representing the chained function call.
-     */
-    fun IrFunctionAccessExpression.chain(func: IrFunctionSymbol, vararg args: Any): IrFunctionAccessExpression {
-        val newCall = builder.irCall(func).apply {
-            this.extensionReceiver = this@chain
-        }
-
-        args.forEachIndexed { index, arg ->
-            newCall.putValueArgument(index, builder.convertToIrExpression(arg))
-        }
-
-        return newCall
-    }
-
+    private val statements: MutableList<IrStatement> = mutableListOf()
     /**
      * Call a function on a property or other symbol.
      *
@@ -68,17 +50,11 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @throws IllegalArgumentException if the property does not have a getter
      * @throws IllegalArgumentException if the provided function to call is not callable (no property or function(symbol))
      * @throws IllegalStateException if the field is not a top-level field
-     * @return An IrCall representing the function call
+     * @return A ChainableCall that can be further chained
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
-        //restrict - yes probably with generics -> the best way to do this in kotlin
-        require(
-            this is IrPropertySymbol || this is IrFieldSymbol || this is IrValueSymbol ||
-                    this is IrClassSymbol || this is IrCall || this is IrConstructorSymbol || this is IrSimpleFunctionSymbol
-        ) {
-            "IrCallHelper: Unsupported symbol type: ${this::class.simpleName}"
-        }
+        //TODO: restrict - yes probably with generics
         val functionCall : IrFunctionSymbol = when (func) {
             is IrFunctionSymbol -> func
             is IrFunction -> func.symbol
@@ -110,6 +86,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             }
             is IrValueSymbol -> builder.irGet(owner)
             is IrClassSymbol -> builder.irGetObject(this)
+            is IrVariableSymbol -> builder.irGet(owner)
             is IrCall -> this
             else -> null
         }
@@ -121,24 +98,18 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
 
         val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
 
-        val dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
-            receiver
-        } else {
-            null
-        }
-
-        val extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
-            receiver
-        } else {
-            null
-        }
-
         return builder.irCall(functionCall).apply {
-            this.dispatchReceiver = dispatchReceiver
-            this.extensionReceiver = extensionReceiver
-            newArgs.forEachIndexed { index, arg ->
-                putValueArgument(index, arg)
+            dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
+                receiver
+            } else {
+                null
             }
+            extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
+                receiver
+            } else {
+                null
+            }
+            newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
         }
     }
 
@@ -147,7 +118,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      *
      * @param func The function symbol to call
      * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
+     * @return A ChainableCall that can be further chained
      */
     fun IrProperty.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
@@ -156,7 +127,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      *
      * @param func The function symbol to call
      * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
+     * @return A ChainableCall that can be further chained
      */
     fun IrField.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
@@ -165,7 +136,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      *
      * @param func The function symbol to call
      * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
+     * @return A ChainableCall that can be further chained
      */
     fun IrValueParameter.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
@@ -174,7 +145,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      *
      * @param func The function symbol to call
      * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
+     * @return A ChainableCall that can be further chained
      */
     fun IrClass.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
@@ -183,27 +154,35 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      *
      * @param func The function symbol to call
      * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
+     * @return A ChainableCall that can be further chained
      */
     fun IrVariable.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
     /**
-     * Calls this function with the given arguments and returns an IrCall to continue building
+     * Calls this function with the given arguments and returns a ChainableCall to continue building
      * the IR expression tree.
      *
      * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
+     * @return A ChainableCall that can be further chained
      */
     operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this.symbol.call(this.symbol, *args)
 
     /**
-     * Calls this function with the given arguments and returns an IrCall to continue building
+     * Calls this function with the given arguments and returns a ChainableCall to continue building
      * the IR expression tree.
      *
      * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
+     * @return A ChainableCall that can be further chained
      */
     operator fun IrFunctionSymbol.invoke(vararg args: Any) : IrFunctionAccessExpression = this.call(this, *args)
+
+    fun IrFunctionAccessExpression.chain(func: IrFunctionSymbol, vararg args: Any): IrFunctionAccessExpression {
+        val newArgs = args.map { builder.convertToIrExpression(it) }
+        return builder.irCall(func).apply {
+            extensionReceiver = this@chain
+            newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
+        }
+    }
 
     /**
      * Builds an IR expression representing a string concatenation of the given params.
@@ -220,25 +199,26 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
     }
 }
 
-/**
- * Converts the given value into an IrExpression. This will be used as a function argument.
- *
- * Supports the following types:
- * - Primitive types
- * - String
- * - IrCall
- * - IrFunction
- * - IrProperty
- * - IrField
- * - IrValueParameter
- * - IrVariable
- * - IrClassSymbol
- * - IrValueDeclaration
- * - IrStringConcatenation
- * - IrConst<*>
- *
- * @throws error if the given value is not supported.
- */
+        /**
+         * Converts the given value into an IrExpression. This will be used as a function argument.
+         *
+         * Supports the following types:
+         * - Primitive types
+         * - String
+         * - IrCall
+         * - IrCallDsl.ChainableCall
+         * - IrFunction
+         * - IrProperty
+         * - IrField
+         * - IrValueParameter
+         * - IrVariable
+         * - IrClassSymbol
+         * - IrValueDeclaration
+         * - IrStringConcatenation
+         * - IrConst<*>
+         *
+         * @throws error if the given value is not supported.
+         */
 fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
     if (value == null) return irNull()
 
@@ -255,6 +235,7 @@ fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
         is String -> irString(value)
         is IrCallImpl -> value
         is IrCall -> irCall(value.symbol)
+        is IrExpression -> value
         is IrFunctionAccessExpression -> value
         is IrFunction -> irCall(value)
         is IrProperty -> irCall(value.getter ?: error("IrCallHelper-convertToIrExpression: Property has no getter"))
@@ -265,7 +246,6 @@ fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
         is IrValueDeclaration -> irGet(value)
         is IrStringConcatenation -> return value
         is IrConst<*> -> value
-        is IrExpression -> value
 
         else -> error("IrCallHelper-convertToIrExpression: Cannot convert $value to IrExpression")
     }
