@@ -136,6 +136,52 @@ fun IrVariable.getTypeClass() = this.type.getClass() ?: throw IllegalArgumentExc
      */
 fun IrVariable.findProperty(name: String): IrProperty = this.getTypeClass().properties.firstOrNull() { it.name.asString().lowercase() == name.lowercase() } ?: throw IllegalArgumentException("Property $name not found")
 
+/**
+ * Finds a function by its signature in the class type of the variable.
+ *
+ * @param pluginContext The IR plugin context used to resolve the function.
+ * @param signature The signature of the function to find. It should be in the format "functionName(params?)".
+ * @param extensionReceiverType The type of the extension receiver, if the function is an extension function.
+ * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
+ * @return The found function symbol or null if it was not found.
+ */
+fun IrVariable.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false) = try {
+        val classSymbol = this.getTypeClass().symbol
+        classSymbol.findFunction(pluginContext, signature, extensionReceiverType, ignoreNullability)
+    } catch (e: Exception) {
+        null
+    }
+
+/**
+ * Finds a constructor by its signature in the class type of the variable.
+ *
+ * @param pluginContext The IR plugin context used to resolve the constructor.
+ * @param signature The signature of the constructor to find. Defaults to "()".
+ * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
+ * @return The found constructor symbol or null if it was not found.
+ */
+fun IrVariable.findConstructor(pluginContext: IrPluginContext, signature: String = "()", ignoreNullability: Boolean = false) = try {
+    val classSymbol = this.getTypeClass().symbol
+    classSymbol.findConstructor(pluginContext, signature, ignoreNullability)
+} catch (e: Exception) {
+    null
+}
+/**
+ * Finds a function by its signature in the class type of the property.
+ *
+ * @param pluginContext The IR plugin context used to resolve the function.
+ * @param signature The signature of the function to find. It should be in the format "functionName(params?)".
+ * @param extensionReceiverType The type of the extension receiver, if the function is an extension function.
+ * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
+ * @return The found function symbol or null if it was not found.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrPropertySymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false) = try {
+    val classSymbol = this.owner.getter?.returnType?.getClass()?.symbol
+    classSymbol?.findFunction(pluginContext, signature, extensionReceiverType, ignoreNullability)
+} catch (e: Exception) {
+    null
+}
 
     /**
      * Finds a constructor by its signature in the given package or class.
@@ -176,14 +222,17 @@ fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrTyp
     val (packageName, className, functionPart, packageForFindClass) = parseSignature(signature)
     val (functionName, params) = parseFunctionParameters(this, functionPart)
 
-    val classSymbol = if (className.isNotBlank()) {
-        findClass("$packageForFindClass/$className")
-    } else {
-        null
+    var classSymbol: IrClassSymbol? = null
+    var propertySymbol: IrPropertySymbol? = null
+
+    if (className.isNotBlank()) {
+        classSymbol = findClass("$packageForFindClass/$className")
+        propertySymbol = findProperty("$packageForFindClass/$className")
     }
 
     return classSymbol?.findFunction(this, functionPart, extensionReceiverType, ignoreNullability)
-        ?: referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName)))
+        ?: propertySymbol?.findFunction(this, functionPart, extensionReceiverType, ignoreNullability) ?:
+        referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName)))
             .firstOrNull { func ->
                 checkMethodSignature(func, params, ignoreNullability) &&
                         checkExtensionFunctionReceiverType(func, extensionReceiverType)
