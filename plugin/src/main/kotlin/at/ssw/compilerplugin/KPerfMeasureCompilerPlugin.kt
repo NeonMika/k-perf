@@ -433,6 +433,9 @@ class PerfMeasureExtension2(
 
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
+        val sinkFuncNew = systemFileSystem.findFunction(pluginContext, "sink()")
+        compareFunctionSymbols(sinkFunc, sinkFuncNew)
+
         val bufferedFuncs = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -526,6 +529,26 @@ class PerfMeasureExtension2(
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNew.dump(), "stringBuilder")
 
+        val stringBuilderNewCall: IrField = pluginContext.irFactory.buildField {
+            name = Name.identifier("_stringBuilder3")
+            type = stringBuilderClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { stringBuilderClass.callConstructor(pluginContext) }
+        }
+        compareFieldDumps(stringBuilder.dump(), stringBuilderNewCall.dump(), "stringBuilder")
+
+        val stringBuilderNewCallDirect: IrField = pluginContext.irFactory.buildField {
+            name = Name.identifier("_stringBuilder4")
+            type = stringBuilderClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { callConstructor(pluginContext, "kotlin/text/StringBuilder") }
+        }
+        compareFieldDumps(stringBuilder.dump(), stringBuilderNewCallDirect.dump(), "stringBuilder")
+
         firstFile.declarations.add(stringBuilder)
         stringBuilder.parent = firstFile
 
@@ -579,12 +602,29 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(randomNumber2)
         randomNumber2.parent = firstFile
 
+        val randomNumber3 = pluginContext.irFactory.buildField {
+            name = Name.identifier("_randNumber3")
+            type = pluginContext.irBuiltIns.intType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
+                callExpression {
+                    randomDefaultObjectClass.call(pluginContext, "nextInt")
+                }
+            }
+        }
+        compareFieldDumps(randomNumber.dump(), randomNumber3.dump(), "randomNumber")
+        firstFile.declarations.add(randomNumber3)
+        randomNumber3.parent = firstFile
+
         val bufferedTraceFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileName")
             type = pluginContext.irBuiltIns.stringType
             isFinal = false
             isStatic = true
         }.apply {
+            //TODO simplify use of concat here
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 irExprBody(
                     irConcat().apply {
@@ -641,6 +681,24 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedTraceFileSink2)
         bufferedTraceFileSink2.parent = firstFile
 
+        val bufferedTraceFileSink3 = pluginContext.irFactory.buildField {
+            name = Name.identifier("_bufferedTraceFileSink3")
+            type = rawSinkClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
+                callExpression {
+                    systemFileSystem.call(pluginContext, "sink()", pathConstructionFunc(bufferedTraceFileName))
+                        .chain(bufferedFunc)
+                }
+            }
+        }
+        compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink3.dump(), "bufferedTraceFileSink")
+
+        firstFile.declarations.add(bufferedTraceFileSink3)
+        bufferedTraceFileSink3.parent = firstFile
+
         val bufferedSymbolsFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileName")
             type = pluginContext.irBuiltIns.stringType
@@ -682,6 +740,21 @@ class PerfMeasureExtension2(
         }
         firstFile.declarations.add(bufferedSymbolsFileSink)
         bufferedSymbolsFileSink.parent = firstFile
+
+        val bufferedSymbolsFileSink2 = pluginContext.irFactory.buildField {
+            name = Name.identifier("_bufferedSymbolsFileSink2")
+            type = rawSinkClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression {
+                systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedSymbolsFileName))
+                    .chain(pluginContext, "kotlinx/io/buffered")
+            }
+        }
+        firstFile.declarations.add(bufferedSymbolsFileSink2)
+        bufferedSymbolsFileSink2.parent = firstFile
+        compareFieldDumps(bufferedSymbolsFileSink.dump(), bufferedSymbolsFileSink2.dump(), "bufferedSymbolsFileSink")
 
         val methodMap = mutableMapOf<String, IrFunction>()
         val methodIdMap = mutableMapOf<String, Int>()
