@@ -1,231 +1,335 @@
 function assignNodeIds(root) {
-  let idCount = 0;
+    let idCount = 0;
 
-  function traverse(node, parent) {
-    node.nodeID = "node" + (idCount++);
-    node.parent = parent;
-    if (Array.isArray(node.Children)) {
-      for (const child of node.Children) {
-        traverse(child, node);
-      }
+    function traverse(node, parent) {
+        node.nodeID = "node" + (idCount++);
+        node.parent = parent;
+        node.highlight = false;
+        if(!("intermediate" in node)){
+            node.intermediate=false;
+        }
+        if (Array.isArray(node.Children)) {
+            for (const child of node.Children) {
+                traverse(child, node);
+            }
+        }
     }
-  }
 
-  traverse(root, null);
-  collapseByDepth(root, 3)
+    traverse(root, null);
+    collapseByDepth(root, 3)
 }
 
 function createDotSource(root) {
-  const dotBuilder = [];
+    const dotBuilder = [];
 
-  dotBuilder.push(
-      `digraph KotlinIR {
+    dotBuilder.push(
+        `digraph KotlinIR {
     rankdir=TB;      // Top-to-bottom layout
     nodesep=1;       // Horizontal spacing
     ranksep=0.75;    // Vertical spacing
 `
-  );
+    );
 
-  function traverse(node) {
-    const typeName = node.NodeName || "";
-    const caption = node.Caption || "";
-
-    const clusterColor = getClusterColor(node.NodeType)
-
-    if(clusterColor){
-      dotBuilder.push(`subgraph cluster_${node.nodeID} {
-        style="filled,rounded";
-        color="grey";
-        margin=25;
-        fillcolor="${clusterColor}"`);
-    }
-
-    let label=typeName+"\n"+node.NodeType;
-    if(caption){
-      label+="\\n"+caption;
-    }
-    if(hasInvisibleChild(node)){
-      label+="\\n➕";
-    }else{
-      label+="\\n➖";
-    }
-
-    const shape=getNodeShape(node.NodeType)
-    if(node.visible){
-      dotBuilder.push(`    ${node.nodeID} [id="${node.nodeID}", label="${label}", shape="${shape}"];`);
-
-
-      if (Array.isArray(node.Children)) {
-        for (const child of node.Children) {
-          if(child.visible){
-            dotBuilder.push(`    ${node.nodeID} -> ${child.nodeID};`);
-            traverse(child);
-          }
+    function traverse(node) {
+        function escapeDotSymbols(s) {
+            return s
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
         }
-      }
-    }
-    if(clusterColor){
-      dotBuilder.push(`}`);
-    }
-  }
 
-  traverse(root);
-  dotBuilder.push("}\n");
-  return dotBuilder.join("\n");
+        const typeName = node.NodeName || "";
+        const caption = node.Caption || "";
+
+        const clusterColor = getClusterColor(node.NodeType)
+
+        if (clusterColor) {
+            dotBuilder.push(`subgraph cluster_${node.nodeID} {
+                            style="filled,rounded";
+                            color="grey";
+                            margin=25;
+                            fillcolor="${clusterColor}"`);
+        }
+
+
+        let label = `<FONT FACE="Calibri" POINT-SIZE="16">${typeName}</FONT><BR/>`+
+                           `<FONT FACE="Courier New" >${node.NodeType}</FONT>`;
+
+
+        if (caption) {
+            label += `<BR/><FONT FACE="Courier New" >${escapeDotSymbols(caption)}</FONT>`;
+        }
+
+        if(node.NodeType === "IrConstImpl"){
+            label += `<BR/><FONT FACE="Courier New" >${escapeDotSymbols(node.Value)}</FONT>`;
+        }
+
+        if (hasInvisibleChild(node)) {
+            label += `<BR/><BR/>➕  `;
+        } else {
+            label += `<BR/><BR/>➖  `;
+        }
+
+
+
+        const shape = getNodeShape(node.NodeType)
+        const fillcolor = node.highlight ? ', fillcolor="#FFFF00", style=filled':"";
+        const style = node.intermediate ? ', style=dotted':"";
+
+        if (node.visible) {
+            dotBuilder.push(`    ${node.nodeID} [id="${node.nodeID}", label=<${label}>, shape="${shape}" ${fillcolor} ${style}];`);
+
+
+            if (Array.isArray(node.Children)) {
+                for (const child of node.Children) {
+                    if (child.visible) {
+                        dotBuilder.push(`    ${node.nodeID} -> ${child.nodeID};`);
+                        traverse(child);
+                    }
+                }
+            }
+        }
+        if (clusterColor) {
+            dotBuilder.push(`}`);
+        }
+    }
+
+    traverse(root);
+    dotBuilder.push("}\n");
+    return dotBuilder.join("\n");
 }
 
 function createNodeDict(root) {
-  const nodeDict = {};
+    const nodeDict = {};
 
-  function traverse(node) {
-    const nodeCopy = {};
-    for (const [key, value] of Object.entries(node)) {
-      if (key !== "Children") {
-        nodeCopy[key] = value;
-      }
+    function traverse(node) {
+        const nodeCopy = {};
+        for (const [key, value] of Object.entries(node)) {
+            if (key !== "Children") {
+                nodeCopy[key] = value;
+            }
+        }
+
+        nodeCopy.original = node;
+        nodeDict[node.nodeID] = nodeCopy;
+
+
+        if (Array.isArray(node.Children)) {
+            for (const child of node.Children) {
+                traverse(child);
+            }
+        }
     }
 
-    nodeCopy.original = node;
-    nodeDict[node.nodeID] = nodeCopy;
-
-
-    if (Array.isArray(node.Children)) {
-      for (const child of node.Children) {
-        traverse(child);
-      }
-    }
-  }
-
-  traverse(root);
-  return nodeDict;
+    traverse(root);
+    return nodeDict;
 }
 
 function filterTree(root, filters) {
-  function visit(node) {
-    let currentNodeVisible = false;
+    function visit(node) {
+        let currentNodeVisible = false;
 
-    if (isFiltered(node, filters)) {
-      currentNodeVisible = true;
-    }
-
-    if (Array.isArray(node.Children)) {
-      for (const child of node.Children) {
-        const childVisible = visit(child);
-        if (childVisible) {
-          currentNodeVisible = true;
+        node.highlight=false;
+        if (isFiltered(node, filters)) {
+            currentNodeVisible = true;
+            node.highlight = true;
         }
-      }
+
+        if (Array.isArray(node.Children)) {
+            for (const child of node.Children) {
+                const childVisible = visit(child);
+                if (childVisible) {
+                    currentNodeVisible = true;
+                }
+            }
+        }
+
+        node.visible = currentNodeVisible;
+        return currentNodeVisible;
     }
 
-    node.visible = currentNodeVisible;
-    return currentNodeVisible;
-  }
-
-  if(filters.length>0){
-    visit(root);
-  }else{
-    collapseByDepth(root, 3)
-  }
+    if (filters.length > 0) {
+        visit(root);
+    } else {
+        collapseByDepth(root, 3)
+    }
 }
 
 function isFiltered(node, filters) {
-  const filtersByType = {};
-  for (const filter of filters) {
-    const { type, value } = filter;
-    if (!filtersByType[type]) {
-      filtersByType[type] = [];
-    }
-    filtersByType[type].push(value);
-  }
-
-  for (const type in filtersByType) {
-    const values = filtersByType[type];
-    let typeMatched = false;
-
-    for (const value of values) {
-      if (typeof node[type] === "string" && node[type].includes(value)) {
-        typeMatched = true;
-        break;
-      }
+    const filtersByType = {};
+    for (const filter of filters) {
+        const {type, value} = filter;
+        if (!filtersByType[type]) {
+            filtersByType[type] = [];
+        }
+        filtersByType[type].push(value);
     }
 
-    if (!typeMatched) {
-      return false;
-    }
-  }
+    for (const type in filtersByType) {
+        const values = filtersByType[type];
+        let typeMatched = false;
 
-  return true;
+        for (const value of values) {
+            if (typeof node[type] === "string" && node[type].includes(value)) {
+                typeMatched = true;
+                break;
+            }
+        }
+
+        if (!typeMatched) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 function collapseByDepth(root, maxDepth) {
-  let idCount = 0;
+    let idCount = 0;
 
-  function traverse(node, depth) {
-    if(depth<maxDepth){
-      node.visible = true;
-    }else{
-      node.visible = false;
+    function traverse(node, depth) {
+        if (depth < maxDepth) {
+            node.visible = true;
+        } else {
+            node.visible = false;
+        }
+        if (Array.isArray(node.Children)) {
+            for (const child of node.Children) {
+                traverse(child, depth + 1);
+            }
+        }
     }
+
+    traverse(root, 0);
+}
+
+function toggleChildren(node, visibility) {
     if (Array.isArray(node.Children)) {
-      for (const child of node.Children) {
-        traverse(child, depth+1);
-      }
+        for (const child of node.Children) {
+            child.visible = visibility;
+        }
     }
-  }
-
-  traverse(root, 0);
 }
 
-function toggleChildren(node, visibility){
-  if (Array.isArray(node.Children)) {
-    for (const child of node.Children) {
-      child.visible = visibility;
+function expandAll(node) {
+    if (Array.isArray(node.Children)) {
+        for (const child of node.Children) {
+            child.visible = true;
+            expandAll(child);
+        }
     }
-  }
 }
 
-function expandAll(node){
-  if (Array.isArray(node.Children)) {
-    for (const child of node.Children) {
-      child.visible = true;
-      expandAll(child);
+function expandAllParents(node) {
+    node.visible = true;
+    if (node.parent) {
+        expandAllParents(node.parent);
     }
-  }
 }
 
-function hasInvisibleChild(node){
-  if (Array.isArray(node.Children)) {
-    for (const child of node.Children) {
-      if(!child.visible){
-        return true;
-      }
+function hasInvisibleChild(node) {
+    if (Array.isArray(node.Children)) {
+        for (const child of node.Children) {
+            if (!child.visible) {
+                return true;
+            }
+        }
     }
-  }
-  return false;
+    return false;
 }
 
-function getSourceCodeOfNode(node){
-  if (!("StartOffset" in node && "EndOffset" in node) ){
-    return null;
-  }
-  let fileNode = node;
-  while(fileNode!=null && fileNode.NodeType!=="IrFileImpl"){
-    fileNode=fileNode.parent;
-  }
-  if(fileNode==null){
-    return null;
-  }
-  return fileNode.Content.substring(node.StartOffset, node.EndOffset);
+function getFileNodeOfNode(node) {
+    let fileNode = node;
+    while (fileNode != null && fileNode.NodeType !== "IrFileImpl") {
+        fileNode = fileNode.parent;
+    }
+    if (fileNode == null) {
+        return null;
+    }
+    return fileNode;
+}
+
+function getSourceCodeOfNode(node) {
+    if (!("StartOffset" in node && "EndOffset" in node)) {
+        return null;
+    }
+    let fileNode = getFileNodeOfNode(node)
+    if (fileNode == null) {
+        return null;
+    }
+    return fileNode.Content.substring(node.StartOffset, node.EndOffset);
+}
+
+function getUnitsOfSourceCode(fileNode) {
+    units = []
+
+    function traverse(node) {
+        if ("StartOffset" in node && "EndOffset" in node && node.StartOffset != node.EndOffset) {
+            units.push({name: node.NodeType, start: node.StartOffset, end: node.EndOffset, nodeID: node.nodeID})
+        }
+        if (Array.isArray(node.Children)) {
+            for (const child of node.Children) {
+                traverse(child);
+            }
+        }
+    }
+
+    traverse(fileNode);
+    return units;
+}
+
+
+function groupByNodeName(tree) {
+    if (!tree.Children || tree.Children.length === 0) {
+        return tree;
+    }
+
+    const processedChildren = tree.Children.map(child => groupByNodeName(child));
+
+    const childrenByNodeName = {};
+    processedChildren.forEach(child => {
+        if (!childrenByNodeName[child.NodeName]) {
+            childrenByNodeName[child.NodeName] = [];
+        }
+        childrenByNodeName[child.NodeName].push(child);
+    });
+
+    const newChildren = [];
+
+    for (const nodeName in childrenByNodeName) {
+        const sameNameNodes = childrenByNodeName[nodeName];
+
+        if (sameNameNodes.length === 1) {
+            newChildren.push(sameNameNodes[0]);
+            continue;
+        }
+
+        const intermediateNode = {
+            NodeType: sameNameNodes[0].NodeType,
+            NodeName: nodeName+" Group",
+            Caption: "",
+            Dump: `Group of ${nodeName}`,
+            intermediate: true,
+            Children: sameNameNodes
+        };
+
+        newChildren.push(intermediateNode);
+    }
+
+    return {
+        ...tree,
+        Children: newChildren
+    };
 }
 
 function getJSON() {
-  const request = new XMLHttpRequest();
-  request.open('GET', 'output.json', false);
-  request.send(null);
+    const request = new XMLHttpRequest();
+    request.open('GET', 'output.json', false);
+    request.send(null);
 
-  if (request.status === 200) {
-    return request.responseText
-  } else {
-    throw new Error('Failed to load JSON');
-  }
+    if (request.status === 200) {
+        return request.responseText
+    } else {
+        throw new Error('Failed to load JSON');
+    }
 }

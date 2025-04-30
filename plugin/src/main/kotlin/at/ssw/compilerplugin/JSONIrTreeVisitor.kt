@@ -192,6 +192,16 @@ class JSONIrTreeVisitor(
         return jsonObj
     }
 
+    override fun visitWhileLoop(loop: IrWhileLoop, data: Unit): JsonElement {
+        return jsonWithDefault("WhileLoop", "", loop)
+    }
+
+    override fun visitExpression(expression: IrExpression, data: Unit): JsonElement {
+        val jsonObj = jsonWithDefault("Expression", "", expression)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
     //-----------------------------------------------------------------------------------------------------------------------------------
     override fun visitDeclaration(declaration: IrDeclarationBase, data: Unit): JsonElement {
         val caption = declaration::class.java.simpleName
@@ -249,11 +259,6 @@ class JSONIrTreeVisitor(
     override fun visitSyntheticBody(body: IrSyntheticBody, data: Unit): JsonElement {
         val caption = body.kind.toString()
         return jsonWithDefault("SyntheticBody", caption, body)
-    }
-
-    override fun visitExpression(expression: IrExpression, data: Unit): JsonElement {
-        val caption = "${expression::class.java.simpleName} type: ${expression.type.render()}"
-        return jsonWithDefault("Expression", caption, expression)
     }
 
     override fun visitVararg(expression: IrVararg, data: Unit): JsonElement {
@@ -321,11 +326,6 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("GetEnumValue", caption, expression)
     }
 
-    override fun visitWhileLoop(loop: IrWhileLoop, data: Unit): JsonElement {
-        val caption = "label: ${loop.label}, origin: ${loop.origin}"
-        return jsonWithDefault("WhileLoop", caption, loop)
-    }
-
     override fun visitDoWhileLoop(loop: IrDoWhileLoop, data: Unit): JsonElement {
         val caption = "label: ${loop.label}, origin: ${loop.origin}"
         return jsonWithDefault("DoWhileLoop", caption, loop)
@@ -371,8 +371,14 @@ class JSONIrTreeVisitor(
             add("NodeName", JsonPrimitive(typeName))
             add("Caption", JsonPrimitive(caption))
             add("Dump", JsonPrimitive(element.accept(renderVisitor, null)))
-            add("StartOffset", JsonPrimitive(element.sourceElement()?.startOffset?:-1))
-            add("EndOffset", JsonPrimitive(element.sourceElement()?.endOffset?:-1))
+            val startOffset=element.sourceElement()?.startOffset;
+            val endOffset=element.sourceElement()?.endOffset;
+            if(startOffset!=null){
+                add("StartOffset", JsonPrimitive(startOffset))
+            }
+            if(endOffset!=null){
+                add("EndOffset", JsonPrimitive(endOffset))
+            }
             add("Children", JsonArray().also { childrenArray ->
                 element.acceptChildren(object : IrElementVisitor<Unit, Unit> {
                     override fun visitElement(child: IrElement, data: Unit) {

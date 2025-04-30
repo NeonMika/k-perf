@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-graphviz/5.6.0/d3-graphviz.min.js"></script>
     <script src="visualizer.js"></script>
     <script src="helper.js"></script>
+    <script src="codeinspector.js"></script>
     <link rel="stylesheet" href="visualizer.css">
     <link rel="stylesheet" href="popup.css">
 </head>
@@ -23,8 +24,8 @@
             <span id="filter-count" style="background: #ddd; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; justify-content: center; align-items: center; font-size: 12px;">0</span>
         </button>
         <button id="download-svg">Download SVG</button>
-        <label for="disable-clustering">Disable Clustering:</label>
-        <input type="checkbox" id="disable-clustering">
+        <label for="enable-grouping" >Enable Grouping:</label>
+        <input type="checkbox" checked id="enable-grouping">
     </div>
 
     <div id="filter-popup" class="filter-popup">
@@ -39,6 +40,9 @@
         <div class="filter-buttons">
             <button id="add-filter">Add Filter</button>
         </div>
+        <div class="filter-buttons">
+            <button id="apply-filter">Apply</button>
+        </div>
         <div class="active-filters">
             <div class="horizontal spacebetween">
                 <h4>Active Filters</h4>
@@ -49,8 +53,11 @@
     </div>
 
     <div class="content-wrapper">
-        <div id="graph-container" class="graph-container no-select"></div>
-        <div id="leftCol" class="spacebetween vertical">
+        <code-inspector id="inspector" class="column"></code-inspector>
+        <div class="separator"></div>
+        <div id="graph-container" class="graph-container no-select column"></div>
+        <div class="separator"></div>
+        <div id="leftCol" class="spacebetween vertical column">
             <div id="selected-node-info">
                 <h3>Click on any node to see details here</h3>
             </div>
@@ -68,14 +75,15 @@
 </div>
 
 <script>
-    const checkbox = document.getElementById('disable-clustering');
+    const checkbox = document.getElementById('enable-grouping');
     const expandBtn = document.getElementById('expandAllChildren');
 
 
     const jsonString = getJSON();
-    const obj = JSON.parse(jsonString);
+    let obj = JSON.parse(jsonString);
+    obj=groupByNodeName(obj);
     assignNodeIds(obj);
-    const nodeDict = createNodeDict(obj);
+    let nodeDict = createNodeDict(obj);
     let dotSource = createDotSource(obj);
 
 
@@ -91,7 +99,8 @@
             .width("100%")
             .height("100%")
             .fit(true)
-            .zoom(true);
+            .zoom(true)
+            .zoomScaleExtent([1, Infinity]);
 
         renderGraph(dotSource);
     }
@@ -120,7 +129,7 @@
                     setUpDownloadButton(svg);
 
                     if (selectedNodeId) {
-                        markSelected(svg, selectedNodeId);
+                        markSelected(selectedNodeId);
                         selectedNodeGroup = getNodeByNodeId(selectedNodeId);
                         drawAllDottedLines(selectedNodeGroup)
                     }
@@ -219,14 +228,14 @@
 
                     const nodeId = nodeGroup.querySelector("title").textContent.trim();
 
-                    setInfoDiv(nodeGroup)
+                    setInfoDiv(nodeGroup.querySelector("title").textContent.trim())
 
-                    unmarkSelected(svg);
+                    unmarkSelected();
                     selectedNodeId = nodeId;
-                    markSelected(svg, selectedNodeId);
+                    markSelected(selectedNodeId);
 
-                    removeAllDottedLines()
-                    drawAllDottedLines(nodeGroup)
+                    removeAllDottedLines();
+                    drawAllDottedLines(nodeGroup);
                 });
                 nodeGroup.handlersAdded = true;
             }
@@ -237,6 +246,14 @@
 
 
     checkbox.addEventListener('change', function (event) {
+        const jsonString = getJSON();
+        obj = JSON.parse(jsonString);
+        if(checkbox.checked){
+            obj=groupByNodeName(obj);
+        }
+        assignNodeIds(obj);
+        nodeDict = createNodeDict(obj);
+        dotSource = createDotSource(obj);
         updateGraph();
     });
 
@@ -248,6 +265,7 @@
     const filterButton = document.getElementById('open-filter');
     const filterPopup = document.getElementById('filter-popup');
     const addFilterBtn = document.getElementById('add-filter');
+    const applyFilterBtn = document.getElementById('apply-filter');
     const clearFiltersBtn = document.getElementById('clear-filters');
     const filterType = document.getElementById('filter-type');
     const filterValue = document.getElementById('filter-value');
@@ -286,11 +304,15 @@
 
         if (!existingFilter) {
             activeFilters.push(filter);
+            filterTree(obj, activeFilters)
             updateFilterTags();
             filterValue.value = '';
-            updateFilterCount();
-            updateGraph();
         }
+    });
+
+    applyFilterBtn.addEventListener('click', function() {
+        updateFilterCount();
+        updateGraph();
     });
 
     filterValue.addEventListener('keydown', function(event) {
@@ -301,6 +323,7 @@
 
     clearFiltersBtn.addEventListener('click', function() {
         activeFilters.length = 0;
+        filterTree(obj, activeFilters)
         updateFilterTags();
         updateFilterCount();
         updateGraph();
@@ -320,7 +343,6 @@
     });
 
     function updateFilterTags() {
-        filterTree(obj, activeFilters)
         activeFilterTags.innerHTML = '';
         activeFilters.forEach((filter, index) => {
             const tag = document.createElement('span');
@@ -336,9 +358,8 @@
             button.addEventListener('click', function() {
                 const index = parseInt(this.dataset.index);
                 activeFilters.splice(index, 1);
+                filterTree(obj, activeFilters)
                 updateFilterTags();
-                updateFilterCount();
-                updateGraph();
             });
         });
     }
@@ -347,7 +368,19 @@
         filterCount.textContent = activeFilters.length;
     }
 
+    const inspector = document.getElementById('inspector');
+    inspector.addEventListener('unitSelected', e => {
+        console.log('User clicked unit:', e.detail);
+        selectedNodeId = e.detail.nodeID;
+        expandAllParents(nodeDict[e.detail.nodeID].original);
+        updateGraph();
+        setInfoDiv(selectedNodeId)
+    });
+
     initGraphviz();
+    setupWidthDragging();
+
+
 </script>
 </body>
 </html>
