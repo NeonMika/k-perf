@@ -94,6 +94,58 @@ class KPerfMeasureCompilerPluginTest {
     }
 
     @OptIn(ExperimentalCompilerApi::class)
+    @Test
+    fun `Class example`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "main.kt",
+                """
+                    package test
+
+                    class MyClass<T>(val value: T) {
+                        fun genericFunction(param: T): T {
+                            return param
+                        }
+            
+                        fun <R> anotherGenericFunction(param: R): R {
+                            return param
+                        }
+
+                        fun normalFunction(param: Int, param2: String? = "Test"): String {
+                            return "Normal Function: ${'$'}param"
+                        }
+
+                        fun normalFunction(param: Int): String {
+                            return "Normal Function: ${'$'}param"
+                        }
+            
+                        companion object {
+                            fun staticFunction() = "Static Function"
+                        }
+                    }
+                    fun topLevelFunction(param: Int, param2: String? = "Test"): String {
+                        return "Top Level Function: ${'$'}param"
+                    }
+
+                    fun topLevelFunction(param: Int): String {
+                        return "Top Level Function: ${'$'}param"
+                    }
+            
+                    fun main() {
+                        val instance = MyClass(42)
+                        val result = instance.genericFunction(100)
+                        val anotherResult = instance.anotherGenericFunction("Hello")
+                        val staticResult = MyClass.staticFunction()
+                        val topLevelResult = topLevelFunction(10)
+                    }
+                """
+            )
+        )
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        result.main("test")
+    }
+
+    @OptIn(ExperimentalCompilerApi::class)
     fun compile(
         sourceFiles: List<SourceFile>,
         compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrar(),
@@ -116,8 +168,9 @@ class KPerfMeasureCompilerPluginTest {
 }
 
 @OptIn(ExperimentalCompilerApi::class)
-private fun JvmCompilationResult.main() {
-    val kClazz = classLoader.loadClass("MainKt")
-    val main = kClazz.declaredMethods.single { it.name == "main" && it.parameterCount == 0 }
+private fun JvmCompilationResult.main(packageName: String = "") {
+    val className = if (packageName.isNotEmpty()) "$packageName.MainKt" else "MainKt"
+    val kClazz = classLoader.loadClass(className)
+    val main = kClazz.declaredMethods.single { it.name.endsWith("main") && it.parameterCount == 0 }
     main.invoke(null)
 }

@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.presentableDescription
 import java.io.File
+import java.util.LinkedList
 import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
@@ -433,6 +434,9 @@ class PerfMeasureExtension2(
 
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
+        val sinkFuncNew = systemFileSystem.findFunction(pluginContext, "sink()")
+        compareFunctionSymbols(sinkFunc, sinkFuncNew)
+
         val bufferedFuncs = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -526,6 +530,26 @@ class PerfMeasureExtension2(
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNew.dump(), "stringBuilder")
 
+        val stringBuilderNewCall: IrField = pluginContext.irFactory.buildField {
+            name = Name.identifier("_stringBuilder3")
+            type = stringBuilderClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { stringBuilderClass.callConstructor(pluginContext) }
+        }
+        compareFieldDumps(stringBuilder.dump(), stringBuilderNewCall.dump(), "stringBuilder")
+
+        val stringBuilderNewCallDirect: IrField = pluginContext.irFactory.buildField {
+            name = Name.identifier("_stringBuilder4")
+            type = stringBuilderClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { callConstructor(pluginContext, "kotlin/text/StringBuilder") }
+        }
+        compareFieldDumps(stringBuilder.dump(), stringBuilderNewCallDirect.dump(), "stringBuilder")
+
         firstFile.declarations.add(stringBuilder)
         stringBuilder.parent = firstFile
 
@@ -579,12 +603,29 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(randomNumber2)
         randomNumber2.parent = firstFile
 
+        val randomNumber3 = pluginContext.irFactory.buildField {
+            name = Name.identifier("_randNumber3")
+            type = pluginContext.irBuiltIns.intType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
+                callExpression {
+                    randomDefaultObjectClass.call(pluginContext, "nextInt")
+                }
+            }
+        }
+        compareFieldDumps(randomNumber.dump(), randomNumber3.dump(), "randomNumber")
+        firstFile.declarations.add(randomNumber3)
+        randomNumber3.parent = firstFile
+
         val bufferedTraceFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileName")
             type = pluginContext.irBuiltIns.stringType
             isFinal = false
             isStatic = true
         }.apply {
+            //TODO simplify use of concat here
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 irExprBody(
                     irConcat().apply {
@@ -641,6 +682,24 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedTraceFileSink2)
         bufferedTraceFileSink2.parent = firstFile
 
+        val bufferedTraceFileSink3 = pluginContext.irFactory.buildField {
+            name = Name.identifier("_bufferedTraceFileSink3")
+            type = rawSinkClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
+                callExpression {
+                    systemFileSystem.call(pluginContext, "sink()", pathConstructionFunc(bufferedTraceFileName))
+                        .chain(bufferedFunc)
+                }
+            }
+        }
+        compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink3.dump(), "bufferedTraceFileSink")
+
+        firstFile.declarations.add(bufferedTraceFileSink3)
+        bufferedTraceFileSink3.parent = firstFile
+
         val bufferedSymbolsFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileName")
             type = pluginContext.irBuiltIns.stringType
@@ -682,6 +741,21 @@ class PerfMeasureExtension2(
         }
         firstFile.declarations.add(bufferedSymbolsFileSink)
         bufferedSymbolsFileSink.parent = firstFile
+
+        val bufferedSymbolsFileSink2 = pluginContext.irFactory.buildField {
+            name = Name.identifier("_bufferedSymbolsFileSink2")
+            type = rawSinkClass.defaultType
+            isFinal = false
+            isStatic = true
+        }.apply {
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression {
+                systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedSymbolsFileName))
+                    .chain(pluginContext, "kotlinx/io/buffered")
+            }
+        }
+        firstFile.declarations.add(bufferedSymbolsFileSink2)
+        bufferedSymbolsFileSink2.parent = firstFile
+        compareFieldDumps(bufferedSymbolsFileSink.dump(), bufferedSymbolsFileSink2.dump(), "bufferedSymbolsFileSink")
 
         val methodMap = mutableMapOf<String, IrFunction>()
         val methodIdMap = mutableMapOf<String, Int>()
@@ -792,7 +866,7 @@ class PerfMeasureExtension2(
                         } else {
                             +bufferedTraceFileSink.call(writeStringFunc, irConcat(">;", valueParameters[0], "\n"))
                         }
-                        timeSourceMonotonicClass.call(funMarkNow).buildReturn()
+                        +irReturn(timeSourceMonotonicClass.call(funMarkNow))
                     }
                 }
             }
@@ -888,9 +962,9 @@ class PerfMeasureExtension2(
                 body = oldBody
                 val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL {
-                        val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow).build())
+                        val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow))
                         val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
-                        val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp).build())
+                        val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
 
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.call(stringBuilderAppendStringFunc, "<;")
@@ -956,12 +1030,11 @@ class PerfMeasureExtension2(
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     flushTraceFile()
-
+                    //TODO: wenn main in package dann wird es nicht gefunden
+                    val mainMethodId = methodIdMap.entries.find { it.key.endsWith("main") }?.value
+                        ?: throw IllegalStateException("main method not found")
                     +irCall(exitFunc).apply {
-                        putValueArgument(
-                            0,
-                            methodIdMap["main"]!!.toIrConst(pluginContext.irBuiltIns.intType)
-                        )
+                        putValueArgument(0, mainMethodId.toIrConst(pluginContext.irBuiltIns.intType))
                         putValueArgument(1, irGet(valueParameters[0]))
                     }
 
@@ -1047,6 +1120,62 @@ class PerfMeasureExtension2(
             }, null)
             println("---${file.name}---")
             println(file.dump())
+        }
+        //------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //further tests
+        val list = LinkedList<String>()
+        val myClass = pluginContext.findClass("test/MyClass")
+
+        if(myClass != null) {
+            //TODO MS4: test
+            /*appendToDebugFile("myClass found\n")
+            // Test for a generic function with one type parameter
+            val genericFunction = myClass.findFunction(pluginContext, "genericFunction(T)")
+            if (genericFunction != null) {
+                appendToDebugFile("genericFunction found\n")
+            } else {
+                appendToDebugFile("genericFunction not found\n")
+            }
+
+            // Test for a generic function with a different type parameter
+            val anotherGenericFunction = myClass.findFunction(pluginContext, "anotherGenericFunction(R)")
+            if (anotherGenericFunction != null) {
+                appendToDebugFile("anotherGenericFunction found\n")
+            } else {
+                appendToDebugFile("anotherGenericFunction not found\n")
+            }*/
+
+            // Test for a static function in the companion object
+            val staticFunction = myClass.findFunction(pluginContext, "staticFunction()")
+            if (staticFunction != null) {
+                appendToDebugFile("staticFunction found\n")
+            } else {
+                appendToDebugFile("staticFunction not found\n")
+            }
+
+            // Test a normal function in a class with simular other function
+            val normalFunction = myClass.findFunction(pluginContext, "normalFunction(Int)")
+            if (normalFunction != null) {
+                appendToDebugFile("normalFunction found\n")
+            } else {
+                appendToDebugFile("normalFunction not found\n")
+            }
+
+            // Test a normal function in a class with all default parameters given
+            val defaultParamFunction = myClass.findFunction(pluginContext, "normalFunction(Int, String)", ignoreNullability = true)
+            if (defaultParamFunction != null) {
+                appendToDebugFile("Function with default params found\n")
+            } else {
+                appendToDebugFile("Function with default params not found\n")
+            }
+
+            // Test for a top-level function with a primitive type parameter
+            val topLevelFunction = pluginContext.findFunction("test/topLevelFunction(Int)")
+            if (topLevelFunction != null) {
+                appendToDebugFile("topLevelFunction found\n")
+            } else {
+                appendToDebugFile("topLevelFunction not found\n")
+            }
         }
     }
 

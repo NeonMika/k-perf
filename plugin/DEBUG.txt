@@ -52,6 +52,8 @@ FunctionCallTest for property (null): null
 
 NonExistingTest for property: null 
 
+Function sink: MATCH
+
 Function buffered: MATCH
 
 Function writeString: MATCH
@@ -62,13 +64,23 @@ Function toString: MATCH
 
 fields stringBuilder match
 
+fields stringBuilder match
+
+fields stringBuilder match
+
 Class kotlin.random.Random.Default: MATCH
 
 Function nextInt: MATCH
 
 fields randomNumber match
 
+fields randomNumber match
+
 fields bufferedTraceFileSink match
+
+fields bufferedTraceFileSink match
+
+fields bufferedSymbolsFileSink match
 
 Class kotlin.time.TimeSource.Monotonic: MATCH
 
@@ -80,3 +92,7 @@ Function elapsedNow: MATCH
 
 fields testBodyWithTempVar match
 
+staticFunction found
+normalFunction found
+Function with default params found
+topLevelFunction found

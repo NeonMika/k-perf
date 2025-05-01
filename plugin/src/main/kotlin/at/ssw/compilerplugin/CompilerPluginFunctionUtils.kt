@@ -1,12 +1,14 @@
 package at.ssw.compilerplugin
 
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.symbols.*
+import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
 
 /**
@@ -17,9 +19,7 @@ import org.jetbrains.kotlin.ir.util.*
  *              the IR call expressions to be included in the block body.
  */
 fun IrBlockBodyBuilder.enableCallDSL(block: IrCallDsl.() -> Unit) {
-    val helper = IrCallDsl(this)
-    helper.block()
-    helper.buildBody(this)
+    IrCallDsl(this).block()
 }
 
 
@@ -31,9 +31,8 @@ fun IrBlockBodyBuilder.enableCallDSL(block: IrCallDsl.() -> Unit) {
  *              the IR call expression to be included in the expression body.
  * @return An `IrExpressionBody` containing the constructed IR expression.
  */
-fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrCallDsl.ChainableCall): IrExpressionBody {
-    val helper = IrCallDsl(this)
-    return irExprBody(helper.block().build())
+fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrFunctionAccessExpression): IrExpressionBody {
+    return irExprBody(IrCallDsl(this).block())
 }
 
 /**
@@ -43,21 +42,74 @@ fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrCallDsl.Chainab
  *                    expressions.
  */
 class IrCallDsl(private val builder: IrBuilderWithScope) {
-    private val statements: MutableList<IrStatement> = mutableListOf()
+
     /**
-     * Call a function on a property or other symbol.
+     * Chains a function call to the current `IrFunctionAccessExpression` and returns the resulting expression.
      *
-     * @param func The function to call. Can be a property, then the getter is called
-     * @param args Variable number of arguments to pass to the function
-     * @throws IllegalArgumentException if the number of arguments does not match the number of parameters
-     * @throws IllegalArgumentException if the property does not have a getter
-     * @throws IllegalArgumentException if the provided function to call is not callable (no property or function(symbol))
-     * @throws IllegalStateException if the field is not a top-level field
-     * @return A ChainableCall that can be further chained
+     * @param func The `IrFunctionSymbol` representing the function to be called.
+     * @param args A variable number of arguments to be passed to the function.
+     * @return A new `IrFunctionAccessExpression` representing the chained function call.
+     */
+    fun IrFunctionAccessExpression.chain(func: IrFunctionSymbol, vararg args: Any): IrFunctionAccessExpression {
+        val newCall = builder.irCall(func).apply {
+            this.extensionReceiver = this@chain
+        }
+
+        args.forEachIndexed { index, arg ->
+            newCall.putValueArgument(index, builder.convertToIrExpression(arg))
+        }
+
+        return newCall
+    }
+
+    /**
+     * Chains a function call to the current `IrFunctionAccessExpression` using a function name and `pluginContext` to find the function.
+     *
+     * @param signature The full path to the function (no parameters) e.g.: `"package/outerClasses.ClassName.funcName"`.
+     * @param pluginContext The `IrPluginContext` used to find the function symbol.
+     * @param args A variable number of arguments to be passed to the function.
+     * @return A new `IrFunctionAccessExpression` representing the chained function call.
+     */
+    fun IrFunctionAccessExpression.chain(pluginContext: IrPluginContext, signature: String, vararg args: Any): IrFunctionAccessExpression {
+        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
+        val funcSymbol = pluginContext.findFunction(signature + params, this.type)
+            ?: throw IllegalArgumentException("Function $signature not found in the provided plugin context")
+
+        val newCall = builder.irCall(funcSymbol).apply {
+            this.extensionReceiver = this@chain
+        }
+
+        args.forEachIndexed { index, arg ->
+            newCall.putValueArgument(index, builder.convertToIrExpression(arg))
+        }
+
+        return newCall
+    }
+
+    /**
+     * Calls a function on a property or other symbol.
+     *
+     * This function supports various symbol types (e.g., `IrPropertySymbol`, `IrFieldSymbol`, etc.)
+     * and constructs an `IrCall` representing the function call. It ensures that the number of
+     * arguments matches the number of non-default parameters in the function being called.
+     *
+     * @param func The function to call. Supported types include:
+     *             - `IrFunctionSymbol`: Directly calls the function.
+     *             - `IrFunction`: Calls the function represented by its symbol.
+     *             - `IrProperty`: Calls the getter of the property.
+     *             - `IrPropertySymbol`: Calls the getter of the property symbol.
+     * @param args Variable number of arguments to pass to the function. The number of arguments
+     *             must match the number of non-default parameters in the function.
+     * @throws IllegalArgumentException If the number of arguments does not match the number of
+     *                                  non-default parameters, the property does not have a getter,
+     *                                  or the provided function type is unsupported.
+     * @throws IllegalStateException If the field is not a top-level field.
+     * @return An `IrCall` representing the constructed function call, including dispatch or
+     *         extension receivers if applicable.
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun IrSymbol.call(func: Any, vararg args: Any): ChainableCall {
-        //TODO: restrict - yes probably with generics
+    fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
+        //TODO: doesn't support setting dispatch and extension receiver
         val functionCall : IrFunctionSymbol = when (func) {
             is IrFunctionSymbol -> func
             is IrFunction -> func.symbol
@@ -89,9 +141,11 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             }
             is IrValueSymbol -> builder.irGet(owner)
             is IrClassSymbol -> builder.irGetObject(this)
-            is IrVariableSymbol -> builder.irGet(owner)
             is IrCall -> this
-            else -> null
+            is IrConstructorSymbol -> null
+            is IrSimpleFunctionSymbol -> null
+            //restrict - yes probably with generics -> the best way to do this in kotlin
+            else -> throw IllegalArgumentException("IrCallHelper: Unsupported symbol type: ${this::class.simpleName}")
         }
 
         val nonDefaultParameters = functionCall.owner.valueParameters.filter { !it.hasDefaultValue() }
@@ -113,89 +167,88 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             null
         }
 
-        return ChainableCall(builder, functionCall, dispatchReceiver, extensionReceiver, newArgs)
+        return builder.irCall(functionCall).apply {
+            this.dispatchReceiver = dispatchReceiver
+            this.extensionReceiver = extensionReceiver
+            newArgs.forEachIndexed { index, arg ->
+                putValueArgument(index, arg)
+            }
+        }
     }
 
     /**
-     * Extension function for [IrProperty] to call a function on this property with the given arguments.
+     * Calls a function on the given plugin context with the specified function signature and arguments.
      *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return A ChainableCall that can be further chained
+     * @param pluginContext The plugin context to use for finding the function symbol.
+     * @param funcSignature The signature of the function to find. It should be in the format
+     *                      "package/outerClasses.ClassName.funcName".
+     *                      Some standard packages are predefined, and if a package is not found in kotlin it is searched for in the java context.
+     * @param extensionReceiverType The type of the extension receiver, if any.
+     * @param args The arguments to pass to the function.
+     * @return An IrFunctionAccessExpression representing the function call.
      */
-    fun IrProperty.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    fun call(pluginContext: IrPluginContext, funcSignature: String, extensionReceiverType: IrType?, vararg args: Any): IrFunctionAccessExpression {
+        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
+        val funcSymbol = pluginContext.findFunction(funcSignature + params, extensionReceiverType) ?: throw IllegalArgumentException("IrCallHelper: Function $funcSignature not found")
+        return funcSymbol(*args)
+    }
 
     /**
-     * Calls a function on this field with the given arguments.
+     * Calls a constructor of a class using the given function signature and arguments.
      *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return A ChainableCall that can be further chained
+     * @param pluginContext The `IrPluginContext` used to find the constructor symbol.
+     * @param funcSignature The signature of the constructor to call, in the format
+     *                      "package/outerClasses.ClassName".
+     * @param args The arguments to pass to the constructor. The number and types of arguments
+     *             must match the constructor's parameters.
+     * @return An `IrFunctionAccessExpression` representing the constructor call.
+     * @throws IllegalArgumentException If the constructor cannot be found.
      */
-    fun IrField.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    fun callConstructor(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression {
+        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
+        val funcSymbol = pluginContext.findConstructor(funcSignature + params) ?: throw IllegalArgumentException("IrCallHelper: Constructor $funcSignature not found")
+        return funcSymbol(*args)
+    }
 
     /**
-     * Calls a function on this value parameter with the given arguments.
+     * Calls a function on the given symbol with the specified function signature and arguments.
      *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return A ChainableCall that can be further chained
+     * @receiver The `IrSymbol` on which the function is to be called. Supported symbol types include:
+     *           - `IrClassSymbol`
+     *           - `IrVariableSymbol`
+     *           - `IrValueSymbol`
+     *           - `IrFieldSymbol`
+     *           - `IrPropertySymbol`
+     * @param pluginContext The `IrPluginContext` used to find the function symbol.
+     * @param funcSignature The signature of the function to call, in the format
+     *                      "funcName".
+     * @param args The arguments to pass to the function.
+     * @return An `IrFunctionAccessExpression` representing the function call.
+     * @throws IllegalArgumentException If the symbol type is unsupported, the class cannot be resolved,
+     *                                  or the function cannot be found.
      */
-    fun IrValueParameter.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    fun IrSymbol.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression {
+        val irClass = when (this) {
+            is IrClassSymbol -> this.owner
+            is IrVariableSymbol -> this.owner.type.getClass()
+            is IrValueSymbol -> this.owner.type.getClass()
+            is IrFieldSymbol -> this.owner.type.getClass()
+            is IrPropertySymbol -> this.owner.getter?.returnType?.getClass() ?: throw IllegalArgumentException("IrCallHelper: Property ${this.owner.name} does not have a getter")
+            else -> throw IllegalArgumentException("Unsupported symbol type: ${this::class.simpleName}")
+        } ?: throw IllegalArgumentException("Could not resolve class from symbol")
 
-    /**
-     * Calls a function on this class with the given arguments.
-     *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return A ChainableCall that can be further chained
-     */
-    fun IrClass.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
+        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
+        val functionSymbol = irClass.symbol.findFunction(pluginContext, funcSignature + params, irClass.defaultType)
+            ?: when (this) {
+                is IrVariableSymbol -> this.owner.findFunction(pluginContext, funcSignature + params, this.owner.type)
+                is IrPropertySymbol -> this.findFunction(pluginContext, funcSignature + params, this.owner.getter?.extensionReceiverParameter?.type)
+                else -> null
+            } ?: throw IllegalArgumentException(
+                "IrCallHelper: Function $funcSignature with params $params not found in class ${irClass.name}"
+            )
 
-    /**
-     * Calls a function on this variable with the given arguments.
-     *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return A ChainableCall that can be further chained
-     */
-    fun IrVariable.call(func: Any, vararg args: Any): ChainableCall = this.symbol.call(func, *args)
-
-    /**
-     * Calls this function with the given arguments and returns a ChainableCall to continue building
-     * the IR expression tree.
-     *
-     * @param args The arguments to be passed to the function
-     * @return A ChainableCall that can be further chained
-     */
-    operator fun IrFunction.invoke(vararg args: Any): ChainableCall = this.symbol.call(this.symbol, *args)
-
-    /**
-     * Calls this function with the given arguments and returns a ChainableCall to continue building
-     * the IR expression tree.
-     *
-     * @param args The arguments to be passed to the function
-     * @return A ChainableCall that can be further chained
-     */
-    operator fun IrFunctionSymbol.invoke(vararg args: Any) : ChainableCall = this.call(this, *args)
-
-    /**
-     * Constructs the body of an IR block by adding the accumulated statements.
-     *
-     * This function iterates over the statements that have been collected in
-     * the DSL by unary plus operators and adds each one to the provided `IrBlockBodyBuilder`. The
-     * `IrBlockBodyBuilder` is then responsible for constructing the IR block
-     * body using these statements.
-     *
-     * @param irBlockBodyBuilder The builder used to create the IR block body.
-     */
-    fun buildBody(irBlockBodyBuilder: IrBlockBodyBuilder) {
-        irBlockBodyBuilder.run {
-            //TODO: reihenfolge. Direkt in BlockBodyStatements einfügen und brutal casten
-            statements.forEach {
-                +it
-            }
-        }
+        return this.call(functionSymbol, *args)
     }
 
     /**
@@ -213,91 +266,161 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
     }
 
     /**
-     * Chainable call class that allows fluid method chaining.
+     * Extension function for [IrProperty] to call a function on this property with the given arguments.
+     *
+     * @param func The function symbol to call
+     * @param args The arguments to be passed to the function
+     * @return An IrCall that can be further chained
      */
-    inner class ChainableCall(
-        private val builder: IrBuilderWithScope,
-        private val callee: IrFunctionSymbol,
-        private var dispatchReceiver: IrExpression? = null,
-        private var extensionReceiver: IrExpression? = null,
-        private val args: MutableList<IrExpression> = mutableListOf()
-    ) {
+    fun IrProperty.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
-        /**
-         * Chains another function call to the current IR expression chain.
-         *
-         * @param func The function symbol representing the function to be called.
-         * @param args The arguments to be passed to the function.
-         * @return A new ChainableCall instance representing the chained function call.
-         */
-        //TODO replace ChainableCall
-        //TODO func type
-        fun chain(func: IrFunctionSymbol, vararg args: Any): ChainableCall {
-            val receiver = this.build()
-            val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
+    /**
+     * Calls a function on this field with the given arguments.
+     *
+     * @param func The function symbol to call
+     * @param args The arguments to be passed to the function
+     * @return An IrCall that can be further chained
+     */
+    fun IrField.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
-            return ChainableCall(builder, func, null, receiver, newArgs)
-        }
+    /**
+     * Calls a function on this value parameter with the given arguments.
+     *
+     * @param func The function symbol to call
+     * @param args The arguments to be passed to the function
+     * @return An IrCall that can be further chained
+     */
+    fun IrValueParameter.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
-        /**
-         * Builds an IR function call expression for the current chainable call.
-         *
-         * @return An IrFunctionAccessExpression representing the built function call.
-         */
-        fun build(): IrFunctionAccessExpression {
-            val call = builder.irCall(callee).apply {
-                this.dispatchReceiver = this@ChainableCall.dispatchReceiver
-                this.extensionReceiver = this@ChainableCall.extensionReceiver
-            }
+    /**
+     * Calls a function on this class with the given arguments.
+     *
+     * @param func The function symbol to call
+     * @param args The arguments to be passed to the function
+     * @return An IrCall that can be further chained
+     */
+    fun IrClass.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
-            args.forEachIndexed { index, value ->
-                call.putValueArgument(index, value)
-            }
+    /**
+     * Calls a function on this variable with the given arguments.
+     *
+     * @param func The function symbol to call
+     * @param args The arguments to be passed to the function
+     * @return An IrCall that can be further chained
+     */
+    fun IrVariable.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
 
-            return call
-        }
+    /**
+     * Calls this function with the given arguments and returns an IrCall to continue building
+     * the IR expression tree.
+     *
+     * @param args The arguments to be passed to the function
+     * @return An IrCall that can be further chained
+     */
+    operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this.symbol.call(this.symbol, *args)
 
-        /**
-         * Adds the built function call to the IR expression chain.
-         *
-         * This function will take the current chainable call and build an IR function call expression.
-         * The resulting expression will then be added to the IR expression chain.
-         */
-        operator fun unaryPlus() {
-            statements.add(this.build())
-        }
+    /**
+     * Calls this function with the given arguments and returns an IrCall to continue building
+     * the IR expression tree.
+     *
+     * @param args The arguments to be passed to the function
+     * @return An IrCall that can be further chained
+     */
+    operator fun IrFunctionSymbol.invoke(vararg args: Any) : IrFunctionAccessExpression = this.call(this, *args)
 
+    /**
+     * Calls a function on this class with the given arguments.
+     *
+     * @param pluginContext The `IrPluginContext` used to find the function symbol.
+     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
+     * @param args The arguments to pass to the function.
+     * @return An `IrFunctionAccessExpression` representing the function call.
+     */
+    fun IrClass.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
+        this.symbol.call(pluginContext, funcSignature, *args)
 
-        /**
-         * Builds an IR return expression for the current chainable call and adds it to the statements list.
-         *
-         * This function constructs an IR return expression using the current chainable call and appends
-         * it to the list of statements. The resulting expression represents the return of the built function call.
-         */
-        fun buildReturn() = statements.add(builder.irReturn(this.build()))
+    /**
+     * Calls a constructor of the class represented by this `IrClassSymbol` with the given arguments.
+     *
+     * @receiver The `IrClassSymbol` representing the class whose constructor is to be called.
+     * @param pluginContext The `IrPluginContext` used to find the constructor symbol.
+     * @param args The arguments to pass to the constructor. The types of the arguments are used to
+     *             determine the constructor signature.
+     * @return An `IrFunctionAccessExpression` representing the constructor call.
+     * @throws IllegalArgumentException If the constructor cannot be found in the class.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    fun IrClassSymbol.callConstructor(pluginContext: IrPluginContext, vararg args: Any): IrFunctionAccessExpression {
+        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
+        return this.findConstructor(pluginContext, params)?.invoke(*args)
+            ?: throw IllegalArgumentException("IrCallHelper: Constructor wit params: $params not found in class ${this.owner.name}")
     }
+
+    /**
+     * Calls a function on this variable with the given arguments.
+     *
+     * @param pluginContext The `IrPluginContext` used to find the function symbol.
+     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
+     * @param args The arguments to pass to the function.
+     * @return An `IrFunctionAccessExpression` representing the function call.
+     */
+    fun IrVariable.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
+        this.symbol.call(pluginContext, funcSignature, *args)
+
+    /**
+     * Calls a function on this value parameter with the given arguments.
+     *
+     * @param pluginContext The `IrPluginContext` used to find the function symbol.
+     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
+     * @param args The arguments to pass to the function.
+     * @return An `IrFunctionAccessExpression` representing the function call.
+     */
+    fun IrValueParameter.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
+        this.symbol.call(pluginContext, funcSignature, *args)
+
+    /**
+     * Calls a function on this field with the given arguments.
+     *
+     * @param pluginContext The `IrPluginContext` used to find the function symbol.
+     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
+     * @param args The arguments to pass to the function.
+     * @return An `IrFunctionAccessExpression` representing the function call.
+     */
+    fun IrField.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
+        this.symbol.call(pluginContext, funcSignature, *args)
+
+    /**
+     * Calls a function on this property with the given arguments.
+     *
+     * @param pluginContext The `IrPluginContext` used to find the function symbol.
+     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
+     * @param args The arguments to pass to the function.
+     * @return An `IrFunctionAccessExpression` representing the function call.
+     */
+    fun IrProperty.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
+        this.symbol.call(pluginContext, funcSignature, *args)
+
 }
 
-        /**
-         * Converts the given value into an IrExpression. This will be used as a function argument.
-         *
-         * Supports the following types:
-         * - Primitive types
-         * - String
-         * - IrCall
-         * - IrCallDsl.ChainableCall
-         * - IrFunction
-         * - IrProperty
-         * - IrField
-         * - IrValueParameter
-         * - IrVariable
-         * - IrClassSymbol
-         * - IrValueDeclaration
-         * - IrStringConcatenation
-         * - IrConst<*>
-         *
-         * @throws error if the given value is not supported.
-         */
+/**
+ * Converts the given value into an IrExpression. This will be used as a function argument.
+ *
+ * Supports the following types:
+ * - Primitive types
+ * - String
+ * - IrCall
+ * - IrFunction
+ * - IrProperty
+ * - IrField
+ * - IrValueParameter
+ * - IrVariable
+ * - IrClassSymbol
+ * - IrValueDeclaration
+ * - IrStringConcatenation
+ * - IrConst<*>
+ *
+ * @throws error if the given value is not supported.
+ */
 fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
     if (value == null) return irNull()
 
@@ -314,9 +437,7 @@ fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
         is String -> irString(value)
         is IrCallImpl -> value
         is IrCall -> irCall(value.symbol)
-        is IrExpression -> value
         is IrFunctionAccessExpression -> value
-        is IrCallDsl.ChainableCall -> value.build()
         is IrFunction -> irCall(value)
         is IrProperty -> irCall(value.getter ?: error("IrCallHelper-convertToIrExpression: Property has no getter"))
         is IrField -> irGetField(null, value)
@@ -326,6 +447,7 @@ fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
         is IrValueDeclaration -> irGet(value)
         is IrStringConcatenation -> return value
         is IrConst<*> -> value
+        is IrExpression -> value
 
         else -> error("IrCallHelper-convertToIrExpression: Cannot convert $value to IrExpression")
     }
