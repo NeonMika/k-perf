@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.presentableDescription
 import java.io.File
+import java.util.LinkedList
 import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
@@ -1029,12 +1030,11 @@ class PerfMeasureExtension2(
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     flushTraceFile()
-
+                    //TODO: wenn main in package dann wird es nicht gefunden
+                    val mainMethodId = methodIdMap.entries.find { it.key.endsWith("main") }?.value
+                        ?: throw IllegalStateException("main method not found")
                     +irCall(exitFunc).apply {
-                        putValueArgument(
-                            0,
-                            methodIdMap["main"]!!.toIrConst(pluginContext.irBuiltIns.intType)
-                        )
+                        putValueArgument(0, mainMethodId.toIrConst(pluginContext.irBuiltIns.intType))
                         putValueArgument(1, irGet(valueParameters[0]))
                     }
 
@@ -1120,6 +1120,62 @@ class PerfMeasureExtension2(
             }, null)
             println("---${file.name}---")
             println(file.dump())
+        }
+        //------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //further tests
+        val list = LinkedList<String>()
+        val myClass = pluginContext.findClass("test/MyClass")
+
+        if(myClass != null) {
+            //TODO MS4: test
+            /*appendToDebugFile("myClass found\n")
+            // Test for a generic function with one type parameter
+            val genericFunction = myClass.findFunction(pluginContext, "genericFunction(T)")
+            if (genericFunction != null) {
+                appendToDebugFile("genericFunction found\n")
+            } else {
+                appendToDebugFile("genericFunction not found\n")
+            }
+
+            // Test for a generic function with a different type parameter
+            val anotherGenericFunction = myClass.findFunction(pluginContext, "anotherGenericFunction(R)")
+            if (anotherGenericFunction != null) {
+                appendToDebugFile("anotherGenericFunction found\n")
+            } else {
+                appendToDebugFile("anotherGenericFunction not found\n")
+            }*/
+
+            // Test for a static function in the companion object
+            val staticFunction = myClass.findFunction(pluginContext, "staticFunction()")
+            if (staticFunction != null) {
+                appendToDebugFile("staticFunction found\n")
+            } else {
+                appendToDebugFile("staticFunction not found\n")
+            }
+
+            // Test a normal function in a class with simular other function
+            val normalFunction = myClass.findFunction(pluginContext, "normalFunction(Int)")
+            if (normalFunction != null) {
+                appendToDebugFile("normalFunction found\n")
+            } else {
+                appendToDebugFile("normalFunction not found\n")
+            }
+
+            // Test a normal function in a class with all default parameters given
+            val defaultParamFunction = myClass.findFunction(pluginContext, "normalFunction(Int, String)", ignoreNullability = true)
+            if (defaultParamFunction != null) {
+                appendToDebugFile("Function with default params found\n")
+            } else {
+                appendToDebugFile("Function with default params not found\n")
+            }
+
+            // Test for a top-level function with a primitive type parameter
+            val topLevelFunction = pluginContext.findFunction("test/topLevelFunction(Int)")
+            if (topLevelFunction != null) {
+                appendToDebugFile("topLevelFunction found\n")
+            } else {
+                appendToDebugFile("topLevelFunction not found\n")
+            }
         }
     }
 
