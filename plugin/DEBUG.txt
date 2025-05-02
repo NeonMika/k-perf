@@ -68,6 +68,8 @@ fields stringBuilder match
 
 fields stringBuilder match
 
+fields stringBuilder match
+
 Class kotlin.random.Random.Default: MATCH
 
 Function nextInt: MATCH
@@ -76,9 +78,15 @@ fields randomNumber match
 
 fields randomNumber match
 
+fields randomNumber match
+
 fields bufferedTraceFileSink match
 
 fields bufferedTraceFileSink match
+
+fields bufferedTraceFileSink match
+
+fields bufferedSymbolsFileName match
 
 fields bufferedSymbolsFileSink match
 
@@ -92,7 +100,3 @@ Function elapsedNow: MATCH
 
 fields testBodyWithTempVar match
 
-staticFunction found
-normalFunction found
-Function with default params found
-topLevelFunction found

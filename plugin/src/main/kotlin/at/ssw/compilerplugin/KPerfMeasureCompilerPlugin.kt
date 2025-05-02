@@ -517,8 +517,9 @@ class PerfMeasureExtension2(
                     )
                 )
         }
+        firstFile.declarations.add(stringBuilder)
+        stringBuilder.parent = firstFile
 
-        //TODO simplify field creation
         val stringBuilderNew: IrField = pluginContext.irFactory.buildField {
             name = Name.identifier("_stringBuilder2")
             type = stringBuilderClass.defaultType
@@ -526,9 +527,10 @@ class PerfMeasureExtension2(
             isStatic = true
         }.apply {
             this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { stringBuilderConstructor() }
-            //TODO: this.initializer = pluginContext.buildIn(firstFile.symbol)
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNew.dump(), "stringBuilder")
+        firstFile.declarations.add(stringBuilderNew)
+        stringBuilderNew.parent = firstFile
 
         val stringBuilderNewCall: IrField = pluginContext.irFactory.buildField {
             name = Name.identifier("_stringBuilder3")
@@ -539,6 +541,8 @@ class PerfMeasureExtension2(
             this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { stringBuilderClass.callConstructor(pluginContext) }
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNewCall.dump(), "stringBuilder")
+        firstFile.declarations.add(stringBuilderNewCall)
+        stringBuilderNewCall.parent = firstFile
 
         val stringBuilderNewCallDirect: IrField = pluginContext.irFactory.buildField {
             name = Name.identifier("_stringBuilder4")
@@ -549,9 +553,13 @@ class PerfMeasureExtension2(
             this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { callConstructor(pluginContext, "kotlin/text/StringBuilder") }
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNewCallDirect.dump(), "stringBuilder")
+        firstFile.declarations.add(stringBuilderNewCallDirect)
+        stringBuilderNewCallDirect.parent = firstFile
 
-        firstFile.declarations.add(stringBuilder)
-        stringBuilder.parent = firstFile
+        val stringBuilderSimpleField = pluginContext.createField(firstFile.symbol, "_stringBuilder5") { stringBuilderClass.callConstructor(pluginContext) }
+        compareFieldDumps(stringBuilder.dump(), stringBuilderSimpleField.dump(), "stringBuilder")
+        firstFile.declarations.add(stringBuilderSimpleField)
+        stringBuilderSimpleField.parent = firstFile
 
         val randomDefaultObjectClass =
             pluginContext.referenceClass(ClassId.fromString("kotlin/random/Random.Default"))!!
@@ -619,18 +627,22 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(randomNumber3)
         randomNumber3.parent = firstFile
 
+        val randomNumber4 = pluginContext.createField(firstFile.symbol, "_randomNumber4") {randomDefaultObjectClass.call(nextIntFunc)}
+        compareFieldDumps(randomNumber.dump(), randomNumber4.dump(), "randomNumber")
+        firstFile.declarations.add(randomNumber4)
+        randomNumber4.parent = firstFile
+
         val bufferedTraceFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileName")
             type = pluginContext.irBuiltIns.stringType
             isFinal = false
             isStatic = true
         }.apply {
-            //TODO simplify use of concat here
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 irExprBody(
                     irConcat().apply {
                         addArgument(irString("./trace_${pluginContext.platform!!.presentableDescription}_"))
-                        // TODO: use kotlinx.datetime.Clock.System.now()
+                        //use kotlinx.datetime.Clock.System.now()
                         addArgument(irGetField(null, randomNumber))
                         addArgument(irString(".txt"))
                     })
@@ -671,7 +683,6 @@ class PerfMeasureExtension2(
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 callExpression {
-                    //TODO: support function path search by searching for sink in systemFileSystem
                     systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
                         .chain(bufferedFunc)
                 }
@@ -700,6 +711,15 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedTraceFileSink3)
         bufferedTraceFileSink3.parent = firstFile
 
+        val bufferedTraceFileSink4 = pluginContext.createField(firstFile.symbol, "_bufferedTraceFileSink4") {
+            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
+                .chain(bufferedFunc)
+        }
+        compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink4.dump(), "bufferedTraceFileSink")
+
+        firstFile.declarations.add(bufferedTraceFileSink4)
+        bufferedTraceFileSink4.parent = firstFile
+
         val bufferedSymbolsFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileName")
             type = pluginContext.irBuiltIns.stringType
@@ -710,7 +730,7 @@ class PerfMeasureExtension2(
                 irExprBody(
                     irConcat().apply {
                         addArgument(irString("./symbols_${pluginContext.platform!!.presentableDescription}_"))
-                        // TODO: use kotlinx.datetime.Clock.System.now()
+                        //use kotlinx.datetime.Clock.System.now()
                         addArgument(irGetField(null, randomNumber))
                         addArgument(irString(".txt"))
                     })
@@ -719,6 +739,12 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedSymbolsFileName)
         bufferedSymbolsFileName.parent = firstFile
 
+        val bufferedSymbolsFileName2 = pluginContext.createField(firstFile.symbol, "_bufferedSymbolsFileName2") {
+            irConcat("./symbols_${pluginContext.platform!!.presentableDescription}_", randomNumber, ".txt")
+        }
+        firstFile.declarations.add(bufferedSymbolsFileName2)
+        bufferedSymbolsFileName2.parent = firstFile
+        compareFieldDumps(bufferedSymbolsFileName.dump(), bufferedSymbolsFileName2.dump(), "bufferedSymbolsFileName")
 
         val bufferedSymbolsFileSink = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileSink")
@@ -913,8 +939,6 @@ class PerfMeasureExtension2(
 
                 val oldBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     // Duration
-                    //TODO MS3 simplify temp var creation like this:
-                    //val temp0 = secondParam.elapsedNow()
                     val elapsedDuration = irTemporary(irCall(funElapsedNow).apply {
                         dispatchReceiver = irGet(valueParameters[1])
                     })

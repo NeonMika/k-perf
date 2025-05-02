@@ -3,6 +3,7 @@ package at.ssw.compilerplugin
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.*
+import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
@@ -10,6 +11,7 @@ import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.name.Name
 
 /**
  * A helper function for building an IR block body using a DSL scope.
@@ -31,8 +33,29 @@ fun IrBlockBodyBuilder.enableCallDSL(block: IrCallDsl.() -> Unit) {
  *              the IR call expression to be included in the expression body.
  * @return An `IrExpressionBody` containing the constructed IR expression.
  */
-fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrFunctionAccessExpression): IrExpressionBody {
+fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrExpression): IrExpressionBody {
     return irExprBody(IrCallDsl(this).block())
+}
+
+fun IrPluginContext.createField(
+    parentSymbol: IrSymbol,
+    fieldName: String,
+    isFinal: Boolean = true,
+    isStatic: Boolean = true,
+    initializerBlock: IrCallDsl.() -> IrExpression
+): IrField {
+    val initializerExpression = DeclarationIrBuilder(this, parentSymbol).callExpression {
+        initializerBlock()
+    }
+
+    return this.irFactory.buildField {
+        name = Name.identifier(fieldName)
+        type = initializerExpression.expression.type
+        this.isFinal = isFinal
+        this.isStatic = isStatic
+    }.apply {
+        this.initializer = DeclarationIrBuilder(this@createField, parentSymbol).irExprBody(initializerExpression.expression)
+    }
 }
 
 /**
