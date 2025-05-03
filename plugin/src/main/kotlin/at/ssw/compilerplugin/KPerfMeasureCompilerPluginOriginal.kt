@@ -18,8 +18,11 @@ import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.ADAPTER_FOR_CALLABLE_REFERENCE
-import org.jetbrains.kotlin.ir.expressions.*
-import org.jetbrains.kotlin.ir.symbols.*
+import org.jetbrains.kotlin.ir.expressions.IrBody
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.addArgument
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.CallableId
@@ -28,11 +31,10 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.presentableDescription
 import java.io.File
-import java.util.LinkedList
 import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
-object ExampleConfigurationKeys {
+object ExampleConfigurationKeysOriginal {
     val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled")
     val LOG_ANNOTATION_KEY: CompilerConfigurationKey<MutableList<String>> =
         CompilerConfigurationKey.create("measure annotation")
@@ -46,8 +48,8 @@ Thus, we need an entry in META-INF/services/org.jetbrains.kotlin.compiler.plugin
 that reads at.ssw.compilerplugin.KPerfMeasureCommandLineProcessor
  */
 @OptIn(ExperimentalCompilerApi::class)
-class KPerfMeasureCommandLineProcessor : CommandLineProcessor {
-    override val pluginId: String = "k-perf-measure-compiler-plugin"
+class KPerfMeasureCommandLineProcessorOriginal : CommandLineProcessor {
+    override val pluginId: String = "k-perf-measure-compiler-plugin-original"
     override val pluginOptions: Collection<CliOption> = listOf(
         CliOption(
             "enabled",
@@ -64,7 +66,7 @@ class KPerfMeasureCommandLineProcessor : CommandLineProcessor {
     )
 
     init {
-        println("KPerfMeasureCommandLineProcessor - init")
+        println("KPerfMeasureCommandLineProcessorOriginal - init")
     }
 
     override fun processOption(
@@ -72,7 +74,7 @@ class KPerfMeasureCommandLineProcessor : CommandLineProcessor {
         value: String,
         configuration: CompilerConfiguration
     ) {
-        println("KPerfMeasureCommandLineProcessor - processOption ($option, $value)")
+        println("KPerfMeasureCommandLineProcessorOriginal - processOption ($option, $value)")
         when (option.optionName) {
             "enabled" -> configuration.put(KEY_ENABLED, value.toBoolean())
             "annotation" -> {
@@ -91,11 +93,11 @@ Thus, we need an entry in META-INF/services/org.jetbrains.kotlin.compiler.plugin
 that reads at.ssw.compilerplugin.PerfMeasureComponentRegistrar
  */
 @OptIn(ExperimentalCompilerApi::class)
-class PerfMeasureComponentRegistrar : CompilerPluginRegistrar() {
+class PerfMeasureComponentRegistrarOriginal : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
 
     init {
-        println("PerfMeasureComponentRegistrar - init")
+        println("PerfMeasureComponentRegistrarOriginal - init")
     }
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
@@ -242,7 +244,7 @@ class PerfMeasureExtension(
 /*
 Backend plugin
  */
-class PerfMeasureExtension2(
+class PerfMeasureExtension2Original(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
 
@@ -263,30 +265,12 @@ class PerfMeasureExtension2(
         val timeMarkClass: IrClassSymbol =
             pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeMark"))!!
 
-        val timeMarkClassNew = pluginContext.findClass("kotlin/time/TimeMark")
-        compareClassSymbols(timeMarkClass, timeMarkClassNew)
-
         val stringBuilderClassId = ClassId.fromString("kotlin/text/StringBuilder")
         // In JVM, StringBuilder is a type alias (see https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.text/-string-builder/)
         val stringBuilderTypeAlias = pluginContext.referenceTypeAlias(stringBuilderClassId)
         val stringBuilderClass = stringBuilderTypeAlias?.owner?.expandedType?.classOrFail
             ?: pluginContext.referenceClass(stringBuilderClassId)!! // In native and JS, StringBuilder is a class
 
-        val stringBuilderClassNew = pluginContext.findClass("kotlin/text/StringBuilder")
-        compareClassSymbols(stringBuilderClass, stringBuilderClassNew)
-
-        //TODO: this works! but should it?
-        val stringClass = pluginContext.findClass("string")
-        val stringEqualsFunc = stringClass?.findFunction(pluginContext, "equals()")
-
-        //irNode test
-        val pairNodeNew = pluginContext.getIrType("Pair<String, Pair<Int, Int>>")
-        val intType = pluginContext.irBuiltIns.intType
-        val stringType = pluginContext.irBuiltIns.stringType
-        val pairClass = pluginContext.referenceClass(ClassId.fromString("kotlin/Pair"))!!
-        val innerPair = pairClass.typeWith(intType, intType)
-        val pairNode = pairClass.typeWith(stringType, innerPair)
-        appendToDebugFile("Pair types are equal: ${pairNodeNew == pairNode}\n\n")
 
         val stringBuilderConstructor =
             stringBuilderClass.constructors.single { it.owner.valueParameters.isEmpty() }
@@ -297,94 +281,13 @@ class PerfMeasureExtension2(
         val stringBuilderAppendStringFunc =
             stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
 
-        //basic constructor test
-        val stringBuilderConstructorNew = stringBuilderClassNew?.findConstructor(pluginContext)
-        compareConstructorSymbols(stringBuilderConstructor, stringBuilderConstructorNew)
-
-        //multiple parameter constructor test with java class
-        val fileClassNew = pluginContext.findClass("java/io/File")
-        val fileConstructor = fileClassNew?.constructors?.singleOrNull() { it.owner.valueParameters.size == 2 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() && it.owner.valueParameters[1].type == pluginContext.irBuiltIns.stringType.makeNullable() }
-        val fileConstructorNew = fileClassNew?.findConstructor(pluginContext, "(String?, String?)")
-        compareConstructorSymbols(fileConstructor!!, fileConstructorNew)
-
-        //single parameter test with kotlin class
-        val regexClass = pluginContext.findClass("kotlin/text/Regex")!!
-        val regexConstructor = regexClass.constructors.singleOrNull { it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType }
-        val regexConstructorNew = regexClass.findConstructor(pluginContext, "(String)")
-        compareConstructorSymbols(regexConstructor!!, regexConstructorNew)
-
-        //subclass constructor test
-        val defaultClass = pluginContext.findClass("kotlin/random/Random.Default")
-        val defaultClassConstructor = defaultClass?.findConstructor(pluginContext)
-
-        val defaultClassConstructorDirect = pluginContext.findConstructor("kotlin/random/Random.Default()")
-        compareConstructorSymbols(defaultClassConstructor!!, defaultClassConstructorDirect)
-
-        val findFunctionDefaultTestWithout = pluginContext.findFunction("kotlin/collections/joinToString()")
-        val findFunctionDefaultTestWith1 = pluginContext.findFunction("kotlin/collections/joinToString(charsequence)")
-        compareFunctionSymbols(findFunctionDefaultTestWithout!!, findFunctionDefaultTestWith1)
-
-        //non existin constructor test
-        val nonExistentConstructorNew = stringBuilderClassNew?.findConstructor(pluginContext, "(Boolean, String)")
-        appendToDebugFile("NonExistingTest for constructor (should be null): $nonExistentConstructorNew \n\n")
-
-        val stringBuilderAppendIntFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(int)")
-        compareFunctionSymbols(stringBuilderAppendIntFunc, stringBuilderAppendIntFuncNew, true)
-
-        val stringBuilderAppendLongFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(long)")
-        compareFunctionSymbols(stringBuilderAppendLongFunc, stringBuilderAppendLongFuncNew, true)
-
-        val stringBuilderAppendStringFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(string?)")
-        compareFunctionSymbols(stringBuilderAppendStringFunc, stringBuilderAppendStringFuncNew, true)
-
         val printlnFunc =
             pluginContext.referenceFunctions(CallableId(FqName("kotlin.io"), Name.identifier("println"))).single {
                 it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
             }
 
-        val printlnFuncNew = pluginContext.findFunction("kotlin/io/println(any?)")
-        compareFunctionSymbols(printlnFunc, printlnFuncNew)
-
-        //negative example for function:
-        val nonExistingFunc = pluginContext.findFunction("kotlin/io/blabliblup()")
-        appendToDebugFile("NonExistingTest for function: $nonExistingFunc \n\n")
-
-        //no parenthesis test for function (this should fail):
-        runCatching {
-            pluginContext.findFunction("kotlin/io/println")
-        }.onFailure { _ ->
-            appendToDebugFile("NoParenthesisTest for function failed successfully \n\n")
-        }.onSuccess {
-            appendToDebugFile("ERROR: NoParenthesisTest for function did not fail! \n\n")
-        }
-
-        //only package test for function (this should fail):
-        runCatching {
-            pluginContext.findFunction("kotlin/io/")
-        }.onFailure { _ ->
-            appendToDebugFile("onlyPackageTest for function failed successfully \n\n")
-        }.onSuccess {
-            appendToDebugFile("ERROR: onlyPackageTest for function did not fail! \n\n")
-        }
-
-        //negative example for class:
-        val nonExistingClass = pluginContext.findClass("kotlin/io/Blabliblup")
-        appendToDebugFile("NonExistingTest for class: $nonExistingClass \n\n")
-
-        //only package test for class (this should fail):
-        runCatching {
-            pluginContext.findClass("kotlin/text/")
-        }.onFailure { _ ->
-            appendToDebugFile("onlyPackageTest for class failed successfully \n\n")
-        }.onSuccess {
-            appendToDebugFile("ERROR: onlyPackageTest for class did not fail! \n\n")
-        }
-
         val rawSinkClass =
             pluginContext.referenceClass(ClassId.fromString("kotlinx/io/RawSink"))!!
-
-        val rawSinkClassNew = pluginContext.findClass("kotlinx/io/RawSink")
-        compareClassSymbols(rawSinkClass, rawSinkClassNew)
 
         // Watch out, Path does not use constructors but functions to build
         val pathConstructionFunc = pluginContext.referenceFunctions(
@@ -394,61 +297,21 @@ class PerfMeasureExtension2(
             )
         ).single { it.owner.valueParameters.size == 1 }
 
-        val pathConstructionFuncNew = pluginContext.findFunction("kotlinx/io/files/Path(string)")
-        compareFunctionSymbols(pathConstructionFunc, pathConstructionFuncNew)
-
         val systemFileSystem = pluginContext.referenceProperties(
             CallableId(
                 FqName("kotlinx.io.files"),
                 Name.identifier("SystemFileSystem")
             )
         ).single()
-
-        //Test findProperty toplevel
-        val systemFileSystemNew = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
-        comparePropertySymbols(systemFileSystem, systemFileSystemNew)
-
-        //Test findProperty inside class
-        val sizeProperty = pluginContext.referenceProperties(
-            CallableId(
-                FqName("kotlin.collections"),
-                FqName("ArrayList"),
-                Name.identifier("size")
-            )
-        ).single()
-        val sizePropertyNew = pluginContext.findProperty("kotlin/collections/ArrayList.size")
-        comparePropertySymbols(sizeProperty, sizePropertyNew)
-
-        //Test findProperty on IrClass
-        val arrayListClass = pluginContext.findClass("kotlin/collections/ArrayList")
-        val sizePropertyNewClass = arrayListClass?.findProperty("size")
-        comparePropertySymbols(sizePropertyNewClass!!, sizeProperty, true)
-
-        //Test findProperty with function call
-        val functionCallTest = arrayListClass.findProperty("size()")
-        appendToDebugFile("FunctionCallTest for property (null): $functionCallTest\n\n")
-
-        //negative example for property:
-        val nonExistingProperty = pluginContext.findProperty("kotlin/io/Blabliblup")
-        appendToDebugFile("NonExistingTest for property: $nonExistingProperty \n\n")
-
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
-        val sinkFuncNew = systemFileSystem.findFunction(pluginContext, "sink()")
-        compareFunctionSymbols(sinkFunc, sinkFuncNew)
-
-        val bufferedFuncs = pluginContext.referenceFunctions(
+        val bufferedFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
                 Name.identifier("buffered")
             )
-        )
-        val bufferedFunc = bufferedFuncs.single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
-
-        val bufferedFuncNew = pluginContext.findFunction("kotlinx/io/buffered()", sinkFunc.owner.returnType)
-        compareFunctionSymbols(bufferedFunc, bufferedFuncNew)
-
-        /*appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
+        ).single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
+        appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
         appendToDebugFile(
             pluginContext.referenceFunctions(
                 CallableId(
@@ -458,7 +321,7 @@ class PerfMeasureExtension2(
             ).joinToString("\n") { func ->
                 "kotlinx.io.writeString(${func.owner.valueParameters.joinToString(",") { param -> param.type.classFqName.toString() }})"
             }
-        )*/
+        )
         val writeStringFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -470,12 +333,6 @@ class PerfMeasureExtension2(
                     it.owner.valueParameters[1].type == pluginContext.irBuiltIns.intType &&
                     it.owner.valueParameters[2].type == pluginContext.irBuiltIns.intType
         }
-
-        //TODO check find function in different versions (generics, default parameters all given, none given, ...)
-        //TODO find functions with java functions have to be perfect match
-        val writeStringFuncNew = pluginContext.findFunction("kotlinx/io/writeString(string,int,int)")
-        compareFunctionSymbols(writeStringFunc, writeStringFuncNew)
-
         val flushFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -483,22 +340,14 @@ class PerfMeasureExtension2(
                 Name.identifier("flush")
             )
         ).single()
-
-        val flushFuncNew = pluginContext.findFunction("kotlinx/io/Sink.flush()")
-        compareFunctionSymbols(flushFunc, flushFuncNew)
-
-        //debugFile.appendText("2")
+        debugFile.appendText("2")
         val toStringFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlin"),
                 Name.identifier("toString")
             )
         ).single()
-
-        val toStringFuncNew = pluginContext.findFunction("kotlin/toString()")
-        compareFunctionSymbols(toStringFunc, toStringFuncNew)
-
-        //debugFile.appendText("3")
+        debugFile.appendText("3")
 
         val firstFile = moduleFragment.files[0]
 
@@ -508,7 +357,6 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            //val sb = ....
             this.initializer =
                 DeclarationIrBuilder(pluginContext, firstFile.symbol).irExprBody(
                     DeclarationIrBuilder(pluginContext, firstFile.symbol).irCallConstructor(
@@ -520,53 +368,8 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(stringBuilder)
         stringBuilder.parent = firstFile
 
-        val stringBuilderNew: IrField = pluginContext.irFactory.buildField {
-            name = Name.identifier("_stringBuilder2")
-            type = stringBuilderClass.defaultType
-            isFinal = false
-            isStatic = true
-        }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { stringBuilderConstructor() }
-        }
-        compareFieldDumps(stringBuilder.dump(), stringBuilderNew.dump(), "stringBuilder")
-        firstFile.declarations.add(stringBuilderNew)
-        stringBuilderNew.parent = firstFile
-
-        val stringBuilderNewCall: IrField = pluginContext.irFactory.buildField {
-            name = Name.identifier("_stringBuilder3")
-            type = stringBuilderClass.defaultType
-            isFinal = false
-            isStatic = true
-        }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { stringBuilderClass.callConstructor(pluginContext) }
-        }
-        compareFieldDumps(stringBuilder.dump(), stringBuilderNewCall.dump(), "stringBuilder")
-        firstFile.declarations.add(stringBuilderNewCall)
-        stringBuilderNewCall.parent = firstFile
-
-        val stringBuilderNewCallDirect: IrField = pluginContext.irFactory.buildField {
-            name = Name.identifier("_stringBuilder4")
-            type = stringBuilderClass.defaultType
-            isFinal = false
-            isStatic = true
-        }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { callConstructor(pluginContext, "kotlin/text/StringBuilder") }
-        }
-        compareFieldDumps(stringBuilder.dump(), stringBuilderNewCallDirect.dump(), "stringBuilder")
-        firstFile.declarations.add(stringBuilderNewCallDirect)
-        stringBuilderNewCallDirect.parent = firstFile
-
-        val stringBuilderSimpleField = pluginContext.createField(firstFile.symbol, "_stringBuilder5") { stringBuilderClass.callConstructor(pluginContext) }
-        compareFieldDumps(stringBuilder.dump(), stringBuilderSimpleField.dump(), "stringBuilder")
-        firstFile.declarations.add(stringBuilderSimpleField)
-        stringBuilderSimpleField.parent = firstFile
-
         val randomDefaultObjectClass =
             pluginContext.referenceClass(ClassId.fromString("kotlin/random/Random.Default"))!!
-
-        val randomDefaultObjectClassNew = pluginContext.findClass("kotlin/random/Random.Default")
-        compareClassSymbols(randomDefaultObjectClass, randomDefaultObjectClassNew)
-
         val nextIntFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlin.random"),
@@ -576,9 +379,6 @@ class PerfMeasureExtension2(
         ).single {
             it.owner.valueParameters.isEmpty()
         }
-
-        val nextIntFuncNew = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()")
-        compareFunctionSymbols(nextIntFunc, nextIntFuncNew)
 
         val randomNumber = pluginContext.irFactory.buildField {
             name = Name.identifier("_randNumber")
@@ -595,43 +395,6 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(randomNumber)
         randomNumber.parent = firstFile
 
-        val randomNumber2 = pluginContext.irFactory.buildField {
-            name = Name.identifier("_randNumber2")
-            type = pluginContext.irBuiltIns.intType
-            isFinal = false
-            isStatic = true
-        }.apply {
-            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callExpression {
-                    randomDefaultObjectClass.call(nextIntFunc)
-                }
-            }
-        }
-        compareFieldDumps(randomNumber.dump(), randomNumber2.dump(), "randomNumber")
-        firstFile.declarations.add(randomNumber2)
-        randomNumber2.parent = firstFile
-
-        val randomNumber3 = pluginContext.irFactory.buildField {
-            name = Name.identifier("_randNumber3")
-            type = pluginContext.irBuiltIns.intType
-            isFinal = false
-            isStatic = true
-        }.apply {
-            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callExpression {
-                    randomDefaultObjectClass.call(pluginContext, "nextInt")
-                }
-            }
-        }
-        compareFieldDumps(randomNumber.dump(), randomNumber3.dump(), "randomNumber")
-        firstFile.declarations.add(randomNumber3)
-        randomNumber3.parent = firstFile
-
-        val randomNumber4 = pluginContext.createField(firstFile.symbol, "_randomNumber4") {randomDefaultObjectClass.call(nextIntFunc)}
-        compareFieldDumps(randomNumber.dump(), randomNumber4.dump(), "randomNumber")
-        firstFile.declarations.add(randomNumber4)
-        randomNumber4.parent = firstFile
-
         val bufferedTraceFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileName")
             type = pluginContext.irBuiltIns.stringType
@@ -642,7 +405,7 @@ class PerfMeasureExtension2(
                 irExprBody(
                     irConcat().apply {
                         addArgument(irString("./trace_${pluginContext.platform!!.presentableDescription}_"))
-                        //use kotlinx.datetime.Clock.System.now()
+                        // TODO: use kotlinx.datetime.Clock.System.now()
                         addArgument(irGetField(null, randomNumber))
                         addArgument(irString(".txt"))
                     })
@@ -657,7 +420,6 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            // _bufferedTraceFileSink = SystemFileSystem.sink(Path(bufferedTraceFileName)).buffered()
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 irExprBody(irCall(bufferedFunc).apply {
                     extensionReceiver = irCall(sinkFunc).apply {
@@ -671,54 +433,8 @@ class PerfMeasureExtension2(
                 })
             }
         }
-
         firstFile.declarations.add(bufferedTraceFileSink)
         bufferedTraceFileSink.parent = firstFile
-
-        val bufferedTraceFileSink2 = pluginContext.irFactory.buildField {
-            name = Name.identifier("_bufferedTraceFileSink2")
-            type = rawSinkClass.defaultType
-            isFinal = false
-            isStatic = true
-        }.apply {
-            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callExpression {
-                    systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
-                        .chain(bufferedFunc)
-                }
-            }
-        }
-        compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink2.dump(), "bufferedTraceFileSink")
-
-        firstFile.declarations.add(bufferedTraceFileSink2)
-        bufferedTraceFileSink2.parent = firstFile
-
-        val bufferedTraceFileSink3 = pluginContext.irFactory.buildField {
-            name = Name.identifier("_bufferedTraceFileSink3")
-            type = rawSinkClass.defaultType
-            isFinal = false
-            isStatic = true
-        }.apply {
-            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callExpression {
-                    systemFileSystem.call(pluginContext, "sink()", pathConstructionFunc(bufferedTraceFileName))
-                        .chain(bufferedFunc)
-                }
-            }
-        }
-        compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink3.dump(), "bufferedTraceFileSink")
-
-        firstFile.declarations.add(bufferedTraceFileSink3)
-        bufferedTraceFileSink3.parent = firstFile
-
-        val bufferedTraceFileSink4 = pluginContext.createField(firstFile.symbol, "_bufferedTraceFileSink4") {
-            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
-                .chain(bufferedFunc)
-        }
-        compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink4.dump(), "bufferedTraceFileSink")
-
-        firstFile.declarations.add(bufferedTraceFileSink4)
-        bufferedTraceFileSink4.parent = firstFile
 
         val bufferedSymbolsFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileName")
@@ -730,7 +446,7 @@ class PerfMeasureExtension2(
                 irExprBody(
                     irConcat().apply {
                         addArgument(irString("./symbols_${pluginContext.platform!!.presentableDescription}_"))
-                        //use kotlinx.datetime.Clock.System.now()
+                        // TODO: use kotlinx.datetime.Clock.System.now()
                         addArgument(irGetField(null, randomNumber))
                         addArgument(irString(".txt"))
                     })
@@ -739,12 +455,6 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedSymbolsFileName)
         bufferedSymbolsFileName.parent = firstFile
 
-        val bufferedSymbolsFileName2 = pluginContext.createField(firstFile.symbol, "_bufferedSymbolsFileName2") {
-            irConcat("./symbols_${pluginContext.platform!!.presentableDescription}_", randomNumber, ".txt")
-        }
-        firstFile.declarations.add(bufferedSymbolsFileName2)
-        bufferedSymbolsFileName2.parent = firstFile
-        compareFieldDumps(bufferedSymbolsFileName.dump(), bufferedSymbolsFileName2.dump(), "bufferedSymbolsFileName")
 
         val bufferedSymbolsFileSink = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileSink")
@@ -768,21 +478,6 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedSymbolsFileSink)
         bufferedSymbolsFileSink.parent = firstFile
 
-        val bufferedSymbolsFileSink2 = pluginContext.irFactory.buildField {
-            name = Name.identifier("_bufferedSymbolsFileSink2")
-            type = rawSinkClass.defaultType
-            isFinal = false
-            isStatic = true
-        }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression {
-                systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedSymbolsFileName))
-                    .chain(pluginContext, "kotlinx/io/buffered")
-            }
-        }
-        firstFile.declarations.add(bufferedSymbolsFileSink2)
-        bufferedSymbolsFileSink2.parent = firstFile
-        compareFieldDumps(bufferedSymbolsFileSink.dump(), bufferedSymbolsFileSink2.dump(), "bufferedSymbolsFileSink")
-
         val methodMap = mutableMapOf<String, IrFunction>()
         val methodIdMap = mutableMapOf<String, Int>()
         var currMethodId = 0
@@ -802,9 +497,6 @@ class PerfMeasureExtension2(
             val timeSourceMonotonicClass: IrClassSymbol =
                 pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeSource.Monotonic"))!!
 
-            val timeSourceMonotonicClassNew = pluginContext.findClass("kotlin/time/TimeSource.Monotonic")
-            compareClassSymbols(timeSourceMonotonicClass, timeSourceMonotonicClassNew)
-
             /* val funMarkNowViaClass = classMonotonic.functions.find { it.owner.name.asString() == "markNow" }!! */
 
             val funMarkNow =
@@ -816,12 +508,9 @@ class PerfMeasureExtension2(
                     )
                 ).single()
 
-            val funMarkNowNew = pluginContext.findFunction("kotlin/time/TimeSource.Monotonic.markNow()")
-            compareFunctionSymbols(funMarkNow, funMarkNowNew)
-
             // assertion: funMarkNowViaClass == funMarkNow
 
-            val enterMethod = pluginContext.irFactory.buildFun {
+            return pluginContext.irFactory.buildFun {
                 name = Name.identifier("_enter_method")
                 returnType = timeMarkClass.defaultType
             }.apply {
@@ -868,36 +557,6 @@ class PerfMeasureExtension2(
                     })
                 }
             }
-
-            val enterMethodNew = pluginContext.irFactory.buildFun {
-                name = Name.identifier("_enter_method_new")
-                returnType = timeMarkClass.defaultType
-            }.apply {
-                addValueParameter {
-                    name = Name.identifier("methodId")
-                    type = pluginContext.irBuiltIns.intType
-                }
-
-                body = DeclarationIrBuilder(
-                    pluginContext,
-                    symbol,
-                    startOffset,
-                    endOffset
-                ).irBlockBody{
-                    enableCallDSL {
-                        if (STRINGBUILDER_MODE) {
-                            +stringBuilderClass.call(stringBuilderAppendStringFunc, ">;")
-                            +stringBuilderClass.call(stringBuilderAppendIntFunc, valueParameters[0])
-                            +stringBuilderClass.call(stringBuilderAppendStringFunc, "\n")
-                        } else {
-                            +bufferedTraceFileSink.call(writeStringFunc, irConcat(">;", valueParameters[0], "\n"))
-                        }
-                        +irReturn(timeSourceMonotonicClass.call(funMarkNow))
-                    }
-                }
-            }
-            compareFieldDumps(enterMethod.dump(), enterMethodNew.dump(), "_enter_method")
-            return enterMethod
         }
 
         val enterFunc = buildEnterFunction()
@@ -913,9 +572,6 @@ class PerfMeasureExtension2(
                         Name.identifier("elapsedNow")
                     )
                 ).single()
-
-            val funElapsedNowNew = pluginContext.findFunction("kotlin/time/TimeMark.elapsedNow()")
-            compareFunctionSymbols(funElapsedNow, funElapsedNowNew)
 
             return pluginContext.irFactory.buildFun {
                 name = Name.identifier("_exit_method")
@@ -937,7 +593,7 @@ class PerfMeasureExtension2(
                     type = pluginContext.irBuiltIns.anyNType
                 } */
 
-                val oldBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
+                body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     // Duration
                     val elapsedDuration = irTemporary(irCall(funElapsedNow).apply {
                         dispatchReceiver = irGet(valueParameters[1])
@@ -983,25 +639,6 @@ class PerfMeasureExtension2(
                         }
                     }
                 }
-                body = oldBody
-                val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
-                    enableCallDSL {
-                        val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow))
-                        val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
-                        val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
-
-                        if (STRINGBUILDER_MODE) {
-                            +stringBuilder.call(stringBuilderAppendStringFunc, "<;")
-                            +stringBuilder.call(stringBuilderAppendIntFunc, valueParameters[0])
-                            +stringBuilder.call(stringBuilderAppendStringFunc, ";")
-                            +stringBuilder.call(stringBuilderAppendLongFunc, elapsedMicros)
-                            +stringBuilder.call(stringBuilderAppendStringFunc, "\n")
-                        } else {
-                            +bufferedTraceFileSink.call(writeStringFunc, irConcat("<;", valueParameters[0], ";", elapsedMicros, "\n"))
-                        }
-                    }
-                }
-                compareFieldDumps(oldBody.dump(), newBody.dump(), "testBodyWithTempVar")
             }
         }
 
@@ -1054,11 +691,12 @@ class PerfMeasureExtension2(
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     flushTraceFile()
-                    //TODO: wenn main in package dann wird es nicht gefunden
-                    val mainMethodId = methodIdMap.entries.find { it.key.endsWith("main") }?.value
-                        ?: throw IllegalStateException("main method not found")
+
                     +irCall(exitFunc).apply {
-                        putValueArgument(0, mainMethodId.toIrConst(pluginContext.irBuiltIns.intType))
+                        putValueArgument(
+                            0,
+                            methodIdMap["main"]!!.toIrConst(pluginContext.irBuiltIns.intType)
+                        )
                         putValueArgument(1, irGet(valueParameters[0]))
                     }
 
@@ -1144,155 +782,6 @@ class PerfMeasureExtension2(
             }, null)
             println("---${file.name}---")
             println(file.dump())
-        }
-        //------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        //further tests
-        val list = LinkedList<String>()
-        val myClass = pluginContext.findClass("test/MyClass")
-
-        if(myClass != null) {
-            //TODO MS4: test
-            /*appendToDebugFile("myClass found\n")
-            // Test for a generic function with one type parameter
-            val genericFunction = myClass.findFunction(pluginContext, "genericFunction(T)")
-            if (genericFunction != null) {
-                appendToDebugFile("genericFunction found\n")
-            } else {
-                appendToDebugFile("genericFunction not found\n")
-            }
-
-            // Test for a generic function with a different type parameter
-            val anotherGenericFunction = myClass.findFunction(pluginContext, "anotherGenericFunction(R)")
-            if (anotherGenericFunction != null) {
-                appendToDebugFile("anotherGenericFunction found\n")
-            } else {
-                appendToDebugFile("anotherGenericFunction not found\n")
-            }*/
-
-            // Test for a static function in the companion object
-            val staticFunction = myClass.findFunction(pluginContext, "staticFunction()")
-            if (staticFunction != null) {
-                appendToDebugFile("staticFunction found\n")
-            } else {
-                appendToDebugFile("staticFunction not found\n")
-            }
-
-            // Test a normal function in a class with simular other function
-            val normalFunction = myClass.findFunction(pluginContext, "normalFunction(Int)")
-            if (normalFunction != null) {
-                appendToDebugFile("normalFunction found\n")
-            } else {
-                appendToDebugFile("normalFunction not found\n")
-            }
-
-            // Test a normal function in a class with all default parameters given
-            val defaultParamFunction = myClass.findFunction(pluginContext, "normalFunction(Int, String)", ignoreNullability = true)
-            if (defaultParamFunction != null) {
-                appendToDebugFile("Function with default params found\n")
-            } else {
-                appendToDebugFile("Function with default params not found\n")
-            }
-
-            // Test for a top-level function with a primitive type parameter
-            val topLevelFunction = pluginContext.findFunction("test/topLevelFunction(Int)")
-            if (topLevelFunction != null) {
-                appendToDebugFile("topLevelFunction found\n")
-            } else {
-                appendToDebugFile("topLevelFunction not found\n")
-            }
-        }
-    }
-
-    //------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    //helper functions
-
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun compareFunctionSymbols(original: IrSimpleFunctionSymbol, new: IrSimpleFunctionSymbol?, classCall: Boolean = false) {
-        if (classCall) appendToDebugFile("IrClassSymbol.findFunction call:\n")
-
-        if (new == null) {
-            appendToDebugFile("New method returned null for ${original.owner.name}\n\n")
-            return
-        }
-
-        val matches = original == new
-        appendToDebugFile("Function ${original.owner.name}: ${if (matches) "MATCH" else "MISMATCH"}\n")
-        if (!matches) {
-            appendToDebugFile("  Original: ${original.owner.kotlinFqName}\n")
-            appendToDebugFile("  New: ${new.owner.kotlinFqName}\n")
-        }
-        appendToDebugFile("\n")
-    }
-
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun compareClassSymbols(original: IrClassSymbol, new: IrClassSymbol?) {
-        if (new == null) {
-            appendToDebugFile("New class returned null for ${original.owner.kotlinFqName}\n\n")
-            return
-        }
-
-        val matches = original == new
-        appendToDebugFile("Class ${original.owner.kotlinFqName}: ${if (matches) "MATCH" else "MISMATCH"}\n")
-        if (!matches) {
-            appendToDebugFile("  Original: ${original.owner.kotlinFqName}\n")
-            appendToDebugFile("  New: ${new.owner.kotlinFqName}\n")
-        }
-        appendToDebugFile("\n")
-    }
-
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun comparePropertySymbols(original: IrPropertySymbol, new: IrPropertySymbol?, classCall: Boolean = false) {
-        if (classCall) appendToDebugFile("IrClassSymbol.findProperty call:\n")
-
-        if (new == null) {
-            appendToDebugFile("New property returned null for ${original.owner.name}\n\n")
-            return
-        }
-
-        val matches = original == new
-        val propertyFqName = "${original.owner.parent.kotlinFqName}.${original.owner.name}"
-        appendToDebugFile("Property $propertyFqName: ${if (matches) "MATCH" else "MISMATCH"}\n")
-        if (!matches) {
-            appendToDebugFile("  Original: $propertyFqName\n")
-            appendToDebugFile("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
-        }
-        appendToDebugFile("\n")
-    }
-
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun compareConstructorSymbols(original: IrConstructorSymbol, new: IrConstructorSymbol?) {
-        if (new == null) {
-            appendToDebugFile("New constructor returned null for ${original.owner.parent.kotlinFqName}\n\n")
-            return
-        }
-        val matches = original == new
-        val constructorFqName = "${original.owner.parent.kotlinFqName}.${original.owner.name}"
-        appendToDebugFile("Constructor $constructorFqName: ${if (matches) "MATCH" else "MISMATCH"}\n")
-        if (!matches) {
-            appendToDebugFile("  Original: $constructorFqName\n")
-            appendToDebugFile("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
-        }
-        appendToDebugFile("\n")
-    }
-
-    private fun compareFieldDumps(dump1: String, dump2: String, variableName: String) {
-
-        val normalizedDump1 = dump1.lines()
-        val normalizedDump2 = dump2.lines()
-
-        if (normalizedDump1.size != normalizedDump2.size) {
-            appendToDebugFile("fields $variableName do not match\n\n")
-            return
-        } else {
-            for (i in normalizedDump1.indices) {
-                val line1 = normalizedDump1[i].trim().split(" ").filter { !it.contains(variableName) }.joinToString(" ")
-                val line2 = normalizedDump1[i].trim().split(" ").filter { !it.contains(variableName) }.joinToString(" ")
-                if (line1 != line2) {
-                    appendToDebugFile("fields $variableName do not match\n\n")
-                    return
-                }
-            }
-            appendToDebugFile("fields $variableName match\n\n")
         }
     }
 }
