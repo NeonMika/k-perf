@@ -32,9 +32,10 @@ private const val groupFqMethod = 1
 private const val groupPackage = 2
 private const val groupClass = 3
 private const val groupMethod = 4
-private const val groupParameters = 5
-private const val groupReturnType = 6
-private val regexFun by lazy { Regex("""((?:((?:[a-zA-Z]\w*\/)*[a-zA-Z]\w*)\/)?(?:((?:[a-zA-Z]\w*\.)*[a-zA-Z]\w*)\.)?([a-zA-Z][\w<>]*))(?:\(((?:\s*(?:[a-zA-Z]\w*\:\s*)?[a-zA-Z][\w<>\.\/]*\??|\*)(?:\s*,\s*(?:[a-zA-Z]\w*\:\s*)?(?:[a-zA-Z][\w<>\.\/]*\??|\*)\s*)*)*\)(?:\s*:\s*((?:((?:[a-zA-Z]\w*[\.\/])*[a-zA-Z]\w*)[\.\/])?(?:[a-zA-Z][\w<>]*)))?)?""") }
+private const val groupParametersExisting = 5
+private const val groupParameters = 6
+private const val groupReturnType = 7
+private val regexFun by lazy { Regex("""((?:((?:[a-zA-Z]\w*\/)*[a-zA-Z]\w*)\/)?(?:((?:[a-zA-Z]\w*\.)*[a-zA-Z]\w*)\.)?([a-zA-Z][\w<>]*))(\(((?:\s*(?:[a-zA-Z]\w*\:\s*)?[a-zA-Z][\w<>\.\/]*\??|\*|\?)(?:\s*,\s*(?:[a-zA-Z]\w*\:\s*)?(?:[a-zA-Z][\w<>\.\/]*\??|\*|\?)\s*)*)*\))?(?:(?:\s*:\s*((?:((?:[a-zA-Z]\w*[\.\/])*[a-zA-Z]\w*)[\.\/])?(?:[a-zA-Z][\w<>]*)))?)?""") }
 
 private fun IrPluginContext.tryFindIrType(parameterType: String): IrType {
     val qm = '?'
@@ -96,192 +97,208 @@ private fun findReferences(context: IrPluginContext, match: MatchResult, methodN
 private fun find(context: IrPluginContext, name: String, findReferences: (match: MatchResult, methodName: String) -> Sequence<IrFunctionSymbol>): IrFunctionSymbol {
     val match = regexFun.matchEntire(name)
     if (match != null) {
-        val size = match.groups.count { it != null }
+        val size = match.groups.size
         if (size >= groupMethod) {
             val methodName = match.groups[groupMethod]?.value
             if (!methodName.isNullOrEmpty()) {
                 var existingFunctionReferences: Sequence<IrFunctionSymbol> = findReferences(match, methodName)
                 if (existingFunctionReferences.any()) {
-                    val parametersStrings = match.groups[groupParameters]?.value?.split(',')?.map {
-                        val index = it.indexOf(':')
-                        if (index >= 0) {
-                            Pair(it.substring(0, index).trim(), it.substring(index + 2).trim())
-                        } else {
-                            Pair(null, it.trim())
-                        }
-                    }?.toList()
+                    if (match.groups[groupParametersExisting] != null) {
+                        val parametersStrings = match.groups[groupParameters]?.value?.split(',')?.map {
+                            val index = it.indexOf(':')
+                            if (index >= 0) {
+                                Pair(it.substring(0, index).trim(), it.substring(index + 2).trim())
+                            } else {
+                                Pair(null, it.trim())
+                            }
+                        }?.toList()
 
-                    if (parametersStrings != null) {
-                        val nix = context.irBuiltIns.anyNType
+                        if (parametersStrings != null) {
+                            if (parametersStrings.any()) {
+                                val anyNullType = context.irBuiltIns.anyNType
+                                val star = "*"
+                                if (parametersStrings.size != 1 || parametersStrings[0].second != star) {
+                                    val em = "!"
+                                    val qm = "?"
 
-                        if (parametersStrings.any()) {
-                            val star = "*"
-                            if (parametersStrings.size != 1 || parametersStrings[0].second != star) {
-                                val (requiredTypes, requiredTypesPerName) = parametersStrings.mapIndexed { index, (argumentName, typeName) ->
-                                    val type: IrType?
-                                    val tName: String?
-                                    if (typeName == star) {
-                                        type = null
-                                        tName = typeName
-                                    } else {
-                                        type = context.tryFindIrType(typeName)
-                                        tName = null
-                                    }
-                                    Tuple4(index, argumentName, tName, type)
-                                }.partition { it.v2 == null }
-
-                                val NONE = 0
-                                val STAR = 1
-                                val ANY = 2
-                                val SUBTYPE = 4
-                                val EXACT = 8
-
-                                fun typeCheck(requiredType: IrType, existingFunctionParameter: IrValueParameter) =
-                                    (if (existingFunctionParameter == requiredType || existingFunctionParameter.type == requiredType.type) EXACT else NONE) or
-                                    (if (requiredType.type.isSubtypeOfClass(existingFunctionParameter.type.classOrNull!!)) SUBTYPE else NONE) or
-                                    (if (existingFunctionParameter.type == nix) ANY else NONE)
-
-                                fun typeCheck(requiredTypeEntry: Tuple4<Int, String?, String?, IrType?>, existingFunctionParameter: IrValueParameter) = if (requiredTypeEntry.v3 == star) STAR else if (requiredTypeEntry.v4 == null) NONE else typeCheck(requiredTypeEntry.v4!!, existingFunctionParameter)
-
-                                var existingFunctionReferenceValueParameters = existingFunctionReferences.map { existingFunctionReference ->
-                                    val existingValueParameters = existingFunctionReference.owner.valueParameters.mapIndexed { index, p -> Triple(index, p, NONE) }
-                                    Triple(existingFunctionReference, existingValueParameters, emptyList<Triple<Int, IrValueParameter, Int>>())
-                                }
-
-                                if (requiredTypesPerName.any()) {
-                                    check(requiredTypesPerName.groupBy { it.v2 }.all { it.value.size <= 1 }) { "ambiguous parameter name: ${requiredTypesPerName.groupBy { it.v2 }.filter { it.value.size > 1 }}" }
-
-                                    val requiredNames = requiredTypesPerName.map { it.v2!! }.toList()
-
-                                    existingFunctionReferenceValueParameters = existingFunctionReferenceValueParameters.map { (existingFunctionReference, existingValueParameters) ->
-                                        val (existingHasName, existingHasNoName) = existingValueParameters
-                                            .map { p -> Pair(p, requiredNames.contains(p.second.name.asString())) }
-                                            .partition { it.second }
-                                        Triple(existingFunctionReference, existingHasNoName.map { it.first }, existingHasName.map { it.first })
-                                    }
-
-                                    val existingHasAllNames = existingFunctionReferenceValueParameters.filter { (_, _, existingHasName) ->  existingHasName.count() == requiredNames.count() }
-
-                                    check(existingHasAllNames.any()) {
-                                        val msg = "argument name not found"
-                                        if (existingFunctionReferenceValueParameters.any()) {
-                                            "$msg: ${requiredNames - existingFunctionReferenceValueParameters.sortedByDescending { it.second.count() }.first().second.map { it.second.name }.toSet()}"
+                                    val (requiredTypes, requiredTypesPerName) = parametersStrings.mapIndexed { index, (argumentName, typeName) ->
+                                        val type: IrType?
+                                        val tName: String?
+                                        if (typeName == star || typeName == qm) {
+                                            type = null
+                                            tName = typeName
                                         } else {
-                                            msg
+                                            type = context.tryFindIrType(typeName)
+                                            tName = null
                                         }
+                                        Tuple4(index, argumentName, tName, type)
+                                    }.partition { it.v2 == null }
+
+                                    val NONE = 0
+                                    val STAR = 1
+                                    val EXCLAMATION_MARK = 2
+                                    val QUESTION_MARK = 4
+                                    val ANY = 8
+                                    val SUBTYPE = 16
+                                    val EXACT = 32
+
+                                    fun typeCheck(requiredType: IrType, existingFunctionParameter: IrValueParameter) =
+                                        (if (existingFunctionParameter == requiredType || existingFunctionParameter.type == requiredType.type) EXACT else NONE) or
+                                        (if (requiredType.type.isSubtypeOfClass(existingFunctionParameter.type.classOrNull!!)) SUBTYPE else NONE) or
+                                        (if (existingFunctionParameter.type == anyNullType) ANY else NONE)
+
+                                    fun typeCheck(requiredTypeEntry: Tuple4<Int, String?, String?, IrType?>, existingFunctionParameter: IrValueParameter) = when (requiredTypeEntry.v3) {
+                                        star -> STAR
+                                        em -> EXCLAMATION_MARK
+                                        qm -> QUESTION_MARK
+                                        else -> if (requiredTypeEntry.v4 == null) NONE else typeCheck(requiredTypeEntry.v4!!, existingFunctionParameter)
                                     }
 
-                                    /// Assign and compare types based on parameter names
-                                    existingFunctionReferenceValueParameters = existingHasAllNames.map { (existingFunctionReference, existingHasNoName, existingHasName) ->
-                                        val existingHasNameDerivationLevel = existingHasName.map { (index, existingValueParameter) ->
-                                            val requiredTypeEntry = requiredTypesPerName.single { it.v2 == existingValueParameter.name.asString() }
-                                            Triple(index, existingValueParameter, typeCheck(requiredTypeEntry, existingValueParameter))
-                                        }
-                                        Triple(existingFunctionReference, existingHasNoName, existingHasNameDerivationLevel)
-                                    }.filter { (existingFunctionReference, existingHasNoName, existingHasNameDerivationLevel) ->
-                                        existingHasNameDerivationLevel.all { (index, existingValueParameter, derivationLevel) -> derivationLevel != NONE }
+                                    var existingFunctionReferenceValueParameters = existingFunctionReferences.map { existingFunctionReference ->
+                                        val existingValueParameters = existingFunctionReference.owner.valueParameters.mapIndexed { index, p -> Triple(index, p, NONE) }
+                                        Triple(existingFunctionReference, existingValueParameters, emptyList<Triple<Int, IrValueParameter, Int>>())
                                     }
-                                }
 
-                                var existingFunctionReferenceValueParametersList = existingFunctionReferenceValueParameters.map {
-                                    val (existingFunctionReference, existingHasNoName, existingHasName) = it
-                                    val existingFunctionParametersIt = existingHasNoName.iterator()
-                                    if (existingFunctionParametersIt.hasNext()) {
-                                        val existingHasNoNameFilter = mutableListOf<Triple<Int, IrValueParameter, Int>>()
+                                    if (requiredTypesPerName.any()) {
+                                        check(requiredTypesPerName.groupBy { it.v2 }.all { it.value.size <= 1 }) { "ambiguous parameter name: ${requiredTypesPerName.groupBy { it.v2 }.filter { it.value.size > 1 }}" }
 
-                                        val requiredTypesIt = requiredTypes.iterator()
-                                        loopRequiredTypes@ while (requiredTypesIt.hasNext()) {
-                                            var entry = requiredTypesIt.next()
-                                            var wildcard = entry.v3
-                                            var requiredType = entry.v4!!
-                                            val isStar = wildcard == star
+                                        val requiredNames = requiredTypesPerName.map { it.v2!! }.toList()
 
-                                            while (wildcard == star && requiredTypesIt.hasNext()) {
-                                                entry = requiredTypesIt.next()
-                                                wildcard = entry.v3
-                                                requiredType = entry.v4!!
+                                        existingFunctionReferenceValueParameters = existingFunctionReferenceValueParameters.map { (existingFunctionReference, existingValueParameters) ->
+                                            val (existingHasName, existingHasNoName) = existingValueParameters
+                                                .map { p -> Pair(p, requiredNames.contains(p.second.name.asString())) }
+                                                .partition { it.second }
+                                            Triple(existingFunctionReference, existingHasNoName.map { it.first }, existingHasName.map { it.first })
+                                        }
+
+                                        val existingHasAllNames = existingFunctionReferenceValueParameters.filter { (_, _, existingHasName) ->  existingHasName.count() == requiredNames.count() }
+
+                                        check(existingHasAllNames.any()) {
+                                            val msg = "argument name not found"
+                                            if (existingFunctionReferenceValueParameters.any()) {
+                                                "$msg: ${requiredNames - existingFunctionReferenceValueParameters.sortedByDescending { it.second.count() }.first().second.map { it.second.name }.toSet()}"
+                                            } else {
+                                                msg
                                             }
+                                        }
 
-                                            var derivationLevel = NONE
-                                            var index = 0
-                                            var existingValueParameter: IrValueParameter? = null
-                                            loopCheckExisting@ while (existingFunctionParametersIt.hasNext()) {
-                                                val existingFunctionParameter = existingFunctionParametersIt.next()
-                                                index = existingFunctionParameter.first
-                                                existingValueParameter = existingFunctionParameter.second
+                                        /// Assign and compare types based on parameter names
+                                        existingFunctionReferenceValueParameters = existingHasAllNames.map { (existingFunctionReference, existingHasNoName, existingHasName) ->
+                                            val existingHasNameDerivationLevel = existingHasName.map { (index, existingValueParameter) ->
+                                                val requiredTypeEntry = requiredTypesPerName.single { it.v2 == existingValueParameter.name.asString() }
+                                                Triple(index, existingValueParameter, typeCheck(requiredTypeEntry, existingValueParameter))
+                                            }
+                                            Triple(existingFunctionReference, existingHasNoName, existingHasNameDerivationLevel)
+                                        }.filter { (existingFunctionReference, existingHasNoName, existingHasNameDerivationLevel) ->
+                                            existingHasNameDerivationLevel.all { (index, existingValueParameter, derivationLevel) -> derivationLevel != NONE }
+                                        }
+                                    }
 
-                                                derivationLevel = typeCheck(requiredType, existingValueParameter)
-                                                if (derivationLevel != NONE) {
-                                                    existingHasNoNameFilter.add(Triple(index, existingValueParameter, derivationLevel))
-                                                    continue@loopRequiredTypes
-                                                // Wildcards and optional parameters
-                                                } else if (isStar || existingValueParameter.defaultValue != null) {
-                                                    existingHasNoNameFilter.add(Triple(index, existingValueParameter, STAR))
-                                                    continue@loopCheckExisting
-                                                } else {
-                                                    return@map Pair(false, it)
+                                    var existingFunctionReferenceValueParametersList = existingFunctionReferenceValueParameters.map {
+                                        val (existingFunctionReference, existingHasNoName, existingHasName) = it
+                                        val existingFunctionParametersIt = existingHasNoName.iterator()
+                                        if (existingFunctionParametersIt.hasNext()) {
+                                            val existingHasNoNameFilter = mutableListOf<Triple<Int, IrValueParameter, Int>>()
+
+                                            val requiredTypesIt = requiredTypes.iterator()
+                                            loopRequiredTypes@ while (requiredTypesIt.hasNext()) {
+                                                var entry = requiredTypesIt.next()
+                                                var wildcard = entry.v3
+                                                if (wildcard == qm && existingFunctionParametersIt.hasNext()) {
+                                                    existingFunctionParametersIt.next()
+                                                    continue
                                                 }
-                                            }
 
-                                            if (isStar && !requiredTypesIt.hasNext()) {
-                                                while (existingFunctionParametersIt.hasNext()) {
+                                                var requiredType = entry.v4!!
+                                                val isStar = wildcard == star
+
+                                                while (wildcard == star && requiredTypesIt.hasNext()) {
+                                                    entry = requiredTypesIt.next()
+                                                    wildcard = entry.v3
+                                                    requiredType = entry.v4!!
+                                                }
+
+                                                var derivationLevel = NONE
+                                                var index: Int
+                                                var existingValueParameter: IrValueParameter?
+                                                loopCheckExisting@ while (existingFunctionParametersIt.hasNext()) {
                                                     val existingFunctionParameter = existingFunctionParametersIt.next()
-                                                    existingHasNoNameFilter.add(Triple(existingFunctionParameter.first, existingFunctionParameter.second, STAR))
+                                                    index = existingFunctionParameter.first
+                                                    existingValueParameter = existingFunctionParameter.second
+
+                                                    derivationLevel = typeCheck(requiredType, existingValueParameter)
+                                                    if (derivationLevel != NONE) {
+                                                        existingHasNoNameFilter.add(Triple(index, existingValueParameter, derivationLevel))
+                                                        continue@loopRequiredTypes
+                                                    // Wildcards and optional parameters
+                                                    } else if (isStar || existingValueParameter.defaultValue != null) {
+                                                        existingHasNoNameFilter.add(Triple(index, existingValueParameter, STAR))
+                                                        continue@loopCheckExisting
+                                                    } else {
+                                                        return@map Pair(false, it)
+                                                    }
                                                 }
+
+                                                if (isStar && !requiredTypesIt.hasNext()) {
+                                                    while (existingFunctionParametersIt.hasNext()) {
+                                                        val existingFunctionParameter = existingFunctionParametersIt.next()
+                                                        existingHasNoNameFilter.add(Triple(existingFunctionParameter.first, existingFunctionParameter.second, STAR))
+                                                    }
+                                                    return@map Pair(true, Triple(existingFunctionReference, existingHasNoNameFilter, existingHasName))
+                                                }
+
+                                                return@map Pair(false, it)
+                                            }
+
+                                            if (existingFunctionParametersIt.hasNext()) {
+                                                return@map Pair(false, it)
+                                            } else {
                                                 return@map Pair(true, Triple(existingFunctionReference, existingHasNoNameFilter, existingHasName))
                                             }
-
-                                            return@map Pair(false, it)
                                         }
 
-                                        if (existingFunctionParametersIt.hasNext()) {
-                                            return@map Pair(false, it)
+                                        if (requiredTypes.all { it.v3 == star }) {
+                                            return@map Pair(true, Triple(existingFunctionReference, existingHasNoName.map { (index, existingValueParameter) -> Triple(index, existingValueParameter, STAR) }, existingHasName))
                                         } else {
-                                            return@map Pair(true, Triple(existingFunctionReference, existingHasNoNameFilter, existingHasName))
+                                            return@map Pair(false, it)
+                                        }
+                                    }
+                                        .filter { it.first }
+                                        .map { it.second }
+                                        .toList()
+
+                                    if (existingFunctionReferenceValueParametersList.size >= 2) {
+                                        for (mask in arrayOf(EXACT, EXACT or SUBTYPE, EXACT or SUBTYPE or ANY, EXACT or SUBTYPE or ANY or STAR)) {
+                                            val result = existingFunctionReferenceValueParametersList.filter { (_, existingHasNoName, existingHasName) -> existingHasNoName.concat(existingHasName)!!.all { it.third == mask } }.toList()
+                                            if (result.any()) {
+                                                existingFunctionReferenceValueParametersList = result
+                                                break
+                                            }
                                         }
                                     }
 
-                                    if (requiredTypes.all { it.v3 == star }) {
-                                        return@map Pair(true, Triple(existingFunctionReference, existingHasNoName.map { (index, existingValueParameter) -> Triple(index, existingValueParameter, STAR) }, existingHasName))
-                                    } else {
-                                        return@map Pair(false, it)
+                                    existingFunctionReferences = existingFunctionReferenceValueParametersList.map { it.first }.asSequence()
+                                }
+
+                                if (existingFunctionReferences.take(2).count() >= 2) {
+                                    val anyNullTypeCounts = existingFunctionReferences.map { Pair(it, it.owner.valueParameters.count { p -> p.type == anyNullType }) }
+                                    val nullMin = anyNullTypeCounts.map { p -> p.second }.min()
+                                    existingFunctionReferences = anyNullTypeCounts
+                                        .filter { p -> p.second == nullMin }
+                                        .map { p -> p.first }
+
+                                    if (existingFunctionReferences.take(2).count() >= 2) {
+                                        val optionalParametersCount = existingFunctionReferences.map { Pair(it, it.owner.valueParameters.count { p -> p.defaultValue != null }) }
+                                        val optionalMin = optionalParametersCount.map { p -> p.second }.min()
+                                        existingFunctionReferences = optionalParametersCount
+                                            .filter { p -> p.second == optionalMin }
+                                            .map { p -> p.first }
                                     }
                                 }
-                                    .filter { it.first }
-                                    .map { it.second }
-                                    .toList()
-
-                                if (existingFunctionReferenceValueParametersList.size >= 2) {
-                                    for (mask in arrayOf(EXACT, EXACT or SUBTYPE, EXACT or SUBTYPE or ANY, EXACT or SUBTYPE or ANY or STAR)) {
-                                        val result = existingFunctionReferenceValueParametersList.filter { (_, existingHasNoName, existingHasName) -> existingHasNoName.concat(existingHasName)!!.all { it.third == mask } }.toList()
-                                        if (result.any()) {
-                                            existingFunctionReferenceValueParametersList = result
-                                            break
-                                        }
-                                    }
-                                }
-
-                                existingFunctionReferences = existingFunctionReferenceValueParametersList.map { it.first }.asSequence()
                             }
-
-                            if (size >= groupReturnType) {
-                                val returnTypeName = match.groups[groupReturnType]?.value
-                                if (!returnTypeName.isNullOrEmpty()) {
-                                    val returnType = context.findClass(returnTypeName).defaultType
-                                    existingFunctionReferences = existingFunctionReferences.filter { it.owner.returnType == returnType }
-                                }
-                            }
-
-                            if (existingFunctionReferences.take(2).count() >= 2) {
-                                val pain = existingFunctionReferences.map { Pair(it, it.owner.valueParameters.count { p -> p.type == nix }) }
-                                val min = pain.map { p -> p.second }.min()
-                                existingFunctionReferences = pain
-                                    .filter { p -> p.second == min }
-                                    .map { p -> p.first }
-                            }
+                        } else {
+                            existingFunctionReferences = existingFunctionReferences.filter { !it.owner.valueParameters.any() }
                         }
-                    } else {
-                        existingFunctionReferences = existingFunctionReferences.filter { !it.owner.valueParameters.any() }
                     }
 
                     if (size >= groupReturnType) {
@@ -348,7 +365,10 @@ fun IrClass.findProperty(name: String): IrPropertySymbol = this.properties.singl
 
 @UnsafeDuringIrConstructionAPI
 fun IrClassSymbol.findProperty(name: String): IrPropertySymbol = this.owner.findProperty(name)
-//#endregion
+
+@UnsafeDuringIrConstructionAPI
+fun IrType.findProperty(name: String): IrPropertySymbol = this.getClass()!!.findProperty(name)
+//#endregion find
 
 //#region call
 fun IrBuilderWithScope.convert(pluginContext: IrPluginContext, parameter : Any?) : IrExpression? {
@@ -369,9 +389,7 @@ fun IrBuilderWithScope.convert(pluginContext: IrPluginContext, parameter : Any?)
 
         is String -> return irString(parameter)
 
-        is IrCallImpl -> return parameter
-
-        is IrCall -> return irCall(parameter.symbol)
+        is IrCall -> return parameter
         is IrFunction -> return irCall(parameter)
         is IrProperty -> return irCall(parameter.getter!!)
         is IrField -> return irGetField(null, parameter)
