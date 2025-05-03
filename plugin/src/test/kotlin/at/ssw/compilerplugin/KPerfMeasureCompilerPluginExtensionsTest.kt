@@ -4,9 +4,30 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.ir.builders.*
+import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
+import org.jetbrains.kotlin.ir.builders.declarations.buildFun
+import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.expressions.addArgument
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.symbols.IrConstructorSymbol
+import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.name.CallableId
+import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.util.collectionUtils.concat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import kotlin.math.abs
@@ -82,11 +103,11 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         expected = pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeMark"))!!
     """, """
         // 102
-
+        
+        actual = findClass("kotlin/text/StringBuilder")
         val stringBuilderClassId = ClassId.fromString("kotlin/text/StringBuilder")
         // In JVM, StringBuilder is a type alias (see https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.text/-string-builder/)
         val stringBuilderTypeAlias = pluginContext.referenceTypeAlias(stringBuilderClassId)
-        actual = pluginContext.referenceTypeAlias(stringBuilderClassId)
         expected = stringBuilderTypeAlias?.owner?.expandedType?.classOrFail?: pluginContext.referenceClass(stringBuilderClassId)!!
     """, """
         // 103
@@ -118,37 +139,77 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     """, """
         // 106
 
-        val stringBuilderClass: IrClassSymbol = pluginContext.findClass("kotlin/text/StringBuilder")
+        val stringBuilderClass: IrClassSymbol = findClass("kotlin/text/StringBuilder")
 
-        // Wish: stringBuilderClass.findFunction("append(String?)")
-        actual = stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(String?)")
+        actual = stringBuilderClass.findFunction("append(String?)")
         expected = stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
     """, """
         // 107
 
-        val stringBuilderClass: IrClassSymbol = pluginContext.findClass("kotlin/text/StringBuilder")
-
-        // Wish:  findFunction("kotlin/io/println(String)")
-        actual = pluginContext.findFunction("kotlin/io/println(String)")
+        actual = findFunction("kotlin/io/println(Any?)")
         expected = pluginContext.referenceFunctions(CallableId(FqName("kotlin.io"), Name.identifier("println"))).single {
             it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
         }
+
+        assert(actual == findFunction("kotlin/io/println(kotlin/text/StringBuilder?)"))
+        assert(actual != findFunction("kotlin/io/println(Int)"))
+    """, """
+        // 107a
+        error = "org.opentest4j.AssertionFailedError(\"<FUN IR_EXTERNAL_DECLARATION_STUB name:println visibility:public modality:FINAL <> (message:kotlin.Int) returnType:kotlin.Unit [inline]>\")"
+
+        actual = findFunction("kotlin/io/println(Any?)")
+        expected = findFunction("kotlin/io/println(Int)")
+
+        org.junit.jupiter.api.Assertions.assertEquals(actual, expected)
+    """, """
+        // 107b
+
+        actual = findFunction("kotlin/io/println(Any?)")
+        expected = findFunction("kotlin/io/println(Int)")
+
+        actual = actual == expected
+        expected = false
+    """, """
+        // 107c
+
+        error("Was wollte ich da nochmal machen?")
+
+        actual = findClass("kotlin/text/StringBuilder").findFunction("append(String?)")
+        expected = findFunction("kotlin/io/println(kotlin/text/String?)")
+    """, """
+        // 107c
+
+        error("Was wollte ich da nochmal machen?")
+
+        actual = findClass("kotlin/text/StringBuilder").findFunction("append(String?)")
+        expected = findFunction("kotlin/io/println(kotlin/text/String?)")
     """, """
         // 108
 
         // Wish:  findFunction("kotlin/io/MyClass.fooFunc(kotlin/text/StringBuilder,Int?)")
-        /* pluginContext.referenceFunctions(CallableId(FqName("kotlin.io"), FqName("MyClass"), Name.identifier("fooFunc"))).single {
+        actual = findFunction("at/ssw/compilerplugin/KPerfMeasureCompilerPluginExtensionsTest.MyClass.fooFunc(kotlin/text/StringBuilder,Int?)")
+        
+        expected = pluginContext.referenceFunctions(CallableId(FqName("at.ssw.compilerplugin"), FqName("KPerfMeasureCompilerPluginExtensionsTest.MyClass"), Name.identifier("fooFunc"))).single {
             func -> func.owner.valueParameters.size == 2 &&
-                func.owner.valueParameters[0].type == findClass("kotlin/text/StringBuilder").type &&
+                func.owner.valueParameters[0].type == findClass("kotlin/text/StringBuilder").defaultType &&
                 func.owner.valueParameters[1].type == pluginContext.irBuiltIns.intType.makeNullable()
-        }*/
+        }
         // Wish:  findClass("kotlin/io/MyClass").findFunction("fooFunc(kotlin/text/StringBuilder,Int?)")
         /* pluginContext.referenceClass(ClassId.fromString("kotlin/io/MyClass")).functions.single {
             // ...
         } */
+        //expected = findFunction("kotlin/io/MyClass.fooFunc(kotlin/text/StringBuilder,Int?)")
+    """, """
+        // 108a
+
+        // Wish:  findFunction("kotlin/io/MyClass.fooFunc(kotlin/text/StringBuilder,Int?)")
+        actual = findClass("at/ssw/compilerplugin/KPerfMeasureCompilerPluginExtensionsTest.MyClass").findFunction("fooFunc(kotlin/text/StringBuilder,Int?)")
         
-        actual = ""
-        expected = "?"
+        expected = pluginContext.referenceFunctions(CallableId(FqName("at.ssw.compilerplugin"), FqName("KPerfMeasureCompilerPluginExtensionsTest.MyClass"), Name.identifier("fooFunc"))).single {
+            func -> func.owner.valueParameters.size == 2 &&
+                func.owner.valueParameters[0].type == findClass("kotlin/text/StringBuilder").defaultType &&
+                func.owner.valueParameters[1].type == pluginContext.irBuiltIns.intType.makeNullable()
+        }
     """, """
         // 109
 
@@ -158,7 +219,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         // 110
 
         // Watch out, Path does not use constructors but functions to build
-        actual = pluginContext.findFunction("kotlinx/io/files/Path(String)")
+        actual = pluginContext.findFunction("kotlinx/io/files/Path(?)")
         expected = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io.files"),
@@ -168,8 +229,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     """, """
         // 111
 
-        // Wish: findProperty("kotlinx/io/files/SystemFileSystem")
-        actual = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        actual = findProperty("kotlinx/io/files/SystemFileSystem")
         expected = pluginContext.referenceProperties(
             CallableId(
                 FqName("kotlinx.io.files"),
@@ -178,10 +238,54 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         ).single()
     """, """
         // 112
+        
+        actual = findFunction("kotlinx/io/buffered: kotlinx/io/Sink")
 
-        actual = pluginContext.findFunction("kotlinx/io/buffered(): kotlinx/io/Sink")
+        val systemFileSystem = pluginContext.referenceProperties(
+            CallableId(
+                FqName("kotlinx.io.files"),
+                Name.identifier("SystemFileSystem")
+            )
+        ).single()
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+        val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
+        expected = pluginContext.referenceFunctions(
+            CallableId(
+                FqName("kotlinx.io"),
+                Name.identifier("buffered")
+            )
+        ).single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
+    """, """
+        // 112a
 
-        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        actual = findFunction("kotlinx/io/buffered(*): kotlinx/io/Sink")
+
+        //val systemFileSystem = findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystem = pluginContext.referenceProperties(
+            CallableId(
+                FqName("kotlinx.io.files"),
+                Name.identifier("SystemFileSystem")
+            )
+        ).single()
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+        val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
+        expected = pluginContext.referenceFunctions(
+            CallableId(
+                FqName("kotlinx.io"),
+                Name.identifier("buffered")
+            )
+        ).single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
+    """, """
+        // 112b
+
+        actual = findFunction("kotlinx/io/buffered(?): kotlinx/io/Sink")
+
+        val systemFileSystem = pluginContext.referenceProperties(
+            CallableId(
+                FqName("kotlinx.io.files"),
+                Name.identifier("SystemFileSystem")
+            )
+        ).single()
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
         expected = pluginContext.referenceFunctions(
@@ -220,7 +324,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     """, """
         // 115
 
-        actual = pluginContext.findFunction("kotlin/toString()")
+        actual = pluginContext.findFunction("kotlin/toString(*)")
         expected = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlin"),
@@ -261,6 +365,54 @@ class KPerfMeasureCompilerPluginExtensionsTest {
                 Name.identifier("markNow")
             )
         ).single()
+    """, """
+        // 120
+
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+
+        actual = systemFileSystemClass.findFunction("sink")
+        expected = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
+    """, """
+        // 120a
+
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+
+        actual = systemFileSystemClass.findFunction("sink(*)")
+        expected = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
+    """, """
+        // 120b
+
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+
+        actual = systemFileSystemClass.findFunction("sink(?)")
+        expected = systemFileSystemClass.findFunction("sink(*)")
+    """, """
+        // 120c
+
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+
+        actual = systemFileSystemClass.findFunction("sink(?, ?)")
+        expected = systemFileSystemClass.findFunction("sink(?)")
+    """, """
+        // 120d
+
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+
+        actual = systemFileSystemClass.findFunction("sink(?, *)")
+        expected = systemFileSystemClass.findFunction("sink(?)")
+    """, """
+        // 120e
+
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+        
+        actual = systemFileSystemClass.findFunction("sink(kotlinx/io/files/Path, Boolean)")
+        expected = systemFileSystemClass.findFunction("sink(kotlinx/io/files/Path)")
     """)
 
         // language="kotlin", prefix="override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) { val actual: String; val expected: String", suffix="}"
@@ -380,7 +532,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val firstFile = moduleFragment.files[0]
         val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
-        val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
+        val sinkFunc = systemFileSystemClass.findFunction("sink()")
         val bufferedFunc = pluginContext.findFunction("kotlinx/io/buffered(): kotlinx/io/Sink")
         val randomDefaultObjectClass = pluginContext.findClass("kotlin/random/Random.Default")
         val rawSinkClass = pluginContext.findClass("kotlinx/io/RawSink")
@@ -498,7 +650,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val rawSinkClass = pluginContext.findClass("kotlinx/io/RawSink")
         val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
-        val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
+        val sinkFunc = systemFileSystemClass.findFunction("sink()")
         val bufferedFunc = pluginContext.findFunction("kotlinx/io/buffered(): kotlinx/io/Sink")
         val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(String)")
         val nextIntFunc = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()")
@@ -558,66 +710,101 @@ class KPerfMeasureCompilerPluginExtensionsTest {
             }
         }.dump()
     """)
+
+        // language="kotlin", prefix="override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) { val actual: String; val expected: String", suffix="}"
+        private val testCasesConcat: List<String> = listOf(/)
     }
 
     //#region unit tests
 
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-101`() = test(testCasesFind[0], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-102`() = test(testCasesFind[1], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-103`() = test(testCasesFind[2], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-104`() = test(testCasesFind[3], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-105`() = test(testCasesFind[4], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-106`() = test(testCasesFind[5], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-107`() = test(testCasesFind[6], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-108`() = test(testCasesFind[7], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-109`() = test(testCasesFind[8], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-110`() = test(testCasesFind[9], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-111`() = test(testCasesFind[10], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-112`() = test(testCasesFind[11], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-113`() = test(testCasesFind[12], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-114`() = test(testCasesFind[13], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-115`() = test(testCasesFind[14], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-116`() = test(testCasesFind[15], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-117`() = test(testCasesFind[16], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-118`() = test(testCasesFind[17], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-119`() = test(testCasesFind[18], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-201`() = test(testCasesBuild[0], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-202`() = test(testCasesBuild[1], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-203`() = test(testCasesBuild[2], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-204`() = test(testCasesBuild[3], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-205`() = test(testCasesBuild[4], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-206`() = test(testCasesBuild[5], 0)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-101`() = test(testCasesFind[0], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-102`() = test(testCasesFind[1], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-103`() = test(testCasesFind[2], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-104`() = test(testCasesFind[3], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-105`() = test(testCasesFind[4], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-106`() = test(testCasesFind[5], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-107`() = test(testCasesFind[6], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-108`() = test(testCasesFind[7], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-109`() = test(testCasesFind[8], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-110`() = test(testCasesFind[9], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-111`() = test(testCasesFind[10], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-112`() = test(testCasesFind[11], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-113`() = test(testCasesFind[12], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-114`() = test(testCasesFind[13], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-115`() = test(testCasesFind[14], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-116`() = test(testCasesFind[15], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-117`() = test(testCasesFind[16], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-118`() = test(testCasesFind[17], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-119`() = test(testCasesFind[18], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-201`() = test(testCasesBuild[0], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-202`() = test(testCasesBuild[1], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-203`() = test(testCasesBuild[2], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-204`() = test(testCasesBuild[3], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-205`() = test(testCasesBuild[4], 1)
-    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-206`() = test(testCasesBuild[5], 1)
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-101`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-102`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-103`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-104`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-105`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-106`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-107`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-107a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-108`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-108a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-109`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-110`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-111`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-112`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-112a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-113`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-114`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-115`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-116`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-117`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-118`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-119`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120b`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120c`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120d`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120e`() = test()
+
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-201`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-202`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-203`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-204`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-205`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-206`() = test()
+
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-101`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-102`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-103`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-104`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-105`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-106`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-107`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-107a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-108`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-108a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-109`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-110`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-111`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-112`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-112a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-113`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-114`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-115`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-116`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-117`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-118`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-119`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120b`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120c`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120d`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120e`() = test()
+
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-201`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-202`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-203`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-204`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-205`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-206`() = test()
 
     //#endregion
 
     @OptIn(ExperimentalCompilerApi::class)
-    fun test(@Language("kotlin", prefix = "override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) { val actual: String; val expected: String", suffix = "}") sourceCode: String, testCode: Int, expectedKotlinCompilationResult: KotlinCompilation.ExitCode = KotlinCompilation.ExitCode.OK, compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrar()) {
-        val code = sourceCode.replace("\$\\{", "\${")
+    fun test(@Language("kotlin", prefix = "override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) { val actual: String?; val expected: String?; val error: String?", suffix = "}") sourceCode: String? = null, testCode: Int? = null, expectedKotlinCompilationResult: KotlinCompilation.ExitCode = KotlinCompilation.ExitCode.OK, compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrar()) {
+        val params = Thread.currentThread().stackTrace[3].methodName.split(' ').last().split('-')
+        val testName = params.last()
+        val list = when (testName[0] - '0') {
+            1 -> testCasesFind
+            2 -> testCasesBuild
+            3 -> testCasesConcat
+            else -> error("unknown test set")
+        }
+
+        val r = Regex("""\s*\/\/\s*(\w+)[^\r\n]*[\r\n]\s*""")
+        val source = sourceCode ?: list.single { r.find(it)!!.groups[1]!!.value == testName }
+        val code = source.replace("\$\\{", "\${")
         val namespace = "at.ssw.compilerplugin"
         val className = "TestPluginExtensions_${abs(code.hashCode())}_${abs(random.nextInt())}"
 
@@ -645,6 +832,7 @@ class ${className}: PerfMeasureExtensionTest() {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         fun findClass(name: String): IrClassSymbol = pluginContext.findClass(name)
         fun findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name)
+        fun findProperty(name: String): IrPropertySymbol = pluginContext.findProperty(name)
         fun IrClassSymbol.findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name, this)
         fun IrClass.findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name, this.symbol)
         fun IrClassSymbol.findConstructor(name: String): IrConstructorSymbol = pluginContext.findConstructor(name, this)
@@ -670,12 +858,32 @@ class ${className}: PerfMeasureExtensionTest() {
 
         val result = KotlinCompilation().apply {
             inheritClassPath = true
-            sources = listOf(SourceFile.kotlin("main_${className}.kt", testCodes[testCode]))
+            sources = listOf(SourceFile.kotlin("main_${className}.kt", testCodes[testCode ?: (params.first().toInt() - 1)]))
             compilerPluginRegistrars = listOf(PerfMeasureComponentRegistrarTest(obj))
         }.compile()
 
-        assertEquals(expectedKotlinCompilationResult, result.exitCode, result.messages)
-        assertEquals(obj.expected, obj.actual)
+        if (obj.error == null) {
+            assertEquals(expectedKotlinCompilationResult, result.exitCode, result.messages)
+            assertEquals(obj.expected, obj.actual)
+        } else {
+            val expected = obj.error
+            if (expected is Exception && result is Exception) {
+                assertEquals(expected::class, result::class)
+                assertEquals(expected.message, result.message)
+            } else {
+                assertEquals(expected, result)
+            }
+        }
+    }
+
+    class MyClass {
+        fun fooFunc(sb: kotlin.text.StringBuilder, index: Int?) {
+        }
+    }
+
+    class Dummy {
+        fun fooFunc(sb: kotlin.text.StringBuilder, index: Int?) {
+        }
     }
 }
 
@@ -689,4 +897,5 @@ class PerfMeasureComponentRegistrarTest(private val generationExtension: PerfMea
 abstract class PerfMeasureExtensionTest: IrGenerationExtension {
     var expected: Any? = null
     var actual: Any? = null
+    var error: Any? = null
 }
