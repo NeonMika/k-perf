@@ -320,8 +320,8 @@ class PerfMeasureExtension2(
         val defaultClassConstructorDirect = pluginContext.findConstructor("kotlin/random/Random.Default()")
         compareConstructorSymbols(defaultClassConstructor!!, defaultClassConstructorDirect)
 
-        val findFunctionDefaultTestWithout = pluginContext.findFunction("kotlin/collections/joinToString()")
-        val findFunctionDefaultTestWith1 = pluginContext.findFunction("kotlin/collections/joinToString(charsequence)")
+        val findFunctionDefaultTestWithout = pluginContext.findFunction("kotlin/collections/joinToString(*)", pluginContext.getIrType("bytearray"))
+        val findFunctionDefaultTestWith1 = pluginContext.findFunction("kotlin/collections/joinToString(charsequence, *)", pluginContext.getIrType("bytearray"))
         compareFunctionSymbols(findFunctionDefaultTestWithout!!, findFunctionDefaultTestWith1)
 
         //non existin constructor test
@@ -434,7 +434,7 @@ class PerfMeasureExtension2(
 
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         val sinkFunc = systemFileSystemClass.functions.single { it.owner.name.asString() == "sink" }
-        val sinkFuncNew = systemFileSystem.findFunction(pluginContext, "sink()")
+        val sinkFuncNew = systemFileSystem.findFunction(pluginContext, "sink(*)")
         compareFunctionSymbols(sinkFunc, sinkFuncNew)
 
         val bufferedFuncs = pluginContext.referenceFunctions(
@@ -701,7 +701,7 @@ class PerfMeasureExtension2(
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 callExpression {
-                    systemFileSystem.call(pluginContext, "sink()", pathConstructionFunc(bufferedTraceFileName))
+                    systemFileSystem.call(pluginContext, "sink(*)", pathConstructionFunc(bufferedTraceFileName))
                         .chain(bufferedFunc)
                 }
             }

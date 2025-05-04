@@ -14,19 +14,16 @@ import org.jetbrains.kotlin.config.CompilerConfigurationKey
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
-import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.ADAPTER_FOR_CALLABLE_REFERENCE
 import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.addArgument
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.CallableId
-import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.presentableDescription
@@ -34,11 +31,11 @@ import java.io.File
 import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
-object ExampleConfigurationKeysNew {
+/*object ExampleConfigurationKeys {
     val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled")
     val LOG_ANNOTATION_KEY: CompilerConfigurationKey<MutableList<String>> =
         CompilerConfigurationKey.create("measure annotation")
-}
+}*/
 
 /*
 Commandline processor to process options.
@@ -269,14 +266,11 @@ class PerfMeasureExtension2New(
 
         val printlnFunc = pluginContext.findFunction("kotlin/io.println(String?)") ?: error("Cannot find function println(String?)")
 
-        val rawSinkClass = pluginContext.findClass("kotlinx/io/RawSink") ?: error("Cannot find class kotlinx.io.RawSink")
-
         // Watch out, Path does not use constructors but functions to build
         val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(string)") ?: error("Cannot find function Path(String)")
 
         val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem") ?: error("Cannot find property kotlinx.io.files.SystemFileSystem")
         val sinkFunc = systemFileSystem.findFunction(pluginContext, "kotlinx/io/sink()") ?: error("Cannot find function sink() in kotlinx.io.sink()")
-        val bufferedFunc = pluginContext.findFunction("kotlinx/io/buffered()") ?: error("Cannot find function buffered() in kotlinx.io.buffered()")
         appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
         appendToDebugFile(
             pluginContext.referenceFunctions(
