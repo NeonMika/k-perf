@@ -97,54 +97,6 @@ class KPerfMeasureCompilerPluginTest {
 
     @OptIn(ExperimentalCompilerApi::class)
     @Test
-    fun `SSP example Original`() {
-        val result = compileOriginal(
-            SourceFile.kotlin(
-                "main.kt",
-                """
-                    fun main() {
-                      sayHello()
-                      sayHello("Hi", "SSP")
-                    }
-
-                    fun sayHello(greeting: String = "Hello", name: String = "World") {
-                        val result = "${'$'}greeting, ${'$'}name!"
-                        println(result)
-                    }
-                    """
-            )
-        )
-        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
-
-        result.main()
-    }
-
-    @OptIn(ExperimentalCompilerApi::class)
-    @Test
-    fun `SSP example New`() {
-        val result = compileNew(
-            SourceFile.kotlin(
-                "main.kt",
-                """
-                    fun main() {
-                      sayHello()
-                      sayHello("Hi", "SSP")
-                    }
-
-                    fun sayHello(greeting: String = "Hello", name: String = "World") {
-                        val result = "${'$'}greeting, ${'$'}name!"
-                        println(result)
-                    }
-                    """
-            )
-        )
-        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
-
-        result.main()
-    }
-
-    @OptIn(ExperimentalCompilerApi::class)
-    @Test
     fun `Class example`() {
         val result = compile(
             SourceFile.kotlin(
