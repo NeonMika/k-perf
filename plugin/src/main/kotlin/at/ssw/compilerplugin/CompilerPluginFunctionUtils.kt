@@ -178,24 +178,18 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
 
         val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
 
-        val dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
-            receiver
-        } else {
-            null
-        }
-
-        val extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
-            receiver
-        } else {
-            null
-        }
-
         return builder.irCall(functionCall).apply {
-            this.dispatchReceiver = dispatchReceiver
-            this.extensionReceiver = extensionReceiver
-            newArgs.forEachIndexed { index, arg ->
-                putValueArgument(index, arg)
+            dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
+                receiver
+            } else {
+                null
             }
+            extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
+                receiver
+            } else {
+                null
+            }
+            newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
         }
     }
 

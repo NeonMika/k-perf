@@ -274,8 +274,7 @@ class PerfMeasureExtension2(
 
         val stringBuilderClassNew = pluginContext.findClass("kotlin/text/StringBuilder")
         compareClassSymbols(stringBuilderClass, stringBuilderClassNew)
-
-        //TODO: this works! but should it?
+        
         val stringClass = pluginContext.findClass("string")
         val stringEqualsFunc = stringClass?.findFunction(pluginContext, "equals()")
 
@@ -471,8 +470,6 @@ class PerfMeasureExtension2(
                     it.owner.valueParameters[2].type == pluginContext.irBuiltIns.intType
         }
 
-        //TODO check find function in different versions (generics, default parameters all given, none given, ...)
-        //TODO find functions with java functions have to be perfect match
         val writeStringFuncNew = pluginContext.findFunction("kotlinx/io/writeString(string,int,int)")
         compareFunctionSymbols(writeStringFunc, writeStringFuncNew)
 
@@ -983,12 +980,15 @@ class PerfMeasureExtension2(
                         }
                     }
                 }
+                val sb = IrStringBuilder(pluginContext, firstFile)
                 body = oldBody
                 val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL {
                         val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow))
                         val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
+
+                        +sb.append(this@irBlockBody, "<;")
 
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.call(stringBuilderAppendStringFunc, "<;")
