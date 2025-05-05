@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.doNothing
-import kotlin.math.abs
 
 /**
  * Data class to hold the individual parts of a signature.
