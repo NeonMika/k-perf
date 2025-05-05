@@ -1,7 +1,7 @@
 package at.ssw.compilerplugin
 
-import at.ssw.compilerplugin.ExampleConfigurationKeys.KEY_ENABLED
-import at.ssw.compilerplugin.ExampleConfigurationKeys.LOG_ANNOTATION_KEY
+import at.ssw.compilerplugin.ExampleConfigurationKeysNew.KEY_ENABLED
+import at.ssw.compilerplugin.ExampleConfigurationKeysNew.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -31,11 +31,12 @@ import java.io.File
 import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
-/*object ExampleConfigurationKeys {
-    val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled")
+object ExampleConfigurationKeysNew {
+    val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled.new")
     val LOG_ANNOTATION_KEY: CompilerConfigurationKey<MutableList<String>> =
-        CompilerConfigurationKey.create("measure annotation")
-}*/
+        CompilerConfigurationKey.create("measure.annotation.new")
+}
+
 
 /*
 Commandline processor to process options.
@@ -264,13 +265,13 @@ class PerfMeasureExtension2New(
         val stringBuilderAppendIntFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(int)") ?: error("Cannot find function append(int) in kotlin.text.StringBuilder")
         val stringBuilderAppendStringFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(String?)") ?: error("Cannot find function append(String?) in kotlin.text.StringBuilder")
 
-        val printlnFunc = pluginContext.findFunction("kotlin/io.println(String?)") ?: error("Cannot find function println(String?)")
+        val printlnFunc = pluginContext.findFunction("kotlin/io/println(Any?)") ?: error("Cannot find function println(Any?)")
 
         // Watch out, Path does not use constructors but functions to build
         val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(string)") ?: error("Cannot find function Path(String)")
 
         val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem") ?: error("Cannot find property kotlinx.io.files.SystemFileSystem")
-        val sinkFunc = systemFileSystem.findFunction(pluginContext, "kotlinx/io/sink()") ?: error("Cannot find function sink() in kotlinx.io.sink()")
+        val sinkFunc = systemFileSystem.findFunction(pluginContext, "sink(*)") ?: error("Cannot find function sink() in SystemFileSystem")
         appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
         appendToDebugFile(
             pluginContext.referenceFunctions(
@@ -291,7 +292,7 @@ class PerfMeasureExtension2New(
 
         val stringBuilder: IrField = pluginContext.createField(firstFile.symbol, "_stringBuilder") {
             pluginContext.findConstructor("kotlin/text/StringBuilder()")?.invoke() ?:
-                throw IllegalStateException("Cannot find constructor kotlin.text.StringBuilder()")
+            throw IllegalStateException("Cannot find constructor kotlin.text.StringBuilder()")
         }
         firstFile.declarations.add(stringBuilder)
         stringBuilder.parent = firstFile
@@ -409,7 +410,9 @@ class PerfMeasureExtension2New(
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL {
-                        val elapsedMicros = irTemporary(valueParameters[1].call(pluginContext, "elapsedNow").chain(pluginContext, "kotlin/time/Duration.inWholeMicroseconds"))
+                        val elapsedDuration = irTemporary(valueParameters[1].call(pluginContext, "elapsedNow"))
+                        val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
+                        val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
 
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.call(stringBuilderAppendStringFunc, "<;")

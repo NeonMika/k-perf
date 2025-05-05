@@ -1,7 +1,7 @@
 package at.ssw.compilerplugin
 
-import at.ssw.compilerplugin.ExampleConfigurationKeys.KEY_ENABLED
-import at.ssw.compilerplugin.ExampleConfigurationKeys.LOG_ANNOTATION_KEY
+import at.ssw.compilerplugin.ExampleConfigurationKeysOriginal.KEY_ENABLED
+import at.ssw.compilerplugin.ExampleConfigurationKeysOriginal.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -35,9 +35,9 @@ import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
 object ExampleConfigurationKeysOriginal {
-    val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled")
+    val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled.original")
     val LOG_ANNOTATION_KEY: CompilerConfigurationKey<MutableList<String>> =
-        CompilerConfigurationKey.create("measure annotation")
+        CompilerConfigurationKey.create("measure.annotation.original")
 }
 
 /*
