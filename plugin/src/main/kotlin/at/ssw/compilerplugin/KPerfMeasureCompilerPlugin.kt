@@ -524,7 +524,7 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { stringBuilderConstructor() }
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression(pluginContext) { stringBuilderConstructor() }
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNew.dump(), "stringBuilder")
         firstFile.declarations.add(stringBuilderNew)
@@ -536,7 +536,7 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { stringBuilderClass.callConstructor(pluginContext) }
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression(pluginContext) { stringBuilderClass() }
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNewCall.dump(), "stringBuilder")
         firstFile.declarations.add(stringBuilderNewCall)
@@ -548,13 +548,13 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression { callConstructor(pluginContext, "kotlin/text/StringBuilder") }
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression(pluginContext) { call("kotlin/text/StringBuilder") }
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNewCallDirect.dump(), "stringBuilder")
         firstFile.declarations.add(stringBuilderNewCallDirect)
         stringBuilderNewCallDirect.parent = firstFile
 
-        val stringBuilderSimpleField = pluginContext.createField(firstFile.symbol, "_stringBuilder5") { stringBuilderClass.callConstructor(pluginContext) }
+        val stringBuilderSimpleField = pluginContext.createField(firstFile.symbol, "_stringBuilder5") { stringBuilderClass() }
         compareFieldDumps(stringBuilder.dump(), stringBuilderSimpleField.dump(), "stringBuilder")
         firstFile.declarations.add(stringBuilderSimpleField)
         stringBuilderSimpleField.parent = firstFile
@@ -600,7 +600,7 @@ class PerfMeasureExtension2(
             isStatic = true
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callExpression {
+                callExpression(pluginContext) {
                     randomDefaultObjectClass.call(nextIntFunc)
                 }
             }
@@ -616,7 +616,7 @@ class PerfMeasureExtension2(
             isStatic = true
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callExpression {
+                callExpression(pluginContext) {
                     randomDefaultObjectClass.call(pluginContext, "nextInt")
                 }
             }
@@ -681,9 +681,9 @@ class PerfMeasureExtension2(
             isStatic = true
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callExpression {
+                callExpression(pluginContext) {
                     systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
-                        .chain(bufferedFunc)
+                        .call(bufferedFunc)
                 }
             }
         }
@@ -699,7 +699,7 @@ class PerfMeasureExtension2(
             isStatic = true
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                callExpression {
+                callExpression(pluginContext) {
                     systemFileSystem.call(pluginContext, "sink(*)", pathConstructionFunc(bufferedTraceFileName))
                         .chain(bufferedFunc)
                 }
@@ -773,7 +773,7 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression {
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression(pluginContext) {
                 systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedSymbolsFileName))
                     .chain(pluginContext, "kotlinx/io/buffered")
             }
@@ -856,7 +856,7 @@ class PerfMeasureExtension2(
                             putValueArgument(0, irString("\n"))
                         }
                     } else {
-                        enableCallDSL {
+                        enableCallDSL(pluginContext) {
                             +irFileHandle.writeData(irConcat(">;", valueParameters[0], "\n"))
                         }
                         +irCall(writeStringFunc).apply {
@@ -889,7 +889,7 @@ class PerfMeasureExtension2(
                     startOffset,
                     endOffset
                 ).irBlockBody{
-                    enableCallDSL {
+                    enableCallDSL(pluginContext) {
                         if (STRINGBUILDER_MODE) {
                             +stringBuilderClass.call(stringBuilderAppendStringFunc, ">;")
                             +stringBuilderClass.call(stringBuilderAppendIntFunc, valueParameters[0])
@@ -981,7 +981,7 @@ class PerfMeasureExtension2(
                             putValueArgument(0, irString("\n"))
                         }
                     } else {
-                        enableCallDSL {
+                        enableCallDSL(pluginContext) {
                             +irFileHandle.writeData(irConcat("<;", valueParameters[0],";", elapsedMicros, "\n"))
                         }
                         +irCall(writeStringFunc).apply {
@@ -998,7 +998,7 @@ class PerfMeasureExtension2(
                 }
                 body = oldBody
                 val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
-                    enableCallDSL {
+                    enableCallDSL(pluginContext) {
                         val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow))
                         val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
@@ -1043,7 +1043,7 @@ class PerfMeasureExtension2(
             }
 
             fun IrBlockBodyBuilder.printFileNamesToStdout() {
-                enableCallDSL {
+                enableCallDSL(pluginContext) {
                     +irPrintLn(pluginContext, "test")
                     +irPrintLn(pluginContext, bufferedTraceFileName)
                 }
@@ -1091,7 +1091,7 @@ class PerfMeasureExtension2(
                             extensionReceiver = irGetField(null, stringBuilder)
                         })
                         +sb.insert(0,"============================================================\n")
-                        enableCallDSL {
+                        enableCallDSL(pluginContext) {
                             +bufferedTraceFileSink.call(writeStringFunc, sb.irToString())
                             +irFileHandle.writeData(sb.irToString())
                         }
