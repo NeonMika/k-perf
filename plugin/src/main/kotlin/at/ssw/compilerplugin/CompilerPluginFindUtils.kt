@@ -91,6 +91,7 @@ fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
  * @return The found function symbol or null if it was not found.
  * @throws IllegalStateException If multiple matching functions are found.
  */
+
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
     val (functionName, params, hasStar) = parseFunctionParameters(pluginContext, signature)
