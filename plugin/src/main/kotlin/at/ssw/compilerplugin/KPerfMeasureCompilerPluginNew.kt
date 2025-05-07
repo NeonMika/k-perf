@@ -322,7 +322,7 @@ class PerfMeasureExtension2New(
                     startOffset,
                     endOffset
                 ).irBlockBody {
-                    enableCallDSL {
+                    enableCallDSL(pluginContext) {
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.append(">;")
                             +stringBuilder.append(valueParameters[0])
@@ -365,7 +365,7 @@ class PerfMeasureExtension2New(
                 } */
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
-                    enableCallDSL {
+                    enableCallDSL(pluginContext) {
                         val elapsedDuration = irTemporary(valueParameters[1].call(pluginContext, "elapsedNow"))
                         val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
@@ -390,13 +390,13 @@ class PerfMeasureExtension2New(
 
         fun buildMainExitFunction(): IrSimpleFunction {
             fun IrBlockBodyBuilder.flushTraceFile() {
-                enableCallDSL {
+                enableCallDSL(pluginContext) {
                     +bufferedTraceFileSink.flushSink()
                 }
             }
 
             fun IrBlockBodyBuilder.writeAndFlushSymbolsFile() {
-                enableCallDSL {
+                enableCallDSL(pluginContext) {
                     +bufferedSymbolsFileSink.writeData("{ " + methodIdMap.map { (name, id) -> id to name }
                         .sortedBy { (id, _) -> id }
                         .joinToString(",\n") { (id, name) -> "\"$id\": \"$name\"" } + " }")
@@ -405,7 +405,7 @@ class PerfMeasureExtension2New(
             }
 
             fun IrBlockBodyBuilder.printFileNamesToStdout() {
-                enableCallDSL {
+                enableCallDSL(pluginContext) {
                     +irPrintLn(pluginContext, bufferedTraceFileName)
                     +irPrintLn(pluginContext, bufferedSymbolsFileName)
                 }
@@ -425,7 +425,7 @@ class PerfMeasureExtension2New(
                 } */
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
-                    enableCallDSL {
+                    enableCallDSL(pluginContext) {
                         flushTraceFile()
 
                         +exitFunc(methodIdMap["main"]!!, valueParameters[0])
@@ -453,7 +453,7 @@ class PerfMeasureExtension2New(
             println("# Wrapping body of ${func.name} (origin: ${func.origin})")
             return DeclarationIrBuilder(pluginContext, func.symbol).irBlockBody {
                 // no +needed on irTemporary as it is automatically added to the builder
-                enableCallDSL {
+                enableCallDSL(pluginContext) {
                     val startTime = irTemporary(enterFunc(methodIdMap[func.kotlinFqName.asString()]!!))
 
                     val tryBlock: IrExpression = irBlock(resultType = func.returnType) {

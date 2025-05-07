@@ -99,6 +99,7 @@ class KPerfMeasureCompilerPluginTest {
     @Test
     fun `Class example`() {
         //TODO write own compiler plugin for test
+        //TODO implement placeholder for generics
         val result = compile(
             SourceFile.kotlin(
                 "main.kt",
