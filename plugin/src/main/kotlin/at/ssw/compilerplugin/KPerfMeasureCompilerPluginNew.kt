@@ -262,16 +262,6 @@ class PerfMeasureExtension2New(
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark") ?: error("Cannot find class kotlin.time.TimeMark")
 
-        val stringBuilderAppendIntFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(int)") ?: error("Cannot find function append(int) in kotlin.text.StringBuilder")
-        val stringBuilderAppendStringFunc = pluginContext.findFunction("kotlin/text/StringBuilder.append(String?)") ?: error("Cannot find function append(String?) in kotlin.text.StringBuilder")
-
-        val printlnFunc = pluginContext.findFunction("kotlin/io/println(Any?)") ?: error("Cannot find function println(Any?)")
-
-        // Watch out, Path does not use constructors but functions to build
-        val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(string)") ?: error("Cannot find function Path(String)")
-
-        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem") ?: error("Cannot find property kotlinx.io.files.SystemFileSystem")
-        val sinkFunc = systemFileSystem.findFunction(pluginContext, "sink(*)") ?: error("Cannot find function sink() in SystemFileSystem")
         appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
         appendToDebugFile(
             pluginContext.referenceFunctions(
@@ -283,53 +273,19 @@ class PerfMeasureExtension2New(
                 "kotlinx.io.writeString(${func.owner.valueParameters.joinToString(",") { param -> param.type.classFqName.toString() }})"
             }
         )
-        val writeStringFunc = pluginContext.findFunction("kotlinx/io/writeString(String, int, int)") ?: error("Cannot find function writeString(String, int, int)")
-        val flushFunc = pluginContext.findFunction("kotlinx/io/Sink.flush()") ?: error("Cannot find function flush() in kotlinx.io.Sink.flush()")
         debugFile.appendText("2")
         debugFile.appendText("3")
 
         val firstFile = moduleFragment.files[0]
 
-        val stringBuilder: IrField = pluginContext.createField(firstFile.symbol, "_stringBuilder") {
-            pluginContext.findConstructor("kotlin/text/StringBuilder()")?.invoke() ?:
-            throw IllegalStateException("Cannot find constructor kotlin.text.StringBuilder()")
-        }
-        firstFile.declarations.add(stringBuilder)
-        stringBuilder.parent = firstFile
+        val stringBuilder = IrStringBuilder(pluginContext, firstFile)
 
-        val randomDefaultObjectClass = pluginContext.findClass("kotlin/random/Random.Default") ?: error("Cannot find class kotlin.random.Random.Default")
+        val randNr = (0..10000).random()
+        val bufferedTraceFileName = "./trace_${pluginContext.platform!!.presentableDescription}_$randNr.txt"
+        val bufferedTraceFileSink = IrFileIOHandler(pluginContext, firstFile, bufferedTraceFileName)
 
-        val randomNumber = pluginContext.createField(firstFile.symbol, "_randNumber", false) {
-            randomDefaultObjectClass.call(pluginContext, "nextInt")
-        }
-        firstFile.declarations.add(randomNumber)
-        randomNumber.parent = firstFile
-
-        val bufferedTraceFileName = pluginContext.createField(firstFile.symbol, "_bufferedTraceFileName", false) {
-            irConcat("./trace_${pluginContext.platform!!.presentableDescription}_", randomNumber, ".txt")
-        }
-        firstFile.declarations.add(bufferedTraceFileName)
-        bufferedTraceFileName.parent = firstFile
-
-        val bufferedTraceFileSink = pluginContext.createField(firstFile.symbol, "_bufferedTraceFileSink", false) {
-            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
-                .chain(pluginContext, "kotlinx/io/buffered")
-        }
-        firstFile.declarations.add(bufferedTraceFileSink)
-        bufferedTraceFileSink.parent = firstFile
-
-        val bufferedSymbolsFileName = pluginContext.createField(firstFile.symbol, "_bufferedSymbolsFileName", false) {
-            irConcat("./symbols_${pluginContext.platform!!.presentableDescription}_", randomNumber, ".txt")
-        }
-        firstFile.declarations.add(bufferedSymbolsFileName)
-        bufferedSymbolsFileName.parent = firstFile
-
-        val bufferedSymbolsFileSink = pluginContext.createField(firstFile.symbol, "_bufferedSymbolsFileSink", false) {
-            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedSymbolsFileName))
-                .chain(pluginContext, "kotlinx/io/buffered")
-        }
-        firstFile.declarations.add(bufferedSymbolsFileSink)
-        bufferedSymbolsFileSink.parent = firstFile
+        val bufferedSymbolsFileName = "./symbols_${pluginContext.platform!!.presentableDescription}_$randNr.txt"
+        val bufferedSymbolsFileSink = IrFileIOHandler(pluginContext, firstFile, bufferedSymbolsFileName)
 
         val methodMap = mutableMapOf<String, IrFunction>()
         val methodIdMap = mutableMapOf<String, Int>()
@@ -368,11 +324,11 @@ class PerfMeasureExtension2New(
                 ).irBlockBody {
                     enableCallDSL {
                         if (STRINGBUILDER_MODE) {
-                            +stringBuilder.call(stringBuilderAppendIntFunc, ">;")
-                            +stringBuilder.call(stringBuilderAppendIntFunc, valueParameters[0])
-                            +stringBuilder.call(stringBuilderAppendStringFunc, "\n")
+                            +stringBuilder.append(">;")
+                            +stringBuilder.append(valueParameters[0])
+                            +stringBuilder.append("\n")
                         } else {
-                            bufferedTraceFileSink.call(writeStringFunc, irConcat(">;", valueParameters[0], "\n"))
+                            bufferedTraceFileSink.writeData(irConcat(">;", valueParameters[0], "\n"))
                         }
                         /* val funMarkNowViaClass = classMonotonic.functions.find { it.owner.name.asString() == "markNow" }!! */
 
@@ -415,13 +371,13 @@ class PerfMeasureExtension2New(
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
 
                         if (STRINGBUILDER_MODE) {
-                            +stringBuilder.call(stringBuilderAppendStringFunc, "<;")
-                            +stringBuilder.call(stringBuilderAppendIntFunc, valueParameters[0])
-                            +stringBuilder.call(stringBuilderAppendStringFunc, ";")
-                            +stringBuilder.call(pluginContext, "append")
-                            +stringBuilder.call(stringBuilderAppendStringFunc, "\n")
+                            +stringBuilder.append("<;")
+                            +stringBuilder.append(valueParameters[0])
+                            +stringBuilder.append(";")
+                            +stringBuilder.append(elapsedMicros)
+                            +stringBuilder.append("\n")
                         } else {
-                            +bufferedTraceFileSink.call(writeStringFunc, irConcat("<;", valueParameters[0], ";", elapsedMicros, "\n"))
+                            +bufferedTraceFileSink.writeData(irConcat("<;", valueParameters[0], ";", elapsedMicros, "\n"))
                         }
                     }
                 }
@@ -435,23 +391,23 @@ class PerfMeasureExtension2New(
         fun buildMainExitFunction(): IrSimpleFunction {
             fun IrBlockBodyBuilder.flushTraceFile() {
                 enableCallDSL {
-                    bufferedTraceFileSink.call(flushFunc)
+                    +bufferedTraceFileSink.flushSink()
                 }
             }
 
             fun IrBlockBodyBuilder.writeAndFlushSymbolsFile() {
                 enableCallDSL {
-                    +bufferedSymbolsFileSink.call(writeStringFunc, "{ " + methodIdMap.map { (name, id) -> id to name }
+                    +bufferedSymbolsFileSink.writeData("{ " + methodIdMap.map { (name, id) -> id to name }
                         .sortedBy { (id, _) -> id }
                         .joinToString(",\n") { (id, name) -> "\"$id\": \"$name\"" } + " }")
-                    +bufferedSymbolsFileSink.call(flushFunc)
+                    +bufferedSymbolsFileSink.flushSink()
                 }
             }
 
             fun IrBlockBodyBuilder.printFileNamesToStdout() {
                 enableCallDSL {
-                    +printlnFunc(bufferedTraceFileName)
-                    +printlnFunc(bufferedSymbolsFileName)
+                    +irPrintLn(pluginContext, bufferedTraceFileName)
+                    +irPrintLn(pluginContext, bufferedSymbolsFileName)
                 }
             }
 
@@ -475,7 +431,7 @@ class PerfMeasureExtension2New(
                         +exitFunc(methodIdMap["main"]!!, valueParameters[0])
 
                         if (STRINGBUILDER_MODE) {
-                            +bufferedTraceFileSink.call(writeStringFunc, stringBuilder.call(pluginContext, "toString"))
+                            +bufferedTraceFileSink.writeData(stringBuilder.irToString())
                         }
 
                         writeAndFlushSymbolsFile()

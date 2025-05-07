@@ -37,6 +37,17 @@ fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrExpression): Ir
     return irExprBody(IrCallDsl(this).block())
 }
 
+/**
+ * Constructs and returns an `IrFunctionAccessExpression` using a DSL block.
+ *
+ * @receiver The `DeclarationIrBuilder` used to build the IR expression.
+ * @param block A lambda with a receiver of type `IrCallDsl` to define the IR function access expression.
+ * @return The constructed `IrFunctionAccessExpression`.
+ */
+fun DeclarationIrBuilder.getCall(block: IrCallDsl.() -> IrFunctionAccessExpression): IrFunctionAccessExpression {
+    return IrCallDsl(this).block()
+}
+
 fun IrPluginContext.createField(
     parentSymbol: IrSymbol,
     fieldName: String,
@@ -176,7 +187,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             throw IllegalArgumentException("Expected ${nonDefaultParameters.size} arguments, got ${args.size}")
         }
 
-        val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
+        val newArgs = args.map { builder.convertToIrExpression(it) }.toList()
 
         return builder.irCall(functionCall).apply {
             dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
@@ -417,6 +428,21 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
     fun IrProperty.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
         this.symbol.call(pluginContext, funcSignature, *args)
 
+    /**
+     * Constructs an `IrFunctionAccessExpression` to print a value using the `println` function.
+     *
+     * @param pluginContext The `IrPluginContext` used to find the `println` function symbol.
+     * @param value The value to be printed. Its type is determined dynamically.
+     * @return An `IrFunctionAccessExpression` representing the call to the `println` function.
+     *         If the specific println function for the value type is not found, it falls back to println(any?).
+     */
+    fun irPrintLn(pluginContext: IrPluginContext, value: Any): IrFunctionAccessExpression {
+        val paramType = extractType(value)
+        val printMethod = pluginContext.findFunction("kotlin/io/println($paramType)")
+            ?: pluginContext.findFunction("kotlin/io/println(any?)")!!
+
+        return printMethod(value)
+    }
 }
 
 /**
