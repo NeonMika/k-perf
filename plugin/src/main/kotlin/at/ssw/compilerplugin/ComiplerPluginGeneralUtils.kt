@@ -28,6 +28,7 @@ class IrStringBuilder(
     private val toStringMethod = sbClass.findFunction(pluginContext, "toString()")!!
 
     init {
+        //TODO counter
         stringBuilderField = pluginContext.createField(file.symbol, "_stringBuilder_${(0..10000).random()}") {
             sbClass.findConstructor(pluginContext)!!()
         }

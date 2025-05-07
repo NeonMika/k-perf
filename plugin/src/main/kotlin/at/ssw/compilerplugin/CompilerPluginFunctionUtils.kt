@@ -75,7 +75,7 @@ fun IrPluginContext.createField(
  * @property builder The IrBuilderWithScope used to construct the IR call
  *                    expressions.
  */
-class IrCallDsl(private val builder: IrBuilderWithScope) {
+class IrCallDsl(private val builder: IrBuilderWithScope/* TODO:, pluginContext: IrPluginContext*/) {
 
     /**
      * Chains a function call to the current `IrFunctionAccessExpression` and returns the resulting expression.
@@ -104,12 +104,14 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args A variable number of arguments to be passed to the function.
      * @return A new `IrFunctionAccessExpression` representing the chained function call.
      */
+    //TODO rename call
     fun IrFunctionAccessExpression.chain(pluginContext: IrPluginContext, signature: String, vararg args: Any): IrFunctionAccessExpression {
         val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
         val funcSymbol = pluginContext.findFunction(signature + params, this.type)
             ?: throw IllegalArgumentException("Function $signature not found in the provided plugin context")
 
         val newCall = builder.irCall(funcSymbol).apply {
+            //TODO false, can be both
             this.extensionReceiver = this@chain
         }
 
@@ -157,6 +159,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
                     ?: throw IllegalArgumentException("IrCallHelper: Property ${func.owner.name} does not have a getter")
                 getter.symbol
             }
+            //TODO hanlde string to not need 2 versions of call
             else -> throw IllegalArgumentException("IrCallHelper: Unsupported function type: ${func::class.simpleName}")
         }
 
@@ -176,6 +179,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
             is IrValueSymbol -> builder.irGet(owner)
             is IrClassSymbol -> builder.irGetObject(this)
             is IrCall -> this
+            //TODO not called functions / constructurs --> call
             is IrConstructorSymbol -> null
             is IrSimpleFunctionSymbol -> null
             //restrict - yes probably with generics -> the best way to do this in kotlin
@@ -345,6 +349,12 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return An IrCall that can be further chained
      */
+    /*TODO create own method to generate call without receiver
+        3 methods:
+        - Pair<symbol,symbol>.call for dispatch and other receiver
+        - Symbol.call
+        - call --> without receivers
+     */
     operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this.symbol.call(this.symbol, *args)
 
     /**
@@ -354,6 +364,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
      * @param args The arguments to be passed to the function
      * @return An IrCall that can be further chained
      */
+    //Todo check if this can be minimized
     operator fun IrFunctionSymbol.invoke(vararg args: Any) : IrFunctionAccessExpression = this.call(this, *args)
 
     /**

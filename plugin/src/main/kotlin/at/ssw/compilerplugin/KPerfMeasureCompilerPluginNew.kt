@@ -245,7 +245,7 @@ Backend plugin
 class PerfMeasureExtension2New(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
-
+    //TODO fix this
     val STRINGBUILDER_MODE = false
 
     val debugFile = File("./DEBUG.txt")
@@ -257,7 +257,7 @@ class PerfMeasureExtension2New(
     fun appendToDebugFile(str: String) {
         debugFile.appendText(str)
     }
-
+    //TODO remove comments in both
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark") ?: error("Cannot find class kotlin.time.TimeMark")

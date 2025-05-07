@@ -98,6 +98,7 @@ class KPerfMeasureCompilerPluginTest {
     @OptIn(ExperimentalCompilerApi::class)
     @Test
     fun `Class example`() {
+        //TODO write own compiler plugin for test
         val result = compile(
             SourceFile.kotlin(
                 "main.kt",
