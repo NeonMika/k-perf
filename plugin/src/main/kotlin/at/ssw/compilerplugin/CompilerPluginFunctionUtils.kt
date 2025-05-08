@@ -94,49 +94,90 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
-        //TODO: doesn't support setting dispatch and extension receiver
         //TODO: test setting dispatch receiver
-        val functionSymbol = extractFunctionSymbol(func, *args)
         val functionCall: IrFunctionAccessExpression = if (func is String) {
-            call(findFunction(this, func, *args), *args)
+            this@IrCallDsl.call(findFunction(this, func, *args), *args)
         } else {
-            call(func, *args)
+            this@IrCallDsl.call(func, *args)
         }
 
-        val receiver = when (this) {
-            is IrPropertySymbol -> {
-                val getter = owner.getter
-                    ?: throw IllegalArgumentException("IrCallHelper: Property ${owner.name} does not have a getter")
-                builder.irCall(getter)
+        return functionCall.setReceivers(this@IrCallDsl.extractReceiver(this))
+    }
+
+    fun Pair<IrSymbol, IrSymbol>.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
+        //TODO: test this
+        val functionCall: IrFunctionAccessExpression = if (func is String) {
+            try {
+                this@IrCallDsl.call(findFunction(this.first, func, *args), *args)
+            } catch (_: Exception) {
+                this@IrCallDsl.call(findFunction(this.second, func, *args), *args)
             }
-            is IrFieldSymbol -> {
-                //only top level fields supported
-                if (owner.parent !is IrFile) {
-                    throw IllegalStateException("IrCallHelper: Only top-level fields are supported here")
-                }
-                builder.irGetField(null, owner)
-            }
-            is IrValueSymbol -> builder.irGet(owner)
-            is IrClassSymbol -> builder.irGetObject(this)
-            is IrCall -> this
-            is IrConstructorSymbol -> this()
-            is IrSimpleFunctionSymbol -> this()
-            //restrict - yes probably with generics -> the best way to do this in kotlin
-            else -> throw IllegalArgumentException("IrCallHelper: Unsupported symbol type: ${this::class.simpleName}")
+        } else {
+            this@IrCallDsl.call(func, *args)
         }
 
-        return functionCall.apply {
-            dispatchReceiver = if (functionSymbol.owner.extensionReceiverParameter == null && functionSymbol.owner.dispatchReceiverParameter != null) {
-                receiver
-            } else {
-                null
-            }
-            extensionReceiver = if (functionSymbol.owner.extensionReceiverParameter != null) {
-                receiver
-            } else {
-                null
-            }
+        return functionCall.setReceivers(this@IrCallDsl.extractReceiver(this.first), this@IrCallDsl.extractReceiver(this.second))
+    }
+
+    fun IrFunctionAccessExpression.call(func: Any, vararg args: Any) = this@IrCallDsl.call(func, *args).setReceivers(this)
+
+    fun IrDeclaration.call(func: Any, vararg args: Any) = this.symbol.call(func, *args)
+
+    /**
+     * Calls this function with the given arguments and returns an IrCall to continue building
+     * the IR expression tree.
+     *
+     * @param args The arguments to be passed to the function
+     * @return An IrCall that can be further chained
+     */
+    operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this.symbol.call(this.symbol, *args)
+
+    /**
+     * Calls this function with the given arguments and returns an IrCall to continue building
+     * the IR expression tree.
+     *
+     * @param args The arguments to be passed to the function
+     * @return An IrCall that can be further chained
+     */
+    operator fun IrFunctionSymbol.invoke(vararg args: Any) : IrFunctionAccessExpression = this.call(this, *args)
+
+    operator fun IrClass.invoke(vararg args: Any) = this.symbol(*args)
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    operator fun IrClassSymbol.invoke(vararg args: Any): IrFunctionAccessExpression {
+        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
+        return this.findConstructor(pluginContext, params)?.invoke(*args)
+            ?: throw IllegalArgumentException("IrCallHelper: Constructor wit params: $params not found in class ${this.owner.name}")
+    }
+
+    /**
+     * Constructs an `IrFunctionAccessExpression` to print a value using the `println` function.
+     *
+     * @param pluginContext The `IrPluginContext` used to find the `println` function symbol.
+     * @param value The value to be printed. Its type is determined dynamically.
+     * @return An `IrFunctionAccessExpression` representing the call to the `println` function.
+     *         If the specific println function for the value type is not found, it falls back to println(any?).
+     */
+    fun irPrintLn(pluginContext: IrPluginContext, value: Any): IrFunctionAccessExpression {
+        val paramType = extractType(value)
+        val printMethod = pluginContext.findFunction("kotlin/io/println($paramType)")
+            ?: pluginContext.findFunction("kotlin/io/println(any?)")!!
+
+        return printMethod(value)
+    }
+
+    /**
+     * Builds an IR expression representing a string concatenation of the given params.
+     *
+     * @param params The variable number of arguments to be concatenated.
+     * @return An IR expression representing a string concatenation of the given params.
+     */
+    fun irConcat(vararg params: Any): IrStringConcatenation {
+        val concat = builder.irConcat()
+        for (param in params) {
+            concat.addArgument(builder.convertToIrExpression(param))
         }
+        return concat
     }
 
     private fun extractFunctionSymbol(func: Any, vararg args: Any) =
@@ -197,71 +238,35 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         return function ?: throw IllegalArgumentException("IrCallHelper: Function $funcSignature with params $params not found!")
     }
 
-    /**
-     * Builds an IR expression representing a string concatenation of the given params.
-     *
-     * @param params The variable number of arguments to be concatenated.
-     * @return An IR expression representing a string concatenation of the given params.
-     */
-    fun irConcat(vararg params: Any): IrStringConcatenation {
-        val concat = builder.irConcat()
-        for (param in params) {
-            concat.addArgument(builder.convertToIrExpression(param))
+    private fun extractReceiver(symbol: IrSymbol) = when (this) {
+        is IrPropertySymbol -> {
+            val getter = owner.getter
+                ?: throw IllegalArgumentException("IrCallHelper: Property ${owner.name} does not have a getter")
+            builder.irCall(getter)
         }
-        return concat
+        is IrFieldSymbol -> {
+            //only top level fields supported
+            if (owner.parent !is IrFile) {
+                throw IllegalStateException("IrCallHelper: Only top-level fields are supported here")
+            }
+            builder.irGetField(null, owner)
+        }
+        is IrValueSymbol -> builder.irGet(owner)
+        is IrClassSymbol -> builder.irGetObject(this)
+        is IrConstructorSymbol -> this()
+        is IrSimpleFunctionSymbol -> this()
+        //restrict - yes probably with generics -> the best way to do this in kotlin
+        else -> throw IllegalArgumentException("IrCallHelper: Unsupported symbol type: ${this::class.simpleName}")
     }
-
-    fun IrFunctionAccessExpression.call(func: Any, vararg args: Any) = this.call(func, *args)
-
-    fun IrDeclaration.call(func: Any, vararg args: Any) = this.symbol.call(func, *args)
-
-    /**
-     * Calls this function with the given arguments and returns an IrCall to continue building
-     * the IR expression tree.
-     *
-     * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
-     */
-    /*TODO create own method to generate call without receiver
-        3 methods:
-        - Pair<symbol,symbol>.call for dispatch and other receiver
-        - Symbol.call
-        - call --> without receivers
-     */
-    operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this.symbol.call(this.symbol, *args)
-
-    /**
-     * Calls this function with the given arguments and returns an IrCall to continue building
-     * the IR expression tree.
-     *
-     * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
-     */
-    operator fun IrFunctionSymbol.invoke(vararg args: Any) : IrFunctionAccessExpression = this.call(this, *args)
-
-    operator fun IrClass.invoke(vararg args: Any) = this.symbol(*args)
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    operator fun IrClassSymbol.invoke(vararg args: Any): IrFunctionAccessExpression {
-        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
-        return this.findConstructor(pluginContext, params)?.invoke(*args)
-            ?: throw IllegalArgumentException("IrCallHelper: Constructor wit params: $params not found in class ${this.owner.name}")
-    }
-
-    /**
-     * Constructs an `IrFunctionAccessExpression` to print a value using the `println` function.
-     *
-     * @param pluginContext The `IrPluginContext` used to find the `println` function symbol.
-     * @param value The value to be printed. Its type is determined dynamically.
-     * @return An `IrFunctionAccessExpression` representing the call to the `println` function.
-     *         If the specific println function for the value type is not found, it falls back to println(any?).
-     */
-    fun irPrintLn(pluginContext: IrPluginContext, value: Any): IrFunctionAccessExpression {
-        val paramType = extractType(value)
-        val printMethod = pluginContext.findFunction("kotlin/io/println($paramType)")
-            ?: pluginContext.findFunction("kotlin/io/println(any?)")!!
-
-        return printMethod(value)
+    private fun IrFunctionAccessExpression.setReceivers(r1: IrExpression, r2: IrExpression? = null) = this.apply{
+        dispatchReceiver = if (this.symbol.owner.dispatchReceiverParameter != null) {
+            r1
+        } else null
+        extensionReceiver = if (this.symbol.owner.extensionReceiverParameter != null) {
+            r2 ?: r1
+        } else null
     }
 }
 

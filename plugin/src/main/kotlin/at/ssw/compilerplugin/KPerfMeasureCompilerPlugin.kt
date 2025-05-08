@@ -617,7 +617,7 @@ class PerfMeasureExtension2(
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 callExpression(pluginContext) {
-                    randomDefaultObjectClass.call(pluginContext, "nextInt")
+                    randomDefaultObjectClass.call("nextInt")
                 }
             }
         }
@@ -700,8 +700,8 @@ class PerfMeasureExtension2(
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 callExpression(pluginContext) {
-                    systemFileSystem.call(pluginContext, "sink(*)", pathConstructionFunc(bufferedTraceFileName))
-                        .chain(bufferedFunc)
+                    systemFileSystem.call("sink(*)", pathConstructionFunc(bufferedTraceFileName))
+                        .call(bufferedFunc)
                 }
             }
         }
@@ -711,8 +711,8 @@ class PerfMeasureExtension2(
         bufferedTraceFileSink3.parent = firstFile
 
         val bufferedTraceFileSink4 = pluginContext.createField(firstFile.symbol, "_bufferedTraceFileSink4") {
-            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
-                .chain(bufferedFunc)
+            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName)).symbol
+                .call(bufferedFunc)
         }
         compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink4.dump(), "bufferedTraceFileSink")
 
@@ -775,7 +775,7 @@ class PerfMeasureExtension2(
         }.apply {
             this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression(pluginContext) {
                 systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedSymbolsFileName))
-                    .chain(pluginContext, "kotlinx/io/buffered")
+                    .call("kotlinx/io/buffered")
             }
         }
         firstFile.declarations.add(bufferedSymbolsFileSink2)
