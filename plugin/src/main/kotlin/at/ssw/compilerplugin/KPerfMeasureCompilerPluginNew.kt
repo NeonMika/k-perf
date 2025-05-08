@@ -333,7 +333,7 @@ class PerfMeasureExtension2New(
                         /* val funMarkNowViaClass = classMonotonic.functions.find { it.owner.name.asString() == "markNow" }!! */
 
                         // assertion: funMarkNowViaClass == funMarkNow
-                        +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic")!!.call(pluginContext,"markNow"))
+                        +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic")!!.call("markNow"))
                     }
                 }
             }
@@ -366,7 +366,7 @@ class PerfMeasureExtension2New(
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL(pluginContext) {
-                        val elapsedDuration = irTemporary(valueParameters[1].call(pluginContext, "elapsedNow"))
+                        val elapsedDuration = irTemporary(valueParameters[1].call("elapsedNow"))
                         val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
 
