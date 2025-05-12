@@ -89,6 +89,7 @@
 
     let graphvizInstance;
     let selectedNodeId;
+    let autoZoomToNode=false
 
     const activeFilters = [];
 
@@ -139,6 +140,10 @@
 
                     d3.select(container).select("svg").on("dblclick.zoom", null);
 
+                    if(autoZoomToNode){
+                        zoomToNode(selectedNodeId);
+                        autoZoomToNode=false;
+                    }
                 });
         } catch (error) {
             console.error(error);
@@ -181,6 +186,10 @@
             </div>`;
         }
     }
+
+
+
+
 
 
 
@@ -372,8 +381,9 @@
         console.log('User clicked unit:', e.detail);
         selectedNodeId = e.detail.nodeID;
         expandAllParents(nodeDict[e.detail.nodeID]);
+        autoZoomToNode=true;
         updateGraph();
-        setInfoDiv(selectedNodeId)
+        setInfoDiv(selectedNodeId);
     });
 
     initGraphviz();

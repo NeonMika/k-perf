@@ -266,6 +266,39 @@ function setupWidthDragging(){
     });
 }
 
+function zoomToNode(nodeId) {
+    if(!nodeId){
+        return;
+    }
+    const svgSel   = graphvizInstance.zoomSelection();
+    const zoomBeh  = graphvizInstance.zoomBehavior();
+    const nodeG    = getNodeByNodeId(nodeId);
+
+    const bb      = nodeG.getBBox();
+    const cx      = bb.x + bb.width  / 2;
+    const cy      = bb.y + bb.height / 2;
+
+    const container = document.getElementById("graph-container");
+    const { width: Cw, height: Ch } = container.getBoundingClientRect();
+
+    const padding= 50;
+
+    const k = Math.min(Cw / (bb.width + 2 * padding ), Ch / (bb.height + 2 * padding));
+
+    const duration=750;
+
+    svgSel
+        .transition()
+        .duration(duration)
+        .call(zoomBeh.translateTo, cx, cy)
+        .on("end", function () {
+            svgSel
+                .transition()
+                .duration(duration)
+                .call(zoomBeh.scaleTo, k);
+        });
+}
+
 function setUpDownloadButton(svg) {
     document.getElementById("download-svg").addEventListener("click", function () {
         const svgData = new XMLSerializer().serializeToString(svg);
