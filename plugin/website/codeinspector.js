@@ -3,6 +3,7 @@ template.innerHTML = `
   <style>
     #sourceContainer {
       width: 100%;
+      height: 100%;
       white-space: pre;  
       overflow: auto;      
       background: #f5f5f5;
@@ -90,10 +91,16 @@ class CodeInspector extends HTMLElement {
 
         const events = [];
         units.forEach(u => {
-            events.push({ pos: u.start, type: 'start', unit: u });
-            events.push({ pos: u.end,   type: 'end',   unit: u });
+            events.push({ pos: u.start, type: 'start', unit: u, length: u.end-u.start });
+            events.push({ pos: u.end,   type: 'end',   unit: u, length: u.end-u.start });
         });
-        events.sort((a,b) => a.pos - b.pos || (a.type==='end'? -1:1));
+        events.sort((a, b) => {
+            if (a.pos !== b.pos) return a.pos - b.pos;
+            if (a.type !== b.type) return a.type === 'end' ? -1 : 1;
+            if (a.type === 'end') return a.length - b.length;
+            else return b.length - a.length;
+        });
+
 
         let idx = 0;
         const stack = [document.createDocumentFragment()];
