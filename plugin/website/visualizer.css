@@ -12,7 +12,8 @@ body {
     margin: 10px;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 60px)
+    height: calc(100vh - 60px);
+    align-items: stretch;
 }
 
 h1, h2 {
@@ -21,8 +22,9 @@ h1, h2 {
 
 .content-wrapper {
     display: flex;
+    flex: 1;
     margin-top: 10px;
-    height: 90%;
+    overflow: hidden;
 }
 
 .graph-container {
