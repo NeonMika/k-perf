@@ -78,12 +78,9 @@ function createDotSource(root) {
 
 
 
-        const shape = getNodeShape(node.NodeType)
-        const fillcolor = node.highlight ? ', fillcolor="#FFFF00", style=filled':"";
-        const style = node.intermediate ? ', style=dotted':"";
 
         if (node.visible) {
-            dotBuilder.push(`    ${node.nodeID} [id="${node.nodeID}", label=<${label}>, shape="${shape}" ${fillcolor} ${style}];`);
+            dotBuilder.push(`    ${node.nodeID} [${nodeAttributes(node, label)}];`);
 
 
             if (Array.isArray(node.Children)) {
@@ -103,6 +100,23 @@ function createDotSource(root) {
     traverse(root);
     dotBuilder.push("}\n");
     return dotBuilder.join("\n");
+}
+
+function nodeAttributes(node, label) {
+    const attrs = [
+        `id="${node.nodeID}"`,
+        `label=<${label}>`,
+        `shape="${getNodeShape(node.NodeType)}"`
+    ];
+
+    if (node.highlight)   attrs.push(`fillcolor="#FFFF00"`);
+
+    const styles = [];
+    if (node.highlight)    styles.push('filled');
+    if (node.intermediate) styles.push('dotted');
+    if (styles.length)     attrs.push(`style="${styles.join(',')}"`);
+
+    return attrs.join(', ');
 }
 
 function createNodeDict(root) {
