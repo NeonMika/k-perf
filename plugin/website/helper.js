@@ -34,7 +34,7 @@ function setInfoDiv(nodeId){
     infoDiv.appendChild(header);
 
     for (const [key, value] of Object.entries(nodeData)) {
-        if (["nodeID", "NodeName", "Caption", "Dump", "FunctionIdentity", "original", "visible", "Content", "StartOffset", "EndOffset", "parent", "highlight", "intermediate"].includes(key)) continue;
+        if (["nodeID", "NodeName", "Children", "Caption", "Dump", "FunctionIdentity", "visible", "Content", "StartOffset", "EndOffset", "parent", "highlight", "intermediate"].includes(key)) continue;
         const p = document.createElement("p");
         const strong = document.createElement("strong");
         strong.textContent = insertSpaceBeforeCaps(key);
@@ -63,7 +63,7 @@ function setInfoDiv(nodeId){
     infoDiv.appendChild(dumpButton);
 
     const inspector = document.getElementById('inspector');
-    const fileNode=getFileNodeOfNode(nodeData.original);
+    const fileNode=getFileNodeOfNode(nodeData);
     if(fileNode){
         inspector.sourceCode = fileNode?.Content;
         inspector.units=getUnitsOfSourceCode(fileNode);

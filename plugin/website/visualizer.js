@@ -33,9 +33,9 @@ function createDotSource(root) {
     function traverse(node) {
         function escapeDotSymbols(s) {
             return s
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
+                ?.replace(/&/g, "&amp;")
+                ?.replace(/</g, "&lt;")
+                ?.replace(/>/g, "&gt;");
         }
 
         const typeName = node.NodeName || "";
@@ -103,16 +103,7 @@ function createNodeDict(root) {
     const nodeDict = {};
 
     function traverse(node) {
-        const nodeCopy = {};
-        for (const [key, value] of Object.entries(node)) {
-            if (key !== "Children") {
-                nodeCopy[key] = value;
-            }
-        }
-
-        nodeCopy.original = node;
-        nodeDict[node.nodeID] = nodeCopy;
-
+        nodeDict[node.nodeID] = node;
 
         if (Array.isArray(node.Children)) {
             for (const child of node.Children) {

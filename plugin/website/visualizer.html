@@ -218,7 +218,7 @@
                 nodeGroup.addEventListener("dblclick", function () {
                     const nodeId = nodeGroup.querySelector("title").textContent.trim();
                     const nodeData = nodeDict[nodeId];
-                    toggleChildren(nodeData.original, hasInvisibleChild(nodeData.original))
+                    toggleChildren(nodeData, hasInvisibleChild(nodeData))
 
                     updateGraph()
                 });
@@ -258,7 +258,7 @@
     });
 
     expandBtn.addEventListener('click', function (event) {
-        expandAll(nodeDict[selectedNodeId].original);
+        expandAll(nodeDict[selectedNodeId]);
         updateGraph();
     });
 
@@ -372,7 +372,7 @@
     inspector.addEventListener('unitSelected', e => {
         console.log('User clicked unit:', e.detail);
         selectedNodeId = e.detail.nodeID;
-        expandAllParents(nodeDict[e.detail.nodeID].original);
+        expandAllParents(nodeDict[e.detail.nodeID]);
         updateGraph();
         setInfoDiv(selectedNodeId)
     });
