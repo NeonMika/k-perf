@@ -82,7 +82,7 @@
     const jsonString = getJSON();
     let obj = JSON.parse(jsonString);
     obj=groupByNodeName(obj);
-    assignNodeIds(obj);
+    restructureTree(obj);
     let nodeDict = createNodeDict(obj);
     let dotSource = createDotSource(obj);
 
@@ -128,13 +128,17 @@
 
                     setUpDownloadButton(svg);
 
-                    if (selectedNodeId) {
+                    if (getNodeByNodeId(selectedNodeId)) {
                         markSelected(selectedNodeId);
                         selectedNodeGroup = getNodeByNodeId(selectedNodeId);
                         drawAllDottedLines(selectedNodeGroup)
+                    }else{
+                        clearSelection();
+                        graphvizInstance.resetZoom();
                     }
 
                     d3.select(container).select("svg").on("dblclick.zoom", null);
+
                 });
         } catch (error) {
             console.error(error);
@@ -178,20 +182,7 @@
         }
     }
 
-    function setUpDownloadButton(svg) {
-        document.getElementById("download-svg").addEventListener("click", function () {
-            const svgData = new XMLSerializer().serializeToString(svg);
-            const blob = new Blob([svgData], {type: "image/svg+xml"});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "dot_graph.svg";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-    }
+
 
     function addNodeClickHandlers(svg) {
         const nodeGroups = svg.querySelectorAll(".node");
@@ -241,7 +232,14 @@
             }
 
         });
+    }
 
+    function clearSelection(){
+        if(selectedNodeId){
+            unmarkSelected();
+            selectedNodeId=null;
+        }
+        setInfoDiv(null);
     }
 
 
@@ -251,7 +249,7 @@
         if(checkbox.checked){
             obj=groupByNodeName(obj);
         }
-        assignNodeIds(obj);
+        restructureTree(obj);
         nodeDict = createNodeDict(obj);
         dotSource = createDotSource(obj);
         updateGraph();

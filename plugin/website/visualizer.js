@@ -1,7 +1,13 @@
-function assignNodeIds(root) {
+function restructureTree(root) {
+    const ignoreList = ["NodeName", "Children", "Caption", "Dump", "FunctionIdentity", "Content", "StartOffset", "EndOffset"];
     let idCount = 0;
 
     function traverse(node, parent) {
+
+        node.displayedData=Object.fromEntries(
+            Object.entries(node).filter(([key]) => !ignoreList.includes(key) && key!=="intermediate")
+        );
+
         node.nodeID = "node" + (idCount++);
         node.parent = parent;
         node.highlight = false;
@@ -138,15 +144,18 @@ function filterTree(root, filters) {
         node.visible = currentNodeVisible;
         return currentNodeVisible;
     }
+    visit(root);
 
     if (filters.length > 0) {
-        visit(root);
     } else {
         collapseByDepth(root, 3)
     }
 }
 
 function isFiltered(node, filters) {
+    if(filters.length===0){
+        return false;
+    }
     const filtersByType = {};
     for (const filter of filters) {
         const {type, value} = filter;

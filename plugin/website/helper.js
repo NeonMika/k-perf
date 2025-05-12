@@ -24,8 +24,18 @@ function unmarkSelected(){
 }
 
 function setInfoDiv(nodeId){
-    const nodeData = nodeDict[nodeId];
     const infoDiv = document.getElementById("selected-node-info");
+    const inspector = document.getElementById('inspector');
+
+    if(!nodeId){
+        infoDiv.innerHTML="<h3>Click on any node to see details here</h3>";
+        const expandBtn = document.getElementById('expandAllChildren');
+        expandBtn.disabled = true;
+        inspector.sourceCode = "";
+        return;
+    }
+
+    const nodeData = nodeDict[nodeId];
 
     infoDiv.innerHTML = "";
 
@@ -33,8 +43,7 @@ function setInfoDiv(nodeId){
     header.textContent = `Selected Node: ${nodeData.NodeName}`;
     infoDiv.appendChild(header);
 
-    for (const [key, value] of Object.entries(nodeData)) {
-        if (["nodeID", "NodeName", "Children", "Caption", "Dump", "FunctionIdentity", "visible", "Content", "StartOffset", "EndOffset", "parent", "highlight", "intermediate"].includes(key)) continue;
+    for (const [key, value] of Object.entries(nodeData.displayedData)) {
         const p = document.createElement("p");
         const strong = document.createElement("strong");
         strong.textContent = insertSpaceBeforeCaps(key);
@@ -62,7 +71,6 @@ function setInfoDiv(nodeId){
     };
     infoDiv.appendChild(dumpButton);
 
-    const inspector = document.getElementById('inspector');
     const fileNode=getFileNodeOfNode(nodeData);
     if(fileNode){
         inspector.sourceCode = fileNode?.Content;
@@ -255,5 +263,20 @@ function setupWidthDragging(){
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
         });
+    });
+}
+
+function setUpDownloadButton(svg) {
+    document.getElementById("download-svg").addEventListener("click", function () {
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const blob = new Blob([svgData], {type: "image/svg+xml"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "dot_graph.svg";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     });
 }
