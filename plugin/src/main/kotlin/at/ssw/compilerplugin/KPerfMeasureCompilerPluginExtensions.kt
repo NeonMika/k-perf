@@ -101,7 +101,7 @@ private fun find(context: IrPluginContext, name: String, findReferences: (match:
         if (size >= groupMethod) {
             val methodName = match.groups[groupMethod]?.value
             if (!methodName.isNullOrEmpty()) {
-                var existingFunctionReferences: Sequence<IrFunctionSymbol> = findReferences(match, methodName)
+                var existingFunctionReferences = findReferences(match, methodName)
                 if (existingFunctionReferences.any()) {
                     if (match.groups[groupParametersExisting] != null) {
                         val parametersStrings = match.groups[groupParameters]?.value?.split(',')?.map {
@@ -117,6 +117,7 @@ private fun find(context: IrPluginContext, name: String, findReferences: (match:
                             if (parametersStrings.any()) {
                                 val anyNullType = context.irBuiltIns.anyNType
                                 val star = "*"
+
                                 if (parametersStrings.size != 1 || parametersStrings[0].second != star) {
                                     val em = "!"
                                     val qm = "?"
@@ -209,24 +210,16 @@ private fun find(context: IrPluginContext, name: String, findReferences: (match:
                                                     continue
                                                 }
 
-                                                var requiredType = entry.v4!!
                                                 val isStar = wildcard == star
-
                                                 while (wildcard == star && requiredTypesIt.hasNext()) {
                                                     entry = requiredTypesIt.next()
                                                     wildcard = entry.v3
-                                                    requiredType = entry.v4!!
                                                 }
 
-                                                var derivationLevel = NONE
-                                                var index: Int
-                                                var existingValueParameter: IrValueParameter?
                                                 loopCheckExisting@ while (existingFunctionParametersIt.hasNext()) {
-                                                    val existingFunctionParameter = existingFunctionParametersIt.next()
-                                                    index = existingFunctionParameter.first
-                                                    existingValueParameter = existingFunctionParameter.second
+                                                    val (index, existingValueParameter) = existingFunctionParametersIt.next()
 
-                                                    derivationLevel = typeCheck(requiredType, existingValueParameter)
+                                                    val derivationLevel = typeCheck(entry, existingValueParameter)
                                                     if (derivationLevel != NONE) {
                                                         existingHasNoNameFilter.add(Triple(index, existingValueParameter, derivationLevel))
                                                         continue@loopRequiredTypes
@@ -251,17 +244,25 @@ private fun find(context: IrPluginContext, name: String, findReferences: (match:
                                             }
 
                                             if (existingFunctionParametersIt.hasNext()) {
-                                                return@map Pair(false, it)
-                                            } else {
-                                                return@map Pair(true, Triple(existingFunctionReference, existingHasNoNameFilter, existingHasName))
+                                                while (existingFunctionParametersIt.hasNext()) {
+                                                    if (existingFunctionParametersIt.next().second.defaultValue == null) {
+                                                        break
+                                                    }
+                                                }
+
+                                                if (existingFunctionParametersIt.hasNext()) {
+                                                    return@map Pair(false, it)
+                                                }
                                             }
+
+                                            return@map Pair(true, Triple(existingFunctionReference, existingHasNoNameFilter, existingHasName))
                                         }
 
                                         if (requiredTypes.all { it.v3 == star }) {
                                             return@map Pair(true, Triple(existingFunctionReference, existingHasNoName.map { (index, existingValueParameter) -> Triple(index, existingValueParameter, STAR) }, existingHasName))
-                                        } else {
-                                            return@map Pair(false, it)
                                         }
+
+                                        return@map Pair(false, it)
                                     }
                                         .filter { it.first }
                                         .map { it.second }
@@ -288,7 +289,7 @@ private fun find(context: IrPluginContext, name: String, findReferences: (match:
                                         .map { p -> p.first }
 
                                     if (existingFunctionReferences.take(2).count() >= 2) {
-                                        val optionalParametersCount = existingFunctionReferences.map { Pair(it, it.owner.valueParameters.count { p -> p.defaultValue != null }) }
+                                        val optionalParametersCount = existingFunctionReferences.map { Pair(it, it.owner.valueParameters.count { p -> p.defaultValue != null || p.varargElementType != null }) }
                                         val optionalMin = optionalParametersCount.map { p -> p.second }.min()
                                         existingFunctionReferences = optionalParametersCount
                                             .filter { p -> p.second == optionalMin }
@@ -311,7 +312,7 @@ private fun find(context: IrPluginContext, name: String, findReferences: (match:
 
                     val count = existingFunctionReferences.take(2).count()
                     if (count > 0) {
-                        check(count <= 1) { "ambiguous ($count) function signature: $name" }
+                        check(count <= 1) { "ambiguous function signature: $name, ${existingFunctionReferences.map { it }}" }
                         return existingFunctionReferences.single()
                     }
                 }
@@ -328,22 +329,29 @@ private val selectorFunctions: (IrClassSymbol?) -> Sequence<IrFunctionSymbol>? =
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 private val selectorConstructors: (IrClassSymbol?) -> Sequence<IrFunctionSymbol>? = { classSymbol -> classSymbol?.constructors}
 
-fun IrPluginContext.findFunction(name: String): IrSimpleFunctionSymbol {
-    return find(this, name) { match, methodName -> findReferences(this, match, methodName, { callableId -> this.referenceFunctions(callableId) }, selectorFunctions) } as IrSimpleFunctionSymbol
-}
+fun IrPluginContext.findFunction(name: String): IrSimpleFunctionSymbol = find(this, name) { match, methodName -> findReferences(this, match, methodName, { callableId -> this.referenceFunctions(callableId) }, selectorFunctions) } as IrSimpleFunctionSymbol
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrPluginContext.findFunction(name: String, clazz: IrClassSymbol): IrSimpleFunctionSymbol {
-    return find(this, name) { _, methodName -> selectorFunctions(clazz)?.filter { it.owner.name.asString() == methodName }!! } as IrSimpleFunctionSymbol
-}
+fun IrPluginContext.findFunction(name: String, clazz: IrClassSymbol): IrSimpleFunctionSymbol = find(this, name) { _, methodName -> selectorFunctions(clazz)?.filter { it.owner.name.asString() == methodName }!! } as IrSimpleFunctionSymbol
 
-fun IrPluginContext.findConstructor(name: String): IrConstructorSymbol {
-    return find(this, name) { match, methodName -> findReferences(this, match, methodName, { callableId -> this.referenceConstructors(ClassId.fromString(callableId.toString())) }, selectorConstructors) } as IrConstructorSymbol
-}
+@UnsafeDuringIrConstructionAPI
+fun IrClass.findFunction(name: String): IrSimpleFunctionSymbol = this.functions.single { it.name.asString() == name }.symbol
 
-fun IrPluginContext.findConstructor(name: String, clazz: IrClassSymbol): IrConstructorSymbol {
-    return find(this, name) { _, _ -> selectorConstructors(clazz)!! } as IrConstructorSymbol
-}
+@UnsafeDuringIrConstructionAPI
+fun IrClassSymbol.findFunction(name: String): IrSimpleFunctionSymbol = this.owner.findFunction(name)
+
+@UnsafeDuringIrConstructionAPI
+fun IrType.findFunction(name: String): IrSimpleFunctionSymbol = this.getClass()!!.findFunction(name)
+
+@UnsafeDuringIrConstructionAPI
+fun IrProperty.findFunction(name: String): IrSimpleFunctionSymbol = this.getter!!.returnType.classOrFail.findFunction(name)
+
+@UnsafeDuringIrConstructionAPI
+fun IrPropertySymbol.findFunction(name: String): IrSimpleFunctionSymbol = this.owner.findFunction(name)
+
+fun IrPluginContext.findConstructor(name: String): IrConstructorSymbol = find(this, name) { match, methodName -> findReferences(this, match, methodName, { callableId -> this.referenceConstructors(ClassId.fromString(callableId.toString())) }, selectorConstructors) } as IrConstructorSymbol
+
+fun IrPluginContext.findConstructor(name: String, clazz: IrClassSymbol): IrConstructorSymbol = find(this, name) { _, _ -> selectorConstructors(clazz)!! } as IrConstructorSymbol
 
 fun IrPluginContext.findProperty(name: String): IrPropertySymbol {
     val match = regexFun.matchEntire(name)
