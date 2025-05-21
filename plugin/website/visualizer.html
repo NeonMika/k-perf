@@ -81,7 +81,7 @@
 
     const jsonString = getJSON();
     let obj = JSON.parse(jsonString);
-    obj=groupByNodeName(obj);
+    obj=groupArrays(obj);
     restructureTree(obj);
     let nodeDict = createNodeDict(obj);
     let dotSource = createDotSource(obj);
@@ -256,7 +256,7 @@
         const jsonString = getJSON();
         obj = JSON.parse(jsonString);
         if(checkbox.checked){
-            obj=groupByNodeName(obj);
+            obj=groupArrays(obj);
         }
         restructureTree(obj);
         nodeDict = createNodeDict(obj);

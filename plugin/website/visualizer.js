@@ -86,7 +86,7 @@ function createDotSource(root) {
             if (Array.isArray(node.Children)) {
                 for (const child of node.Children) {
                     if (child.visible) {
-                        dotBuilder.push(`    ${node.nodeID} -> ${child.nodeID};`);
+                        dotBuilder.push(`    ${node.nodeID} -> ${child.nodeID} [label="${child.Property}"];`);
                         traverse(child);
                     }
                 }
@@ -293,48 +293,66 @@ function getUnitsOfSourceCode(fileNode) {
 }
 
 
-function groupByNodeName(tree) {
+function groupArrays(tree) {
     if (!tree.Children || tree.Children.length === 0) {
         return tree;
     }
 
-    const processedChildren = tree.Children.map(child => groupByNodeName(child));
-
-    const childrenByNodeName = {};
-    processedChildren.forEach(child => {
-        if (!childrenByNodeName[child.NodeName]) {
-            childrenByNodeName[child.NodeName] = [];
-        }
-        childrenByNodeName[child.NodeName].push(child);
-    });
+    const processedChildren = tree.Children.map(child => groupArrays(child));
 
     const newChildren = [];
+    let i = 0;
 
-    for (const nodeName in childrenByNodeName) {
-        const sameNameNodes = childrenByNodeName[nodeName];
+    while (i < processedChildren.length) {
+        const first = processedChildren[i];
+        const prop  = extractBeforeBracket(first.Property);
+        const type  = first.NodeName;
 
-        if (sameNameNodes.length === 1) {
-            newChildren.push(sameNameNodes[0]);
-            continue;
+        const run = [ first ];
+        let j = i + 1;
+        while (
+            j < processedChildren.length &&
+            extractBeforeBracket(processedChildren[j].Property) === prop &&
+            processedChildren[j].NodeName === type
+            ) {
+            run.push(processedChildren[j]);
+            j++;
         }
 
-        const intermediateNode = {
-            NodeType: sameNameNodes[0].NodeType,
-            NodeName: nodeName+" Group",
-            Caption: "",
-            Dump: `Group of ${nodeName}`,
-            intermediate: true,
-            Children: sameNameNodes
-        };
+        if (run.length < 3) {
+            run.forEach(node => newChildren.push(node));
+        } else {
+            newChildren.push({
+                NodeType: run[0].NodeType,
+                NodeName:  `${type} Group`,
+                Caption:   "",
+                Dump:      `Group of ${prop} (type=${type})`,
+                intermediate: true,
+                Property:  prop+`[${extractArrayIndex(run[0].Property)}..${extractArrayIndex(run[run.length-1].Property)}]`,
+                Type:      type,
+                Children:  run
+            });
+        }
 
-        newChildren.push(intermediateNode);
+        i = j;
     }
 
     return {
         ...tree,
         Children: newChildren
     };
+
+    function extractBeforeBracket(str) {
+        const index = str.indexOf('[');
+        return index === -1 ? str : str.substring(0, index);
+    }
+    function extractArrayIndex(str){
+        const start = str.indexOf('[');
+        const end = str.indexOf(']');
+        return parseInt(str.substring(start+1, end), 10);
+    }
 }
+
 
 function getJSON() {
     const request = new XMLHttpRequest();
