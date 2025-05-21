@@ -67,7 +67,7 @@ class JSONIrTreeVisitor(
         jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
         jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
         jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(declaration.symbol.owner)))
-
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
         return jsonObj
     }
 
@@ -81,6 +81,7 @@ class JSONIrTreeVisitor(
         jsonObj.add("FunctionName", JsonPrimitive(expression.symbol.owner.name.asString()))
         jsonObj.add("ReturnType", JsonPrimitive(expression.type.render()))
         jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(expression.symbol.owner)))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
         return jsonObj
     }
 
@@ -107,6 +108,7 @@ class JSONIrTreeVisitor(
         val jsonObj = jsonWithDefault("Get Value", caption, expression, data)
         jsonObj.add("VariableName", JsonPrimitive(expression.symbol.owner.name.asString()))
         jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
         return jsonObj
     }
 
@@ -118,12 +120,14 @@ class JSONIrTreeVisitor(
         }
         val jsonObj = jsonWithDefault(name, "", expression, data)
         jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
         return jsonObj
     }
 
     override fun visitWhen(expression: IrWhen, data: String): JsonElement {
         val jsonObj = jsonWithDefault("When", "", expression, data)
         jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
         return jsonObj
     }
 
@@ -141,6 +145,7 @@ class JSONIrTreeVisitor(
         jsonObj.add("Type", JsonPrimitive(declaration.type.render()))
         jsonObj.add("Name", JsonPrimitive(declaration.name.asString()))
         jsonObj.add("Index", JsonPrimitive(declaration.index))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
         return jsonObj
     }
 
@@ -157,6 +162,7 @@ class JSONIrTreeVisitor(
         jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
         jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
         jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(declaration.symbol.owner)))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
         return jsonObj
     }
 
@@ -166,6 +172,7 @@ class JSONIrTreeVisitor(
         jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
         jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
         jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
         return jsonObj
     }
 
@@ -175,6 +182,7 @@ class JSONIrTreeVisitor(
         jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
         jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
         jsonObj.add("Type", JsonPrimitive(declaration.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
         return jsonObj
     }
 
@@ -184,6 +192,7 @@ class JSONIrTreeVisitor(
         jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
         jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
         jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
         return jsonObj
     }
 
@@ -192,6 +201,7 @@ class JSONIrTreeVisitor(
         val jsonObj = jsonWithDefault("Get Field", caption, expression, data)
         jsonObj.add("VariableName", JsonPrimitive(expression.symbol.owner.name.asString()))
         jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
         return jsonObj
     }
 
