@@ -66,7 +66,7 @@ function createDotSource(root) {
             label += `<BR/><FONT FACE="Courier New" >${escapeDotSymbols(caption)}</FONT>`;
         }
 
-        if(node.NodeType === "IrConstImpl"){
+        if(node.NodeType === "IrConstImpl" && !node.intermediate){
             label += `<BR/><FONT FACE="Courier New" >${escapeDotSymbols(node.Value)}</FONT>`;
         }
 
