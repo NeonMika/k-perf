@@ -711,7 +711,7 @@ class PerfMeasureExtension2(
         bufferedTraceFileSink3.parent = firstFile
 
         val bufferedTraceFileSink4 = pluginContext.createField(firstFile.symbol, "_bufferedTraceFileSink4") {
-            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName)).symbol
+            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName)) //TODO this works, but if you append .symbol after the first call it does not????
                 .call(bufferedFunc)
         }
         compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink4.dump(), "bufferedTraceFileSink")

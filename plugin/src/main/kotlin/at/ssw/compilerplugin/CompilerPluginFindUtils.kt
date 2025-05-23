@@ -251,7 +251,7 @@ fun IrPluginContext.findConstructor(signature: String, ignoreNullability: Boolea
     val (className, _) = parseFunctionParameters(this, constructorPart)
 
     val classSymbol = if (className.isNotBlank()) {
-        findClass("$packageForFindClass/$outerClasses.$className")
+        findClass("$packageForFindClass/$outerClasses${if (outerClasses.isNotEmpty()) "." else ""}$className")
     } else {
         null
     }

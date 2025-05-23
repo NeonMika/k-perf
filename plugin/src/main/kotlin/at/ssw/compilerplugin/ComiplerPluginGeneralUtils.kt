@@ -48,7 +48,7 @@ class IrStringBuilder(
         val appendMethod = sbClass.findFunction(pluginContext, "append(${paramType})", ignoreNullability = true)
             ?: throw IllegalArgumentException("Method append($paramType) not found in StringBuilder")
 
-        return DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall {
+        return DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall(pluginContext) {
             stringBuilderField.call(appendMethod, value)
         }
     }
@@ -66,7 +66,7 @@ class IrStringBuilder(
         val insertMethod = sbClass.findFunction(pluginContext, "insert(int, ${paramType})", ignoreNullability = true)
             ?: throw IllegalArgumentException("Method insert(int, ${paramType}) not found in StringBuilder")
 
-        return DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall {
+        return DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall(pluginContext) {
             stringBuilderField.call(insertMethod, index, value)
         }
     }
@@ -78,7 +78,7 @@ class IrStringBuilder(
      * @param end The end index of the range to delete.
      * @return An IR function access expression representing the delete operation.
      */
-    fun delete(start: Int, end: Int): IrFunctionAccessExpression = DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall {
+    fun delete(start: Int, end: Int): IrFunctionAccessExpression = DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall(pluginContext) {
             stringBuilderField.call(deleteMethod, start, end)
         }
 
@@ -87,7 +87,7 @@ class IrStringBuilder(
      *
      * @return An IR function access expression representing the toString operation.
      */
-    fun irToString(): IrFunctionAccessExpression = DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall {
+    fun irToString(): IrFunctionAccessExpression = DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall(pluginContext) {
             stringBuilderField.call(toStringMethod)
         }
 }
@@ -134,7 +134,7 @@ class IrFileIOHandler(
         //create sink
         if(writeMode) {
             sinkField = pluginContext.createField(file.symbol, "_fileSink_${(0..10000).random()}") {
-                systemFileSystemProperty.call(sinkFunction, filePathField).chain(bufferedSinkFunction)
+                systemFileSystemProperty.call(sinkFunction, filePathField).call(bufferedSinkFunction)
             }
             file.declarations.add(sinkField!!)
             sinkField!!.parent = file
@@ -143,7 +143,7 @@ class IrFileIOHandler(
         //create source, only if file exists
         if (Path(fileName).exists() && !writeMode) {
             sourceField = pluginContext.createField(file.symbol, "_fileSource_${(0..10000).random()}") {
-                systemFileSystemProperty.call(sourceFunction, filePathField).chain(bufferedSourceFunction)
+                systemFileSystemProperty.call(sourceFunction, filePathField).call(bufferedSourceFunction)
             }
             file.declarations.add(sourceField!!)
             sourceField!!.parent = file
@@ -161,7 +161,7 @@ class IrFileIOHandler(
         require(extractType(data) == "string") {"Write function only supports string types"}
         require(writeMode) { "Cannot write in read mode!" }
 
-        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall {
+        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall(pluginContext) {
             sinkField!!.call(writeStringFunction, data)
         }
     }
@@ -174,7 +174,7 @@ class IrFileIOHandler(
      */
     fun readData(): IrFunctionAccessExpression {
         require(!writeMode) { "Cannot read in write mode!" }
-        return DeclarationIrBuilder(pluginContext, sourceField!!.symbol).getCall {
+        return DeclarationIrBuilder(pluginContext, sourceField!!.symbol).getCall(pluginContext) {
             sourceField!!.call(readStringFunction)
         }
     }
@@ -187,7 +187,7 @@ class IrFileIOHandler(
      */
     fun closeSink(): IrFunctionAccessExpression {
         require(writeMode) { "Cannot close Sink when in read mode!" }
-        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall {
+        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall(pluginContext) {
             sinkField!!.call(closeSinkFunction)
         }
     }
@@ -200,7 +200,7 @@ class IrFileIOHandler(
      */
     fun closeSource(): IrFunctionAccessExpression {
         require(!writeMode) { "Cannot close Source when in write mode!" }
-        return DeclarationIrBuilder(pluginContext, sourceField!!.symbol).getCall {
+        return DeclarationIrBuilder(pluginContext, sourceField!!.symbol).getCall(pluginContext) {
             sourceField!!.call(closeSourceFunction)
         }
     }
@@ -213,7 +213,7 @@ class IrFileIOHandler(
      */
     fun flushSink(): IrFunctionAccessExpression {
         require(writeMode) { "Cannot flush Sink when in read mode!" }
-        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall {
+        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall(pluginContext) {
             sinkField!!.call(flushFunction)
         }
     }
