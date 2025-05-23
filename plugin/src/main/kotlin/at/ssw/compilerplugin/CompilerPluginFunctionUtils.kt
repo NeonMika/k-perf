@@ -8,7 +8,6 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.symbols.*
-import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.Name
@@ -77,6 +76,7 @@ fun IrPluginContext.createField(
  */
 class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginContext: IrPluginContext) {
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun call(func: Any, vararg args: Any): IrFunctionAccessExpression {
         val function = extractFunctionSymbol(func, *args)
 
@@ -92,7 +92,6 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         }
     }
 
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
         //TODO: test setting dispatch receiver
         val functionCall: IrFunctionAccessExpression = if (func is String) {
@@ -100,8 +99,8 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         } else {
             this@IrCallDsl.call(func, *args)
         }
-
-        return functionCall.setReceivers(this@IrCallDsl.extractReceiver(this))
+        val receiver = this.extractReceiver()
+        return functionCall.setReceivers(receiver)
     }
 
     fun Pair<IrSymbol, IrSymbol>.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
@@ -116,10 +115,19 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
             this@IrCallDsl.call(func, *args)
         }
 
-        return functionCall.setReceivers(this@IrCallDsl.extractReceiver(this.first), this@IrCallDsl.extractReceiver(this.second))
+        return functionCall.setReceivers(this.first.extractReceiver(), this.second.extractReceiver())
     }
 
-    fun IrFunctionAccessExpression.call(func: Any, vararg args: Any) = this@IrCallDsl.call(func, *args).setReceivers(this)
+    fun IrFunctionAccessExpression.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
+        return if (func is String) {
+            val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
+            val funcSymbol = pluginContext.findFunction(func + params, this.type)
+                ?: throw IllegalArgumentException("Function $func not found with params $params")
+            this@IrCallDsl.call(funcSymbol, *args)
+        } else {
+            this@IrCallDsl.call(func, *args)
+        }.setReceivers(this)
+    }
 
     fun IrDeclaration.call(func: Any, vararg args: Any) = this.symbol.call(func, *args)
 
@@ -199,38 +207,22 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun findFunction(symbol: IrSymbol?, funcSignature: String, vararg args: Any): IrSimpleFunctionSymbol {
+    private fun findFunction(symbol: IrSymbol?, funcSignature: String, vararg args: Any): IrFunctionSymbol {
         val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
         val function = if(symbol != null) {
-            var dispatchReceiver: IrType? = null
             val irClass = when (symbol) {
-                is IrClassSymbol -> {
-                    dispatchReceiver = symbol.owner.defaultType
-                    symbol.owner
-                }
-                is IrVariableSymbol -> {
-                    dispatchReceiver = symbol.owner.type
-                    symbol.owner.type.getClass()
-                }
-                is IrValueSymbol -> {
-                    dispatchReceiver = symbol.owner.type
-                    symbol.owner.type.getClass()
-                }
-                is IrFieldSymbol -> {
-                    dispatchReceiver = symbol.owner.type
-                    symbol.owner.type.getClass()
-                }
-                is IrPropertySymbol -> {
-                    dispatchReceiver = symbol.owner.getter?.returnType
-                    symbol.owner.getter?.returnType?.getClass() ?: throw IllegalArgumentException("IrCallHelper: Property ${symbol.owner.name} does not have a getter")
-                }
+                is IrClassSymbol -> symbol.owner
+                is IrVariableSymbol -> symbol.owner.type.getClass()
+                is IrValueSymbol -> symbol.owner.type.getClass()
+                is IrFieldSymbol ->  symbol.owner.type.getClass()
+                is IrPropertySymbol -> symbol.owner.getter?.returnType?.getClass() ?: throw IllegalArgumentException("IrCallHelper: Property ${symbol.owner.name} does not have a getter")
                 else -> throw IllegalArgumentException("Unsupported symbol type: ${symbol::class.simpleName}")
             } ?: throw IllegalArgumentException("Could not resolve class from symbol")
 
             irClass.symbol.findFunction(pluginContext, funcSignature + params, irClass.defaultType)
         } else {
             if(!funcSignature.contains(".") && funcSignature.substringAfterLast("/").get(0).isUpperCase()) {
-                pluginContext.findConstructor(funcSignature + params) as? IrSimpleFunctionSymbol
+                pluginContext.findConstructor(funcSignature + params)
             } else {
                 pluginContext.findFunction(funcSignature + params)
             }
@@ -238,7 +230,8 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         return function ?: throw IllegalArgumentException("IrCallHelper: Function $funcSignature with params $params not found!")
     }
 
-    private fun extractReceiver(symbol: IrSymbol) = when (this) {
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrSymbol.extractReceiver() = when (this) {
         is IrPropertySymbol -> {
             val getter = owner.getter
                 ?: throw IllegalArgumentException("IrCallHelper: Property ${owner.name} does not have a getter")
@@ -253,8 +246,8 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         }
         is IrValueSymbol -> builder.irGet(owner)
         is IrClassSymbol -> builder.irGetObject(this)
-        is IrConstructorSymbol -> this()
-        is IrSimpleFunctionSymbol -> this()
+        is IrConstructorSymbol -> builder.irCall(this)
+        is IrSimpleFunctionSymbol -> builder.irCall(this)
         //restrict - yes probably with generics -> the best way to do this in kotlin
         else -> throw IllegalArgumentException("IrCallHelper: Unsupported symbol type: ${this::class.simpleName}")
     }
