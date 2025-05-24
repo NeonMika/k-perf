@@ -1,18 +1,23 @@
 const template = document.createElement('template');
 template.innerHTML = `
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.css"/>
   <style>
-    #sourceContainer {
-      width: 100%;
-      height: 100%;
-      white-space: pre;  
-      overflow: auto;      
+    pre {
+      margin: 0;
+      padding: 10px;
+      border: 1px solid #ccc;
       background: #f5f5f5;
+      overflow: auto;
       font-family: Consolas, Menlo, Monaco, 'Courier New', monospace;
       font-size: 10.5pt;
       position: relative;
-      padding: 10px;
+      width: 100%;
+      height: 100%;
       box-sizing: border-box;
-      border: 1px solid #ccc;
+    }
+    .token {
+        background: transparent !important;
     }
     .unit {
       cursor: pointer;
@@ -35,7 +40,8 @@ template.innerHTML = `
       z-index: 1000;
     }
   </style>
-  <div id="sourceContainer"></div>
+  <!-- Prism container sets language-kotlin and line-numbers -->
+  <pre id="sourceContainer" class="line-numbers"><code class="language-kotlin"></code></pre>
   <div id="tooltip"></div>
 `;
 
@@ -45,6 +51,7 @@ class CodeInspector extends HTMLElement {
         this.attachShadow({ mode: 'open' })
             .appendChild(template.content.cloneNode(true));
 
+        this._fileNode = '';
         this._sourceCode = '';
         this._units = [];
         this._hover = null;
@@ -53,6 +60,7 @@ class CodeInspector extends HTMLElement {
 
     connectedCallback() {
         this.container = this.shadowRoot.getElementById('sourceContainer');
+        this.codeEl    = this.container.querySelector('code');
         this.tooltip   = this.shadowRoot.getElementById('tooltip');
 
         this.container.addEventListener('mousemove', e => this._onMouseMove(e));
@@ -60,6 +68,14 @@ class CodeInspector extends HTMLElement {
         this.container.addEventListener('click', e => this._onClick(e));
     }
 
+    set fileNode(fileNode) {
+        if(this._fileNode !== fileNode) {
+            this._fileNode = fileNode;
+            this._sourceCode = fileNode?.Content;
+            this._units=getUnitsOfSourceCode(fileNode);
+            this._render();
+        }
+    }
     set sourceCode(code) {
         this._sourceCode = code;
         this._render();
@@ -70,7 +86,7 @@ class CodeInspector extends HTMLElement {
     }
 
     highlightUnit({ start, end }) {
-        const spans = this.container.querySelectorAll('.unit');
+        const spans = this.codeEl.querySelectorAll('.unit');
         let target = null;
         spans.forEach(s => {
             if (+s.dataset.start === start && +s.dataset.end === end) target = s;
@@ -87,69 +103,89 @@ class CodeInspector extends HTMLElement {
         if (!this.container) return;
         const code = this._sourceCode;
         const units = this._units;
-        this.container.innerHTML = '';
 
-        const events = [];
-        units.forEach(u => {
-            events.push({ pos: u.start, type: 'start', unit: u, length: u.end-u.start });
-            events.push({ pos: u.end,   type: 'end',   unit: u, length: u.end-u.start });
-        });
-        events.sort((a, b) => {
-            if (a.pos !== b.pos) return a.pos - b.pos;
-            if (a.type !== b.type) return a.type === 'end' ? -1 : 1;
-            if (a.type === 'end') return a.length - b.length;
-            else return b.length - a.length;
-        });
+        this.codeEl.textContent = code;
 
-
-        let idx = 0;
-        const stack = [document.createDocumentFragment()];
-
-        events.forEach(ev => {
-            const { pos, type, unit } = ev;
-            if (pos > idx) {
-                stack[stack.length-1].appendChild(
-                    document.createTextNode(code.slice(idx, pos))
-                );
-                idx = pos;
-            }
-            if (type === 'start') {
-                const span = document.createElement('span');
-                span.classList.add('unit');
-                span.dataset.name  = unit.name;
-                span.dataset.start = unit.start;
-                span.dataset.end   = unit.end;
-                span.dataset.nodeID   = unit.nodeID;
-                stack[stack.length-1].appendChild(span);
-                stack.push(span);
-            } else {
-                stack.pop();
-            }
-        });
-
-        if (idx < code.length) {
-            stack[stack.length-1].appendChild(
-                document.createTextNode(code.slice(idx))
-            );
+        if (window.Prism) {
+            Prism.highlightElement(this.codeEl);
         }
 
-        this.container.appendChild(stack[0]);
+        this.wrapRanges(this.codeEl, units);
+
+        if (window.Prism) {
+            if (Prism.plugins?.lineNumbers) {
+                Prism.plugins.lineNumbers.resize(this.codeEl);
+            }
+        }
     }
+
+    wrapRanges(container, units) {
+
+        units.sort((a, b) => {
+            if (a.start !== b.start) return b.start - a.start;
+            return a.end - b.end;
+        });
+
+        for (let unit of units) {
+            const walker = document.createTreeWalker(
+                container,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+
+            let node, charCount = 0;
+            let startNode, startOffset, endNode, endOffset;
+
+            while ((node = walker.nextNode())) {
+                const nextCount = charCount + node.nodeValue.length;
+
+                if (!startNode && nextCount >= unit.start) {
+                    startNode   = node;
+                    startOffset = unit.start - charCount;
+                }
+                if (startNode && nextCount >= unit.end) {
+                    endNode   = node;
+                    endOffset = unit.end   - charCount;
+                    break;
+                }
+                charCount = nextCount;
+            }
+
+            if (!startNode || !endNode) continue; // skip invalid ranges
+
+            const range = document.createRange();
+            range.setStart(startNode,  startOffset);
+            range.setEnd(  endNode,    endOffset);
+
+            const fragment = range.cloneContents();
+            range.deleteContents();
+
+            const span = document.createElement('span');
+            span.classList.add('unit');
+            span.dataset.name  = unit.name;
+            span.dataset.start = unit.start;
+            span.dataset.end   = unit.end;
+            span.dataset.nodeID = unit.nodeID;
+            span.appendChild(fragment);
+            range.insertNode(span);
+        }
+    }
+
+
 
     _onMouseMove(e) {
         const span = e.target.closest('.unit');
         if (span && this.container.contains(span)) {
-            if (this._hover && this._hover!==span) {
+            if (this._hover && this._hover !== span) {
                 this._hover.classList.remove('hover-highlight');
             }
             this._hover = span;
             span.classList.add('hover-highlight');
             this.tooltip.textContent = span.dataset.name;
             this.tooltip.style.display = 'block';
-            const containerRect = this.container.getBoundingClientRect();
             const tooltipHeight = this.tooltip.offsetHeight;
-
-            this.tooltip.style.left = (e.clientX  + 5) + 'px';
+            this.tooltip.style.left = (e.clientX + 5) + 'px';
             this.tooltip.style.top  = (e.clientY - tooltipHeight - 5) + 'px';
         } else {
             this._onMouseLeave();
@@ -170,7 +206,6 @@ class CodeInspector extends HTMLElement {
         if (this._selected) this._selected.classList.remove('selected');
         this._selected = span;
         span.classList.add('selected');
-
         const detail = span.dataset;
         this.dispatchEvent(new CustomEvent('unitSelected', { detail }));
     }

@@ -73,8 +73,7 @@ function setInfoDiv(nodeId){
 
     const fileNode=getFileNodeOfNode(nodeData);
     if(fileNode){
-        inspector.sourceCode = fileNode?.Content;
-        inspector.units=getUnitsOfSourceCode(fileNode);
+        inspector.fileNode = fileNode;
         inspector.highlightUnit({ start: nodeData.StartOffset, end: nodeData.EndOffset });
     }else {
         inspector.sourceCode="";
