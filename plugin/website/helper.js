@@ -84,7 +84,6 @@ function setInfoDiv(nodeId) {
                     expandAllParents(node);
                 }
             }
-            autoZoomToNode = false;
             updateGraph();
         };
         infoDiv.appendChild(functionCallButton);
@@ -343,7 +342,11 @@ function zoomToNode(nodeId) {
 
     const padding = 50;
 
-    const k = Math.min(Cw / (bb.width + 2 * padding), Ch / (bb.height + 2 * padding));
+    const graphG = svgSel.select('g');
+    const graphBB = graphG.node().getBBox();
+    const ratioX = graphBB.width  / bb.width;
+    const ratioY = graphBB.height / bb.height;
+    const k      = Math.min(ratioX, ratioY);
 
     const duration = 750;
 
