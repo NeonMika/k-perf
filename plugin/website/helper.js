@@ -76,7 +76,7 @@ function setInfoDiv(nodeId){
         inspector.fileNode = fileNode;
         inspector.highlightUnit({ start: nodeData.StartOffset, end: nodeData.EndOffset });
     }else {
-        inspector.sourceCode="";
+        inspector.fileNode=null;
     }
 
 

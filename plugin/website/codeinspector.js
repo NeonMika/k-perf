@@ -69,13 +69,20 @@ class CodeInspector extends HTMLElement {
     }
 
     set fileNode(fileNode) {
-        if(this._fileNode !== fileNode) {
-            this._fileNode = fileNode;
-            this._sourceCode = fileNode?.Content;
-            this._units=getUnitsOfSourceCode(fileNode);
+        if (this._fileNode !== fileNode) {
+            if (fileNode == null) {
+                this._fileNode = fileNode;
+                this._sourceCode = "";
+                this._units = [];
+            } else {
+                this._fileNode = fileNode;
+                this._sourceCode = fileNode?.Content;
+                this._units = getUnitsOfSourceCode(fileNode);
+            }
             this._render();
         }
     }
+
     set sourceCode(code) {
         this._sourceCode = code;
         this._render();
