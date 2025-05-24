@@ -34,7 +34,7 @@ h1, h2 {
     overflow: hidden;
 }
 
-#inspector{
+#inspector {
     display: flex;
     overflow: hidden;
 }
@@ -50,7 +50,7 @@ h1, h2 {
     margin-bottom: 5px;
 }
 
-#selected-node-info button{
+#selected-node-info button {
     margin-left: 0;
 }
 
@@ -63,11 +63,11 @@ h1, h2 {
     flex: 0 0 10px;
     margin: 0 10px;
     cursor: col-resize;
-    background-color: rgba(0,0,0,0);
+    background-color: rgba(0, 0, 0, 0);
 }
 
 
-#top{
+#top {
     display: flex;
     flex-direction: row;
 }
@@ -78,6 +78,7 @@ button {
     padding: 8px 16px;
     text-align: center;
     display: inline-flex;
+    justify-content: center;
     align-items: center;
     font-size: 14px;
     margin-left: 20px;
@@ -88,6 +89,8 @@ button {
     border: 1px solid #ccc;
     gap: 5px;
 }
+
+
 
 button:hover {
     background-color: #e0e0e0;
@@ -102,6 +105,10 @@ button:disabled:hover {
     background-color: #d3d3d3;
 }
 
+#selected-node-info button{
+    width: 150px;
+}
+
 .horizontal {
     display: flex;
     flex-direction: row;
@@ -112,10 +119,9 @@ button:disabled:hover {
     flex-direction: column;
 }
 
-.spacebetween{
+.spacebetween {
     justify-content: space-between;
 }
-
 
 
 label {
@@ -154,10 +160,10 @@ label {
     margin-bottom: 15px;
 }
 
-.filter-popup button{
+.filter-popup button {
     height: 33px;
     width: 100px;
-    display:table-cell;
+    display: table-cell;
 }
 
 .filter-row {

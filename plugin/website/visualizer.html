@@ -13,7 +13,8 @@
     <link rel="stylesheet" href="popup.css">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.css"/>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-kotlin.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
@@ -25,13 +26,15 @@
         <h1>Kotlin Compiler IR Visualization</h1>
         <button id="open-filter" class="filter-button">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 2H1L7 9.5V14L9 15V9.5L15 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M15 2H1L7 9.5V14L9 15V9.5L15 2Z" stroke="currentColor" stroke-width="1.5"
+                      stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             Filters
-            <span id="filter-count" style="background: #ddd; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; justify-content: center; align-items: center; font-size: 12px;">0</span>
+            <span id="filter-count"
+                  style="background: #ddd; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; justify-content: center; align-items: center; font-size: 12px;">0</span>
         </button>
         <button id="download-svg">Download SVG</button>
-        <label for="enable-grouping" >Enable Grouping:</label>
+        <label for="enable-grouping">Enable Grouping:</label>
         <input type="checkbox" checked id="enable-grouping">
     </div>
 
@@ -88,7 +91,7 @@
 
     const jsonString = getJSON();
     let obj = JSON.parse(jsonString);
-    obj=groupArrays(obj);
+    obj = groupArrays(obj);
     restructureTree(obj);
     let nodeDict = createNodeDict(obj);
     let dotSource = createDotSource(obj);
@@ -96,7 +99,7 @@
 
     let graphvizInstance;
     let selectedNodeId;
-    let autoZoomToNode=false
+    let autoZoomToNode = false
 
     const activeFilters = [];
 
@@ -140,16 +143,16 @@
                         markSelected(selectedNodeId);
                         selectedNodeGroup = getNodeByNodeId(selectedNodeId);
                         drawAllDottedLines(selectedNodeGroup)
-                    }else{
+                    } else {
                         clearSelection();
                         graphvizInstance.resetZoom();
                     }
 
                     d3.select(container).select("svg").on("dblclick.zoom", null);
 
-                    if(autoZoomToNode){
+                    if (autoZoomToNode) {
                         zoomToNode(selectedNodeId);
-                        autoZoomToNode=false;
+                        autoZoomToNode = false;
                     }
                 });
         } catch (error) {
@@ -195,11 +198,6 @@
     }
 
 
-
-
-
-
-
     function addNodeClickHandlers(svg) {
         const nodeGroups = svg.querySelectorAll(".node");
         nodeGroups.forEach(nodeGroup => {
@@ -231,7 +229,7 @@
                 });
 
                 nodeGroup.addEventListener("click", function () {
-                    expandBtn.disabled=false;
+                    expandBtn.disabled = false;
 
                     const nodeId = nodeGroup.querySelector("title").textContent.trim();
 
@@ -251,10 +249,10 @@
         });
     }
 
-    function clearSelection(){
-        if(selectedNodeId){
+    function clearSelection() {
+        if (selectedNodeId) {
             unmarkSelected();
-            selectedNodeId=null;
+            selectedNodeId = null;
         }
         setInfoDiv(null);
         setCodeInspector(null);
@@ -264,8 +262,8 @@
     checkbox.addEventListener('change', function (event) {
         const jsonString = getJSON();
         obj = JSON.parse(jsonString);
-        if(checkbox.checked){
-            obj=groupArrays(obj);
+        if (checkbox.checked) {
+            obj = groupArrays(obj);
         }
         restructureTree(obj);
         nodeDict = createNodeDict(obj);
@@ -289,7 +287,7 @@
     const activeFilterTags = document.getElementById('active-filter-tags');
     const filterCount = document.getElementById('filter-count');
 
-    filterButton.addEventListener('click', function() {
+    filterButton.addEventListener('click', function () {
         if (filterPopup.style.display === 'block') {
             filterPopup.style.display = 'none';
         } else {
@@ -301,13 +299,13 @@
         }
     });
 
-    document.addEventListener('click', function(event) {
-        if (!filterPopup.contains(event.target) && event.target !== filterButton && event.target.className!=="filter-tag-close") {
+    document.addEventListener('click', function (event) {
+        if (!filterPopup.contains(event.target) && event.target !== filterButton && event.target.className !== "filter-tag-close") {
             filterPopup.style.display = 'none';
         }
     });
 
-    addFilterBtn.addEventListener('click', function() {
+    addFilterBtn.addEventListener('click', function () {
         if (filterValue.value.trim() === '') return;
 
         const filter = {
@@ -327,18 +325,18 @@
         }
     });
 
-    applyFilterBtn.addEventListener('click', function() {
+    applyFilterBtn.addEventListener('click', function () {
         updateFilterCount();
         updateGraph();
     });
 
-    filterValue.addEventListener('keydown', function(event) {
+    filterValue.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
             addFilterBtn.click();
         }
     });
 
-    clearFiltersBtn.addEventListener('click', function() {
+    clearFiltersBtn.addEventListener('click', function () {
         activeFilters.length = 0;
         filterTree(obj, activeFilters)
         updateFilterTags();
@@ -372,7 +370,7 @@
         });
 
         document.querySelectorAll('.filter-tag-close').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const index = parseInt(this.dataset.index);
                 activeFilters.splice(index, 1);
                 filterTree(obj, activeFilters)
@@ -390,7 +388,7 @@
         console.log('User clicked unit:', e.detail);
         selectedNodeId = e.detail.nodeID;
         expandAllParents(nodeDict[e.detail.nodeID]);
-        autoZoomToNode=true;
+        autoZoomToNode = true;
         updateGraph();
         setInfoDiv(selectedNodeId);
     });

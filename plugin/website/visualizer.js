@@ -4,15 +4,15 @@ function restructureTree(root) {
 
     function traverse(node, parent) {
 
-        node.displayedData=Object.fromEntries(
-            Object.entries(node).filter(([key]) => !ignoreList.includes(key) && key!=="intermediate")
+        node.displayedData = Object.fromEntries(
+            Object.entries(node).filter(([key]) => !ignoreList.includes(key) && key !== "intermediate")
         );
 
         node.nodeID = "node" + (idCount++);
         node.parent = parent;
         node.highlight = false;
-        if(!("intermediate" in node)){
-            node.intermediate=false;
+        if (!("intermediate" in node)) {
+            node.intermediate = false;
         }
         if (Array.isArray(node.Children)) {
             for (const child of node.Children) {
@@ -58,15 +58,15 @@ function createDotSource(root) {
         }
 
 
-        let label = `<FONT FACE="Calibri" POINT-SIZE="16">${typeName}</FONT><BR/>`+
-                           `<FONT FACE="Courier New" >${node.NodeType}</FONT>`;
+        let label = `<FONT FACE="Calibri" POINT-SIZE="16">${typeName}</FONT><BR/>` +
+            `<FONT FACE="Courier New" >${node.NodeType}</FONT>`;
 
 
         if (caption) {
             label += `<BR/><FONT FACE="Courier New" >${escapeDotSymbols(caption)}</FONT>`;
         }
 
-        if(node.NodeType === "IrConstImpl" && !node.intermediate){
+        if (node.NodeType === "IrConstImpl" && !node.intermediate) {
             label += `<BR/><FONT FACE="Courier New" >${escapeDotSymbols(node.Value)}</FONT>`;
         }
 
@@ -75,8 +75,6 @@ function createDotSource(root) {
         } else {
             label += `<BR/><BR/>➖  `;
         }
-
-
 
 
         if (node.visible) {
@@ -109,12 +107,12 @@ function nodeAttributes(node, label) {
         `shape="${getNodeShape(node.NodeType)}"`
     ];
 
-    if (node.highlight)   attrs.push(`fillcolor="#FFFF00"`);
+    if (node.highlight) attrs.push(`fillcolor="#FFFF00"`);
 
     const styles = [];
-    if (node.highlight)    styles.push('filled');
+    if (node.highlight) styles.push('filled');
     if (node.intermediate) styles.push('dotted');
-    if (styles.length)     attrs.push(`style="${styles.join(',')}"`);
+    if (styles.length) attrs.push(`style="${styles.join(',')}"`);
 
     return attrs.join(', ');
 }
@@ -140,7 +138,7 @@ function filterTree(root, filters) {
     function visit(node) {
         let currentNodeVisible = false;
 
-        node.highlight=false;
+        node.highlight = false;
         if (isFiltered(node, filters)) {
             currentNodeVisible = true;
             node.highlight = true;
@@ -158,6 +156,7 @@ function filterTree(root, filters) {
         node.visible = currentNodeVisible;
         return currentNodeVisible;
     }
+
     visit(root);
 
     if (filters.length > 0) {
@@ -167,7 +166,7 @@ function filterTree(root, filters) {
 }
 
 function isFiltered(node, filters) {
-    if(filters.length===0){
+    if (filters.length === 0) {
         return false;
     }
     const filtersByType = {};
@@ -305,10 +304,10 @@ function groupArrays(tree) {
 
     while (i < processedChildren.length) {
         const first = processedChildren[i];
-        const prop  = extractBeforeBracket(first.Property);
-        const type  = first.NodeName;
+        const prop = extractBeforeBracket(first.Property);
+        const type = first.NodeName;
 
-        const run = [ first ];
+        const run = [first];
         let j = i + 1;
         while (
             j < processedChildren.length &&
@@ -324,13 +323,13 @@ function groupArrays(tree) {
         } else {
             newChildren.push({
                 NodeType: run[0].NodeType,
-                NodeName:  `${type} Group`,
-                Caption:   "",
-                Dump:      `Group of ${prop} (type=${type})`,
+                NodeName: `${type} Group`,
+                Caption: "",
+                Dump: `Group of ${prop} (type=${type})`,
                 intermediate: true,
-                Property:  prop+`[${extractArrayIndex(run[0].Property)}..${extractArrayIndex(run[run.length-1].Property)}]`,
-                Type:      type,
-                Children:  run
+                Property: prop + `[${extractArrayIndex(run[0].Property)}..${extractArrayIndex(run[run.length - 1].Property)}]`,
+                Type: type,
+                Children: run
             });
         }
 
@@ -346,10 +345,11 @@ function groupArrays(tree) {
         const index = str.indexOf('[');
         return index === -1 ? str : str.substring(0, index);
     }
-    function extractArrayIndex(str){
+
+    function extractArrayIndex(str) {
         const start = str.indexOf('[');
         const end = str.indexOf(']');
-        return parseInt(str.substring(start+1, end), 10);
+        return parseInt(str.substring(start + 1, end), 10);
     }
 }
 

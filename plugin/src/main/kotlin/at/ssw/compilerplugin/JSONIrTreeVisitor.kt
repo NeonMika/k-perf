@@ -76,12 +76,14 @@ class JSONIrTreeVisitor(
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitCall(expression: IrCall, data: String): JsonElement { val caption = expression.symbol.owner.name.asString()
+    override fun visitCall(expression: IrCall, data: String): JsonElement {
+        val caption = expression.symbol.owner.name.asString()
         val jsonObj = jsonWithDefault("Call", caption, expression, data)
         jsonObj.add("FunctionName", JsonPrimitive(expression.symbol.owner.name.asString()))
         jsonObj.add("ReturnType", JsonPrimitive(expression.type.render()))
         jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(expression.symbol.owner)))
         jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        jsonObj.add("Name", JsonPrimitive(expression.symbol.owner.name.asString()))
         return jsonObj
     }
 
@@ -360,7 +362,10 @@ class JSONIrTreeVisitor(
     }
 
     override fun visitFunctionReference(expression: IrFunctionReference, data: String): JsonElement {
-        val caption = "symbol: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}, origin: ${expression.origin}, reflectionTarget: ${renderReflectionTarget(expression)}"
+        val caption =
+            "symbol: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}, origin: ${expression.origin}, reflectionTarget: ${
+                renderReflectionTarget(expression)
+            }"
         return jsonWithDefault("FunctionReference", caption, expression, data)
     }
 
@@ -377,19 +382,18 @@ class JSONIrTreeVisitor(
             expression.reflectionTarget?.owner?.name?.asString() ?: ""
 
 
-
     fun jsonWithDefault(typeName: String, caption: String, element: IrElement, property: String): JsonObject {
         val jsonObj = JsonObject().apply {
             add("NodeType", JsonPrimitive(element::class.simpleName))
             add("NodeName", JsonPrimitive(typeName))
             add("Caption", JsonPrimitive(caption))
             add("Dump", JsonPrimitive(element.accept(renderVisitor, null)))
-            val startOffset=element.sourceElement()?.startOffset;
-            val endOffset=element.sourceElement()?.endOffset;
-            if(startOffset!=null){
+            val startOffset = element.sourceElement()?.startOffset;
+            val endOffset = element.sourceElement()?.endOffset;
+            if (startOffset != null) {
                 add("StartOffset", JsonPrimitive(startOffset))
             }
-            if(endOffset!=null){
+            if (endOffset != null) {
                 add("EndOffset", JsonPrimitive(endOffset))
             }
             add("Property", JsonPrimitive(property))

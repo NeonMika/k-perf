@@ -4,17 +4,17 @@ import kotlin.reflect.jvm.isAccessible
 
 fun Any.getPropertyName(target: Any): String? {
     for (prop in this::class.memberProperties) {
-        if(prop.visibility!=KVisibility.PUBLIC){
-            prop.isAccessible=true;
+        if (prop.visibility != KVisibility.PUBLIC) {
+            prop.isAccessible = true;
         }
-        if(prop.getter.visibility!=KVisibility.PUBLIC){
-            prop.getter.isAccessible=true;
+        if (prop.getter.visibility != KVisibility.PUBLIC) {
+            prop.getter.isAccessible = true;
         }
 
         var value: Any?
-        try{
+        try {
             value = prop.getter.call(this) ?: continue
-        }catch (e: Exception){
+        } catch (e: Exception) {
             continue
         }
 
