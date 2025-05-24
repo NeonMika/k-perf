@@ -90,7 +90,9 @@ button {
     gap: 5px;
 }
 
-
+g{
+    pointer-events: all;
+}
 
 button:hover {
     background-color: #e0e0e0;

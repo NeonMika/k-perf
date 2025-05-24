@@ -148,7 +148,7 @@ function drawAllDottedLines(nodeGroup) {
             if (node.NodeName === "Function") {
                 const functionNode = getNodeByNodeId(node.nodeID)
                 if (functionNode) {
-                    drawDottedLine(nodeGroup, functionNode, svg)
+                    drawDottedLine(nodeGroup, functionNode, svg, nodeData.nodeID, node.nodeID);
                 }
             }
         }
@@ -160,7 +160,7 @@ function drawAllDottedLines(nodeGroup) {
             if (node.NodeName === "Call") {
                 const functionNode = getNodeByNodeId(node.nodeID)
                 if (functionNode) {
-                    drawDottedLine(nodeGroup, functionNode, svg)
+                    const line = drawDottedLine(nodeGroup, functionNode, svg, nodeData.nodeID, node.nodeID);
                 }
             }
         }
@@ -172,7 +172,7 @@ function getNodeByNodeId(nodeID) {
     return svg.querySelector("#" + nodeID)
 }
 
-function drawDottedLine(node1, node2, svg) {
+function drawDottedLine(node1, node2, svg, nodeID1, nodeID2) {
     const bbox1 = node1.getBBox();
     const bbox2 = node2.getBBox();
 
@@ -218,8 +218,40 @@ function drawDottedLine(node1, node2, svg) {
     line.setAttribute("stroke-width", "2");
     line.classList.add("dotted-line");
 
+    const hit = document.createElementNS("http://www.w3.org/2000/svg","line");
+    hit.setAttribute("x1", point1.x);
+    hit.setAttribute("y1", point1.y);
+    hit.setAttribute("x2", point2.x);
+    hit.setAttribute("y2", point2.y);
+    hit.setAttribute("stroke", "transparent");
+    hit.setAttribute("stroke-width", "10");
+    hit.setAttribute("pointer-events", "stroke");
+    hit.classList.add("dotted-line");
+    hit.style.cursor = "pointer";                    // show pointer
+
+    hit.addEventListener("click", e => {
+        const clickX = e.clientX;
+        const clickY = e.clientY;
+        const rect1 = node1.getBoundingClientRect();
+        const rect2 = node2.getBoundingClientRect();
+        const center1Client = {
+            x: rect1.left + rect1.width  / 2,
+            y: rect1.top  + rect1.height / 2
+        };
+        const center2Client = {
+            x: rect2.left + rect2.width  / 2,
+            y: rect2.top  + rect2.height / 2
+        };
+        const d1 = Math.hypot(clickX - center1Client.x, clickY - center1Client.y);
+        const d2 = Math.hypot(clickX - center2Client.x, clickY - center2Client.y);
+        if (d1 < d2) zoomToNode(nodeID2);
+        else          zoomToNode(nodeID1);
+    });
+
     const graph = svg.querySelector(".graph");
     graph.appendChild(line);
+    graph.appendChild(hit);
+    return line;
 }
 
 function getClusterColor(type) {
