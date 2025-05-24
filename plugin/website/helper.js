@@ -25,13 +25,12 @@ function unmarkSelected(){
 
 function setInfoDiv(nodeId){
     const infoDiv = document.getElementById("selected-node-info");
-    const inspector = document.getElementById('inspector');
 
     if(!nodeId){
         infoDiv.innerHTML="<h3>Click on any node to see details here</h3>";
         const expandBtn = document.getElementById('expandAllChildren');
         expandBtn.disabled = true;
-        inspector.sourceCode = "";
+        inspector.fileNode=null;
         return;
     }
 
@@ -71,17 +70,32 @@ function setInfoDiv(nodeId){
     };
     infoDiv.appendChild(dumpButton);
 
-    const fileNode=getFileNodeOfNode(nodeData);
-    if(fileNode){
-        inspector.fileNode = fileNode;
-        inspector.highlightUnit({ start: nodeData.StartOffset, end: nodeData.EndOffset });
-    }else {
-        inspector.fileNode=null;
-    }
-
 
     function insertSpaceBeforeCaps(str) {
         return str.replace(/(?!^)([A-Z])/g, ' $1');
+    }
+}
+
+function setCodeInspector(nodeId){
+    const inspector = document.getElementById('inspector');
+
+    if(!nodeId){
+        inspector.fileNode=null;
+        return;
+    }
+
+    const nodeData = nodeDict[nodeId];
+
+    const fileNode=getFileNodeOfNode(nodeData);
+    if(fileNode){
+        inspector.fileNode = fileNode;
+        if(!nodeData.intermediate){
+            inspector.highlightUnit({ start: nodeData.StartOffset, end: nodeData.EndOffset });
+        }else{
+            inspector.highlightUnit({start: -1, end: -1})
+        }
+    }else {
+        inspector.fileNode=null;
     }
 }
 

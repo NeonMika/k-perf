@@ -235,7 +235,8 @@
 
                     const nodeId = nodeGroup.querySelector("title").textContent.trim();
 
-                    setInfoDiv(nodeGroup.querySelector("title").textContent.trim())
+                    setInfoDiv(nodeId);
+                    setCodeInspector(nodeId);
 
                     unmarkSelected();
                     selectedNodeId = nodeId;
@@ -256,6 +257,7 @@
             selectedNodeId=null;
         }
         setInfoDiv(null);
+        setCodeInspector(null);
     }
 
 
