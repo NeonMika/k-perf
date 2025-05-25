@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-graphviz/5.6.0/d3-graphviz.min.js"></script>
     <script src="visualizer.js"></script>
     <script src="helper.js"></script>
+    <script src="communication.js"></script>
     <script src="codeinspector.js"></script>
     <link rel="stylesheet" href="visualizer.css">
     <link rel="stylesheet" href="popup.css">
@@ -36,6 +37,7 @@
         <button id="download-svg">Download SVG</button>
         <label for="enable-grouping">Enable Grouping:</label>
         <input type="checkbox" checked id="enable-grouping">
+        <button id="closeVisualizer" class="last-button">Close Visualizer</button>
     </div>
 
     <div id="filter-popup" class="filter-popup">
@@ -391,6 +393,12 @@
         autoZoomToNode = true;
         updateGraph();
         setInfoDiv(selectedNodeId);
+    });
+
+    const closeVisualizerBtn = document.getElementById('closeVisualizer');
+
+    closeVisualizerBtn.addEventListener('click', () => {
+        closeVisualizer();
     });
 
     initGraphviz();

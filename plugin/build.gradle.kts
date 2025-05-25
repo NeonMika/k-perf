@@ -25,6 +25,8 @@ dependencies {
     // must also be in target program!
     // this is here for the tests to run
     implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.5.3")
+    implementation("io.ktor:ktor-server-core:3.1.3")
+    implementation("io.ktor:ktor-server-netty:3.1.3")
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

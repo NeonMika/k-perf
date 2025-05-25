@@ -356,7 +356,7 @@ function groupArrays(tree) {
 
 function getJSON() {
     const request = new XMLHttpRequest();
-    request.open('GET', 'output.json', false);
+    request.open('GET', 'irtree.json', false);
     request.send(null);
 
     if (request.status === 200) {

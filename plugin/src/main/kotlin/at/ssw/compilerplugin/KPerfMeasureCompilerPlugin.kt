@@ -2,6 +2,7 @@ package at.ssw.compilerplugin
 
 import at.ssw.compilerplugin.ExampleConfigurationKeys.KEY_ENABLED
 import at.ssw.compilerplugin.ExampleConfigurationKeys.LOG_ANNOTATION_KEY
+import io.ktor.http.*
 import org.gradle.internal.impldep.com.google.gson.GsonBuilder
 import org.gradle.internal.impldep.org.h2.util.json.JSONObject
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -37,6 +38,15 @@ import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.routing.*
+import io.ktor.server.http.content.*
+import io.ktor.server.response.*
+import java.awt.Desktop
+import java.net.URI
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 
 object ExampleConfigurationKeys {
@@ -270,7 +280,37 @@ class PerfMeasureExtension2(
         val jsonTree = moduleFragment.accept(JSONIrTreeVisitor(), "")
         val jsonString = GsonBuilder().setPrettyPrinting().create().toJson(jsonTree)
 
-        val outputFile = File("./website/output.json")
-        outputFile.writeText(jsonString)
+        //val outputFile = File("./website/output.json")
+        //outputFile.writeText(jsonString)
+
+
+        val continueLatch = CountDownLatch(1)
+
+        val server = embeddedServer(Netty, port = 8080) {
+            routing {
+                staticResources("/", "website")
+
+                post("/continue") {
+                    call.respondText("Resuming compilation")
+                    continueLatch.countDown()
+                }
+
+                get("/irtree.json") {
+                    call.respondText(
+                        text = jsonString,
+                        contentType = ContentType.Application.Json
+                    )
+                }
+            }
+        }
+        server.start(wait = false)
+
+        val url = URI("http://localhost:8080/visualizer.html")
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            Desktop.getDesktop().browse(url)
+        }
+        continueLatch.await()
+
+        server.stop(0, 0, TimeUnit.MILLISECONDS)
     }
 }
