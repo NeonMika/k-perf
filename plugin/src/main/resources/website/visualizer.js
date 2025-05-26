@@ -1,5 +1,5 @@
 function restructureTree(root) {
-    const ignoreList = ["NodeName", "Children", "Caption", "Dump", "FunctionIdentity", "Content", "StartOffset", "EndOffset"];
+    const ignoreList = ["NodeName", "Children", "Caption", "Dump", "FunctionIdentity", "Content", "StartOffset", "EndOffset", "ObjectIdentity"];
     let idCount = 0;
 
     function traverse(node, parent) {

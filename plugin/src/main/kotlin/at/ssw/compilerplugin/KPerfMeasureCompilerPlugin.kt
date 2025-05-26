@@ -2,7 +2,9 @@ package at.ssw.compilerplugin
 
 import at.ssw.compilerplugin.ExampleConfigurationKeys.KEY_ENABLED
 import at.ssw.compilerplugin.ExampleConfigurationKeys.LOG_ANNOTATION_KEY
+import inspectProperties
 import io.ktor.http.*
+import io.ktor.server.application.*
 import org.gradle.internal.impldep.com.google.gson.GsonBuilder
 import org.gradle.internal.impldep.org.h2.util.json.JSONObject
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -43,8 +45,14 @@ import io.ktor.server.netty.*
 import io.ktor.server.routing.*
 import io.ktor.server.http.content.*
 import io.ktor.server.response.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.serialization.gson.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import java.awt.Desktop
 import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -277,7 +285,8 @@ class PerfMeasureExtension2(
 
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        val jsonTree = moduleFragment.accept(JSONIrTreeVisitor(), "")
+        val objects = ConcurrentHashMap<Int, Any>()
+        val jsonTree = moduleFragment.accept(JSONIrTreeVisitor(), PassedData("",objects))
         val jsonString = GsonBuilder().setPrettyPrinting().create().toJson(jsonTree)
 
         //val outputFile = File("./website/output.json")
@@ -287,6 +296,10 @@ class PerfMeasureExtension2(
         val continueLatch = CountDownLatch(1)
 
         val server = embeddedServer(Netty, port = 8080) {
+            install(ContentNegotiation) {
+                gson {
+                }
+            }
             routing {
                 staticResources("/", "website")
 
@@ -300,6 +313,21 @@ class PerfMeasureExtension2(
                         text = jsonString,
                         contentType = ContentType.Application.Json
                     )
+                }
+
+                get("/inspect") {
+                    try{
+                        val idParam = call.request.queryParameters["id"]?.toIntOrNull()
+                            ?: return@get call.respond(HttpStatusCode.BadRequest, "No object id provided")
+
+                        val target = objects[idParam] ?: return@get call.respond(HttpStatusCode.BadRequest, "Unknown object id: $idParam")
+
+                        val props = inspectProperties(target, objects)
+                        call.respond(props)
+                    }catch (e: Exception){
+                        appendToDebugFile(e.toString())
+                    }
+
                 }
             }
         }

@@ -58,17 +58,28 @@ function setInfoDiv(nodeId) {
     dumpParagraph.appendChild(document.createTextNode(`: ${nodeData.Dump}`));
     infoDiv.appendChild(dumpParagraph);
 
-    const sourcecodeButton = document.createElement("button");
-    sourcecodeButton.textContent = "Show Sourcecode";
-    sourcecodeButton.onclick = () => {
-        const popup = document.getElementById('fullscreen-popup');
-        popup.classList.add('active');
-        const codeHeading = popup.querySelector("#codeHeading");
-        codeHeading.textContent = "Original Source Code of " + nodeData.NodeType + " " + nodeData.Caption;
-        const codeParagraph = popup.querySelector("#codeParagraph");
-        codeParagraph.textContent = getSourceCodeOfNode(nodeData) ?? 'Source Code not found';
-    };
-    infoDiv.appendChild(sourcecodeButton);
+    if (!nodeData.intermediate) {
+        const sourcecodeButton = document.createElement("button");
+        sourcecodeButton.textContent = "Show Sourcecode";
+        sourcecodeButton.onclick = () => {
+            const popup = document.getElementById('fullscreen-popup');
+            popup.classList.add('active');
+            const codeHeading = popup.querySelector("#codeHeading");
+            codeHeading.textContent = "Original Source Code of " + nodeData.NodeType + " " + nodeData.Caption;
+            const codeParagraph = popup.querySelector("#codeParagraph");
+            codeParagraph.textContent = getSourceCodeOfNode(nodeData) ?? 'Source Code not found';
+        };
+        infoDiv.appendChild(sourcecodeButton);
+
+        const inspectButton = document.createElement("button");
+        inspectButton.textContent = "Inspect Object";
+        inspectButton.onclick = () => {
+            const insp = document.getElementById('object-inspector');
+            insp.open(nodeData.ObjectIdentity, nodeData.NodeType)
+        };
+        infoDiv.appendChild(inspectButton);
+    }
+
 
     if (nodeData.NodeName === "Function" || nodeData.NodeName === "Call") {
         const functionCallButton = document.createElement("button");
@@ -80,7 +91,7 @@ function setInfoDiv(nodeId) {
         functionCallButton.onclick = () => {
             const nodes = getAllNodesWithFunctionIdentity(nodeData.FunctionIdentity);
             for (let node of nodes) {
-                if(nodeData.NodeName !== node.NodeName){
+                if (nodeData.NodeName !== node.NodeName) {
                     expandAllParents(node);
                 }
             }
@@ -218,7 +229,7 @@ function drawDottedLine(node1, node2, svg, nodeID1, nodeID2) {
     line.setAttribute("stroke-width", "2");
     line.classList.add("dotted-line");
 
-    const hit = document.createElementNS("http://www.w3.org/2000/svg","line");
+    const hit = document.createElementNS("http://www.w3.org/2000/svg", "line");
     hit.setAttribute("x1", point1.x);
     hit.setAttribute("y1", point1.y);
     hit.setAttribute("x2", point2.x);
@@ -235,17 +246,17 @@ function drawDottedLine(node1, node2, svg, nodeID1, nodeID2) {
         const rect1 = node1.getBoundingClientRect();
         const rect2 = node2.getBoundingClientRect();
         const center1Client = {
-            x: rect1.left + rect1.width  / 2,
-            y: rect1.top  + rect1.height / 2
+            x: rect1.left + rect1.width / 2,
+            y: rect1.top + rect1.height / 2
         };
         const center2Client = {
-            x: rect2.left + rect2.width  / 2,
-            y: rect2.top  + rect2.height / 2
+            x: rect2.left + rect2.width / 2,
+            y: rect2.top + rect2.height / 2
         };
         const d1 = Math.hypot(clickX - center1Client.x, clickY - center1Client.y);
         const d2 = Math.hypot(clickX - center2Client.x, clickY - center2Client.y);
         if (d1 < d2) zoomToNode(nodeID2);
-        else          zoomToNode(nodeID1);
+        else zoomToNode(nodeID1);
     });
 
     const graph = svg.querySelector(".graph");
@@ -376,9 +387,9 @@ function zoomToNode(nodeId) {
 
     const graphG = svgSel.select('g');
     const graphBB = graphG.node().getBBox();
-    const ratioX = graphBB.width  / bb.width;
+    const ratioX = graphBB.width / bb.width;
     const ratioY = graphBB.height / bb.height;
-    const k      = Math.min(ratioX, ratioY);
+    const k = Math.min(ratioX, ratioY);
 
     const duration = 750;
 

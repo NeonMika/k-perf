@@ -27,7 +27,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.5.3")
     implementation("io.ktor:ktor-server-core:3.1.3")
     implementation("io.ktor:ktor-server-netty:3.1.3")
-
+    implementation("io.ktor:ktor-server-content-negotiation:3.1.3")
+    implementation("io.ktor:ktor-serialization-gson:3.1.3")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     // The following does not support Kotlin 2.0 yet

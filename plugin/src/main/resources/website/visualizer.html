@@ -10,6 +10,7 @@
     <script src="helper.js"></script>
     <script src="communication.js"></script>
     <script src="codeinspector.js"></script>
+    <script src="objectinspector.js"></script>
     <link rel="stylesheet" href="visualizer.css">
     <link rel="stylesheet" href="popup.css">
 
@@ -77,6 +78,8 @@
         </div>
     </div>
 </div>
+
+<object-inspector id="object-inspector"></object-inspector>
 
 <div id="fullscreen-popup">
     <div class="popup-box">
@@ -404,6 +407,11 @@
     initGraphviz();
     setupWidthDragging();
 
+    const data = {
+        id: 42,
+        name: "Foo",
+        nested: { a: 1, b: [2,3] }
+    }
 
 </script>
 </body>
