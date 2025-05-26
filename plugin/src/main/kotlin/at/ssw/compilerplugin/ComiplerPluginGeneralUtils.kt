@@ -11,6 +11,16 @@ import org.jetbrains.kotlin.ir.types.defaultType
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 
+private object StringBuilderCounter {
+    private var counter = 0
+    fun next(): Int = counter++
+}
+
+private object FileCounter {
+    private var counter = 0
+    fun next(): Int = counter++
+}
+
 /**
  * Utility class for creating and managing a Kotlin IR-based StringBuilder.
  *
@@ -28,8 +38,7 @@ class IrStringBuilder(
     private val toStringMethod = sbClass.findFunction(pluginContext, "toString()")!!
 
     init {
-        //TODO counter
-        stringBuilderField = pluginContext.createField(file.symbol, "_stringBuilder_${(0..10000).random()}") {
+        stringBuilderField = pluginContext.createField(file.symbol, "_stringBuilder_${StringBuilderCounter.next()}") {
             sbClass.findConstructor(pluginContext)!!()
         }
         file.declarations.add(stringBuilderField)
@@ -125,7 +134,7 @@ class IrFileIOHandler(
         val bufferedSinkFunction = pluginContext.findFunction("kotlinx/io/buffered()", sinkFunction.owner.returnType)!!
         val bufferedSourceFunction = pluginContext.findFunction("kotlinx/io/buffered()", sourceFunction.owner.returnType)!!
 
-        filePathField = pluginContext.createField(file.symbol, "_filePath_${(0..10000).random()}") {
+        filePathField = pluginContext.createField(file.symbol, "_filePath_${FileCounter.next()}") {
             pathFunction(fileName)
         }
         file.declarations.add(filePathField)
@@ -133,7 +142,7 @@ class IrFileIOHandler(
 
         //create sink
         if(writeMode) {
-            sinkField = pluginContext.createField(file.symbol, "_fileSink_${(0..10000).random()}") {
+            sinkField = pluginContext.createField(file.symbol, "_fileSink_${FileCounter.next()}") {
                 systemFileSystemProperty.call(sinkFunction, filePathField).call(bufferedSinkFunction)
             }
             file.declarations.add(sinkField!!)

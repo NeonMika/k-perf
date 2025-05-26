@@ -122,6 +122,8 @@ class KPerfMeasureCompilerPluginTest {
                         fun normalFunction(param: Int): String {
                             return "Normal Function: ${'$'}param"
                         }
+
+                        fun String.foo(x: Int): String = "Host($this) + ${'$'}x"
             
                         companion object {
                             fun staticFunction() = "Static Function"
