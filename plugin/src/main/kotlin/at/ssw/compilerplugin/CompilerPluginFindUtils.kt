@@ -405,6 +405,7 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
      * @return A pair containing the main type and a list of type parameters. If a type parameter cannot be resolved,
      *         it will be `null`.
      */
+    //TODO is this even needed?
 fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, List<IrType?>> {
     //no generic part in string
     if (!signature.contains("<")) {
@@ -567,6 +568,15 @@ private fun parseFunctionParameters(pluginContext: IrPluginContext, signature: S
     return Triple(functionName, params, paramsString.contains("*"))
 }
 
+/**
+ * Compares this type with another type, ignoring platform-specific differences.
+ *
+ * If either type is a platform type, the comparison ignores nullability and compares
+ * their erased upper bounds instead. Otherwise, the types are compared directly.
+ *
+ * @param type2 The type to compare with this type.
+ * @return `true` if the types are considered equal, `false` otherwise.
+ */
 fun IrType.equalsIgnorePlatform(type2: IrType): Boolean {
     //handle platform types
     if (this.isPlatformType() || type2.isPlatformType()) {

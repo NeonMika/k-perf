@@ -1072,7 +1072,7 @@ class PerfMeasureExtension2(
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     flushTraceFile()
-                    //TODO: wenn main in package dann wird es nicht gefunden
+                    //wenn main in package dann wird es nicht gefunden
                     val mainMethodId = methodIdMap.entries.find { it.key.endsWith("main") }?.value
                         ?: throw IllegalStateException("main method not found")
                     +irCall(exitFunc).apply {
@@ -1228,6 +1228,15 @@ class PerfMeasureExtension2(
             } else {
                 appendToDebugFile("topLevelFunction not found\n")
             }
+
+            val testString = pluginContext.createField(firstFile.symbol, "_testString") { convertToIrExpression("test") }
+            firstFile.declarations.add(testString)
+            testString.parent = firstFile
+
+            val pairCall = DeclarationIrBuilder(pluginContext, firstFile.symbol).getCall(pluginContext) {
+                Pair(myClass, testString.symbol).call("foo", 42)
+            }
+            appendToDebugFile(pairCall.dump())
         }
     }
 
