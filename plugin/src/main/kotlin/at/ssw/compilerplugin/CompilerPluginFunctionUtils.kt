@@ -91,20 +91,17 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
     /**
      * Constructs an `IrFunctionAccessExpression` by calling the specified function with the given arguments.
      *
-     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`,
-     *             or a string representing the function name (parameters signature will be calculated dynamically by the passed parameters).
+     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`, or a string representing the function (check [findFunction] for the exact signature requirements)
      * @param args The arguments to be passed to the function.
      * @return The constructed `IrFunctionAccessExpression` representing the function call.
      * @throws IllegalArgumentException If the number of arguments does not match the number of non-default parameters of the function.
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun call(func: Any, vararg args: Any): IrFunctionAccessExpression {
-        val function = extractFunctionSymbol(func, *args)
+        val function = extractFunctionSymbol(func)
 
         val nonDefaultParameters = function.owner.valueParameters.filter { !it.hasDefaultValue() }
-        if(nonDefaultParameters.size != args.size) {
-            throw IllegalArgumentException("Expected ${nonDefaultParameters.size} arguments, got ${args.size}")
-        }
+        require(nonDefaultParameters.size == args.size) {"Expected ${nonDefaultParameters.size} arguments, got ${args.size}"}
 
         val newArgs = args.map { convertToIrExpression(it) }.toList()
 
@@ -116,15 +113,15 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
     /**
      * Calls the specified function with the given arguments using this `IrSymbol` as the receiver (checks the function signature if it should be used as extension- or dispatch receiver).
      *
-     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`,
-     *             or a string representing the function name (parameters signature will be calculated dynamically by the passed parameters).
+     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`, or a string representing the function (check [findFunction] for the exact signature requirements)
+     *             The function will be searched in the irSymbol this method is called on.
      * @param args The arguments to be passed to the function.
      * @return An `IrFunctionAccessExpression` representing the function call with the receiver set.
      * @throws IllegalArgumentException If the function cannot be resolved or the arguments are invalid.
      */
     fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
         val functionCall: IrFunctionAccessExpression = if (func is String) {
-            this@IrCallDsl.call(findFunction(this, func, null, *args), *args)
+            this@IrCallDsl.call(findFunction(func, this), *args)
         } else {
             this@IrCallDsl.call(func, *args)
         }
@@ -142,8 +139,8 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      *
      * @receiver A `Pair` of `IrSymbol`s, where the first symbol is the dispatch receiver and the second
      *           symbol is the extension receiver.
-     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`,
-     *             or a string representing the function name (parameters signature will be calculated dynamically by the passed parameters).
+     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`, or a string representing the function (check [findFunction] for the exact signature requirements)
+     *             The function will be searched in the dispatch receiver.
      * @param args The arguments to be passed to the function.
      * @return An `IrFunctionAccessExpression` representing the function call with the receivers set.
      * @throws IllegalArgumentException If the function cannot be resolved or the arguments are invalid.
@@ -152,7 +149,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         //this is a very specific case: we expect the first symbol to be the dispatch receiver and the function in this case can only be found in the dispatch receiver
         //furthermore, must the searched function have an extension receiver of the second symbol type
         val functionCall: IrFunctionAccessExpression = if (func is String) {
-            this@IrCallDsl.call(findFunction(this.first, func, this.second.extractType(),*args), *args)
+            this@IrCallDsl.call(findFunction(func, this.first, this.second.extractType()), *args)
         } else {
             this@IrCallDsl.call(func, *args)
         }
@@ -164,8 +161,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      * Method for chaining multiple irCalls together.
      *
      * @receiver The `IrFunctionAccessExpression` on which the function call is performed.
-     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`,
-     *             or a string representing the function name (parameters signature will be calculated dynamically by the passed parameters).
+     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`, or a string representing the function (check [findFunction] for the exact signature requirements)
      * @param args The arguments to be passed to the function.
      * @return The modified `IrFunctionAccessExpression` with the receivers set.
      * @throws IllegalArgumentException If the function cannot be resolved or the arguments are invalid.
@@ -221,6 +217,14 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      */
     operator fun IrClass.invoke(vararg args: Any) = this.symbol(*args)
 
+    /**
+     * Invokes the constructor of the `IrClass` represented by this `IrClassSymbol` with the provided arguments.
+     *
+     * @receiver The `IrClassSymbol` representing the class whose constructor is to be invoked.
+     * @param args The arguments to be passed to the constructor. The constructor signature will be calculated dynamically based on the types of the provided arguments, so they must match exactly.
+     * @return An `IrFunctionAccessExpression` representing the constructor call.
+     * @throws IllegalArgumentException If the constructor cannot be resolved or the arguments are invalid.
+     */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     operator fun IrClassSymbol.invoke(vararg args: Any): IrFunctionAccessExpression {
         val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
@@ -318,12 +322,11 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      *             - `IrProperty`: The symbol of the property's getter is returned.
      *             - `IrPropertySymbol`: The symbol of the property's getter is returned.
      *             - `String`: The function is resolved dynamically using its name and arguments.
-     * @param args The arguments used to resolve the function when `func` is a `String`.
      * @return The extracted `IrFunctionSymbol`.
      * @throws IllegalArgumentException If the function type is unsupported or a getter is missing for a property.
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun extractFunctionSymbol(func: Any, vararg args: Any) =
+    private fun extractFunctionSymbol(func: Any) =
         when (func) {
             is IrFunctionSymbol -> func
             is IrFunction -> func.symbol
@@ -337,7 +340,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
                     ?: throw IllegalArgumentException("IrCallHelper: Property ${func.owner.name} does not have a getter")
                 getter.symbol
             }
-            is String -> findFunction(null, func, null, *args)
+            is String -> findFunction(func)
             else -> throw IllegalArgumentException("IrCallHelper: Unsupported function type: ${func::class.simpleName}")
         }
 
@@ -346,15 +349,17 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      *
      * @param symbol An optional `IrSymbol` representing the context in which the function is searched.
      *               If provided, the function is searched within the class or type represented by this symbol.
-     * @param funcSignature The signature of the function to find, including its name and optionally its parameters.
+     * @param funcSignature The name of the function to find.
+     *                      If no symbol is provided, this should include the package and class name (e.g., "package/class.function").
+     *                      Parameters are expected after the function name, e.g., "function(int, param2Type)".
+     *                      "*" can be used as parameter if from here the parameters are arbitrary. It can only be used once and only at the end of the signature.
+     *                      "G" can be used as a placeholder for generic parameters.
      * @param extensionReceiverType An optional `IrType` representing the type of the extension receiver, if applicable.
-     * @param args The arguments used to resolve the function, which are used to determine the parameter types.
      * @return The `IrFunctionSymbol` representing the found function.
      * @throws IllegalArgumentException If the function cannot be found or the symbol type is unsupported.
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun findFunction(symbol: IrSymbol?, funcSignature: String, extensionReceiverType: IrType?, vararg args: Any): IrFunctionSymbol {
-        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
+    private fun findFunction(funcSignature: String, symbol: IrSymbol? = null, extensionReceiverType: IrType? = null): IrFunctionSymbol {
         val function = if(symbol != null) {
             val irClass = when (symbol) {
                 is IrClassSymbol -> symbol.owner
@@ -365,15 +370,15 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
                 else -> throw IllegalArgumentException("Unsupported symbol type: ${symbol::class.simpleName}")
             } ?: throw IllegalArgumentException("Could not resolve class from symbol")
 
-            irClass.symbol.findFunction(pluginContext, funcSignature + params, extensionReceiverType ?: irClass.defaultType)
+            irClass.symbol.findFunction(pluginContext, funcSignature, extensionReceiverType ?: irClass.defaultType)
         } else {
             if(!funcSignature.contains(".") && funcSignature.substringAfterLast("/").get(0).isUpperCase()) {
-                pluginContext.findConstructor(funcSignature + params)
+                pluginContext.findConstructor(funcSignature)
             } else {
-                pluginContext.findFunction(funcSignature + params, extensionReceiverType)
+                pluginContext.findFunction(funcSignature, extensionReceiverType)
             }
         }
-        return function ?: throw IllegalArgumentException("IrCallHelper: Function $funcSignature with params $params not found!")
+        return function ?: throw IllegalArgumentException("IrCallHelper: Function $funcSignature not found!")
     }
 
     /**

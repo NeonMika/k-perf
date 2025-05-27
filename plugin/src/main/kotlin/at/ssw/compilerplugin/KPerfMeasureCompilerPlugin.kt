@@ -548,7 +548,7 @@ class PerfMeasureExtension2(
             isFinal = false
             isStatic = true
         }.apply {
-            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression(pluginContext) { call("kotlin/text/StringBuilder") }
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression(pluginContext) { call("kotlin/text/StringBuilder()") }
         }
         compareFieldDumps(stringBuilder.dump(), stringBuilderNewCallDirect.dump(), "stringBuilder")
         firstFile.declarations.add(stringBuilderNewCallDirect)
@@ -617,7 +617,7 @@ class PerfMeasureExtension2(
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
                 callExpression(pluginContext) {
-                    randomDefaultObjectClass.call("nextInt")
+                    randomDefaultObjectClass.call("nextInt()")
                 }
             }
         }
@@ -775,7 +775,7 @@ class PerfMeasureExtension2(
         }.apply {
             this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).callExpression(pluginContext) {
                 systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedSymbolsFileName))
-                    .call("kotlinx/io/buffered")
+                    .call("kotlinx/io/buffered()")
             }
         }
         firstFile.declarations.add(bufferedSymbolsFileSink2)
@@ -1179,7 +1179,6 @@ class PerfMeasureExtension2(
         val myClass = pluginContext.findClass("test/MyClass")
 
         if(myClass != null) {
-            //TODO MS4: test
             appendToDebugFile("myClass found\n")
             // Test for a generic function with one type parameter
             val genericFunction = myClass.findFunction(pluginContext, "genericFunction(*)")
@@ -1188,14 +1187,14 @@ class PerfMeasureExtension2(
             } else {
                 appendToDebugFile("genericFunction not found\n")
             }
-            /*
+
             // Test for a generic function with a different type parameter
-            val anotherGenericFunction = myClass.findFunction(pluginContext, "anotherGenericFunction(R)")
+            val anotherGenericFunction = myClass.findFunction(pluginContext, "anotherGenericFunction(G)")
             if (anotherGenericFunction != null) {
                 appendToDebugFile("anotherGenericFunction found\n")
             } else {
                 appendToDebugFile("anotherGenericFunction not found\n")
-            }*/
+            }
 
             // Test for a static function in the companion object
             val staticFunction = myClass.findFunction(pluginContext, "staticFunction()")
@@ -1205,8 +1204,8 @@ class PerfMeasureExtension2(
                 appendToDebugFile("staticFunction not found\n")
             }
 
-            // Test a normal function in a class with simular other function
-            val normalFunction = myClass.findFunction(pluginContext, "normalFunction(Int)")
+            // Test a normal function in a class with similar other function
+            val normalFunction = myClass.findFunction(pluginContext, "normalFunction(int)")
             if (normalFunction != null) {
                 appendToDebugFile("normalFunction found\n")
             } else {
@@ -1234,7 +1233,7 @@ class PerfMeasureExtension2(
             testString.parent = firstFile
 
             val pairCall = DeclarationIrBuilder(pluginContext, firstFile.symbol).getCall(pluginContext) {
-                Pair(myClass, testString.symbol).call("foo", 42)
+                Pair(myClass, testString.symbol).call("foo(int)", 42)
             }
             appendToDebugFile(pairCall.dump())
         }

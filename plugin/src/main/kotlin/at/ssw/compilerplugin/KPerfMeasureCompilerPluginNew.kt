@@ -152,7 +152,7 @@ class PerfMeasureExtension2New(
                         } else {
                             bufferedTraceFileSink.writeData(irConcat(">;", valueParameters[0], "\n"))
                         }
-                        +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic")!!.call("markNow"))
+                        +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic")!!.call("markNow()"))
                     }
                 }
             }
@@ -175,7 +175,7 @@ class PerfMeasureExtension2New(
                 }
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL(pluginContext) {
-                        val elapsedDuration = irTemporary(valueParameters[1].call("elapsedNow"))
+                        val elapsedDuration = irTemporary(valueParameters[1].call("elapsedNow()"))
                         val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
                         if (STRINGBUILDER_MODE) {

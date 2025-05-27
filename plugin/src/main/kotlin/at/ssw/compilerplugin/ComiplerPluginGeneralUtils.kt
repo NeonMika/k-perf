@@ -123,7 +123,7 @@ class IrFileIOHandler(
     private val flushFunction = pluginContext.findFunction("kotlinx/io/Sink.flush()")!!
     private val closeSourceFunction = pluginContext.findFunction("kotlinx/io/Source.close()")!!
     private val closeSinkFunction = pluginContext.findFunction("kotlinx/io/Sink.close()")!!
-    private val writeStringFunction = pluginContext.findFunction("kotlinx/io/writeString(string, int, int")!!
+    private val writeStringFunction = pluginContext.findFunction("kotlinx/io/writeString(string, int, int)")!!
     private val readStringFunction = pluginContext.findFunction("kotlinx/io/readString()", extensionReceiverType =  pluginContext.findClass("kotlinx/io/Source")!!.defaultType)!!
 
     init {
