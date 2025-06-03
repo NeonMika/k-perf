@@ -1,5 +1,4 @@
 package at.ssw.compilerplugin
-
 import at.ssw.compilerplugin.ExampleConfigurationKeysOriginal.KEY_ENABLED
 import at.ssw.compilerplugin.ExampleConfigurationKeysOriginal.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -33,20 +32,11 @@ import org.jetbrains.kotlin.platform.presentableDescription
 import java.io.File
 import kotlin.collections.set
 import kotlin.time.ExperimentalTime
-
 object ExampleConfigurationKeysOriginal {
     val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled.original")
     val LOG_ANNOTATION_KEY: CompilerConfigurationKey<MutableList<String>> =
         CompilerConfigurationKey.create("measure.annotation.original")
 }
-
-/*
-Commandline processor to process options.
-This is the entry point for the compiler plugin.
-It is found via a ServiceLoader.
-Thus, we need an entry in META-INF/services/org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
-that reads at.ssw.compilerplugin.KPerfMeasureCommandLineProcessor
- */
 @OptIn(ExperimentalCompilerApi::class)
 class KPerfMeasureCommandLineProcessorOriginal : CommandLineProcessor {
     override val pluginId: String = "k-perf-measure-compiler-plugin-original"
@@ -64,11 +54,9 @@ class KPerfMeasureCommandLineProcessorOriginal : CommandLineProcessor {
             allowMultipleOccurrences = true
         )
     )
-
     init {
         println("KPerfMeasureCommandLineProcessorOriginal - init")
     }
-
     override fun processOption(
         option: AbstractCliOption,
         value: String,
@@ -80,198 +68,43 @@ class KPerfMeasureCommandLineProcessorOriginal : CommandLineProcessor {
             "annotation" -> {
                 configuration.putIfAbsent(LOG_ANNOTATION_KEY, mutableListOf()).add(value)
             }
-
             else -> throw CliOptionProcessingException("KPerfMeasureCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
         }
     }
 }
-
-/*
-Registrar to register all registrars.
-It is found via a ServiceLoader.
-Thus, we need an entry in META-INF/services/org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
-that reads at.ssw.compilerplugin.PerfMeasureComponentRegistrar
- */
 @OptIn(ExperimentalCompilerApi::class)
 class PerfMeasureComponentRegistrarOriginal : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
-
     init {
         println("PerfMeasureComponentRegistrarOriginal - init")
     }
-
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         if (configuration[KEY_ENABLED] == false) {
             return
         }
-
-        // org.jetbrains.kotlin.cli.common.CLIConfigurationKeys contains default configuration keys
         val messageCollector = configuration.get(CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY)!!
-
-        /*
-        println(":) :) :)")
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.ALLOW_KOTLIN_PACKAGE - ${CLIConfigurationKeys.ALLOW_KOTLIN_PACKAGE} - ${
-                configuration.get(CLIConfigurationKeys.ALLOW_KOTLIN_PACKAGE)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.CONTENT_ROOTS - ${CLIConfigurationKeys.CONTENT_ROOTS} - ${
-                configuration.get(CLIConfigurationKeys.CONTENT_ROOTS)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.FLEXIBLE_PHASE_CONFIG - ${CLIConfigurationKeys.FLEXIBLE_PHASE_CONFIG} - ${
-                configuration.get(CLIConfigurationKeys.FLEXIBLE_PHASE_CONFIG)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.INTELLIJ_PLUGIN_ROOT - ${CLIConfigurationKeys.INTELLIJ_PLUGIN_ROOT} - ${
-                configuration.get(CLIConfigurationKeys.INTELLIJ_PLUGIN_ROOT)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY - ${CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY} - ${
-                configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.METADATA_DESTINATION_DIRECTORY - ${CLIConfigurationKeys.METADATA_DESTINATION_DIRECTORY} - ${
-                configuration.get(CLIConfigurationKeys.METADATA_DESTINATION_DIRECTORY)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY - ${CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY} - ${
-                configuration.get(CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.PATH_TO_KOTLIN_COMPILER_JAR - ${CLIConfigurationKeys.PATH_TO_KOTLIN_COMPILER_JAR} - ${
-                configuration.get(CLIConfigurationKeys.PATH_TO_KOTLIN_COMPILER_JAR)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.PERF_MANAGER - ${CLIConfigurationKeys.PERF_MANAGER} - ${
-                configuration.get(CLIConfigurationKeys.PERF_MANAGER)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.RENDER_DIAGNOSTIC_INTERNAL_NAME - ${CLIConfigurationKeys.RENDER_DIAGNOSTIC_INTERNAL_NAME} - ${
-                configuration.get(CLIConfigurationKeys.RENDER_DIAGNOSTIC_INTERNAL_NAME)
-            }"
-        )
-        messageCollector.report(
-            CompilerMessageSeverity.INFO,
-            "CLIConfigurationKeys.PHASE_CONFIG - ${CLIConfigurationKeys.PHASE_CONFIG} - ${
-                configuration.get(CLIConfigurationKeys.PHASE_CONFIG)
-            }"
-        )
-        */
-
-        // Frontend plugin registrar
-        /*
-        FirExtensionRegistrarAdapter.registerExtension(
-            PerfMeasureExtensionRegistrar(
-                configuration[LOG_ANNOTATION_KEY] ?: listOf()
-            )
-        )
-        */
-
-        // Backend plugin
         IrGenerationExtension.registerExtension(PerfMeasureExtension2(MessageCollector.NONE))
     }
 }
-
-/*
-Frontend plugin registrar
- */
-/*
-class PerfMeasureExtensionRegistrar(val annotations: List<String>) : FirExtensionRegistrar() {
-    @OptIn(ExperimentalTopLevelDeclarationsGenerationApi::class)
-    override fun ExtensionRegistrarContext.configurePlugin() {
-        +::PerfMeasureExtension
-    }
-}
-*/
-
-/*
-Frontend plugin
- */
-/*
-@ExperimentalTopLevelDeclarationsGenerationApi
-class PerfMeasureExtension(
-    session: FirSession
-) : FirDeclarationGenerationExtension(session) {
-
-    init {
-        println("PerfMeasureExtension - init")
-    }
-
-    override fun FirDeclarationPredicateRegistrar.registerPredicates() {
-        register(LookupPredicate.create {
-            annotatedOrUnder(FqName("MyAnnotation"))
-        })
-    }
-
-    override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirClassLikeSymbol<*>? {
-        println("PerfMeasureExtension.generateTopLevelClassLikeDeclaration: $classId")
-        return super.generateTopLevelClassLikeDeclaration(classId)
-    }
-
-    override fun generateFunctions(
-        callableId: CallableId,
-        context: MemberGenerationContext?
-    ): List<FirNamedFunctionSymbol> {
-        println("PerfMeasureExtension.generateFunctions: $callableId $context")
-
-        println(context?.declaredScope?.classId)
-        println(context?.owner)
-        return super.generateFunctions(callableId, context)
-    }
-}
-*/
-
-/*
-Backend plugin
- */
 class PerfMeasureExtension2Original(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
-
     val STRINGBUILDER_MODE = false
-
     val debugFile = File("./DEBUG.txt")
-
     init {
         debugFile.delete()
     }
-
     fun appendToDebugFile(str: String) {
         debugFile.appendText(str)
     }
-
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val timeMarkClass: IrClassSymbol =
             pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeMark"))!!
-
         val stringBuilderClassId = ClassId.fromString("kotlin/text/StringBuilder")
-        // In JVM, StringBuilder is a type alias (see https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.text/-string-builder/)
         val stringBuilderTypeAlias = pluginContext.referenceTypeAlias(stringBuilderClassId)
         val stringBuilderClass = stringBuilderTypeAlias?.owner?.expandedType?.classOrFail
-            ?: pluginContext.referenceClass(stringBuilderClassId)!! // In native and JS, StringBuilder is a class
-
-
+            ?: pluginContext.referenceClass(stringBuilderClassId)!!
         val stringBuilderConstructor =
             stringBuilderClass.constructors.single { it.owner.valueParameters.isEmpty() }
         val stringBuilderAppendIntFunc =
@@ -280,23 +113,18 @@ class PerfMeasureExtension2Original(
             stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.longType }
         val stringBuilderAppendStringFunc =
             stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
-
         val printlnFunc =
             pluginContext.referenceFunctions(CallableId(FqName("kotlin.io"), Name.identifier("println"))).single {
                 it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
             }
-
         val rawSinkClass =
             pluginContext.referenceClass(ClassId.fromString("kotlinx/io/RawSink"))!!
-
-        // Watch out, Path does not use constructors but functions to build
         val pathConstructionFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io.files"),
                 Name.identifier("Path")
             )
         ).single { it.owner.valueParameters.size == 1 }
-
         val systemFileSystem = pluginContext.referenceProperties(
             CallableId(
                 FqName("kotlinx.io.files"),
@@ -348,9 +176,7 @@ class PerfMeasureExtension2Original(
             )
         ).single()
         debugFile.appendText("3")
-
         val firstFile = moduleFragment.files[0]
-
         val stringBuilder: IrField = pluginContext.irFactory.buildField {
             name = Name.identifier("_stringBuilder")
             type = stringBuilderClass.defaultType
@@ -367,7 +193,6 @@ class PerfMeasureExtension2Original(
         }
         firstFile.declarations.add(stringBuilder)
         stringBuilder.parent = firstFile
-
         val randomDefaultObjectClass =
             pluginContext.referenceClass(ClassId.fromString("kotlin/random/Random.Default"))!!
         val nextIntFunc = pluginContext.referenceFunctions(
@@ -379,7 +204,6 @@ class PerfMeasureExtension2Original(
         ).single {
             it.owner.valueParameters.isEmpty()
         }
-
         val randomNumber = pluginContext.irFactory.buildField {
             name = Name.identifier("_randNumber")
             type = pluginContext.irBuiltIns.intType
@@ -394,7 +218,6 @@ class PerfMeasureExtension2Original(
         }
         firstFile.declarations.add(randomNumber)
         randomNumber.parent = firstFile
-
         val bufferedTraceFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileName")
             type = pluginContext.irBuiltIns.stringType
@@ -405,7 +228,6 @@ class PerfMeasureExtension2Original(
                 irExprBody(
                     irConcat().apply {
                         addArgument(irString("./trace_${pluginContext.platform!!.presentableDescription}_"))
-                        // TODO: use kotlinx.datetime.Clock.System.now()
                         addArgument(irGetField(null, randomNumber))
                         addArgument(irString(".txt"))
                     })
@@ -413,7 +235,6 @@ class PerfMeasureExtension2Original(
         }
         firstFile.declarations.add(bufferedTraceFileName)
         bufferedTraceFileName.parent = firstFile
-
         val bufferedTraceFileSink = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileSink")
             type = rawSinkClass.defaultType
@@ -435,7 +256,6 @@ class PerfMeasureExtension2Original(
         }
         firstFile.declarations.add(bufferedTraceFileSink)
         bufferedTraceFileSink.parent = firstFile
-
         val bufferedSymbolsFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileName")
             type = pluginContext.irBuiltIns.stringType
@@ -446,7 +266,6 @@ class PerfMeasureExtension2Original(
                 irExprBody(
                     irConcat().apply {
                         addArgument(irString("./symbols_${pluginContext.platform!!.presentableDescription}_"))
-                        // TODO: use kotlinx.datetime.Clock.System.now()
                         addArgument(irGetField(null, randomNumber))
                         addArgument(irString(".txt"))
                     })
@@ -454,8 +273,6 @@ class PerfMeasureExtension2Original(
         }
         firstFile.declarations.add(bufferedSymbolsFileName)
         bufferedSymbolsFileName.parent = firstFile
-
-
         val bufferedSymbolsFileSink = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileSink")
             type = rawSinkClass.defaultType
@@ -477,7 +294,6 @@ class PerfMeasureExtension2Original(
         }
         firstFile.declarations.add(bufferedSymbolsFileSink)
         bufferedSymbolsFileSink.parent = firstFile
-
         val methodMap = mutableMapOf<String, IrFunction>()
         val methodIdMap = mutableMapOf<String, Int>()
         var currMethodId = 0
@@ -486,19 +302,13 @@ class PerfMeasureExtension2Original(
                 override fun visitFunctionNew(declaration: IrFunction): IrStatement {
                     methodMap[declaration.kotlinFqName.asString()] = declaration
                     methodIdMap[declaration.kotlinFqName.asString()] = currMethodId++
-                    // do not transform at all
-                    // we just use a transformer because it correctly descends recursively
                     return super.visitFunctionNew(declaration)
                 }
             }, null)
         }
-
         fun buildEnterFunction(): IrFunction {
             val timeSourceMonotonicClass: IrClassSymbol =
                 pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeSource.Monotonic"))!!
-
-            /* val funMarkNowViaClass = classMonotonic.functions.find { it.owner.name.asString() == "markNow" }!! */
-
             val funMarkNow =
                 pluginContext.referenceFunctions(
                     CallableId(
@@ -507,18 +317,11 @@ class PerfMeasureExtension2Original(
                         Name.identifier("markNow")
                     )
                 ).single()
-
-            // assertion: funMarkNowViaClass == funMarkNow
-
             return pluginContext.irFactory.buildFun {
                 name = Name.identifier("_enter_method")
                 returnType = timeMarkClass.defaultType
             }.apply {
                 addValueParameter {
-                    /*
-                name = Name.identifier("method")
-                type = pluginContext.irBuiltIns.stringType
-                */
                     name = Name.identifier("methodId")
                     type = pluginContext.irBuiltIns.intType
                 }
@@ -558,11 +361,9 @@ class PerfMeasureExtension2Original(
                 }
             }
         }
-
         val enterFunc = buildEnterFunction()
         firstFile.declarations.add(enterFunc)
         enterFunc.parent = firstFile
-
         fun buildGeneralExitFunction(): IrFunction {
             val funElapsedNow =
                 pluginContext.referenceFunctions(
@@ -572,29 +373,19 @@ class PerfMeasureExtension2Original(
                         Name.identifier("elapsedNow")
                     )
                 ).single()
-
             return pluginContext.irFactory.buildFun {
                 name = Name.identifier("_exit_method")
                 returnType = pluginContext.irBuiltIns.unitType
             }.apply {
                 addValueParameter {
-                    /*
-                    name = Name.identifier("method")
-                    type = pluginContext.irBuiltIns.stringType */
                     name = Name.identifier("methodId")
                     type = pluginContext.irBuiltIns.intType
                 }
                 addValueParameter {
                     name = Name.identifier("startTime")
                     type = timeMarkClass.defaultType
-                } /*
-                addValueParameter {
-                    name = Name.identifier("result")
-                    type = pluginContext.irBuiltIns.anyNType
-                } */
-
+                }
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
-                    // Duration
                     val elapsedDuration = irTemporary(irCall(funElapsedNow).apply {
                         dispatchReceiver = irGet(valueParameters[1])
                     })
@@ -604,7 +395,6 @@ class PerfMeasureExtension2Original(
                     val elapsedMicros = irTemporary(irCall(elapsedMicrosProp.getter!!).apply {
                         dispatchReceiver = irGet(elapsedDuration)
                     })
-
                     if (STRINGBUILDER_MODE) {
                         +irCall(stringBuilderAppendStringFunc).apply {
                             dispatchReceiver = irGetField(null, stringBuilder)
@@ -641,18 +431,15 @@ class PerfMeasureExtension2Original(
                 }
             }
         }
-
         val exitFunc = buildGeneralExitFunction()
         firstFile.declarations.add(exitFunc)
         exitFunc.parent = firstFile
-
         fun buildMainExitFunction(): IrSimpleFunction {
             fun IrBlockBodyBuilder.flushTraceFile() {
                 +irCall(flushFunc).apply {
                     dispatchReceiver = irGetField(null, bufferedTraceFileSink)
                 }
             }
-
             fun IrBlockBodyBuilder.writeAndFlushSymbolsFile() {
                 +irCall(writeStringFunc).apply {
                     extensionReceiver = irGetField(null, bufferedSymbolsFileSink)
@@ -664,7 +451,6 @@ class PerfMeasureExtension2Original(
                     dispatchReceiver = irGetField(null, bufferedSymbolsFileSink)
                 }
             }
-
             fun IrBlockBodyBuilder.printFileNamesToStdout() {
                 +irCall(printlnFunc).apply {
                     putValueArgument(0, irGetField(null, bufferedTraceFileName))
@@ -675,7 +461,6 @@ class PerfMeasureExtension2Original(
                     )
                 }
             }
-
             return pluginContext.irFactory.buildFun {
                 name = Name.identifier("_exit_main")
                 returnType = pluginContext.irBuiltIns.unitType
@@ -683,15 +468,9 @@ class PerfMeasureExtension2Original(
                 addValueParameter {
                     name = Name.identifier("startTime")
                     type = timeMarkClass.defaultType
-                } /*
-                addValueParameter {
-                    name = Name.identifier("result")
-                    type = pluginContext.irBuiltIns.anyNType
-                } */
-
+                }
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     flushTraceFile()
-
                     +irCall(exitFunc).apply {
                         putValueArgument(
                             0,
@@ -699,7 +478,6 @@ class PerfMeasureExtension2Original(
                         )
                         putValueArgument(1, irGet(valueParameters[0]))
                     }
-
                     if (STRINGBUILDER_MODE) {
                         +irCall(writeStringFunc).apply {
                             extensionReceiver = irGetField(null, bufferedTraceFileSink)
@@ -708,36 +486,27 @@ class PerfMeasureExtension2Original(
                             })
                         }
                     }
-
                     writeAndFlushSymbolsFile()
-
                     flushTraceFile()
-
                     printFileNamesToStdout()
                 }
             }
         }
-
         val exitMainFunc = buildMainExitFunction()
         firstFile.declarations.add(exitMainFunc)
         exitMainFunc.parent = firstFile
-
         fun buildBodyWithMeasureCode(func: IrFunction): IrBody {
-
             println("# Wrapping body of ${func.name} (origin: ${func.origin})")
             return DeclarationIrBuilder(pluginContext, func.symbol).irBlockBody {
-                // no +needed on irTemporary as it is automatically added to the builder
                 val startTime = irTemporary(irCall(enterFunc).apply {
                     putValueArgument(
                         0,
                         methodIdMap[func.kotlinFqName.asString()]!!.toIrConst(pluginContext.irBuiltIns.intType)
                     )
                 })
-
                 val tryBlock: IrExpression = irBlock(resultType = func.returnType) {
                     for (statement in func.body?.statements ?: listOf()) +statement
                 }
-
                 +irTry(
                     tryBlock.type,
                     tryBlock,
@@ -754,11 +523,6 @@ class PerfMeasureExtension2Original(
                 )
             }
         }
-
-        // IrElementVisitor / IrElementVisitorVoid
-        // IrElementTransformer / IrElementTransformerVoid / IrElementTransformerVoidWithContext
-        // IrElementTransformerVoidWithContext().visitfile(file, null)
-
         moduleFragment.files.forEach { file ->
             file.transform(object : IrElementTransformerVoidWithContext() {
                 override fun visitFunctionNew(declaration: IrFunction): IrStatement {
@@ -771,12 +535,10 @@ class PerfMeasureExtension2Original(
                         declaration.fqNameWhenAvailable?.asString()?.contains("<init>") != false ||
                         declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false
                     ) {
-                        // do not further transform this method, e.g., its statements are not transformed
                         println("# Do not wrap body of ${declaration.name} (${declaration.fqNameWhenAvailable?.asString()}):\n${declaration.dump()}")
                         return declaration
                     }
                     declaration.body = buildBodyWithMeasureCode(declaration)
-
                     return super.visitFunctionNew(declaration)
                 }
             }, null)

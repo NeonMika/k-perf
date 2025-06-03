@@ -20,8 +20,8 @@ import org.jetbrains.kotlin.name.Name
  * @param block A lambda with a receiver of type `IrCallDsl` used to define
  *              the IR call expressions to be included in the block body.
  */
-fun IrBlockBodyBuilder.enableCallDSL(block: IrCallDsl.() -> Unit) {
-    IrCallDsl(this).block()
+fun IrBlockBodyBuilder.enableCallDSL(pluginContext: IrPluginContext, block: IrCallDsl.() -> Unit) {
+    IrCallDsl(this, pluginContext).block()
 }
 
 
@@ -33,10 +33,32 @@ fun IrBlockBodyBuilder.enableCallDSL(block: IrCallDsl.() -> Unit) {
  *              the IR call expression to be included in the expression body.
  * @return An `IrExpressionBody` containing the constructed IR expression.
  */
-fun DeclarationIrBuilder.callExpression(block: IrCallDsl.() -> IrExpression): IrExpressionBody {
-    return irExprBody(IrCallDsl(this).block())
+fun DeclarationIrBuilder.callExpression(pluginContext: IrPluginContext, block: IrCallDsl.() -> IrExpression): IrExpressionBody {
+    return irExprBody(IrCallDsl(this, pluginContext).block())
 }
 
+/**
+ * Constructs and returns an `IrFunctionAccessExpression` using a DSL block.
+ *
+ * @receiver The `DeclarationIrBuilder` used to build the IR expression.
+ * @param block A lambda with a receiver of type `IrCallDsl` to define the IR function access expression.
+ * @return The constructed `IrFunctionAccessExpression`.
+ */
+fun DeclarationIrBuilder.getCall(pluginContext: IrPluginContext, block: IrCallDsl.() -> IrFunctionAccessExpression): IrFunctionAccessExpression {
+    return IrCallDsl(this, pluginContext).block()
+}
+
+/**
+ * Creates a new `IrField` with the specified properties and an initializer expression.
+ *
+ * @receiver The `IrPluginContext` used to create the field.
+ * @param parentSymbol The parent symbol to which the field belongs.
+ * @param fieldName The name of the field to be created.
+ * @param isFinal Whether the field is final (default is `true`).
+ * @param isStatic Whether the field is static (default is `true`).
+ * @param initializerBlock A lambda defining the initializer expression for the field.
+ * @return The created `IrField` with the specified properties and initializer.
+ */
 fun IrPluginContext.createField(
     parentSymbol: IrSymbol,
     fieldName: String,
@@ -44,7 +66,7 @@ fun IrPluginContext.createField(
     isStatic: Boolean = true,
     initializerBlock: IrCallDsl.() -> IrExpression
 ): IrField {
-    val initializerExpression = DeclarationIrBuilder(this, parentSymbol).callExpression {
+    val initializerExpression = DeclarationIrBuilder(this, parentSymbol).callExpression(this) {
         initializerBlock()
     }
 
@@ -64,282 +86,108 @@ fun IrPluginContext.createField(
  * @property builder The IrBuilderWithScope used to construct the IR call
  *                    expressions.
  */
-class IrCallDsl(private val builder: IrBuilderWithScope) {
+class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginContext: IrPluginContext) {
 
     /**
-     * Chains a function call to the current `IrFunctionAccessExpression` and returns the resulting expression.
+     * Constructs an `IrFunctionAccessExpression` by calling the specified function with the given arguments.
      *
-     * @param func The `IrFunctionSymbol` representing the function to be called.
-     * @param args A variable number of arguments to be passed to the function.
-     * @return A new `IrFunctionAccessExpression` representing the chained function call.
-     */
-    fun IrFunctionAccessExpression.chain(func: IrFunctionSymbol, vararg args: Any): IrFunctionAccessExpression {
-        val newCall = builder.irCall(func).apply {
-            this.extensionReceiver = this@chain
-        }
-
-        args.forEachIndexed { index, arg ->
-            newCall.putValueArgument(index, builder.convertToIrExpression(arg))
-        }
-
-        return newCall
-    }
-
-    /**
-     * Chains a function call to the current `IrFunctionAccessExpression` using a function name and `pluginContext` to find the function.
-     *
-     * @param signature The full path to the function (no parameters) e.g.: `"package/outerClasses.ClassName.funcName"`.
-     * @param pluginContext The `IrPluginContext` used to find the function symbol.
-     * @param args A variable number of arguments to be passed to the function.
-     * @return A new `IrFunctionAccessExpression` representing the chained function call.
-     */
-    fun IrFunctionAccessExpression.chain(pluginContext: IrPluginContext, signature: String, vararg args: Any): IrFunctionAccessExpression {
-        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
-        val funcSymbol = pluginContext.findFunction(signature + params, this.type)
-            ?: throw IllegalArgumentException("Function $signature not found in the provided plugin context")
-
-        val newCall = builder.irCall(funcSymbol).apply {
-            this.extensionReceiver = this@chain
-        }
-
-        args.forEachIndexed { index, arg ->
-            newCall.putValueArgument(index, builder.convertToIrExpression(arg))
-        }
-
-        return newCall
-    }
-
-    /**
-     * Calls a function on a property or other symbol.
-     *
-     * This function supports various symbol types (e.g., `IrPropertySymbol`, `IrFieldSymbol`, etc.)
-     * and constructs an `IrCall` representing the function call. It ensures that the number of
-     * arguments matches the number of non-default parameters in the function being called.
-     *
-     * @param func The function to call. Supported types include:
-     *             - `IrFunctionSymbol`: Directly calls the function.
-     *             - `IrFunction`: Calls the function represented by its symbol.
-     *             - `IrProperty`: Calls the getter of the property.
-     *             - `IrPropertySymbol`: Calls the getter of the property symbol.
-     * @param args Variable number of arguments to pass to the function. The number of arguments
-     *             must match the number of non-default parameters in the function.
-     * @throws IllegalArgumentException If the number of arguments does not match the number of
-     *                                  non-default parameters, the property does not have a getter,
-     *                                  or the provided function type is unsupported.
-     * @throws IllegalStateException If the field is not a top-level field.
-     * @return An `IrCall` representing the constructed function call, including dispatch or
-     *         extension receivers if applicable.
+     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`, or a string representing the function (check [findFunction] for the exact signature requirements)
+     * @param args The arguments to be passed to the function.
+     * @return The constructed `IrFunctionAccessExpression` representing the function call.
+     * @throws IllegalArgumentException If the number of arguments does not match the number of non-default parameters of the function.
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
-        //TODO: doesn't support setting dispatch and extension receiver
-        val functionCall : IrFunctionSymbol = when (func) {
-            is IrFunctionSymbol -> func
-            is IrFunction -> func.symbol
-            is IrProperty -> {
-                val getter = func.getter
-                    ?: throw IllegalArgumentException("IrCallHelper: Property ${func.name} does not have a getter")
-                getter.symbol
-            }
-            is IrPropertySymbol -> {
-                val getter = func.owner.getter
-                    ?: throw IllegalArgumentException("IrCallHelper: Property ${func.owner.name} does not have a getter")
-                getter.symbol
-            }
-            else -> throw IllegalArgumentException("IrCallHelper: Unsupported function type: ${func::class.simpleName}")
-        }
+    fun call(func: Any, vararg args: Any): IrFunctionAccessExpression {
+        val function = extractFunctionSymbol(func)
 
-        val receiver = when (this) {
-            is IrPropertySymbol -> {
-                val getter = owner.getter
-                    ?: throw IllegalArgumentException("IrCallHelper: Property ${owner.name} does not have a getter")
-                builder.irCall(getter)
-            }
-            is IrFieldSymbol -> {
-                //only top level fields supported
-                if (owner.parent !is IrFile) {
-                    throw IllegalStateException("IrCallHelper: Only top-level fields are supported here")
-                }
-                builder.irGetField(null, owner)
-            }
-            is IrValueSymbol -> builder.irGet(owner)
-            is IrClassSymbol -> builder.irGetObject(this)
-            is IrCall -> this
-            is IrConstructorSymbol -> null
-            is IrSimpleFunctionSymbol -> null
-            //restrict - yes probably with generics -> the best way to do this in kotlin
-            else -> throw IllegalArgumentException("IrCallHelper: Unsupported symbol type: ${this::class.simpleName}")
-        }
+        val nonDefaultParameters = function.owner.valueParameters.filter { !it.hasDefaultValue() }
+        require(nonDefaultParameters.size == args.size) {"Expected ${nonDefaultParameters.size} arguments, got ${args.size}"}
 
-        val nonDefaultParameters = functionCall.owner.valueParameters.filter { !it.hasDefaultValue() }
-        if(nonDefaultParameters.size != args.size) {
-            throw IllegalArgumentException("Expected ${nonDefaultParameters.size} arguments, got ${args.size}")
-        }
+        val newArgs = args.map { convertToIrExpression(it) }.toList()
 
-        val newArgs = args.map { builder.convertToIrExpression(it) }.toMutableList()
-
-        return builder.irCall(functionCall).apply {
-            dispatchReceiver = if (functionCall.owner.extensionReceiverParameter == null && functionCall.owner.dispatchReceiverParameter != null) {
-                receiver
-            } else {
-                null
-            }
-            extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
-                receiver
-            } else {
-                null
-            }
+        return builder.irCall(function).apply {
             newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
         }
+    }
 
-        val extensionReceiver = if (functionCall.owner.extensionReceiverParameter != null) {
-            receiver
+    /**
+     * Calls the specified function with the given arguments using this `IrSymbol` as the receiver (checks the function signature if it should be used as extension- or dispatch receiver).
+     *
+     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`, or a string representing the function (check [findFunction] for the exact signature requirements)
+     *             The function will be searched in the irSymbol this method is called on.
+     * @param args The arguments to be passed to the function.
+     * @return An `IrFunctionAccessExpression` representing the function call with the receiver set.
+     * @throws IllegalArgumentException If the function cannot be resolved or the arguments are invalid.
+     */
+    fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
+        val functionCall: IrFunctionAccessExpression = if (func is String) {
+            this@IrCallDsl.call(findFunction(func, this), *args)
         } else {
-            null
+            this@IrCallDsl.call(func, *args)
+        }
+        val receiver = this.extractReceiver()
+        return functionCall.setReceivers(receiver)
+    }
+
+    /**
+     * Calls a function with the given arguments using a pair of `IrSymbol`s as receivers.
+     *
+     * This function is designed for a specific use case where both extension- and dispatch receiver need to be set.
+     * The first symbol is expected to be the
+     * dispatch receiver, and the function being called must belong to the dispatch receiver. Additionally,
+     * the function must have an extension receiver of the type represented by the second symbol.
+     *
+     * @receiver A `Pair` of `IrSymbol`s, where the first symbol is the dispatch receiver and the second
+     *           symbol is the extension receiver.
+     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`, or a string representing the function (check [findFunction] for the exact signature requirements)
+     *             The function will be searched in the dispatch receiver.
+     * @param args The arguments to be passed to the function.
+     * @return An `IrFunctionAccessExpression` representing the function call with the receivers set.
+     * @throws IllegalArgumentException If the function cannot be resolved or the arguments are invalid.
+     */
+    fun Pair<IrSymbol, IrSymbol>.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
+        //this is a very specific case: we expect the first symbol to be the dispatch receiver and the function in this case can only be found in the dispatch receiver
+        //furthermore, must the searched function have an extension receiver of the second symbol type
+        val functionCall: IrFunctionAccessExpression = if (func is String) {
+            this@IrCallDsl.call(findFunction(func, this.first, this.second.extractType()), *args)
+        } else {
+            this@IrCallDsl.call(func, *args)
         }
 
-        return builder.irCall(functionCall).apply {
-            this.dispatchReceiver = dispatchReceiver
-            this.extensionReceiver = extensionReceiver
-            newArgs.forEachIndexed { index, arg ->
-                putValueArgument(index, arg)
-            }
-        }
+        return functionCall.setReceivers(this.first.extractReceiver(), this.second.extractReceiver())
     }
 
     /**
-     * Calls a function on the given plugin context with the specified function signature and arguments.
+     * Method for chaining multiple irCalls together.
      *
-     * @param pluginContext The plugin context to use for finding the function symbol.
-     * @param funcSignature The signature of the function to find. It should be in the format
-     *                      "package/outerClasses.ClassName.funcName".
-     *                      Some standard packages are predefined, and if a package is not found in kotlin it is searched for in the java context.
-     * @param extensionReceiverType The type of the extension receiver, if any.
-     * @param args The arguments to pass to the function.
-     * @return An IrFunctionAccessExpression representing the function call.
+     * @receiver The `IrFunctionAccessExpression` on which the function call is performed.
+     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`, or a string representing the function (check [findFunction] for the exact signature requirements)
+     * @param args The arguments to be passed to the function.
+     * @return The modified `IrFunctionAccessExpression` with the receivers set.
+     * @throws IllegalArgumentException If the function cannot be resolved or the arguments are invalid.
      */
-    fun call(pluginContext: IrPluginContext, funcSignature: String, extensionReceiverType: IrType?, vararg args: Any): IrFunctionAccessExpression {
-        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
-        val funcSymbol = pluginContext.findFunction(funcSignature + params, extensionReceiverType) ?: throw IllegalArgumentException("IrCallHelper: Function $funcSignature not found")
-        return funcSymbol(*args)
+    fun IrFunctionAccessExpression.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
+        return if (func is String) {
+            val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
+            val funcSymbol = pluginContext.findFunction(func + params, this.type)
+                ?: throw IllegalArgumentException("Function $func not found with params $params")
+            this@IrCallDsl.call(funcSymbol, *args)
+        } else {
+            this@IrCallDsl.call(func, *args)
+        }.setReceivers(this)
     }
 
     /**
-     * Calls a constructor of a class using the given function signature and arguments.
+     * Calls the specified function with the given arguments using this `IrDeclaration` as the receiver.
      *
-     * @param pluginContext The `IrPluginContext` used to find the constructor symbol.
-     * @param funcSignature The signature of the constructor to call, in the format
-     *                      "package/outerClasses.ClassName".
-     * @param args The arguments to pass to the constructor. The number and types of arguments
-     *             must match the constructor's parameters.
-     * @return An `IrFunctionAccessExpression` representing the constructor call.
-     * @throws IllegalArgumentException If the constructor cannot be found.
+     * @receiver The `IrDeclaration` used as the receiver for the function call.
+     * @param func The function to be called. Can be an `IrFunctionSymbol`, `IrFunction`, `IrProperty`,
+     *             or a string representing the function name (parameters signature will be calculated dynamically by the passed parameters).
+     * @param args The arguments to be passed to the function.
+     * @return An `IrFunctionAccessExpression` representing the function call with the receiver set.
+     * @throws IllegalArgumentException If the function cannot be resolved or the arguments are invalid.
      */
-    fun callConstructor(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression {
-        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
-        val funcSymbol = pluginContext.findConstructor(funcSignature + params) ?: throw IllegalArgumentException("IrCallHelper: Constructor $funcSignature not found")
-        return funcSymbol(*args)
-    }
-
-    /**
-     * Calls a function on the given symbol with the specified function signature and arguments.
-     *
-     * @receiver The `IrSymbol` on which the function is to be called. Supported symbol types include:
-     *           - `IrClassSymbol`
-     *           - `IrVariableSymbol`
-     *           - `IrValueSymbol`
-     *           - `IrFieldSymbol`
-     *           - `IrPropertySymbol`
-     * @param pluginContext The `IrPluginContext` used to find the function symbol.
-     * @param funcSignature The signature of the function to call, in the format
-     *                      "funcName".
-     * @param args The arguments to pass to the function.
-     * @return An `IrFunctionAccessExpression` representing the function call.
-     * @throws IllegalArgumentException If the symbol type is unsupported, the class cannot be resolved,
-     *                                  or the function cannot be found.
-     */
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun IrSymbol.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression {
-        val irClass = when (this) {
-            is IrClassSymbol -> this.owner
-            is IrVariableSymbol -> this.owner.type.getClass()
-            is IrValueSymbol -> this.owner.type.getClass()
-            is IrFieldSymbol -> this.owner.type.getClass()
-            is IrPropertySymbol -> this.owner.getter?.returnType?.getClass() ?: throw IllegalArgumentException("IrCallHelper: Property ${this.owner.name} does not have a getter")
-            else -> throw IllegalArgumentException("Unsupported symbol type: ${this::class.simpleName}")
-        } ?: throw IllegalArgumentException("Could not resolve class from symbol")
-
-        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
-        val functionSymbol = irClass.symbol.findFunction(pluginContext, funcSignature + params, irClass.defaultType)
-            ?: when (this) {
-                is IrVariableSymbol -> this.owner.findFunction(pluginContext, funcSignature + params, this.owner.type)
-                is IrPropertySymbol -> this.findFunction(pluginContext, funcSignature + params, this.owner.getter?.extensionReceiverParameter?.type)
-                else -> null
-            } ?: throw IllegalArgumentException(
-                "IrCallHelper: Function $funcSignature with params $params not found in class ${irClass.name}"
-            )
-
-        return this.call(functionSymbol, *args)
-    }
-
-    /**
-     * Builds an IR expression representing a string concatenation of the given params.
-     *
-     * @param params The variable number of arguments to be concatenated.
-     * @return An IR expression representing a string concatenation of the given params.
-     */
-    fun irConcat(vararg params: Any): IrStringConcatenation {
-        val concat = builder.irConcat()
-        for (param in params) {
-            concat.addArgument(builder.convertToIrExpression(param))
-        }
-        return concat
-    }
-
-    /**
-     * Extension function for [IrProperty] to call a function on this property with the given arguments.
-     *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
-     */
-    fun IrProperty.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
-
-    /**
-     * Calls a function on this field with the given arguments.
-     *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
-     */
-    fun IrField.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
-
-    /**
-     * Calls a function on this value parameter with the given arguments.
-     *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
-     */
-    fun IrValueParameter.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
-
-    /**
-     * Calls a function on this class with the given arguments.
-     *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
-     */
-    fun IrClass.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
-
-    /**
-     * Calls a function on this variable with the given arguments.
-     *
-     * @param func The function symbol to call
-     * @param args The arguments to be passed to the function
-     * @return An IrCall that can be further chained
-     */
-    fun IrVariable.call(func: Any, vararg args: Any): IrFunctionAccessExpression = this.symbol.call(func, *args)
+    fun IrDeclaration.call(func: Any, vararg args: Any) = this.symbol.call(func, *args)
 
     /**
      * Calls this function with the given arguments and returns an IrCall to continue building
@@ -360,126 +208,252 @@ class IrCallDsl(private val builder: IrBuilderWithScope) {
     operator fun IrFunctionSymbol.invoke(vararg args: Any) : IrFunctionAccessExpression = this.call(this, *args)
 
     /**
-     * Calls a function on this class with the given arguments.
+     * Invokes the constructor of the `IrClass` using the provided arguments.
      *
-     * @param pluginContext The `IrPluginContext` used to find the function symbol.
-     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
-     * @param args The arguments to pass to the function.
-     * @return An `IrFunctionAccessExpression` representing the function call.
+     * @receiver The `IrClass` whose constructor is to be invoked.
+     * @param args The arguments to be passed to the constructor.
+     * @return An `IrFunctionAccessExpression` representing the constructor call.
+     * @throws IllegalArgumentException If the constructor cannot be resolved or the arguments are invalid.
      */
-    fun IrClass.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
-        this.symbol.call(pluginContext, funcSignature, *args)
+    operator fun IrClass.invoke(vararg args: Any) = this.symbol(*args)
 
     /**
-     * Calls a constructor of the class represented by this `IrClassSymbol` with the given arguments.
+     * Invokes the constructor of the `IrClass` represented by this `IrClassSymbol` with the provided arguments.
      *
-     * @receiver The `IrClassSymbol` representing the class whose constructor is to be called.
-     * @param pluginContext The `IrPluginContext` used to find the constructor symbol.
-     * @param args The arguments to pass to the constructor. The types of the arguments are used to
-     *             determine the constructor signature.
+     * @receiver The `IrClassSymbol` representing the class whose constructor is to be invoked.
+     * @param args The arguments to be passed to the constructor. The constructor signature will be calculated dynamically based on the types of the provided arguments, so they must match exactly.
      * @return An `IrFunctionAccessExpression` representing the constructor call.
-     * @throws IllegalArgumentException If the constructor cannot be found in the class.
+     * @throws IllegalArgumentException If the constructor cannot be resolved or the arguments are invalid.
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    fun IrClassSymbol.callConstructor(pluginContext: IrPluginContext, vararg args: Any): IrFunctionAccessExpression {
-        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { it::class.simpleName?.lowercase() ?: "unknown" }
+    operator fun IrClassSymbol.invoke(vararg args: Any): IrFunctionAccessExpression {
+        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
         return this.findConstructor(pluginContext, params)?.invoke(*args)
             ?: throw IllegalArgumentException("IrCallHelper: Constructor wit params: $params not found in class ${this.owner.name}")
     }
 
     /**
-     * Calls a function on this variable with the given arguments.
+     * Constructs an `IrFunctionAccessExpression` to print a value using the `println` function.
      *
-     * @param pluginContext The `IrPluginContext` used to find the function symbol.
-     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
-     * @param args The arguments to pass to the function.
-     * @return An `IrFunctionAccessExpression` representing the function call.
+     * @param pluginContext The `IrPluginContext` used to find the `println` function symbol.
+     * @param value The value to be printed. Its type is determined dynamically.
+     * @return An `IrFunctionAccessExpression` representing the call to the `println` function.
+     *         If the specific println function for the value type is not found, it falls back to println(any?).
      */
-    fun IrVariable.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
-        this.symbol.call(pluginContext, funcSignature, *args)
+    fun irPrintLn(pluginContext: IrPluginContext, value: Any): IrFunctionAccessExpression {
+        val paramType = extractType(value)
+        val printMethod = pluginContext.findFunction("kotlin/io/println($paramType)")
+            ?: pluginContext.findFunction("kotlin/io/println(any?)")!!
+
+        return printMethod(value)
+    }
 
     /**
-     * Calls a function on this value parameter with the given arguments.
+     * Builds an IR expression representing a string concatenation of the given params.
      *
-     * @param pluginContext The `IrPluginContext` used to find the function symbol.
-     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
-     * @param args The arguments to pass to the function.
-     * @return An `IrFunctionAccessExpression` representing the function call.
+     * @param params The variable number of arguments to be concatenated.
+     * @return An IR expression representing a string concatenation of the given params.
      */
-    fun IrValueParameter.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
-        this.symbol.call(pluginContext, funcSignature, *args)
+    fun irConcat(vararg params: Any): IrStringConcatenation {
+        val concat = builder.irConcat()
+        for (param in params) {
+            concat.addArgument(convertToIrExpression(param))
+        }
+        return concat
+    }
 
     /**
-     * Calls a function on this field with the given arguments.
+     * Converts the given value into an IrExpression.
      *
-     * @param pluginContext The `IrPluginContext` used to find the function symbol.
-     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
-     * @param args The arguments to pass to the function.
-     * @return An `IrFunctionAccessExpression` representing the function call.
+     * Supports the following types:
+     * - Primitive types
+     * - String
+     * - IrCall
+     * - IrFunction
+     * - IrProperty
+     * - IrField
+     * - IrValueParameter
+     * - IrVariable
+     * - IrClassSymbol
+     * - IrValueDeclaration
+     * - IrStringConcatenation
+     * - IrConst<*>
+     *
+     * @throws error if the given value is not supported.
      */
-    fun IrField.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
-        this.symbol.call(pluginContext, funcSignature, *args)
+    fun convertToIrExpression(value: Any?): IrExpression {
+        if (value == null) return builder.irNull()
+
+        return when (value) {
+            is Boolean -> builder.irBoolean(value)
+            is Byte -> builder.irByte(value)
+            is Short -> builder.irShort(value)
+            is Int -> builder.irInt(value)
+            is Long -> builder.irLong(value)
+            is Float -> value.toIrConst(pluginContext.irBuiltIns.floatType)
+            is Double -> value.toIrConst(pluginContext.irBuiltIns.doubleType)
+            is Char -> builder.irChar(value)
+
+            is String -> builder.irString(value)
+            is IrCallImpl -> value
+            is IrCall -> builder.irCall(value.symbol)
+            is IrFunctionAccessExpression -> value
+            is IrFunction -> builder.irCall(value)
+            is IrProperty -> builder.irCall(value.getter ?: error("IrCallHelper-convertToIrExpression: Property has no getter"))
+            is IrField -> builder.irGetField(null, value)
+            is IrValueParameter -> builder.irGet(value)
+            is IrVariable -> builder.irGet(value)
+            is IrClassSymbol -> builder.irGetObject(value)
+            is IrValueDeclaration -> builder.irGet(value)
+            is IrStringConcatenation -> return value
+            is IrConst<*> -> value
+            is IrExpression -> value
+
+            else -> error("IrCallHelper-convertToIrExpression: Cannot convert $value to IrExpression")
+        }
+    }
 
     /**
-     * Calls a function on this property with the given arguments.
+     * Extracts the `IrFunctionSymbol` from the given function representation.
      *
-     * @param pluginContext The `IrPluginContext` used to find the function symbol.
-     * @param funcSignature The signature of the function to call, in the format "funcName(params?)".
-     * @param args The arguments to pass to the function.
-     * @return An `IrFunctionAccessExpression` representing the function call.
+     * @param func The function to extract the symbol from. Can be one of the following:
+     *             - `IrFunctionSymbol`: The symbol is returned directly.
+     *             - `IrFunction`: The symbol of the function is returned.
+     *             - `IrProperty`: The symbol of the property's getter is returned.
+     *             - `IrPropertySymbol`: The symbol of the property's getter is returned.
+     *             - `String`: The function is resolved dynamically using its name and arguments.
+     * @return The extracted `IrFunctionSymbol`.
+     * @throws IllegalArgumentException If the function type is unsupported or a getter is missing for a property.
      */
-    fun IrProperty.call(pluginContext: IrPluginContext, funcSignature: String, vararg args: Any): IrFunctionAccessExpression =
-        this.symbol.call(pluginContext, funcSignature, *args)
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun extractFunctionSymbol(func: Any) =
+        when (func) {
+            is IrFunctionSymbol -> func
+            is IrFunction -> func.symbol
+            is IrProperty -> {
+                val getter = func.getter
+                    ?: throw IllegalArgumentException("IrCallHelper: Property ${func.name} does not have a getter")
+                getter.symbol
+            }
+            is IrPropertySymbol -> {
+                val getter = func.owner.getter
+                    ?: throw IllegalArgumentException("IrCallHelper: Property ${func.owner.name} does not have a getter")
+                getter.symbol
+            }
+            is String -> findFunction(func)
+            else -> throw IllegalArgumentException("IrCallHelper: Unsupported function type: ${func::class.simpleName}")
+        }
 
-}
+    /**
+     * Finds a function symbol based on the provided signature, symbol, and arguments.
+     *
+     * @param symbol An optional `IrSymbol` representing the context in which the function is searched.
+     *               If provided, the function is searched within the class or type represented by this symbol.
+     * @param funcSignature The name of the function to find.
+     *                      If no symbol is provided, this should include the package and class name (e.g., "package/class.function").
+     *                      Parameters are expected after the function name, e.g., "function(int, param2Type)".
+     *                      "*" can be used as parameter if from here the parameters are arbitrary. It can only be used once and only at the end of the signature.
+     *                      "G" can be used as a placeholder for generic parameters.
+     * @param extensionReceiverType An optional `IrType` representing the type of the extension receiver, if applicable.
+     * @return The `IrFunctionSymbol` representing the found function.
+     * @throws IllegalArgumentException If the function cannot be found or the symbol type is unsupported.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun findFunction(funcSignature: String, symbol: IrSymbol? = null, extensionReceiverType: IrType? = null): IrFunctionSymbol {
+        val function = if(symbol != null) {
+            val irClass = when (symbol) {
+                is IrClassSymbol -> symbol.owner
+                is IrVariableSymbol -> symbol.owner.type.getClass()
+                is IrValueSymbol -> symbol.owner.type.getClass()
+                is IrFieldSymbol ->  symbol.owner.type.getClass()
+                is IrPropertySymbol -> symbol.owner.getter?.returnType?.getClass() ?: throw IllegalArgumentException("IrCallHelper: Property ${symbol.owner.name} does not have a getter")
+                else -> throw IllegalArgumentException("Unsupported symbol type: ${symbol::class.simpleName}")
+            } ?: throw IllegalArgumentException("Could not resolve class from symbol")
 
-/**
- * Converts the given value into an IrExpression. This will be used as a function argument.
- *
- * Supports the following types:
- * - Primitive types
- * - String
- * - IrCall
- * - IrFunction
- * - IrProperty
- * - IrField
- * - IrValueParameter
- * - IrVariable
- * - IrClassSymbol
- * - IrValueDeclaration
- * - IrStringConcatenation
- * - IrConst<*>
- *
- * @throws error if the given value is not supported.
- */
-fun IrBuilderWithScope.convertToIrExpression(value: Any?): IrExpression {
-    if (value == null) return irNull()
+            irClass.symbol.findFunction(pluginContext, funcSignature, extensionReceiverType ?: irClass.defaultType)
+        } else {
+            if(!funcSignature.contains(".") && funcSignature.substringAfterLast("/").get(0).isUpperCase()) {
+                pluginContext.findConstructor(funcSignature)
+            } else {
+                pluginContext.findFunction(funcSignature, extensionReceiverType)
+            }
+        }
+        return function ?: throw IllegalArgumentException("IrCallHelper: Function $funcSignature not found!")
+    }
 
-    return when (value) {
-        is Boolean -> irBoolean(value)
-        is Byte -> irByte(value)
-        is Short -> irShort(value)
-        is Int -> irInt(value)
-        is Long -> irLong(value)
-        is Float -> value.toIrConst(context.irBuiltIns.floatType)
-        is Double -> value.toIrConst(context.irBuiltIns.doubleType)
-        is Char -> irChar(value)
+    /**
+     * Extracts the appropriate `IrExpression` receiver from the given `IrSymbol`.
+     *
+     * This function determines the type of the `IrSymbol` and returns the corresponding
+     * `IrExpression` that represents the receiver. It supports various symbol types such as
+     * properties, fields, values, classes, constructors, and functions.
+     *
+     * @receiver The `IrSymbol` from which the receiver is extracted.
+     * @return The extracted `IrExpression` representing the receiver.
+     * @throws IllegalArgumentException If the symbol type is unsupported or a required getter is missing.
+     * @throws IllegalStateException If a non-top-level field is encountered.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrSymbol.extractReceiver() = when (this) {
+        is IrPropertySymbol -> {
+            val getter = owner.getter
+                ?: throw IllegalArgumentException("IrCallHelper: Property ${owner.name} does not have a getter")
+            builder.irCall(getter)
+        }
+        is IrFieldSymbol -> {
+            //only top level fields supported
+            if (owner.parent !is IrFile) {
+                throw IllegalStateException("IrCallHelper: Only top-level fields are supported here")
+            }
+            builder.irGetField(null, owner)
+        }
+        is IrValueSymbol -> builder.irGet(owner)
+        is IrClassSymbol -> builder.irGetObject(this)
+        is IrConstructorSymbol -> builder.irCall(this)
+        is IrSimpleFunctionSymbol -> builder.irCall(this)
+        //restrict - yes probably with generics -> the best way to do this in kotlin
+        else -> throw IllegalArgumentException("IrCallHelper: Unsupported symbol type: ${this::class.simpleName}")
+    }
 
-        is String -> irString(value)
-        is IrCallImpl -> value
-        is IrCall -> irCall(value.symbol)
-        is IrFunctionAccessExpression -> value
-        is IrFunction -> irCall(value)
-        is IrProperty -> irCall(value.getter ?: error("IrCallHelper-convertToIrExpression: Property has no getter"))
-        is IrField -> irGetField(null, value)
-        is IrValueParameter -> irGet(value)
-        is IrVariable -> irGet(value)
-        is IrClassSymbol -> irGetObject(value)
-        is IrValueDeclaration -> irGet(value)
-        is IrStringConcatenation -> return value
-        is IrConst<*> -> value
-        is IrExpression -> value
+    /**
+     * Extracts the `IrType` associated with the given `IrSymbol`.
+     *
+     * This function determines the type of the symbol based on its specific kind, such as property, field, value, class,
+     * constructor, or function. If the symbol type is unsupported or a required getter is missing, an exception is thrown.
+     *
+     * @receiver The `IrSymbol` whose type is to be extracted.
+     * @return The `IrType` associated with the symbol.
+     * @throws IllegalArgumentException If the symbol type is unsupported or a required getter is missing.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrSymbol.extractType(): IrType = when (this) {
+        is IrPropertySymbol -> {
+            owner.getter?.returnType
+                ?: throw IllegalArgumentException("IrCallHelper: Property ${owner.name} does not have a getter")
+        }
+        is IrFieldSymbol -> owner.type
+        is IrValueSymbol -> owner.type
+        is IrClassSymbol -> owner.defaultType
+        is IrConstructorSymbol -> owner.returnType
+        is IrSimpleFunctionSymbol -> owner.returnType
+        else -> throw IllegalArgumentException("IrCallHelper: Unsupported symbol type: ${this::class.simpleName}")
+    }
 
-        else -> error("IrCallHelper-convertToIrExpression: Cannot convert $value to IrExpression")
+    /**
+     * Sets the dispatch and extension receivers for this `IrFunctionAccessExpression`.
+     *
+     * @param r1 The primary receiver to be set as the dispatch receiver if applicable.
+     * @param r2 The secondary receiver to be set as the extension receiver if applicable.
+     *           If `r2` is null, `r1` will be used as the extension receiver.
+     * @return The modified `IrFunctionAccessExpression` with the receivers set.
+     */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    private fun IrFunctionAccessExpression.setReceivers(r1: IrExpression, r2: IrExpression? = null) = this.apply{
+        dispatchReceiver = if (this.symbol.owner.dispatchReceiverParameter != null) {
+            r1
+        } else null
+        extensionReceiver = if (this.symbol.owner.extensionReceiverParameter != null) {
+            r2 ?: r1
+        } else null
     }
 }

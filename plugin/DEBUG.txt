@@ -94,9 +94,20 @@ Class kotlin.time.TimeSource.Monotonic: MATCH
 
 Function markNow: MATCH
 
-fields _enter_method match
+fields _enter_method do not match
 
 Function elapsedNow: MATCH
 
-fields testBodyWithTempVar match
+fields testBodyWithTempVar do not match
 
+myClass found
+genericFunction found
+anotherGenericFunction found
+staticFunction found
+normalFunction found
+Function with default params found
+topLevelFunction found
+CALL 'public final fun foo (x: kotlin.Int): kotlin.String declared in test.MyClass' type=kotlin.String origin=null
+  $this: GET_OBJECT 'CLASS CLASS name:MyClass modality:FINAL visibility:public superTypes:[kotlin.Any]' type=test.MyClass
+  $receiver: GET_FIELD 'FIELD name:_testString type:kotlin.String visibility:public [final,static] declared in test' type=kotlin.String origin=null
+  x: CONST Int type=kotlin.Int value=42

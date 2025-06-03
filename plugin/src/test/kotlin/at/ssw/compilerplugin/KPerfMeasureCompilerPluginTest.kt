@@ -98,6 +98,8 @@ class KPerfMeasureCompilerPluginTest {
     @OptIn(ExperimentalCompilerApi::class)
     @Test
     fun `Class example`() {
+        //TODO write own compiler plugin for test
+        //TODO implement placeholder for generics
         val result = compile(
             SourceFile.kotlin(
                 "main.kt",
@@ -120,6 +122,8 @@ class KPerfMeasureCompilerPluginTest {
                         fun normalFunction(param: Int): String {
                             return "Normal Function: ${'$'}param"
                         }
+
+                        fun String.foo(x: Int): String = "Host($this) + ${'$'}x"
             
                         companion object {
                             fun staticFunction() = "Static Function"
