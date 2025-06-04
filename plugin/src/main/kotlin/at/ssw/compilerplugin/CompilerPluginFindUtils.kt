@@ -181,8 +181,9 @@ fun IrVariable.getTypeClass() = this.type.getClass() ?: throw IllegalArgumentExc
  * @throws IllegalArgumentException if the property is not found.
  * @return The found property.
  */
+//TODO
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrVariable.findProperty(name: String): IrProperty = this.getTypeClass().properties.firstOrNull() { it.name.asString().lowercase() == name.lowercase() } ?: throw IllegalArgumentException("Property $name not found")
+fun IrVariable.findProperty(name: String): IrPropertySymbol? = this.getTypeClass().symbol.findProperty(name)
 
 /**
  * Finds a function by its signature in the class type of the variable.

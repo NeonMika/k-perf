@@ -97,6 +97,7 @@ class PerfMeasureExtension2New(
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark") ?: error("Cannot find class kotlin.time.TimeMark")
+        //TODO remove testCode in both files
         appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
         appendToDebugFile(
             pluginContext.referenceFunctions(
@@ -114,6 +115,7 @@ class PerfMeasureExtension2New(
         val stringBuilder = IrStringBuilder(pluginContext, firstFile)
         val randNr = (0..10000).random()
         val bufferedTraceFileName = "./trace_${pluginContext.platform!!.presentableDescription}_$randNr.txt"
+        //TODO IrFileSink and IrFileSource static methods
         val bufferedTraceFileSink = IrFileIOHandler(pluginContext, firstFile, bufferedTraceFileName)
         val bufferedSymbolsFileName = "./symbols_${pluginContext.platform!!.presentableDescription}_$randNr.txt"
         val bufferedSymbolsFileSink = IrFileIOHandler(pluginContext, firstFile, bufferedSymbolsFileName)
@@ -176,7 +178,7 @@ class PerfMeasureExtension2New(
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL(pluginContext) {
                         val elapsedDuration = irTemporary(valueParameters[1].call("elapsedNow()"))
-                        val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
+                        val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds")!!
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.append("<;")
@@ -195,6 +197,7 @@ class PerfMeasureExtension2New(
         firstFile.declarations.add(exitFunc)
         exitFunc.parent = firstFile
         fun buildMainExitFunction(): IrSimpleFunction {
+            //TODO check functions
             fun IrBlockBodyBuilder.flushTraceFile() {
                 enableCallDSL(pluginContext) {
                     +bufferedTraceFileSink.flushSink()
