@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.Name
+import kotlin.reflect.full.memberProperties
 
 /**
  * A helper function for building an IR block body using a DSL scope.
@@ -281,10 +282,16 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      *
      * @throws error if the given value is not supported.
      */
-    fun convertToIrExpression(value: Any?): IrExpression {
+    fun convertArgToIrExpression(value: Any?): IrExpression {
         if (value == null) return builder.irNull()
+        //TODO if symbol call owner
+        var toProcess = value
+        val ownerProp = value::class.memberProperties.find { it.name == "owner" }
+        if (ownerProp != null) {
+            toProcess = ownerProp.call(value)
+        }
 
-        return when (value) {
+        return when (toProcess) {
             is Boolean -> builder.irBoolean(value)
             is Byte -> builder.irByte(value)
             is Short -> builder.irShort(value)
@@ -394,7 +401,8 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      * @throws IllegalStateException If a non-top-level field is encountered.
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun IrSymbol.extractReceiver() = when (this) {
+    private fun IrSymbol.convertReceiverToIrExpression(): IrExpression = when (this) {
+        //TODO call argtoexpression method
         is IrPropertySymbol -> {
             val getter = owner.getter
                 ?: throw IllegalArgumentException("IrCallHelper: Property ${owner.name} does not have a getter")
