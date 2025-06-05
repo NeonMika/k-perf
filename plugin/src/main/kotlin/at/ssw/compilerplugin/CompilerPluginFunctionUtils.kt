@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.Name
-import kotlin.reflect.full.memberProperties
 
 /**
  * A helper function for building an IR block body using a DSL scope.
@@ -82,10 +81,10 @@ fun IrPluginContext.createField(
 }
 
 /**
- * A DSL scope for building IR call expressions in a fluent manner.
+ * A DSL scope for constructing IR call expressions in a fluent and readable manner.
  *
- * @property builder The IrBuilderWithScope used to construct the IR call
- *                    expressions.
+ * @property builder The `IrBuilderWithScope` used to create IR call expressions.
+ * @property pluginContext The `IrPluginContext` providing access to the IR plugin environment.
  */
 class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginContext: IrPluginContext) {
 
@@ -104,7 +103,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         val nonDefaultParameters = function.owner.valueParameters.filter { !it.hasDefaultValue() }
         require(nonDefaultParameters.size == args.size) {"Expected ${nonDefaultParameters.size} arguments, got ${args.size}"}
 
-        val newArgs = args.map { convertToIrExpression(it) }.toList()
+        val newArgs = args.map { convertArgToIrExpression(it) }.toList()
 
         return builder.irCall(function).apply {
             newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
@@ -126,7 +125,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         } else {
             this@IrCallDsl.call(func, *args)
         }
-        val receiver = this.extractReceiver()
+        val receiver = this.convertReceiverToIrExpression()
         return functionCall.setReceivers(receiver)
     }
 
@@ -155,7 +154,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
             this@IrCallDsl.call(func, *args)
         }
 
-        return functionCall.setReceivers(this.first.extractReceiver(), this.second.extractReceiver())
+        return functionCall.setReceivers(this.first.convertReceiverToIrExpression(), this.second.convertReceiverToIrExpression())
     }
 
     /**
@@ -258,65 +257,75 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
     fun irConcat(vararg params: Any): IrStringConcatenation {
         val concat = builder.irConcat()
         for (param in params) {
-            concat.addArgument(convertToIrExpression(param))
+            concat.addArgument(convertArgToIrExpression(param))
         }
         return concat
     }
 
     /**
-     * Converts the given value into an IrExpression.
+     * Converts the given value into an `IrExpression`.
      *
-     * Supports the following types:
-     * - Primitive types
-     * - String
-     * - IrCall
-     * - IrFunction
-     * - IrProperty
-     * - IrField
-     * - IrValueParameter
-     * - IrVariable
-     * - IrClassSymbol
-     * - IrValueDeclaration
-     * - IrStringConcatenation
-     * - IrConst<*>
+     * Supported types:
+     * - Primitive types (`Boolean`, `Byte`, `Short`, `Int`, `Long`, `Float`, `Double`, `Char`)
+     * - `String`
+     * - `IrCall`, `IrCallImpl`
+     * - `IrFunctionAccessExpression`
+     * - `IrFunction`
+     * - `IrProperty`
+     * - `IrField`
+     * - `IrValueParameter`
+     * - `IrVariable`
+     * - `IrClass`
+     * - `IrClassSymbol`
+     * - `IrValueDeclaration`
+     * - `IrStringConcatenation`
+     * - `IrConst<*>`
+     * - `IrExpression`
      *
-     * @throws error if the given value is not supported.
+     * @param value The value to be converted into an `IrExpression`.
+     * @return The corresponding `IrExpression`.
+     * @throws IllegalArgumentException If the given value cannot be converted.
      */
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     fun convertArgToIrExpression(value: Any?): IrExpression {
         if (value == null) return builder.irNull()
-        //TODO if symbol call owner
+
         var toProcess = value
-        val ownerProp = value::class.memberProperties.find { it.name == "owner" }
-        if (ownerProp != null) {
-            toProcess = ownerProp.call(value)
+        if(value is IrSymbol) {
+            toProcess = value.owner
         }
 
         return when (toProcess) {
-            is Boolean -> builder.irBoolean(value)
-            is Byte -> builder.irByte(value)
-            is Short -> builder.irShort(value)
-            is Int -> builder.irInt(value)
-            is Long -> builder.irLong(value)
-            is Float -> value.toIrConst(pluginContext.irBuiltIns.floatType)
-            is Double -> value.toIrConst(pluginContext.irBuiltIns.doubleType)
-            is Char -> builder.irChar(value)
+            is Boolean -> builder.irBoolean(toProcess)
+            is Byte -> builder.irByte(toProcess)
+            is Short -> builder.irShort(toProcess)
+            is Int -> builder.irInt(toProcess)
+            is Long -> builder.irLong(toProcess)
+            is Float -> toProcess.toIrConst(pluginContext.irBuiltIns.floatType)
+            is Double -> toProcess.toIrConst(pluginContext.irBuiltIns.doubleType)
+            is Char -> builder.irChar(toProcess)
+            is String -> builder.irString(toProcess)
 
-            is String -> builder.irString(value)
-            is IrCallImpl -> value
-            is IrCall -> builder.irCall(value.symbol)
-            is IrFunctionAccessExpression -> value
-            is IrFunction -> builder.irCall(value)
-            is IrProperty -> builder.irCall(value.getter ?: error("IrCallHelper-convertToIrExpression: Property has no getter"))
-            is IrField -> builder.irGetField(null, value)
-            is IrValueParameter -> builder.irGet(value)
-            is IrVariable -> builder.irGet(value)
-            is IrClassSymbol -> builder.irGetObject(value)
-            is IrValueDeclaration -> builder.irGet(value)
-            is IrStringConcatenation -> return value
-            is IrConst<*> -> value
-            is IrExpression -> value
+            is IrCallImpl -> toProcess
+            is IrCall -> builder.irCall(toProcess.symbol)
+            is IrFunctionAccessExpression -> toProcess
+            is IrFunction -> builder.irCall(toProcess)
+            is IrProperty -> builder.irCall(toProcess.getter ?: error("IrCallHelper-convertToIrExpression: Property has no getter"))
+            is IrField -> {
+                if (toProcess.parent !is IrFile) {
+                    throw IllegalStateException("IrCallHelper: Only top-level fields are supported here")
+                }
+                builder.irGetField(null, toProcess)
+            }
+            is IrValueParameter -> builder.irGet(toProcess)
+            is IrVariable -> builder.irGet(toProcess)
+            is IrClass -> builder.irGetObject(toProcess.symbol)
+            is IrValueDeclaration -> builder.irGet(toProcess)
+            is IrStringConcatenation -> return toProcess
+            is IrConst<*> -> toProcess
+            is IrExpression -> toProcess
 
-            else -> error("IrCallHelper-convertToIrExpression: Cannot convert $value to IrExpression")
+            else -> error("IrCallHelper-convertToIrExpression: Cannot convert $toProcess to IrExpression")
         }
     }
 
@@ -389,37 +398,24 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
     }
 
     /**
-     * Extracts the appropriate `IrExpression` receiver from the given `IrSymbol`.
+     * Converts an `IrSymbol` into the corresponding `IrExpression` receiver.
      *
      * This function determines the type of the `IrSymbol` and returns the corresponding
-     * `IrExpression` that represents the receiver. It supports various symbol types such as
+     * `IrExpression` representing the receiver. It supports various symbol types such as
      * properties, fields, values, classes, constructors, and functions.
      *
      * @receiver The `IrSymbol` from which the receiver is extracted.
      * @return The extracted `IrExpression` representing the receiver.
-     * @throws IllegalArgumentException If the symbol type is unsupported or a required getter is missing.
-     * @throws IllegalStateException If a non-top-level field is encountered.
+     * @throws IllegalArgumentException If the symbol type is not supported or a required getter is missing.
+     * @throws IllegalStateException If a field that is not at the top level is encountered.
      */
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun IrSymbol.convertReceiverToIrExpression(): IrExpression = when (this) {
-        //TODO call argtoexpression method
-        is IrPropertySymbol -> {
-            val getter = owner.getter
-                ?: throw IllegalArgumentException("IrCallHelper: Property ${owner.name} does not have a getter")
-            builder.irCall(getter)
-        }
-        is IrFieldSymbol -> {
-            //only top level fields supported
-            if (owner.parent !is IrFile) {
-                throw IllegalStateException("IrCallHelper: Only top-level fields are supported here")
-            }
-            builder.irGetField(null, owner)
-        }
-        is IrValueSymbol -> builder.irGet(owner)
-        is IrClassSymbol -> builder.irGetObject(this)
-        is IrConstructorSymbol -> builder.irCall(this)
-        is IrSimpleFunctionSymbol -> builder.irCall(this)
-        //restrict - yes probably with generics -> the best way to do this in kotlin
+        is IrPropertySymbol,
+        is IrFieldSymbol,
+        is IrValueSymbol,
+        is IrClassSymbol,
+        is IrConstructorSymbol,
+        is IrSimpleFunctionSymbol -> convertArgToIrExpression(this)
         else -> throw IllegalArgumentException("IrCallHelper: Unsupported symbol type: ${this::class.simpleName}")
     }
 

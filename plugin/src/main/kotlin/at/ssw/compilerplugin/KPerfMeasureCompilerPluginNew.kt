@@ -87,38 +87,16 @@ class PerfMeasureExtension2New(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
     val STRINGBUILDER_MODE = false
-    val debugFile = File("./DEBUG.txt")
-    init {
-        debugFile.delete()
-    }
-    fun appendToDebugFile(str: String) {
-        debugFile.appendText(str)
-    }
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark") ?: error("Cannot find class kotlin.time.TimeMark")
-        //TODO remove testCode in both files
-        appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
-        appendToDebugFile(
-            pluginContext.referenceFunctions(
-                CallableId(
-                    FqName("kotlinx.io"),
-                    Name.identifier("writeString")
-                )
-            ).joinToString("\n") { func ->
-                "kotlinx.io.writeString(${func.owner.valueParameters.joinToString(",") { param -> param.type.classFqName.toString() }})"
-            }
-        )
-        debugFile.appendText("2")
-        debugFile.appendText("3")
         val firstFile = moduleFragment.files[0]
         val stringBuilder = IrStringBuilder(pluginContext, firstFile)
         val randNr = (0..10000).random()
         val bufferedTraceFileName = "./trace_${pluginContext.platform!!.presentableDescription}_$randNr.txt"
-        //TODO IrFileSink and IrFileSource static methods
-        val bufferedTraceFileSink = IrFileIOHandler(pluginContext, firstFile, bufferedTraceFileName)
+        val bufferedTraceFileSink = IrFileWriter(pluginContext, firstFile, bufferedTraceFileName)
         val bufferedSymbolsFileName = "./symbols_${pluginContext.platform!!.presentableDescription}_$randNr.txt"
-        val bufferedSymbolsFileSink = IrFileIOHandler(pluginContext, firstFile, bufferedSymbolsFileName)
+        val bufferedSymbolsFileSink = IrFileWriter(pluginContext, firstFile, bufferedSymbolsFileName)
         val methodMap = mutableMapOf<String, IrFunction>()
         val methodIdMap = mutableMapOf<String, Int>()
         var currMethodId = 0
@@ -178,7 +156,7 @@ class PerfMeasureExtension2New(
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL(pluginContext) {
                         val elapsedDuration = irTemporary(valueParameters[1].call("elapsedNow()"))
-                        val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds")!!
+                        val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds") ?: throw IllegalStateException("Property 'inWholeMicroseconds' not found")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.append("<;")
@@ -197,26 +175,6 @@ class PerfMeasureExtension2New(
         firstFile.declarations.add(exitFunc)
         exitFunc.parent = firstFile
         fun buildMainExitFunction(): IrSimpleFunction {
-            //TODO check functions
-            fun IrBlockBodyBuilder.flushTraceFile() {
-                enableCallDSL(pluginContext) {
-                    +bufferedTraceFileSink.flushSink()
-                }
-            }
-            fun IrBlockBodyBuilder.writeAndFlushSymbolsFile() {
-                enableCallDSL(pluginContext) {
-                    +bufferedSymbolsFileSink.writeData("{ " + methodIdMap.map { (name, id) -> id to name }
-                        .sortedBy { (id, _) -> id }
-                        .joinToString(",\n") { (id, name) -> "\"$id\": \"$name\"" } + " }")
-                    +bufferedSymbolsFileSink.flushSink()
-                }
-            }
-            fun IrBlockBodyBuilder.printFileNamesToStdout() {
-                enableCallDSL(pluginContext) {
-                    +irPrintLn(pluginContext, bufferedTraceFileName)
-                    +irPrintLn(pluginContext, bufferedSymbolsFileName)
-                }
-            }
             return pluginContext.irFactory.buildFun {
                 name = Name.identifier("_exit_main")
                 returnType = pluginContext.irBuiltIns.unitType
@@ -227,14 +185,18 @@ class PerfMeasureExtension2New(
                 }
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL(pluginContext) {
-                        flushTraceFile()
+                        +bufferedTraceFileSink.flushSink()
                         +exitFunc(methodIdMap["main"]!!, valueParameters[0])
                         if (STRINGBUILDER_MODE) {
                             +bufferedTraceFileSink.writeData(stringBuilder.irToString())
                         }
-                        writeAndFlushSymbolsFile()
-                        flushTraceFile()
-                        printFileNamesToStdout()
+                        +bufferedSymbolsFileSink.writeData("{ " + methodIdMap.map { (name, id) -> id to name }
+                            .sortedBy { (id, _) -> id }
+                            .joinToString(",\n") { (id, name) -> "\"$id\": \"$name\"" } + " }")
+                        +bufferedSymbolsFileSink.flushSink()
+                        +bufferedTraceFileSink.flushSink()
+                        +irPrintLn(pluginContext, bufferedTraceFileName)
+                        +irPrintLn(pluginContext, bufferedSymbolsFileName)
                     }
                 }
             }

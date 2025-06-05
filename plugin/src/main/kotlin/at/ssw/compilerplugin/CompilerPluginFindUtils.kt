@@ -2,7 +2,6 @@ package at.ssw.compilerplugin
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.symbols.*
@@ -14,7 +13,6 @@ import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.getType
 import org.jetbrains.kotlin.utils.doNothing
 
 /**
@@ -34,6 +32,19 @@ private data class SignatureParts(
     val memberName: String,
     val packageForFindClass: String
 )
+
+/**
+ * Represents the type of signature used in method or parameter matching.
+ *
+ * - `Star`: Indicates a wildcard parameter, allowing arbitrary parameters from this point onward.
+ * - `Generic`: Represents a placeholder for generic types.
+ * - `Type`: Specifies a concrete type for matching.
+ */
+enum class SignatureType {
+    Star,
+    Generic,
+    Type
+}
 
 /**
  * Finds a class by its signature.
@@ -175,14 +186,12 @@ fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: Str
 fun IrVariable.getTypeClass() = this.type.getClass() ?: throw IllegalArgumentException("Type is not a class")
 
 /**
- * Finds a property by its name in the class type of the variable.
+ * Searches for a property by its name in the class type of the variable.
  *
- * @param name The name of the property to find.
- * @throws IllegalArgumentException if the property is not found.
- * @return The found property.
+ * @param name The name of the property to search for.
+ * @return The found property symbol or `null` if the property is not found.
+ * @throws IllegalArgumentException If the type of the variable is not a class.
  */
-//TODO
-@OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrVariable.findProperty(name: String): IrPropertySymbol? = this.getTypeClass().symbol.findProperty(name)
 
 /**
@@ -333,28 +342,22 @@ fun IrPluginContext.findProperty(signature: String): IrPropertySymbol? {
             .singleOrNull()
 }
 
-    /**
-     * Tries to find the IR type for the given type string. It will first try to match it against primitive types,
-     * then against primitive arrays, and if it does not match any of those, it will try to find a class with the
-     * given name and return its type.
-     *
-     * @param typeString The string to parse. Primitive types are supported in short form (int, short, ...).
-     * Further types are supported in short form see [getTypePackage].
-     * Other ways the typeString should be in the format "package.ClassName<typeParameters>" for a full classSearch.
-     *
-     * return The resolved IR type or null if a "*" (ignore type) or a "G" (generic placeholder) is found.
-     * @throws IllegalArgumentException If the type cannot be resolved or if generic parameters are invalid.
-     */
-@OptIn(UnsafeDuringIrConstructionAPI::class)
+/**
+ * Attempts to resolve the IR type for a given type string. The method first checks for primitive types,
+ * then primitive arrays, and finally tries to locate a class with the specified name to return its type.
+ *
+ * @param typeString The type string to resolve. Primitive types can be specified in short form (e.g., int, short, etc.).
+ * Additional types are supported in short form; see [getTypePackage] for details.
+ * Alternatively, the type string can be in the format "package.ClassName<typeParameters>" for a full class search.
+ *
+ * @return The resolved IR type, or `null` if the type string contains "*" (wildcard) or "G" (generic placeholder).
+ * @throws IllegalArgumentException If the type cannot be resolved.
+ */
 fun IrPluginContext.getIrType(typeString: String): IrType? {
     val isNullable = typeString.endsWith("?", ignoreCase = true)
-    val baseType = if (isNullable) typeString.removeSuffix("?") else typeString
+    val baseType = if (isNullable) typeString.removeSuffix("?").lowercase() else typeString.lowercase()
 
-    val parsedType = parseGenericTypes(baseType)
-    val normalizedType = parsedType.first.lowercase()
-    val typeArguments = parsedType.second
-
-    val type = when (normalizedType) {
+    val type = when (baseType) {
         // primitive types
         "int", "integer" -> this.irBuiltIns.intType
         "long" -> this.irBuiltIns.longType
@@ -384,93 +387,14 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
 
         //handle other types dynamically
         else -> {
-            val fqName = getTypePackage(normalizedType)
+            val fqName = getTypePackage(baseType)
 
-            val classSymbol = if (fqName == normalizedType) null else findClass(fqName)
-            if (classSymbol == null) throw IllegalArgumentException("getIrType: Type $typeString not found in context")
-
-            //validate number of parameters
-            val expectedParamCount = classSymbol.owner.typeParameters.size
-            if (typeArguments.size != expectedParamCount) throw IllegalArgumentException("getIrType: Type $typeString expects $expectedParamCount type parameters, but got ${typeArguments.size}")
-
-            //apply type arguments if present
-            if (typeArguments.isEmpty()) {
-                classSymbol.defaultType
-            } else {
-                if (typeArguments.any { it == null }) {
-                    throw IllegalArgumentException("getIrType: Type $typeString has a typeargument that could not be resolved")
-                } else {
-                    classSymbol.typeWith(*typeArguments.requireNoNulls().toTypedArray())
-                }
-            }
+            val classSymbol = if (fqName == baseType) null else findClass(fqName)
+            classSymbol?.defaultType ?: throw IllegalArgumentException("getIrType: Type $typeString not found in context")
         }
     }
 
     return if (isNullable) type.makeNullable() else type
-}
-
-    /**
-     * Tries to parse the given string as a type signature with generic parameters.
-     *
-     * @param signature The string to parse. It should be in the format "type<typeParameter1, typeParameter2, ...>".
-     * @return A pair containing the main type and a list of type parameters. If a type parameter cannot be resolved,
-     *         it will be `null`.
-     */
-    //TODO is this even needed?
-fun IrPluginContext.parseGenericTypes(signature: String): Pair<String, List<IrType?>> {
-    //no generic part in string
-    if (!signature.contains("<")) {
-        return Pair(signature, emptyList())
-    }
-
-    require(signature.count { it == '<' } == signature.count { it == '>' }) {
-        "Generic parameter string must have matching '<' and '>'"
-    }
-
-    val mainType = signature.substringBefore("<")
-    val genericPart = signature.substring(
-        signature.indexOf('<') + 1,
-        signature.lastIndexOf('>')
-    )
-
-    //no generic parameters
-    if (genericPart.isBlank()) {
-        return Pair(mainType, emptyList())
-    }
-
-    val params = mutableListOf<IrType?>()
-    var currentParam = StringBuilder()
-    var nestedLevel = 0
-
-    //parse nested parameters
-    for (char in genericPart) {
-        when (char) {
-            '<' -> {
-                nestedLevel++
-                currentParam.append(char)
-            }
-            '>' -> {
-                nestedLevel--
-                currentParam.append(char)
-            }
-            ',' -> {
-                if (nestedLevel == 0) {
-                    //only split outer most level
-                    params.add(getIrType(currentParam.toString().trim()))
-                    currentParam = StringBuilder()
-                } else {
-                    currentParam.append(char)
-                }
-            }
-            else -> currentParam.append(char)
-        }
-    }
-
-    if (currentParam.isNotEmpty()) {
-        params.add(getIrType(currentParam.toString().trim()))
-    }
-
-    return Pair(mainType, params)
 }
 
 /**
@@ -837,10 +761,4 @@ private fun getTypePackage(typeString: String) = when (typeString) {
     "executorservice" -> "java/util/concurrent/ExecutorService"
 
     else -> typeString //here we assume we have fully qualified name
-}
-
-enum class SignatureType {
-    Star,
-    Generic,
-    Type
 }

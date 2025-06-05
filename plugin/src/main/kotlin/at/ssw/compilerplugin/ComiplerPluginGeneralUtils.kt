@@ -102,56 +102,54 @@ class IrStringBuilder(
 }
 
 /**
- * Utility class for handling file I/O operations in Kotlin IR.
- * Currently only supports read and write operations of Strings
+ * Abstract base class for handling file operations in Kotlin IR.
  *
  * @property pluginContext The IR plugin context used for creating IR elements.
  * @param file The IR file where the file-related fields are declared.
  * @param fileName The name of the file to read from or write to.
- * @param writeMode Whether the file is opened in write mode (default is true).
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-class IrFileIOHandler(
-    private val pluginContext: IrPluginContext,
-    file: IrFile,
-    private val fileName: String,
-    private val writeMode: Boolean = true
+abstract class IrFileHandler(
+    protected val pluginContext: IrPluginContext,
+    private val file: IrFile,
+    private val fileName: String
 ) {
-    private val filePathField: IrField
-    private var sinkField: IrField? = null
-    private var sourceField: IrField? = null
-    private val flushFunction = pluginContext.findFunction("kotlinx/io/Sink.flush()")!!
-    private val closeSourceFunction = pluginContext.findFunction("kotlinx/io/Source.close()")!!
-    private val closeSinkFunction = pluginContext.findFunction("kotlinx/io/Sink.close()")!!
-    private val writeStringFunction = pluginContext.findFunction("kotlinx/io/writeString(string, int, int)")!!
-    private val readStringFunction = pluginContext.findFunction("kotlinx/io/readString()", extensionReceiverType =  pluginContext.findClass("kotlinx/io/Source")!!.defaultType)!!
+    protected val filePathField: IrField
+    protected val systemFileSystemProperty = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")!!
 
     init {
         val pathFunction = pluginContext.findFunction("kotlinx/io/files/Path(string)")!!
-        val systemFileSystemProperty = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")!!
-        val sinkFunction = systemFileSystemProperty.findFunction(pluginContext, "sink(*)")!!
-        val sourceFunction = systemFileSystemProperty.findFunction(pluginContext, "source(*)")!!
-        val bufferedSinkFunction = pluginContext.findFunction("kotlinx/io/buffered()", sinkFunction.owner.returnType)!!
-        val bufferedSourceFunction = pluginContext.findFunction("kotlinx/io/buffered()", sourceFunction.owner.returnType)!!
-
         filePathField = pluginContext.createField(file.symbol, "_filePath_${FileCounter.next()}") {
             pathFunction(fileName)
         }
         file.declarations.add(filePathField)
         filePathField.parent = file
+    }
+}
 
-        //create sink
-        if(writeMode) {
-            sinkField = pluginContext.createField(file.symbol, "_fileSink_${FileCounter.next()}") {
-                systemFileSystemProperty.call(sinkFunction, filePathField).call(bufferedSinkFunction)
-            }
-            file.declarations.add(sinkField!!)
-            sinkField!!.parent = file
-        }
+/**
+ * Class for handling file reading operations in Kotlin IR.
+ *
+ * @property pluginContext The IR plugin context used for creating IR elements.
+ * @param file The IR file where the file-related fields are declared.
+ * @param fileName The name of the file to read from.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+class IrFileReader(
+    pluginContext: IrPluginContext,
+    file: IrFile,
+    fileName: String
+) : IrFileHandler(pluginContext, file, fileName) {
+    private var sourceField: IrField? = null
+    private val readStringFunction = pluginContext.findFunction("kotlinx/io/readString()", extensionReceiverType = pluginContext.findClass("kotlinx/io/Source")!!.defaultType)!!
+    private val closeSourceFunction = pluginContext.findFunction("kotlinx/io/Source.close()")!!
 
-        //create source, only if file exists
-        if (Path(fileName).exists() && !writeMode) {
-            sourceField = pluginContext.createField(file.symbol, "_fileSource_${(0..10000).random()}") {
+    init {
+        val sourceFunction = systemFileSystemProperty.findFunction(pluginContext, "source(*)")!!
+        val bufferedSourceFunction = pluginContext.findFunction("kotlinx/io/buffered()", sourceFunction.owner.returnType)!!
+
+        if (Path(fileName).exists()) {
+            sourceField = pluginContext.createField(file.symbol, "_fileSource_${FileCounter.next()}") {
                 systemFileSystemProperty.call(sourceFunction, filePathField).call(bufferedSourceFunction)
             }
             file.declarations.add(sourceField!!)
@@ -159,71 +157,67 @@ class IrFileIOHandler(
         }
     }
 
-    /**
-     * Writes data to the file.
-     *
-     * @param data The data to write (must be a string).
-     * @return An IR function access expression representing the write operation.
-     * @throws IllegalArgumentException If the data type is not a string or if the handler is in read mode.
-     */
-    fun writeData(data: Any): IrFunctionAccessExpression {
-        require(extractType(data) == "string") {"Write function only supports string types"}
-        require(writeMode) { "Cannot write in read mode!" }
-
-        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall(pluginContext) {
-            sinkField!!.call(writeStringFunction, data)
-        }
-    }
-
-    /**
-     * Reads data from the file.
-     *
-     * @return An IR function access expression representing the read operation.
-     * @throws IllegalArgumentException If the handler is in write mode.
-     */
     fun readData(): IrFunctionAccessExpression {
-        require(!writeMode) { "Cannot read in write mode!" }
+        require(sourceField != null) { "Cannot read from a non-existent file!" }
         return DeclarationIrBuilder(pluginContext, sourceField!!.symbol).getCall(pluginContext) {
             sourceField!!.call(readStringFunction)
         }
     }
 
-    /**
-     * Closes the sink (write stream) for the file.
-     *
-     * @return An IR function access expression representing the close operation.
-     * @throws IllegalArgumentException If the handler is in read mode.
-     */
-    fun closeSink(): IrFunctionAccessExpression {
-        require(writeMode) { "Cannot close Sink when in read mode!" }
-        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall(pluginContext) {
-            sinkField!!.call(closeSinkFunction)
-        }
-    }
-
-    /**
-     * Closes the source (read stream) for the file.
-     *
-     * @return An IR function access expression representing the close operation.
-     * @throws IllegalArgumentException If the handler is in write mode.
-     */
     fun closeSource(): IrFunctionAccessExpression {
-        require(!writeMode) { "Cannot close Source when in write mode!" }
+        require(sourceField != null) { "Cannot close a non-existent source!" }
         return DeclarationIrBuilder(pluginContext, sourceField!!.symbol).getCall(pluginContext) {
             sourceField!!.call(closeSourceFunction)
         }
     }
+}
 
-    /**
-     * Flushes the sink (write stream) for the file.
-     *
-     * @return An IR function access expression representing the flush operation.
-     * @throws IllegalArgumentException If the handler is in read mode.
-     */
+/**
+ * Class for handling file writing operations in Kotlin IR.
+ * Currently only supports writing Strings.
+ *
+ * @property pluginContext The IR plugin context used for creating IR elements.
+ * @param file The IR file where the file-related fields are declared.
+ * @param fileName The name of the file to write to.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+class IrFileWriter(
+    pluginContext: IrPluginContext,
+    file: IrFile,
+    fileName: String
+) : IrFileHandler(pluginContext, file, fileName) {
+    private var sinkField: IrField? = null
+    private val writeStringFunction = pluginContext.findFunction("kotlinx/io/writeString(string, int, int)")!!
+    private val flushFunction = pluginContext.findFunction("kotlinx/io/Sink.flush()")!!
+    private val closeSinkFunction = pluginContext.findFunction("kotlinx/io/Sink.close()")!!
+
+    init {
+        val sinkFunction = systemFileSystemProperty.findFunction(pluginContext, "sink(*)")!!
+        val bufferedSinkFunction = pluginContext.findFunction("kotlinx/io/buffered()", sinkFunction.owner.returnType)!!
+
+        sinkField = pluginContext.createField(file.symbol, "_fileSink_${FileCounter.next()}") {
+            systemFileSystemProperty.call(sinkFunction, filePathField).call(bufferedSinkFunction)
+        }
+        file.declarations.add(sinkField!!)
+        sinkField!!.parent = file
+    }
+
+    fun writeData(data: Any): IrFunctionAccessExpression {
+        require(extractType(data) == "string") { "Write function only supports string types" }
+        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall(pluginContext) {
+            sinkField!!.call(writeStringFunction, data)
+        }
+    }
+
     fun flushSink(): IrFunctionAccessExpression {
-        require(writeMode) { "Cannot flush Sink when in read mode!" }
         return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall(pluginContext) {
             sinkField!!.call(flushFunction)
+        }
+    }
+
+    fun closeSink(): IrFunctionAccessExpression {
+        return DeclarationIrBuilder(pluginContext, sinkField!!.symbol).getCall(pluginContext) {
+            sinkField!!.call(closeSinkFunction)
         }
     }
 }
