@@ -281,15 +281,6 @@ class PerfMeasureExtension2(
         val stringClass = pluginContext.findClass("string")
         val stringEqualsFunc = stringClass?.findFunction(pluginContext, "equals()")
 
-        //irNode test
-        val pairNodeNew = pluginContext.getIrType("Pair<String, Pair<Int, Int>>")
-        val intType = pluginContext.irBuiltIns.intType
-        val stringType = pluginContext.irBuiltIns.stringType
-        val pairClass = pluginContext.referenceClass(ClassId.fromString("kotlin/Pair"))!!
-        val innerPair = pairClass.typeWith(intType, intType)
-        val pairNode = pairClass.typeWith(stringType, innerPair)
-        appendToDebugFile("Pair types are equal: ${pairNodeNew == pairNode}\n\n")
-
         val stringBuilderConstructor =
             stringBuilderClass.constructors.single { it.owner.valueParameters.isEmpty() }
         val stringBuilderAppendIntFunc =
@@ -672,7 +663,7 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedTraceFileSink)
         bufferedTraceFileSink.parent = firstFile
 
-        val irFileHandle = IrFileIOHandler(pluginContext, firstFile, "./trace_${pluginContext.platform!!.presentableDescription}_${(0..10000).random()}.txt")
+        val irFileHandle = IrFileWriter(pluginContext, firstFile, "./trace_${pluginContext.platform!!.presentableDescription}_${(0..10000).random()}.txt")
 
         val bufferedTraceFileSink2 = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileSink2")
@@ -711,7 +702,7 @@ class PerfMeasureExtension2(
         bufferedTraceFileSink3.parent = firstFile
 
         val bufferedTraceFileSink4 = pluginContext.createField(firstFile.symbol, "_bufferedTraceFileSink4") {
-            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName)) //TODO this works, but if you append .symbol after the first call it does not????
+            systemFileSystem.call(sinkFunc, pathConstructionFunc(bufferedTraceFileName))
                 .call(bufferedFunc)
         }
         compareFieldDumps(bufferedTraceFileSink.dump(), bufferedTraceFileSink4.dump(), "bufferedTraceFileSink")
@@ -1000,7 +991,7 @@ class PerfMeasureExtension2(
                 val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL(pluginContext) {
                         val elapsedDuration = irTemporary(valueParameters[1].call(funElapsedNow))
-                        val elapsedMicrosProp: IrProperty = elapsedDuration.findProperty("inWholeMicroseconds")
+                        val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds") ?: throw IllegalStateException("Property 'inWholeMicroseconds' not found")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
 
                         if (STRINGBUILDER_MODE) {
@@ -1096,8 +1087,9 @@ class PerfMeasureExtension2(
                             +irFileHandle.writeData(sb.irToString())
                         }
                     }
-                    /*enableCallDSL {
-                        val readFileHandle = IrFileIOHandler(pluginContext, firstFile, "trace_JVM (1.8)_1319045142.txt", false)
+                    /*
+                    enableCallDSL(pluginContext) {
+                        val readFileHandle = IrFileReader(pluginContext, firstFile, "trace_JVM (1.8)_442461669.txt")
                         +irPrintLn(pluginContext, readFileHandle.readData())
                     }*/
                     writeAndFlushSymbolsFile()
@@ -1228,7 +1220,7 @@ class PerfMeasureExtension2(
                 appendToDebugFile("topLevelFunction not found\n")
             }
 
-            val testString = pluginContext.createField(firstFile.symbol, "_testString") { convertToIrExpression("test") }
+            val testString = pluginContext.createField(firstFile.symbol, "_testString") { convertArgToIrExpression("test") }
             firstFile.declarations.add(testString)
             testString.parent = firstFile
 

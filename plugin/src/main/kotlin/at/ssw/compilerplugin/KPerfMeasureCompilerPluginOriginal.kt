@@ -90,13 +90,6 @@ class PerfMeasureExtension2Original(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
     val STRINGBUILDER_MODE = false
-    val debugFile = File("./DEBUG.txt")
-    init {
-        debugFile.delete()
-    }
-    fun appendToDebugFile(str: String) {
-        debugFile.appendText(str)
-    }
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val timeMarkClass: IrClassSymbol =
@@ -139,17 +132,6 @@ class PerfMeasureExtension2Original(
                 Name.identifier("buffered")
             )
         ).single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
-        appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
-        appendToDebugFile(
-            pluginContext.referenceFunctions(
-                CallableId(
-                    FqName("kotlinx.io"),
-                    Name.identifier("writeString")
-                )
-            ).joinToString("\n") { func ->
-                "kotlinx.io.writeString(${func.owner.valueParameters.joinToString(",") { param -> param.type.classFqName.toString() }})"
-            }
-        )
         val writeStringFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -168,14 +150,12 @@ class PerfMeasureExtension2Original(
                 Name.identifier("flush")
             )
         ).single()
-        debugFile.appendText("2")
         val toStringFunc = pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlin"),
                 Name.identifier("toString")
             )
         ).single()
-        debugFile.appendText("3")
         val firstFile = moduleFragment.files[0]
         val stringBuilder: IrField = pluginContext.irFactory.buildField {
             name = Name.identifier("_stringBuilder")
