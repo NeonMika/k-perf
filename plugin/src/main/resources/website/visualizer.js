@@ -30,9 +30,9 @@ function createDotSource(root) {
 
     dotBuilder.push(
         `digraph KotlinIR {
-    rankdir=TB;      // Top-to-bottom layout
-    nodesep=1;       // Horizontal spacing
-    ranksep=0.75;    // Vertical spacing
+         rankdir=TB;      // Top-to-bottom layout
+         nodesep=1;       // Horizontal spacing
+         ranksep=0.75;    // Vertical spacing
 `
     );
 
@@ -60,16 +60,18 @@ function createDotSource(root) {
                             fillcolor="${clusterColor}"`);
         }
 
-
+        // noinspection XmlDeprecatedElement,HtmlDeprecatedTag,HtmlUnknownAttribute
         let label = `<FONT FACE="Calibri" POINT-SIZE="16">${typeName}</FONT><BR/>` +
             `<FONT FACE="Courier New" >${node.NodeType}</FONT>`;
 
 
         if (caption) {
+            // noinspection XmlDeprecatedElement,HtmlDeprecatedTag
             label += `<BR/><FONT FACE="Courier New" >${escapeDotSymbols(caption)}</FONT>`;
         }
 
         if (node.NodeType === "IrConstImpl" && !node.intermediate) {
+            // noinspection XmlDeprecatedElement,HtmlDeprecatedTag
             label += `<BR/><FONT FACE="Courier New" >${truncate(escapeDotSymbols(node.Value), 30)}</FONT>`;
         }
 
@@ -201,14 +203,9 @@ function isFiltered(node, filters) {
 }
 
 function collapseByDepth(root, maxDepth) {
-    let idCount = 0;
 
     function traverse(node, depth) {
-        if (depth < maxDepth) {
-            node.visible = true;
-        } else {
-            node.visible = false;
-        }
+        node.visible = depth < maxDepth;
         if (Array.isArray(node.Children)) {
             for (const child of node.Children) {
                 traverse(child, depth + 1);
@@ -277,10 +274,10 @@ function getSourceCodeOfNode(node) {
 }
 
 function getUnitsOfSourceCode(fileNode) {
-    units = []
+    let units = []
 
     function traverse(node) {
-        if ("StartOffset" in node && "EndOffset" in node && node.StartOffset != node.EndOffset) {
+        if ("StartOffset" in node && "EndOffset" in node && node.StartOffset !== node.EndOffset) {
             units.push({name: node.NodeType, start: node.StartOffset, end: node.EndOffset, nodeID: node.nodeID})
         }
         if (Array.isArray(node.Children)) {
@@ -353,18 +350,5 @@ function groupArrays(tree) {
         const start = str.indexOf('[');
         const end = str.indexOf(']');
         return parseInt(str.substring(start + 1, end), 10);
-    }
-}
-
-
-function getJSON() {
-    const request = new XMLHttpRequest();
-    request.open('GET', 'irtree.json', false);
-    request.send(null);
-
-    if (request.status === 200) {
-        return request.responseText
-    } else {
-        throw new Error('Failed to load JSON');
     }
 }

@@ -1,5 +1,5 @@
-const template = document.createElement('template');
-template.innerHTML = `
+const templateCodeInsp = document.createElement('template');
+templateCodeInsp.innerHTML = `
   <link rel="stylesheet" href="libs/prism/prism.css"/>
   <style>
     pre {
@@ -48,16 +48,14 @@ class CodeInspector extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({mode: 'open'})
-            .appendChild(template.content.cloneNode(true));
+            .appendChild(templateCodeInsp.content.cloneNode(true));
 
         this._fileNode = '';
         this._sourceCode = '';
         this._units = [];
         this._hover = null;
         this._selected = null;
-    }
 
-    connectedCallback() {
         this.container = this.shadowRoot.getElementById('sourceContainer');
         this.codeEl = this.container.querySelector('code');
         this.tooltip = this.shadowRoot.getElementById('tooltip');
@@ -67,7 +65,7 @@ class CodeInspector extends HTMLElement {
         this.container.addEventListener('click', e => this._onClick(e));
     }
 
-    set fileNode(fileNode) {
+    setFileNode(fileNode) {
         if (this._fileNode !== fileNode) {
             if (fileNode == null) {
                 this._fileNode = fileNode;
@@ -80,16 +78,6 @@ class CodeInspector extends HTMLElement {
             }
             this._render();
         }
-    }
-
-    set sourceCode(code) {
-        this._sourceCode = code;
-        this._render();
-    }
-
-    set units(arr) {
-        this._units = arr;
-        this._render();
     }
 
     highlightUnit({start, end}) {

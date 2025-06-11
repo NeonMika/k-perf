@@ -1,12 +1,12 @@
 function markSelected(selectedNodeId) {
     const svg = document.getElementById("graph-container").querySelector("svg");
-    nodeGroup = getNodeByNodeId(selectedNodeId);
+    let nodeGroup = getNodeByNodeId(selectedNodeId);
     nodeGroup.classList.add("node-selected");
     svg.querySelectorAll(".node-selected").forEach(el => {
         const shape = el.querySelector("ellipse, polygon, path, rect");
         if (shape) {
             shape.setAttribute("stroke", "#FFE066");
-            shape.setAttribute("stroke-width", 5);
+            shape.setAttribute("stroke-width", String(5));
         }
     });
 }
@@ -18,7 +18,7 @@ function unmarkSelected() {
         const shape = el.querySelector("ellipse, polygon, path, rect");
         if (shape) {
             shape.setAttribute("stroke", "#000");
-            shape.setAttribute("stroke-width", 1);
+            shape.setAttribute("stroke-width", String(1));
         }
     });
 }
@@ -110,7 +110,7 @@ function setCodeInspector(nodeId) {
     const inspector = document.getElementById('inspector');
 
     if (!nodeId) {
-        inspector.fileNode = null;
+        inspector.setFileNode(null);
         return;
     }
 
@@ -118,14 +118,14 @@ function setCodeInspector(nodeId) {
 
     const fileNode = getFileNodeOfNode(nodeData);
     if (fileNode) {
-        inspector.fileNode = fileNode;
+        inspector.setFileNode(fileNode);
         if (!nodeData.intermediate) {
             inspector.highlightUnit({start: nodeData.StartOffset, end: nodeData.EndOffset});
         } else {
             inspector.highlightUnit({start: -1, end: -1})
         }
     } else {
-        inspector.fileNode = null;
+        inspector.setFileNode(null);
     }
 }
 
@@ -138,7 +138,7 @@ function removeAllDottedLines() {
 
 function getAllNodesWithFunctionIdentity(functionIdentity) {
     const nodes = [];
-    for (const [key, value] of Object.entries(nodeDict)) {
+    for (const [, value] of Object.entries(nodeDict)) {
         if (value.NodeName === "Function" || value.NodeName === "Call") {
             if (value.FunctionIdentity === functionIdentity) {
                 nodes.push(value);
@@ -171,7 +171,7 @@ function drawAllDottedLines(nodeGroup) {
             if (node.NodeName === "Call") {
                 const functionNode = getNodeByNodeId(node.nodeID)
                 if (functionNode) {
-                    const line = drawDottedLine(nodeGroup, functionNode, svg, nodeData.nodeID, node.nodeID);
+                    drawDottedLine(nodeGroup, functionNode, svg, nodeData.nodeID, node.nodeID);
                 }
             }
         }
@@ -192,10 +192,10 @@ function drawDottedLine(node1, node2, svg, nodeID1, nodeID2) {
 
     function getEdgeMidpoints(bbox) {
         return [
-            {x: bbox.x + bbox.width / 2, y: bbox.y},                    // Top
-            {x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height},        // Bottom
-            {x: bbox.x, y: bbox.y + bbox.height / 2},       // Left
-            {x: bbox.x + bbox.width, y: bbox.y + bbox.height / 2}        // Right
+            {x: bbox.x + bbox.width / 2, y: bbox.y},
+            {x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height},
+            {x: bbox.x, y: bbox.y + bbox.height / 2},
+            {x: bbox.x + bbox.width, y: bbox.y + bbox.height / 2}
         ];
     }
 
@@ -379,11 +379,6 @@ function zoomToNode(nodeId) {
     const bb = nodeG.getBBox();
     const cx = bb.x + bb.width / 2;
     const cy = bb.y + bb.height / 2;
-
-    const container = document.getElementById("graph-container");
-    const {width: Cw, height: Ch} = container.getBoundingClientRect();
-
-    const padding = 50;
 
     const graphG = svgSel.select('g');
     const graphBB = graphG.node().getBBox();

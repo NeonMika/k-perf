@@ -11,16 +11,24 @@ async function closeVisualizer(){
         if (!resp.ok) {
             const text = await resp.text();
             console.error("Server error:", text);
-            alert("Error continuing: " + resp.status);
+            alert("Server error: " + text);
             return;
         }
-
-        const msg = await resp.text();
-        console.log("Server says:", msg);
-
         close();
     } catch (err) {
         console.error("Network error:", err);
-        alert("Failed to connect to compiler-server.");
+        alert("Failed to close visualizer.");
+    }
+}
+
+function getJSON() {
+    const request = new XMLHttpRequest();
+    request.open('GET', 'irtree.json', false);
+    request.send(null);
+
+    if (request.status === 200) {
+        return request.responseText
+    } else {
+        alert('Failed to load JSON');
     }
 }

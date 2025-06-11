@@ -39,11 +39,11 @@
     <div id="filter-popup" class="filter-popup">
         <h3>Filter Nodes</h3>
         <div class="filter-row">
-            <select id="filter-type">
+            <select id="filter-type" aria-label="Filter Type">
                 <option value="NodeType">Node Type</option>
                 <option value="Name">Name</option>
             </select>
-            <input type="text" id="filter-value" placeholder="Filter value">
+            <input type="text" id="filter-value" placeholder="Filter value" aria-label="Filter Value">
         </div>
         <div class="filter-buttons">
             <button id="add-filter">Add Filter</button>
@@ -69,7 +69,7 @@
             <div id="selected-node-info">
                 <h3>Click on any node to see details here</h3>
             </div>
-            <button disabled="true" id="expandAllChildren">Expand All Children</button>
+            <button disabled="disabled" id="expandAllChildren">Expand All Children</button>
         </div>
     </div>
 </div>
@@ -131,17 +131,13 @@
                     const svg = container.querySelector("svg");
                     svg.dataset.originalViewBox = svg.getAttribute("viewBox");
 
-                    svg.addEventListener("contextmenu", function (event) {
-                        //event.preventDefault();
-                    });
-
                     addNodeClickHandlers(svg);
 
                     setUpDownloadButton(svg);
 
                     if (getNodeByNodeId(selectedNodeId)) {
                         markSelected(selectedNodeId);
-                        selectedNodeGroup = getNodeByNodeId(selectedNodeId);
+                        let selectedNodeGroup = getNodeByNodeId(selectedNodeId);
                         drawAllDottedLines(selectedNodeGroup)
                     } else {
                         clearSelection();
@@ -178,14 +174,13 @@
             graphvizInstance
                 .transition(function () {
                     return d3.transition()
-                        .duration(750)  // Duration of transition in milliseconds
+                        .duration(750)
                         .ease(d3.easeLinear);
                 })
-                .tweenShapes(true)      // Enable shape tweening
-                //s.tweenPrecision(20)
-                .tweenPaths(false)       // Enable path tweening
-                .convertEqualSidedPolygons(true)  // Helps with smoother transitions
-                .growEnteringEdges(true)  // Animate new edges growing
+                .tweenShapes(true)
+                .tweenPaths(false)
+                .convertEqualSidedPolygons(true)
+                .growEnteringEdges(true)
                 .renderDot(dotSource);
 
         } catch (error) {
@@ -259,7 +254,7 @@
     }
 
 
-    checkbox.addEventListener('change', function (event) {
+    checkbox.addEventListener('change', function () {
         const jsonString = getJSON();
         obj = JSON.parse(jsonString);
         if (checkbox.checked) {
@@ -272,7 +267,7 @@
         updateGraph();
     });
 
-    expandBtn.addEventListener('click', function (event) {
+    expandBtn.addEventListener('click', function () {
         expandAll(nodeDict[selectedNodeId]);
         updateGraph();
     });
@@ -380,7 +375,7 @@
     }
 
     function updateFilterCount() {
-        filterCount.textContent = activeFilters.length;
+        filterCount.textContent = String(activeFilters.length);
     }
 
     const inspector = document.getElementById('inspector');

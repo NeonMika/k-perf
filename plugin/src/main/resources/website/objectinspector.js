@@ -163,9 +163,7 @@ class ObjectInspector extends HTMLElement {
                     const info = document.createElement('span');
                     info.className = 'property-info visibility-' + prop.visibility;
 
-                    // Name and type
                     const prefix = document.createTextNode(`${prop.name} (${prop.visibility}) : ${prop.returnType}\t`);
-                    // Value span
                     const valueSpan = document.createElement('span');
                     valueSpan.className = 'property-value';
                     valueSpan.textContent = prop.value;
