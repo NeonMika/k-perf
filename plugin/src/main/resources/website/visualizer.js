@@ -84,7 +84,7 @@ function createDotSource(root) {
             if (Array.isArray(node.Children)) {
                 for (const child of node.Children) {
                     if (child.visible) {
-                        dotBuilder.push(`    ${node.nodeID} -> ${child.nodeID} [label="${child.Property}"];`);
+                        dotBuilder.push(`    ${node.nodeID} -> ${child.nodeID} [label="${child.Relationship}"];`);
                         traverse(child);
                     }
                 }
@@ -304,14 +304,14 @@ function groupArrays(tree) {
 
     while (i < processedChildren.length) {
         const first = processedChildren[i];
-        const prop = extractBeforeBracket(first.Property);
+        const prop = extractBeforeBracket(first.Relationship);
         const type = first.NodeName;
 
         const run = [first];
         let j = i + 1;
         while (
             j < processedChildren.length &&
-            extractBeforeBracket(processedChildren[j].Property) === prop &&
+            extractBeforeBracket(processedChildren[j].Relationship) === prop &&
             processedChildren[j].NodeName === type
             ) {
             run.push(processedChildren[j]);
@@ -327,7 +327,7 @@ function groupArrays(tree) {
                 Caption: "",
                 Dump: `Group of ${prop} (type=${type})`,
                 intermediate: true,
-                Property: prop + `[${extractArrayIndex(run[0].Property)}..${extractArrayIndex(run[run.length - 1].Property)}]`,
+                Relationship: prop + `[${extractArrayIndex(run[0].Relationship)}..${extractArrayIndex(run[run.length - 1].Relationship)}]`,
                 Type: type,
                 Children: run
             });

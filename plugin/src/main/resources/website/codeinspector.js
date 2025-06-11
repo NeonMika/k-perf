@@ -4,7 +4,7 @@ template.innerHTML = `
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.css"/>
   <style>
     pre {
-      margin: 0;
+      margin: 0 !important; 
       padding: 10px;
       border: 1px solid #ccc;
       background: #f5f5f5;

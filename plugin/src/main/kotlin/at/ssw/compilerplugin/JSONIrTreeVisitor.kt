@@ -398,7 +398,7 @@ class JSONIrTreeVisitor(
             if (endOffset != null) {
                 add("EndOffset", JsonPrimitive(endOffset))
             }
-            add("Property", JsonPrimitive(data.property))
+            add("Relationship", JsonPrimitive(data.property))
             add("ObjectIdentity", JsonPrimitive(System.identityHashCode(element)))
             add("Children", JsonArray().also { childrenArray ->
                 element.acceptChildren(object : IrElementVisitor<Unit, PassedData> {
