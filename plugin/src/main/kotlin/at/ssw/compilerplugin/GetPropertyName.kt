@@ -1,13 +1,15 @@
+package at.ssw.compilerplugin
+
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 
 fun Any.getPropertyName(target: Any): String? {
     for (prop in this::class.memberProperties) {
-        prop.isAccessible = true;
+        prop.isAccessible = true
 
         if (prop.getter.visibility != KVisibility.PUBLIC) {
-            prop.getter.isAccessible = true;
+            prop.getter.isAccessible = true
         }
 
         var value: Any?

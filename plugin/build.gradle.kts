@@ -29,6 +29,7 @@ dependencies {
     implementation("io.ktor:ktor-server-netty:3.1.3")
     implementation("io.ktor:ktor-server-content-negotiation:3.1.3")
     implementation("io.ktor:ktor-serialization-gson:3.1.3")
+    implementation("com.google.code.gson:gson:2.10.1")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     // The following does not support Kotlin 2.0 yet

@@ -1,34 +1,21 @@
-package org.jetbrains.kotlin.ir.util
+package at.ssw.compilerplugin
 
-import getPropertyName
-import org.gradle.internal.impldep.com.google.gson.JsonArray
-import org.gradle.internal.impldep.com.google.gson.JsonElement
-import org.gradle.internal.impldep.com.google.gson.JsonObject
-import org.gradle.internal.impldep.com.google.gson.JsonPrimitive
-import org.jetbrains.kotlin.backend.jvm.ir.hasChild
+import com.google.gson.*
 import org.jetbrains.kotlin.ir.IrElement
-import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
-import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
-import org.jetbrains.kotlin.ir.IrFileEntry
-import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
-import org.jetbrains.kotlin.ir.backend.js.utils.asString
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
-import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
-import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
-import org.jetbrains.kotlin.psi
-import org.jetbrains.kotlin.psi.psiUtil.startOffset
-import org.jetbrains.kotlin.utils.Printer
+import org.jetbrains.kotlin.ir.util.DumpIrTreeOptions
+import org.jetbrains.kotlin.ir.util.RenderIrElementVisitor
+import org.jetbrains.kotlin.ir.util.render
+import org.jetbrains.kotlin.ir.util.sourceElement
+import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 import java.io.File
-import kotlin.reflect.full.memberProperties
 
 data class PassedData(val property: String, val map: MutableMap<Int, Any>)
 
 class JSONIrTreeVisitor(
-    private val options: DumpIrTreeOptions = DumpIrTreeOptions()
+    options: DumpIrTreeOptions = DumpIrTreeOptions()
 ) : IrElementVisitor<JsonElement, PassedData> {
 
     private val renderVisitor = RenderIrElementVisitor(options)
@@ -158,6 +145,7 @@ class JSONIrTreeVisitor(
         return jsonObj
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitConstructor(declaration: IrConstructor, data: PassedData): JsonElement {
         val caption = declaration.name.toString()
         val jsonObj = jsonWithDefault("Constructor", caption, declaration, data)
@@ -199,6 +187,7 @@ class JSONIrTreeVisitor(
         return jsonObj
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitGetField(expression: IrGetField, data: PassedData): JsonElement {
         val caption = expression.symbol.owner.name.asString()
         val jsonObj = jsonWithDefault("Get Field", caption, expression, data)
@@ -296,17 +285,20 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("Return", caption, expression, data)
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitConstructorCall(expression: IrConstructorCall, data: PassedData): JsonElement {
         val jsonObj = jsonWithDefault("Call", expression.symbol.owner.name.asString(), expression, data)
 
         return jsonObj
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitDelegatingConstructorCall(expression: IrDelegatingConstructorCall, data: PassedData): JsonElement {
         val caption = expression.symbol.owner.name.asString()
         return jsonWithDefault("DelegatingConstructorCall", caption, expression, data)
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitEnumConstructorCall(expression: IrEnumConstructorCall, data: PassedData): JsonElement {
         val caption = expression.symbol.owner.name.asString()
         return jsonWithDefault("EnumConstructorCall", caption, expression, data)
@@ -317,11 +309,13 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("InstanceInitializerCall", caption, expression, data)
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitSetValue(expression: IrSetValue, data: PassedData): JsonElement {
         val caption = "var: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
         return jsonWithDefault("SetValue", caption, expression, data)
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitSetField(expression: IrSetField, data: PassedData): JsonElement {
         val captionBuilder = StringBuilder()
         captionBuilder.append("field: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}")
@@ -332,11 +326,13 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("SetField", captionBuilder.toString(), expression, data)
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitGetObjectValue(expression: IrGetObjectValue, data: PassedData): JsonElement {
         val caption = "object: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
         return jsonWithDefault("GetObjectValue", caption, expression, data)
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitGetEnumValue(expression: IrGetEnumValue, data: PassedData): JsonElement {
         val caption = "enum: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
         return jsonWithDefault("GetEnumValue", caption, expression, data)
@@ -362,6 +358,7 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("Throw", caption, expression, data)
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitFunctionReference(expression: IrFunctionReference, data: PassedData): JsonElement {
         val caption =
             "symbol: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}, origin: ${expression.origin}, reflectionTarget: ${
@@ -370,12 +367,14 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("FunctionReference", caption, expression, data)
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitRawFunctionReference(expression: IrRawFunctionReference, data: PassedData): JsonElement {
         val caption = "symbol: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
         return jsonWithDefault("RawFunctionReference", caption, expression, data)
     }
 
     // Helper used by visitFunctionReference.
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun renderReflectionTarget(expression: IrFunctionReference): String =
         if (expression.symbol == expression.reflectionTarget)
             "<same>"
@@ -383,15 +382,15 @@ class JSONIrTreeVisitor(
             expression.reflectionTarget?.owner?.name?.asString() ?: ""
 
 
-    fun jsonWithDefault(typeName: String, caption: String, element: IrElement, data: PassedData): JsonObject {
-        data.map[System.identityHashCode(element)]=element
+    private fun jsonWithDefault(typeName: String, caption: String, irElement: IrElement, data: PassedData): JsonObject {
+        data.map[System.identityHashCode(irElement)]=irElement
         val jsonObj = JsonObject().apply {
-            add("NodeType", JsonPrimitive(element::class.simpleName))
+            add("NodeType", JsonPrimitive(irElement::class.simpleName))
             add("NodeName", JsonPrimitive(typeName))
             add("Caption", JsonPrimitive(caption))
-            add("Dump", JsonPrimitive(element.accept(renderVisitor, null)))
-            val startOffset = element.sourceElement()?.startOffset;
-            val endOffset = element.sourceElement()?.endOffset
+            add("Dump", JsonPrimitive(irElement.accept(renderVisitor, null)))
+            val startOffset = irElement.sourceElement()?.startOffset
+            val endOffset = irElement.sourceElement()?.endOffset
             if (startOffset != null) {
                 add("StartOffset", JsonPrimitive(startOffset))
             }
@@ -399,12 +398,12 @@ class JSONIrTreeVisitor(
                 add("EndOffset", JsonPrimitive(endOffset))
             }
             add("Relationship", JsonPrimitive(data.property))
-            add("ObjectIdentity", JsonPrimitive(System.identityHashCode(element)))
+            add("ObjectIdentity", JsonPrimitive(System.identityHashCode(irElement)))
             add("Children", JsonArray().also { childrenArray ->
-                element.acceptChildren(object : IrElementVisitor<Unit, PassedData> {
-                    override fun visitElement(child: IrElement, data: PassedData) {
-                        val property: String = element.getPropertyName(child) ?: "Not found";
-                        childrenArray.add(child.accept(this@JSONIrTreeVisitor, PassedData(property, data.map)))
+                irElement.acceptChildren(object : IrElementVisitor<Unit, PassedData> {
+                    override fun visitElement(element: IrElement, data: PassedData) {
+                        val property: String = irElement.getPropertyName(element) ?: "Not found"
+                        childrenArray.add(element.accept(this@JSONIrTreeVisitor, PassedData(property, data.map)))
                     }
                 }, PassedData("", data.map))
             })
