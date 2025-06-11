@@ -1,7 +1,6 @@
 const template = document.createElement('template');
 template.innerHTML = `
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.css"/>
+  <link rel="stylesheet" href="libs/prism/prism.css"/>
   <style>
     pre {
       margin: 0 !important; 
