@@ -43,6 +43,9 @@ function createDotSource(root) {
                 ?.replace(/</g, "&lt;")
                 ?.replace(/>/g, "&gt;");
         }
+        function truncate(str, maxLength) {
+            return str.length > maxLength ? str.slice(0, maxLength) + "..." : str;
+        }
 
         const typeName = node.NodeName || "";
         const caption = node.Caption || "";
@@ -67,7 +70,7 @@ function createDotSource(root) {
         }
 
         if (node.NodeType === "IrConstImpl" && !node.intermediate) {
-            label += `<BR/><FONT FACE="Courier New" >${escapeDotSymbols(node.Value)}</FONT>`;
+            label += `<BR/><FONT FACE="Courier New" >${truncate(escapeDotSymbols(node.Value), 30)}</FONT>`;
         }
 
         if (hasInvisibleChild(node)) {

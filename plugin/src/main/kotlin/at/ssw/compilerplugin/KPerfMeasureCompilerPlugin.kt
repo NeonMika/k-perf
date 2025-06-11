@@ -11,6 +11,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.compiler.plugin.*
@@ -100,7 +101,7 @@ class PerfMeasureExtension2 : IrGenerationExtension {
 
         val continueLatch = CountDownLatch(1)
 
-        val server = embeddedServer(Netty, port = 8080) {
+        val server = embeddedServer(Netty, port=0) {
             install(ContentNegotiation) {
                 gson {
                 }
@@ -138,14 +139,34 @@ class PerfMeasureExtension2 : IrGenerationExtension {
         }
 
         server.start(wait = false)
-
-        val url = URI("http://localhost:8080/visualizer.html")
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            Desktop.getDesktop().browse(url)
+        val port = runBlocking {
+            server.engine.resolvedConnectors().first().port
         }
+        val url = URI("http://localhost:$port/visualizer.html")
+
+        openBrowser(url)
+        println(url)
 
         continueLatch.await()
 
         server.stop(0, 0, TimeUnit.MILLISECONDS)
+    }
+
+    private fun openBrowser(url: URI){
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            Desktop.getDesktop().browse(url)
+        }else {
+            val os = System.getProperty("os.name").lowercase()
+            val command = when {
+                os.contains("win") -> listOf("rundll32", "url.dll,FileProtocolHandler", url.toString())
+                os.contains("mac") -> listOf("open", url.toString())
+                os.contains("nix") || os.contains("nux") || os.contains("aix") -> listOf("xdg-open", url.toString())
+                else -> throw UnsupportedOperationException("Unsupported OS: $os")
+            }
+            try {
+                ProcessBuilder(command).start()
+            } catch (_: Exception) {
+            }
+        }
     }
 }

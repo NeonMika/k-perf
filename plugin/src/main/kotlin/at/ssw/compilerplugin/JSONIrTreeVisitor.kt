@@ -39,7 +39,7 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         val jsonObj = jsonWithDefault("File", caption, declaration, data)
         jsonObj.add("Name", JsonPrimitive(declaration.name))
         jsonObj.add("Path", JsonPrimitive(declaration.path))
-        jsonObj.add("Content", JsonPrimitive(File(declaration.path).readText()))
+        jsonObj.add("Content", JsonPrimitive(File(declaration.path).readText().replace("\r\n", "\n").replace("\r", "\n")))
         return jsonObj
     }
 
