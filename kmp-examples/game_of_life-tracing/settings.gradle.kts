@@ -1,4 +1,4 @@
-// needed so that the k-perf-measure-plugin plugin can be used in this project from mavenLocal
+// needed so that the k-ir-visualizer-plugin plugin can be used in this project from mavenLocal
 pluginManagement {
     repositories {
         mavenLocal() // Add this line to include mavenLocal()

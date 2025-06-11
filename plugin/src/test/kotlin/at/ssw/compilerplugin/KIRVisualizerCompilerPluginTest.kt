@@ -1,4 +1,4 @@
-import at.ssw.compilerplugin.PerfMeasureComponentRegistrar
+import at.ssw.compilerplugin.IRVisualizerComponentRegistrar
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class KPerfMeasureCompilerPluginTest {
+class KIRVisualizerCompilerPluginTest {
     @OptIn(ExperimentalCompilerApi::class)
     @Test
     fun `plugin success`() {
@@ -422,7 +422,7 @@ fun main() {
     @OptIn(ExperimentalCompilerApi::class)
     fun compile(
         sourceFiles: List<SourceFile>,
-        compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrar(),
+        compilerPluginRegistrar: CompilerPluginRegistrar = IRVisualizerComponentRegistrar(),
     ): JvmCompilationResult {
         return KotlinCompilation().apply {
             // To have access to kotlinx.io
@@ -437,7 +437,7 @@ fun main() {
     @OptIn(ExperimentalCompilerApi::class)
     fun compile(
         sourceFile: SourceFile,
-        compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrar(),
+        compilerPluginRegistrar: CompilerPluginRegistrar = IRVisualizerComponentRegistrar(),
     ) = compile(listOf(sourceFile), compilerPluginRegistrar)
 }
 

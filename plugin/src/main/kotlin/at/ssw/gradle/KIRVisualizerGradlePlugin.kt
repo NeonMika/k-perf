@@ -6,18 +6,18 @@ import org.jetbrains.kotlin.gradle.plugin.*
 
 
 // KotlinCompilerPluginSupportPlugin inherits from Plugin<Project>
-class KPerfMeasureGradlePlugin : KotlinCompilerPluginSupportPlugin {
+class KIRVisualizerGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
 
     override fun apply(target: Project) {
         // Could be overridden
         super.apply(target)
 
-        println("KPerfMeasureGradlePlugin - apply")
+        println("KIRVisualizerGradlePlugin - apply")
 
-        target.tasks.register("kPerfMeasureInfo") {
+        target.tasks.register("KIRVisualizerInfo") {
             doLast {
-                println("KPerfMeasureGradlePlugin - kPerfMeasureInfo")
+                println("KIRVisualizerGradlePlugin - KIRVisualizerInfo")
             }
         }
     }
@@ -25,14 +25,14 @@ class KPerfMeasureGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun applyToCompilation(
         kotlinCompilation: KotlinCompilation<*>
     ): Provider<List<SubpluginOption>> {
-        println("KPerfMeasureGradlePlugin - applyToCompilation (${kotlinCompilation.name})")
+        println("KIRVisualizerGradlePlugin - applyToCompilation (${kotlinCompilation.name})")
 
         return kotlinCompilation.target.project.provider {
             // internally the parameters defined in applyToCompilation are passed as
             // "-P plugin:<compilerPluginId>:<key>=<value>" on the command line
             // TODO: Extract options from build file
             // Something like:
-            // k-perf-measure {
+            // k-ir-visualizer {
             //   enabled = true
             //   ...
             // }
@@ -47,11 +47,11 @@ class KPerfMeasureGradlePlugin : KotlinCompilerPluginSupportPlugin {
     // internally the parameters defined in applyToCompilation are passed as
     // "-P plugin:<compilerPluginId>:<key>=<value>" on the command line
     override fun getCompilerPluginId(): String {
-        return "k-perf-measure-compiler-plugin"
+        return "k-ir-visualizer-compiler-plugin"
     }
 
     // the name of the project that contains the compiler plugin
     // this will be looked up on maven
     override fun getPluginArtifact(): SubpluginArtifact =
-        SubpluginArtifact(groupId = "at.ssw", artifactId = "k-perf-measure", version = "0.0.2")
+        SubpluginArtifact(groupId = "at.ssw", artifactId = "k-ir-visualizer", version = "0.0.2")
 }

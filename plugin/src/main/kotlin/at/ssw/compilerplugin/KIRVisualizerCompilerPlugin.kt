@@ -34,11 +34,11 @@ Commandline processor to process options.
 This is the entry point for the compiler plugin.
 It is found via a ServiceLoader.
 Thus, we need an entry in META-INF/services/org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
-that reads at.ssw.compilerplugin.KPerfMeasureCommandLineProcessor
+that reads at.ssw.compilerplugin.KIRVisualizerCommandLineProcessor
  */
 @OptIn(ExperimentalCompilerApi::class)
-class KPerfMeasureCommandLineProcessor : CommandLineProcessor {
-    override val pluginId: String = "k-perf-measure-compiler-plugin"
+class KIRVisualizerCommandLineProcessor : CommandLineProcessor {
+    override val pluginId: String = "k-ir-visualizer-compiler-plugin"
     override val pluginOptions: Collection<CliOption> = listOf(
         CliOption(
             "enabled",
@@ -48,7 +48,7 @@ class KPerfMeasureCommandLineProcessor : CommandLineProcessor {
     )
 
     init {
-        println("KPerfMeasureCommandLineProcessor - init")
+        println("KIRVisualizerCommandLineProcessor - init")
     }
 
     override fun processOption(
@@ -56,11 +56,11 @@ class KPerfMeasureCommandLineProcessor : CommandLineProcessor {
         value: String,
         configuration: CompilerConfiguration
     ) {
-        println("KPerfMeasureCommandLineProcessor - processOption ($option, $value)")
+        println("KIRVisualizerCommandLineProcessor - processOption ($option, $value)")
         when (option.optionName) {
             "enabled" -> configuration.put(KEY_ENABLED, value.toBoolean())
 
-            else -> throw CliOptionProcessingException("KPerfMeasureCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
+            else -> throw CliOptionProcessingException("KIRVisualizerCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
         }
     }
 }
@@ -69,14 +69,14 @@ class KPerfMeasureCommandLineProcessor : CommandLineProcessor {
 Registrar to register all registrars.
 It is found via a ServiceLoader.
 Thus, we need an entry in META-INF/services/org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
-that reads at.ssw.compilerplugin.PerfMeasureComponentRegistrar
+that reads at.ssw.compilerplugin.IRVisualizerComponentRegistrar
  */
 @OptIn(ExperimentalCompilerApi::class)
-class PerfMeasureComponentRegistrar : CompilerPluginRegistrar() {
+class IRVisualizerComponentRegistrar : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
 
     init {
-        println("PerfMeasureComponentRegistrar - init")
+        println("IRVisualizerComponentRegistrar - init")
     }
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
@@ -85,14 +85,14 @@ class PerfMeasureComponentRegistrar : CompilerPluginRegistrar() {
         }
 
         // Backend plugin
-        IrGenerationExtension.registerExtension(PerfMeasureExtension2())
+        IrGenerationExtension.registerExtension(IRVisualizeExtension())
     }
 }
 
 /*
 Backend plugin
  */
-class PerfMeasureExtension2 : IrGenerationExtension {
+class IRVisualizeExtension : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val objects = ConcurrentHashMap<Int, Any>()

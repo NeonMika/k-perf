@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "at.ssw"
-version = "0.0.2"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
@@ -57,9 +57,9 @@ project.extra.properties.forEach { (key, value) -> println("- $key: $value")  }
 
 gradlePlugin {
     plugins {
-        create("kPerfMeasure") {
-            id = "at.ssw.k-perf-measure-plugin" // to use this plugin later in other projects we will use plugins { id("at.ssw.k-perf-measure") }
-            implementationClass = "at.ssw.gradle.KPerfMeasureGradlePlugin"
+        create("kIRVisualizer") {
+            id = "at.ssw.k-ir-visualizer-plugin" // to use this plugin later in other projects we will use plugins { id("at.ssw.k-ir-visualize") }
+            implementationClass = "at.ssw.gradle.KIRVisualizerGradlePlugin"
         }
     }
 }
