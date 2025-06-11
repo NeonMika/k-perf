@@ -7,6 +7,8 @@ plugins {
     `kotlin-dsl` // To be able to use Kotlin when developing the Plugin<Project> class
 
     `maven-publish` // the generated plugin will be published to mavenLocal
+
+    id("com.gradleup.shadow") version "8.3.6"
 }
 
 group = "at.ssw"
@@ -40,6 +42,10 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.shadowJar {
+    isZip64 = true
 }
 
 /*

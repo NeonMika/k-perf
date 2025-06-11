@@ -5,7 +5,6 @@ import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.util.DumpIrTreeOptions
 import org.jetbrains.kotlin.ir.util.RenderIrElementVisitor
 import org.jetbrains.kotlin.ir.util.render
 import org.jetbrains.kotlin.ir.util.sourceElement
@@ -14,11 +13,9 @@ import java.io.File
 
 data class PassedData(val property: String, val map: MutableMap<Int, Any>)
 
-class JSONIrTreeVisitor(
-    options: DumpIrTreeOptions = DumpIrTreeOptions()
-) : IrElementVisitor<JsonElement, PassedData> {
+class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
 
-    private val renderVisitor = RenderIrElementVisitor(options)
+    private val renderVisitor = RenderIrElementVisitor()
 
     override fun visitElement(element: IrElement, data: PassedData): JsonElement {
         var caption = ""
@@ -228,8 +225,6 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("Script", "Script", declaration, data)
     }
 
-// (Helper renderValueParameterTypes() is used only for string-based rendering so we omit it in JSON mode)
-
     override fun visitVariable(declaration: IrVariable, data: PassedData): JsonElement {
         // Assuming normalizedName(variableNameData) gives a proper name string.
         val caption = declaration.name.asString()
@@ -373,7 +368,6 @@ class JSONIrTreeVisitor(
         return jsonWithDefault("RawFunctionReference", caption, expression, data)
     }
 
-    // Helper used by visitFunctionReference.
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun renderReflectionTarget(expression: IrFunctionReference): String =
         if (expression.symbol == expression.reflectionTarget)

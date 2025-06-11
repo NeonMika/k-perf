@@ -38,7 +38,6 @@ class KPerfMeasureGradlePlugin : KotlinCompilerPluginSupportPlugin {
             // }
             listOf(
                 SubpluginOption("enabled", "true"),
-                SubpluginOption("annotation", "at.ssw.Measure")
             )
         }
     }

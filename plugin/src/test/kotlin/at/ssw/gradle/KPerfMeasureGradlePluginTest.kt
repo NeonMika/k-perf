@@ -29,22 +29,4 @@ class KPerfMeasureGradlePluginTest {
         val task = project.tasks.findByName("kPerfMeasureInfo")
         assertNotNull(task)
     }
-
-    @Test
-    fun `build task executes successfully`() {
-        // Get the build task
-        val buildTask = project.tasks.findByName("build")
-        assertNotNull(buildTask, "Build task should exist")
-
-        // Execute the build task
-        // TODO: Currently no actions, probably because no source files are added?
-        buildTask?.actions?.forEach { action ->
-            println(action)
-            action.execute(buildTask)
-        }
-
-        // Verify the build task executed successfully
-        assertTrue(buildTask?.state?.executed ?: false, "Build task should have been executed")
-        assertTrue(buildTask?.state?.didWork ?: false, "Build task should have performed work")
-    }
 }

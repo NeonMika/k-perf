@@ -1,7 +1,6 @@
 package at.ssw.compilerplugin
 
 import at.ssw.compilerplugin.ExampleConfigurationKeys.KEY_ENABLED
-import at.ssw.compilerplugin.ExampleConfigurationKeys.LOG_ANNOTATION_KEY
 import com.google.gson.GsonBuilder
 import io.ktor.http.*
 import io.ktor.serialization.gson.*
@@ -27,8 +26,6 @@ import java.util.concurrent.TimeUnit
 
 object ExampleConfigurationKeys {
     val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled")
-    val LOG_ANNOTATION_KEY: CompilerConfigurationKey<MutableList<String>> =
-        CompilerConfigurationKey.create("measure annotation")
 }
 
 /*
@@ -46,13 +43,6 @@ class KPerfMeasureCommandLineProcessor : CommandLineProcessor {
             "enabled",
             "<true|false>",
             "whether plugin is enabled"
-        ),
-        CliOption(
-            "annotation",
-            "<fully qualified annotation name>",
-            "methods that are annotated with this name will be measured",
-            required = true,
-            allowMultipleOccurrences = true
         )
     )
 
@@ -68,9 +58,6 @@ class KPerfMeasureCommandLineProcessor : CommandLineProcessor {
         println("KPerfMeasureCommandLineProcessor - processOption ($option, $value)")
         when (option.optionName) {
             "enabled" -> configuration.put(KEY_ENABLED, value.toBoolean())
-            "annotation" -> {
-                configuration.putIfAbsent(LOG_ANNOTATION_KEY, mutableListOf()).add(value)
-            }
 
             else -> throw CliOptionProcessingException("KPerfMeasureCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
         }
