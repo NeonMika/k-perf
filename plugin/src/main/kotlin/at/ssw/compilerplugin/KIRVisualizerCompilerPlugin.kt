@@ -95,12 +95,13 @@ class IRVisualizeExtension : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val objects: MutableList<Any> = ArrayList()
-        val jsonTree = moduleFragment.accept(JSONIrTreeVisitor(), PassedData("",objects))
+        val functionOwners: MutableMap<Any, Int> = HashMap()
+        val jsonTree = moduleFragment.accept(JSONIrTreeVisitor(), PassedData("", objects, functionOwners))
         val jsonString = GsonBuilder().setPrettyPrinting().create().toJson(jsonTree)
 
         val continueLatch = CountDownLatch(1)
 
-        val server = embeddedServer(Netty, port=0) {
+        val server = embeddedServer(Netty, port = 0) {
             install(ContentNegotiation) {
                 gson {
                 }
@@ -121,18 +122,18 @@ class IRVisualizeExtension : IrGenerationExtension {
                 }
 
                 get("/inspect") {
-                    try{
+                    try {
                         val idParam = call.request.queryParameters["id"]?.toIntOrNull()
                             ?: return@get call.respond(HttpStatusCode.BadRequest, "No object id provided")
 
-                        if(idParam in objects.indices){
+                        if (idParam in objects.indices) {
                             val target = objects[idParam]
                             val props = inspectProperties(target, objects)
                             call.respond(props)
-                        }else{
+                        } else {
                             return@get call.respond(HttpStatusCode.BadRequest, "Unknown object id: $idParam")
                         }
-                    }catch (e: Exception){
+                    } catch (e: Exception) {
                         call.respond(HttpStatusCode.BadRequest, "Unknown backend error occurred")
                     }
 
@@ -154,10 +155,10 @@ class IRVisualizeExtension : IrGenerationExtension {
         server.stop(0, 0, TimeUnit.MILLISECONDS)
     }
 
-    private fun openBrowser(url: URI){
+    private fun openBrowser(url: URI) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             Desktop.getDesktop().browse(url)
-        }else {
+        } else {
             val os = System.getProperty("os.name").lowercase()
             val command = when {
                 os.contains("win") -> listOf("rundll32", "url.dll,FileProtocolHandler", url.toString())

@@ -11,7 +11,16 @@ import org.jetbrains.kotlin.ir.util.sourceElement
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 import java.io.File
 
-data class PassedData(val property: String, val objects: MutableList<Any>)
+data class PassedData(val property: String, val objects: MutableList<Any>, val functionOwners: MutableMap<Any, Int>) {
+    fun getFunctionId(owner: Any): Int {
+        var id = functionOwners[owner]
+        if (id == null) {
+            id = functionOwners.size
+            functionOwners[owner] = id
+        }
+        return id
+    }
+}
 
 class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
 
@@ -39,7 +48,10 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         val jsonObj = jsonWithDefault("File", caption, declaration, data)
         jsonObj.add("Name", JsonPrimitive(declaration.name))
         jsonObj.add("Path", JsonPrimitive(declaration.path))
-        jsonObj.add("Content", JsonPrimitive(File(declaration.path).readText().replace("\r\n", "\n").replace("\r", "\n")))
+        jsonObj.add(
+            "Content",
+            JsonPrimitive(File(declaration.path).readText().replace("\r\n", "\n").replace("\r", "\n"))
+        )
         return jsonObj
     }
 
@@ -51,7 +63,7 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
         jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
         jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
-        jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(declaration.symbol.owner)))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(data.getFunctionId(declaration.symbol.owner)))
         jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
         return jsonObj
     }
@@ -66,7 +78,7 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         val jsonObj = jsonWithDefault("Call", caption, expression, data)
         jsonObj.add("FunctionName", JsonPrimitive(expression.symbol.owner.name.asString()))
         jsonObj.add("ReturnType", JsonPrimitive(expression.type.render()))
-        jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(expression.symbol.owner)))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(data.getFunctionId(expression.symbol.owner)))
         jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
         jsonObj.add("Name", JsonPrimitive(expression.symbol.owner.name.asString()))
         return jsonObj
@@ -149,7 +161,7 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
         jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
         jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
-        jsonObj.add("FunctionIdentity", JsonPrimitive(System.identityHashCode(declaration.symbol.owner)))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(data.getFunctionId(declaration.symbol.owner)))
         jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
         return jsonObj
     }
@@ -288,7 +300,10 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitDelegatingConstructorCall(expression: IrDelegatingConstructorCall, data: PassedData): JsonElement {
+    override fun visitDelegatingConstructorCall(
+        expression: IrDelegatingConstructorCall,
+        data: PassedData
+    ): JsonElement {
         val caption = expression.symbol.owner.name.asString()
         return jsonWithDefault("DelegatingConstructorCall", caption, expression, data)
     }
@@ -392,14 +407,19 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
                 add("EndOffset", JsonPrimitive(endOffset))
             }
             add("Relationship", JsonPrimitive(data.property))
-            add("ObjectIdentity", JsonPrimitive(data.objects.size-1))
+            add("ObjectIdentity", JsonPrimitive(data.objects.size - 1))
             add("Children", JsonArray().also { childrenArray ->
                 irElement.acceptChildren(object : IrElementVisitor<Unit, PassedData> {
                     override fun visitElement(element: IrElement, data: PassedData) {
                         val property: String = irElement.getPropertyName(element) ?: "Not found"
-                        childrenArray.add(element.accept(this@JSONIrTreeVisitor, PassedData(property, data.objects)))
+                        childrenArray.add(
+                            element.accept(
+                                this@JSONIrTreeVisitor,
+                                PassedData(property, data.objects, data.functionOwners)
+                            )
+                        )
                     }
-                }, PassedData("", data.objects))
+                }, PassedData("", data.objects, data.functionOwners))
             })
         }
         return jsonObj
