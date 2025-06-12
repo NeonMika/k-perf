@@ -56,8 +56,10 @@ function createDotSource(root) {
             dotBuilder.push(`subgraph cluster_${node.nodeID} {
                             style="filled,rounded";
                             color="grey";
-                            margin=25;
-                            fillcolor="${clusterColor}"`);
+                            margin=25;`);
+            if(!node.intermediate){
+                dotBuilder.push(`fillcolor="${clusterColor}"`);
+            }
         }
 
         // noinspection XmlDeprecatedElement,HtmlDeprecatedTag,HtmlUnknownAttribute
