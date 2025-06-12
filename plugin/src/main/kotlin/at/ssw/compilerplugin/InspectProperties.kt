@@ -12,7 +12,7 @@ data class PropertyInfo(
     val value: String
 )
 
-fun inspectProperties(obj: Any, map: MutableMap<Int, Any>): List<PropertyInfo> =
+fun inspectProperties(obj: Any, objects: MutableList<Any>): List<PropertyInfo> =
     obj::class.memberProperties.map { prop ->
         prop.isAccessible = true
 
@@ -31,16 +31,15 @@ fun inspectProperties(obj: Any, map: MutableMap<Int, Any>): List<PropertyInfo> =
             null
         }
 
-        val childId = System.identityHashCode(value)
         if(value!=null){
-            map[childId]=value
+            objects.add(value)
         }
 
         PropertyInfo(
             name = prop.name,
             visibility = vis,
             returnType = typeStr,
-            id = childId,
+            id = objects.size-1,
             value = value.toString()
         )
     }

@@ -20,7 +20,6 @@ import org.jetbrains.kotlin.config.CompilerConfigurationKey
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import java.awt.Desktop
 import java.net.URI
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -95,7 +94,7 @@ Backend plugin
 class IRVisualizeExtension : IrGenerationExtension {
 
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        val objects = ConcurrentHashMap<Int, Any>()
+        val objects: MutableList<Any> = ArrayList()
         val jsonTree = moduleFragment.accept(JSONIrTreeVisitor(), PassedData("",objects))
         val jsonString = GsonBuilder().setPrettyPrinting().create().toJson(jsonTree)
 
@@ -126,10 +125,13 @@ class IRVisualizeExtension : IrGenerationExtension {
                         val idParam = call.request.queryParameters["id"]?.toIntOrNull()
                             ?: return@get call.respond(HttpStatusCode.BadRequest, "No object id provided")
 
-                        val target = objects[idParam] ?: return@get call.respond(HttpStatusCode.BadRequest, "Unknown object id: $idParam")
-
-                        val props = inspectProperties(target, objects)
-                        call.respond(props)
+                        if(idParam in objects.indices){
+                            val target = objects[idParam]
+                            val props = inspectProperties(target, objects)
+                            call.respond(props)
+                        }else{
+                            return@get call.respond(HttpStatusCode.BadRequest, "Unknown object id: $idParam")
+                        }
                     }catch (e: Exception){
                         call.respond(HttpStatusCode.BadRequest, "Unknown backend error occurred")
                     }

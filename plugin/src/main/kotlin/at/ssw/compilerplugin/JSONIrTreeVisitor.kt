@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.ir.util.sourceElement
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 import java.io.File
 
-data class PassedData(val property: String, val map: MutableMap<Int, Any>)
+data class PassedData(val property: String, val objects: MutableList<Any>)
 
 class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
 
@@ -377,7 +377,7 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
 
 
     private fun jsonWithDefault(typeName: String, caption: String, irElement: IrElement, data: PassedData): JsonObject {
-        data.map[System.identityHashCode(irElement)]=irElement
+        data.objects.add(irElement)
         val jsonObj = JsonObject().apply {
             add("NodeType", JsonPrimitive(irElement::class.simpleName))
             add("NodeName", JsonPrimitive(typeName))
@@ -392,14 +392,14 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
                 add("EndOffset", JsonPrimitive(endOffset))
             }
             add("Relationship", JsonPrimitive(data.property))
-            add("ObjectIdentity", JsonPrimitive(System.identityHashCode(irElement)))
+            add("ObjectIdentity", JsonPrimitive(data.objects.size-1))
             add("Children", JsonArray().also { childrenArray ->
                 irElement.acceptChildren(object : IrElementVisitor<Unit, PassedData> {
                     override fun visitElement(element: IrElement, data: PassedData) {
                         val property: String = irElement.getPropertyName(element) ?: "Not found"
-                        childrenArray.add(element.accept(this@JSONIrTreeVisitor, PassedData(property, data.map)))
+                        childrenArray.add(element.accept(this@JSONIrTreeVisitor, PassedData(property, data.objects)))
                     }
-                }, PassedData("", data.map))
+                }, PassedData("", data.objects))
             })
         }
         return jsonObj
