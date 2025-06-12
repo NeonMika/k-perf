@@ -9,8 +9,11 @@ templateObjInsp.innerHTML = `
       justify-content: center;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.4s ease;
       z-index: 1000;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
     }
     :host(.open) {
       pointer-events: auto;
@@ -18,33 +21,29 @@ templateObjInsp.innerHTML = `
     }
     #modalContent {
       width: 70%;
-      height: 80%;
+      height: 90vh;
       background: #ffffff;
-      border-radius: 8px;
+      border-radius: 1rem;
       padding: 1.5em;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
       display: flex;
       flex-direction: column;
-      font-family: 'Roboto', sans-serif;
       color: #333333
+      font-family: Arial, sans-serif;
     }
     #header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1em;
-    }
-    #header h2 {
-      margin: 0;
-      font-weight: 500;
-      color: #4CAF50;
+      height: 60px;
     }
     #closeBtn {
       background: transparent;
       border: none;
-      font-size: 1.2rem;
+      font-size: 1.5rem;
       cursor: pointer;
-      color: #333333;
+      color: #666;
       transition: color 0.2s ease;
     }
     #closeBtn:hover { color: #f44336; }
@@ -69,6 +68,11 @@ templateObjInsp.innerHTML = `
     .row{
       display: flex;
       flex-direction: row;
+      font-family: inherit;
+    }
+    .row h1 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
     }
     .property-item {
       position: relative;
@@ -117,9 +121,9 @@ templateObjInsp.innerHTML = `
 
   <div id="modalContent">
     <div id="header">
-      <pre class="row"><h2>Object Inspector - </h2><h2 id="title"></h2></pre>
+      <pre class="row"><h1>Object Inspector - </h1><h1 id="title"></h1></pre>
 
-      <button id="closeBtn">✕</button>
+      <button id="closeBtn">×</button>
     </div>
     <div id="tree"></div>
   </div>
