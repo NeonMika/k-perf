@@ -25,6 +25,9 @@ function unmarkSelected() {
 
 function setInfoDiv(nodeId) {
     const infoDiv = document.getElementById("selected-node-info");
+    const leftCol = document.getElementById("leftCol");
+
+    leftCol.querySelectorAll('.optional').forEach(el => el.remove());
 
     if (!nodeId) {
         infoDiv.innerHTML = "<h3>Click on any node to see details here</h3>";
@@ -61,6 +64,7 @@ function setInfoDiv(nodeId) {
     if (!nodeData.intermediate) {
         const sourcecodeButton = document.createElement("button");
         sourcecodeButton.textContent = "Show Sourcecode";
+        sourcecodeButton.className = "optional";
         sourcecodeButton.onclick = () => {
             const popup = document.getElementById('fullscreen-popup');
             popup.classList.add('active');
@@ -69,20 +73,22 @@ function setInfoDiv(nodeId) {
             const codeParagraph = popup.querySelector("#codeParagraph");
             codeParagraph.textContent = getSourceCodeOfNode(nodeData) ?? 'Source Code not found';
         };
-        infoDiv.appendChild(sourcecodeButton);
+        leftCol.appendChild(sourcecodeButton);
 
         const inspectButton = document.createElement("button");
         inspectButton.textContent = "Inspect Object";
+        inspectButton.className = "optional";
         inspectButton.onclick = () => {
             const insp = document.getElementById('object-inspector');
             insp.open(nodeData.ObjectIdentity, nodeData.NodeType)
         };
-        infoDiv.appendChild(inspectButton);
+        leftCol.appendChild(inspectButton);
     }
 
 
     if (nodeData.NodeName === "Function" || nodeData.NodeName === "Call") {
         const functionCallButton = document.createElement("button");
+        functionCallButton.className = "optional";
         if (nodeData.NodeName === "Function") {
             functionCallButton.textContent = "Expand all calls";
         } else if (nodeData.NodeName === "Call") {
@@ -97,7 +103,7 @@ function setInfoDiv(nodeId) {
             }
             updateGraph();
         };
-        infoDiv.appendChild(functionCallButton);
+        leftCol.appendChild(functionCallButton);
     }
 
 

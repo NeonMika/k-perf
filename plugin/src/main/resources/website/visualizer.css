@@ -45,13 +45,15 @@ h1, h2 {
     padding: 15px;
     border-radius: 4px;
     border-left: 5px solid #27ae60;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     word-wrap: break-word;
     margin-bottom: 5px;
 }
 
-#selected-node-info button {
-    margin-left: 0;
+#leftCol button {
+    width: 100%;
+    max-width: 160px;
 }
 
 #leftCol {
