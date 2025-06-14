@@ -13,10 +13,12 @@ group = "at.ssw"
 version = "0.0.2"
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
+    implementation("at.ssw:KIRHelperKit:0.0.2")
     implementation(kotlin("stdlib"))
     implementation(kotlin("compiler-embeddable"))
     // https://youtrack.jetbrains.com/issue/KT-47897/Official-Kotlin-Gradle-plugin-api

@@ -1,4 +1,4 @@
-package at.ssw.compilerplugin
+package at.ssw.helpers
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
