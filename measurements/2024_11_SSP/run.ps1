@@ -1,10 +1,10 @@
 # Uncomment version you want to run
-$jarPath = "..\kmp-examples\game_of_life-plain\build\lib\kotlin-multiplatform-game-of-life-jvm-0.0.1.jar"
-#$jarPath = "..\kmp-examples\game_of_life-tracing\lib\kotlin-multiplatform-game-of-life-jvm-0.0.1.jar"
-#$exePath = "..\kmp-examples\game_of_life-plain\build\bin\mingwX64\releaseExecutable\kotlin-multiplatform-game-of-life.exe"
-#$exePath = "..\kmp-examples\game_of_life-tracing\build\bin\mingwX64\releaseExecutable\kotlin-multiplatform-game-of-life.exe"
-#$nodePath = "..\kmp-examples\game_of_life-plain\build\js\packages\kotlin-multiplatform-game-of-life\kotlin\kotlin-multiplatform-game-of-life.js"
-#$nodePath = "..\kmp-examples\game_of_life-tracing\build\js\packages\kotlin-multiplatform-game-of-life\kotlin\kotlin-multiplatform-game-of-life.js"
+$jarPath = "..\..\kmp-examples\game_of_life-plain\build\lib\kotlin-multiplatform-game-of-life-jvm-0.0.1.jar"
+#$jarPath = "..\..\kmp-examples\game_of_life-tracing\lib\kotlin-multiplatform-game-of-life-jvm-0.0.1.jar"
+#$exePath = "..\..\kmp-examples\game_of_life-plain\build\bin\mingwX64\releaseExecutable\kotlin-multiplatform-game-of-life.exe"
+#$exePath = "..\..\kmp-examples\game_of_life-tracing\build\bin\mingwX64\releaseExecutable\kotlin-multiplatform-game-of-life.exe"
+#$nodePath = "..\..\kmp-examples\game_of_life-plain\build\js\packages\kotlin-multiplatform-game-of-life\kotlin\kotlin-multiplatform-game-of-life.js"
+#$nodePath = "..\..\kmp-examples\game_of_life-tracing\build\js\packages\kotlin-multiplatform-game-of-life\kotlin\kotlin-multiplatform-game-of-life.js"
 
 
 # Initialize an array to hold the elapsed times
