@@ -48,11 +48,18 @@ class KPerfMeasureGradlePlugin : KotlinCompilerPluginSupportPlugin {
     // internally the parameters defined in applyToCompilation are passed as
     // "-P plugin:<compilerPluginId>:<key>=<value>" on the command line
     override fun getCompilerPluginId(): String {
+        // besides the jar name and the Gradle plugin (see described in getPluginArtifact) this is the third identifier relevant to compiler plugin development
         return "k-perf-measure-compiler-plugin"
     }
 
     // the name of the project that contains the compiler plugin
     // this will be looked up on maven
     override fun getPluginArtifact(): SubpluginArtifact =
+        // This is defined in settings.gradle.kts, see:
+        // rootProject.name = "k-perf-measure"
+
+        // Why different names at all (at.ssw.k-perf-measure VS at.ssw.k-perf-measure-plugin)?
+        // at.ssw.k-perf-measure (which is defined here) basically is the .jar file that contains the compiler plugin
+        // at.ssw.k-perf-measure-plugin (defined in the gradlePlugin section of the Gradle build script) defines the name of the Gradle plugin
         SubpluginArtifact(groupId = "at.ssw", artifactId = "k-perf-measure", version = "0.0.2")
 }

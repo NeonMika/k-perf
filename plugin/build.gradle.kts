@@ -3,8 +3,8 @@
 plugins {
     kotlin("jvm") version "2.0.20" // we have a kotlin project
 
-    `java-gradle-plugin` // we generate a gradle plugin configured in the gradlePlugin section
-    `kotlin-dsl` // To be able to use Kotlin when developing the Plugin<Project> class
+    `java-gradle-plugin` // In this project, we generate a Gradle plugin (which is configured in the gradlePlugin section)
+    `kotlin-dsl` // To be able to use Kotlin when developing the Gradle plugin, i.e., when developing the class inheriting from Plugin<Project> / KotlinCompilerPluginSupportPlugin
 
     `maven-publish` // the generated plugin will be published to mavenLocal
 }
@@ -47,8 +47,8 @@ project.extra.properties.forEach { (key, value) -> println("- $key: $value")  }
 
 gradlePlugin {
     plugins {
-        create("kPerfMeasure") {
-            id = "at.ssw.k-perf-measure-plugin" // to use this plugin later in other projects we will use plugins { id("at.ssw.k-perf-measure") }
+        create("kPerfMeasure") { // this name defines how the Gradle publish commands are named (in this case publishKPerfMeasurePluginMarkerMavenPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
+            id = "at.ssw.k-perf-measure-plugin" // to use this plugin later in other projects we will use plugins { id("at.ssw.k-perf-measure-plugin") }
             implementationClass = "at.ssw.gradle.KPerfMeasureGradlePlugin"
         }
     }
