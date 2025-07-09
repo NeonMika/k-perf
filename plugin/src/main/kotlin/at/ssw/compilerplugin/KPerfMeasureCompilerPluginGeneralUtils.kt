@@ -1,6 +1,6 @@
 package at.ssw.compilerplugin
-import at.ssw.compilerplugin.ExampleConfigurationKeysNew.KEY_ENABLED
-import at.ssw.compilerplugin.ExampleConfigurationKeysNew.LOG_ANNOTATION_KEY
+import at.ssw.compilerplugin.ExampleConfigurationKeysGeneral.KEY_ENABLED
+import at.ssw.compilerplugin.ExampleConfigurationKeysGeneral.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -27,14 +27,14 @@ import org.jetbrains.kotlin.platform.presentableDescription
 import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 import at.ssw.helpers.*
-object ExampleConfigurationKeysNew {
-    val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled.new")
+object ExampleConfigurationKeysGeneral {
+    val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled.general")
     val LOG_ANNOTATION_KEY: CompilerConfigurationKey<MutableList<String>> =
-        CompilerConfigurationKey.create("measure.annotation.new")
+        CompilerConfigurationKey.create("measure.annotation.general")
 }
 @OptIn(ExperimentalCompilerApi::class)
-class KPerfMeasureCommandLineProcessorNew : CommandLineProcessor {
-    override val pluginId: String = "k-perf-measure-compiler-plugin-New"
+class KPerfMeasureCommandLineProcessorGeneral : CommandLineProcessor {
+    override val pluginId: String = "k-perf-measure-compiler-plugin-General"
     override val pluginOptions: Collection<CliOption> = listOf(
         CliOption(
             "enabled",
@@ -50,14 +50,14 @@ class KPerfMeasureCommandLineProcessorNew : CommandLineProcessor {
         )
     )
     init {
-        println("KPerfMeasureCommandLineProcessorNew - init")
+        println("KPerfMeasureCommandLineProcessorGeneral - init")
     }
     override fun processOption(
         option: AbstractCliOption,
         value: String,
         configuration: CompilerConfiguration
     ) {
-        println("KPerfMeasureCommandLineProcessorNew - processOption ($option, $value)")
+        println("KPerfMeasureCommandLineProcessorGeneral - processOption ($option, $value)")
         when (option.optionName) {
             "enabled" -> configuration.put(KEY_ENABLED, value.toBoolean())
             "annotation" -> {
@@ -68,10 +68,10 @@ class KPerfMeasureCommandLineProcessorNew : CommandLineProcessor {
     }
 }
 @OptIn(ExperimentalCompilerApi::class)
-class PerfMeasureComponentRegistrarNew : CompilerPluginRegistrar() {
+class PerfMeasureComponentRegistrarGeneral : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
     init {
-        println("PerfMeasureComponentRegistrarNew - init")
+        println("PerfMeasureComponentRegistrarGeneral - init")
     }
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         if (configuration[KEY_ENABLED] == false) {
@@ -81,7 +81,7 @@ class PerfMeasureComponentRegistrarNew : CompilerPluginRegistrar() {
         IrGenerationExtension.registerExtension(PerfMeasureExtension2(MessageCollector.NONE))
     }
 }
-class PerfMeasureExtension2New(
+class PerfMeasureExtension2General(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
     val STRINGBUILDER_MODE = false
@@ -128,7 +128,7 @@ class PerfMeasureExtension2New(
                             +stringBuilder.append(valueParameters[0])
                             +stringBuilder.append("\n")
                         } else {
-                            bufferedTraceFileSink.writeData(irConcat(">;", valueParameters[0], "\n"))
+                            +bufferedTraceFileSink.writeData(irConcat(">;", valueParameters[0], "\n"))
                         }
                         +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic")!!.call("markNow()"))
                     }

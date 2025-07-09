@@ -1,6 +1,4 @@
 import at.ssw.compilerplugin.PerfMeasureComponentRegistrar
-import at.ssw.compilerplugin.PerfMeasureComponentRegistrarNew
-import at.ssw.compilerplugin.PerfMeasureComponentRegistrarOriginal
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -168,18 +166,6 @@ class KPerfMeasureCompilerPluginTest {
     fun compile(
         sourceFile: SourceFile,
         compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrar(),
-    ) = compile(listOf(sourceFile), compilerPluginRegistrar)
-
-    @OptIn(ExperimentalCompilerApi::class)
-    fun compileOriginal(
-        sourceFile: SourceFile,
-        compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrarOriginal(),
-    ) = compile(listOf(sourceFile), compilerPluginRegistrar)
-
-    @OptIn(ExperimentalCompilerApi::class)
-    fun compileNew(
-        sourceFile: SourceFile,
-        compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrarNew(),
     ) = compile(listOf(sourceFile), compilerPluginRegistrar)
 }
 
