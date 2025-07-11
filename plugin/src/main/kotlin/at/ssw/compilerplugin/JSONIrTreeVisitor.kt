@@ -172,6 +172,7 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
         jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
         jsonObj.add("Modality", JsonPrimitive(declaration.modality.name))
+        jsonObj.add("IsVar", JsonPrimitive(declaration.isVar))
         jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
         return jsonObj
     }
@@ -207,7 +208,9 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
     }
 
     override fun visitWhileLoop(loop: IrWhileLoop, data: PassedData): JsonElement {
-        return jsonWithDefault("WhileLoop", "", loop, data)
+        val jsonObj = jsonWithDefault("While Loop", "", loop, data)
+        jsonObj.add("Origin", JsonPrimitive(loop.origin.toString()))
+        return jsonObj
     }
 
     override fun visitExpression(expression: IrExpression, data: PassedData): JsonElement {
@@ -216,179 +219,360 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         return jsonObj
     }
 
-    //-----------------------------------------------------------------------------------------------------------------------------------
     override fun visitDeclaration(declaration: IrDeclarationBase, data: PassedData): JsonElement {
-        val caption = declaration::class.java.simpleName
-        return jsonWithDefault("Declaration", caption, declaration, data)
+        val jsonObj = jsonWithDefault("Declaration", "", declaration, data)
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        return jsonObj
     }
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitFunction(declaration: IrFunction, data: PassedData): JsonElement {
         val caption = declaration.name.toString()
         val jsonObj = jsonWithDefault("Function", caption, declaration, data)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("ReturnType", JsonPrimitive(declaration.returnType.render()))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(data.getFunctionId(declaration.symbol.owner)))
         return jsonObj
     }
 
     override fun visitExternalPackageFragment(declaration: IrExternalPackageFragment, data: PassedData): JsonElement {
         val caption = declaration.packageFqName.toString()
-        return jsonWithDefault("ExternalPackageFragment", caption, declaration, data)
+        val jsonObj = jsonWithDefault("External Package Fragment", caption, declaration, data)
+        jsonObj.add("Name", JsonPrimitive(declaration.packageFqName.toString()))
+        return jsonObj
     }
 
     override fun visitScript(declaration: IrScript, data: PassedData): JsonElement {
-        return jsonWithDefault("Script", "Script", declaration, data)
+        val jsonObj = jsonWithDefault("Script", "", declaration, data)
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        return jsonObj
     }
 
     override fun visitVariable(declaration: IrVariable, data: PassedData): JsonElement {
-        // Assuming normalizedName(variableNameData) gives a proper name string.
-        val caption = declaration.name.asString()
-        return jsonWithDefault("Variable", caption, declaration, data)
+        val caption = declaration.name.toString()
+        val jsonObj = jsonWithDefault("Variable", caption, declaration, data)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("Type", JsonPrimitive(declaration.type.render()))
+        jsonObj.add("IsVar", JsonPrimitive(declaration.isVar))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        return jsonObj
     }
 
     override fun visitEnumEntry(declaration: IrEnumEntry, data: PassedData): JsonElement {
         val caption = declaration.name.toString()
-        return jsonWithDefault("EnumEntry", caption, declaration, data)
+        val jsonObj = jsonWithDefault("Enum Entry", caption, declaration, data)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        return jsonObj
     }
 
     override fun visitAnonymousInitializer(declaration: IrAnonymousInitializer, data: PassedData): JsonElement {
-        val caption = if (declaration.isStatic) "static" else "instance"
-        return jsonWithDefault("AnonymousInitializer", caption, declaration, data)
+        val jsonObj = jsonWithDefault("Anonymous Initializer", "", declaration, data)
+        jsonObj.add("IsStatic", JsonPrimitive(declaration.isStatic))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        return jsonObj
     }
 
     override fun visitTypeParameter(declaration: IrTypeParameter, data: PassedData): JsonElement {
         val caption = declaration.name.toString()
-        return jsonWithDefault("TypeParameter", caption, declaration, data)
+        val jsonObj = jsonWithDefault("Type Parameter", caption, declaration, data)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("Index", JsonPrimitive(declaration.index))
+        jsonObj.add("Variance", JsonPrimitive(declaration.variance.toString()))
+        jsonObj.add("IsReified", JsonPrimitive(declaration.isReified))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        return jsonObj
     }
 
     override fun visitLocalDelegatedProperty(declaration: IrLocalDelegatedProperty, data: PassedData): JsonElement {
         val caption = declaration.name.toString()
-        return jsonWithDefault("LocalDelegatedProperty", caption, declaration, data)
-    }
+        val jsonObj = jsonWithDefault("Local Delegated Property", caption, declaration, data)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("Type", JsonPrimitive(declaration.type.render()))
+        jsonObj.add("IsVar", JsonPrimitive(declaration.isVar))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        return jsonObj}
 
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitTypeAlias(declaration: IrTypeAlias, data: PassedData): JsonElement {
         val caption = declaration.name.toString()
-        return jsonWithDefault("TypeAlias", caption, declaration, data)
+        val jsonObj = jsonWithDefault("Type Alias", caption, declaration, data)
+        jsonObj.add("Name", JsonPrimitive(declaration.name.toString()))
+        jsonObj.add("Visibility", JsonPrimitive(declaration.visibility.name))
+        jsonObj.add("ExpandedType", JsonPrimitive(declaration.expandedType.render()))
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        return jsonObj
     }
 
     override fun visitSyntheticBody(body: IrSyntheticBody, data: PassedData): JsonElement {
         val caption = body.kind.toString()
-        return jsonWithDefault("SyntheticBody", caption, body, data)
+        val jsonObj = jsonWithDefault("Synthetic Body", caption, body, data)
+        jsonObj.add("Kind", JsonPrimitive(body.kind.toString()))
+        return jsonObj
     }
 
     override fun visitVararg(expression: IrVararg, data: PassedData): JsonElement {
-        val caption = "type: ${expression.type.render()}, varargElementType: ${expression.varargElementType.render()}"
-        return jsonWithDefault("Vararg", caption, expression, data)
+        val jsonObj = jsonWithDefault("Vararg", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("VarargElementType", JsonPrimitive(expression.varargElementType.render()))
+        return jsonObj
     }
-
     override fun visitSpreadElement(spread: IrSpreadElement, data: PassedData): JsonElement {
-        return jsonWithDefault("SpreadElement", "SpreadElement", spread, data)
+        return jsonWithDefault("Spread Element", "", spread, data)
     }
 
     override fun visitComposite(expression: IrComposite, data: PassedData): JsonElement {
-        val caption = "type=${expression.type.render()}, origin=${expression.origin}"
-        return jsonWithDefault("Composite", caption, expression, data)
+        val jsonObj = jsonWithDefault("Composite", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        return jsonObj
     }
 
     override fun visitReturn(expression: IrReturn, data: PassedData): JsonElement {
-        val caption = ""
-        return jsonWithDefault("Return", caption, expression, data)
-    }
-
-    @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitConstructorCall(expression: IrConstructorCall, data: PassedData): JsonElement {
-        val jsonObj = jsonWithDefault("Call", expression.symbol.owner.name.asString(), expression, data)
-
+        val jsonObj = jsonWithDefault("Return", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
         return jsonObj
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitDelegatingConstructorCall(
-        expression: IrDelegatingConstructorCall,
-        data: PassedData
-    ): JsonElement {
+    override fun visitConstructorCall(expression: IrConstructorCall, data: PassedData): JsonElement {
         val caption = expression.symbol.owner.name.asString()
-        return jsonWithDefault("DelegatingConstructorCall", caption, expression, data)
+        val jsonObj = jsonWithDefault("Constructor Call", caption, expression, data)
+        jsonObj.add("ConstructorName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("ReturnType", JsonPrimitive(expression.type.render()))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(data.getFunctionId(expression.symbol.owner)))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        jsonObj.add("Name", JsonPrimitive(expression.symbol.owner.name.asString()))
+        return jsonObj
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitDelegatingConstructorCall(expression: IrDelegatingConstructorCall, data: PassedData): JsonElement {
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Delegating Constructor Call", caption, expression, data)
+        jsonObj.add("ConstructorName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("ReturnType", JsonPrimitive(expression.type.render()))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(data.getFunctionId(expression.symbol.owner)))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        jsonObj.add("Name", JsonPrimitive(expression.symbol.owner.name.asString()))
+        return jsonObj
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitEnumConstructorCall(expression: IrEnumConstructorCall, data: PassedData): JsonElement {
         val caption = expression.symbol.owner.name.asString()
-        return jsonWithDefault("EnumConstructorCall", caption, expression, data)
+        val jsonObj = jsonWithDefault("Enum Constructor Call", caption, expression, data)
+        jsonObj.add("ConstructorName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("ReturnType", JsonPrimitive(expression.type.render()))
+        jsonObj.add("FunctionIdentity", JsonPrimitive(data.getFunctionId(expression.symbol.owner)))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        jsonObj.add("Name", JsonPrimitive(expression.symbol.owner.name.asString()))
+        return jsonObj
     }
 
     override fun visitInstanceInitializerCall(expression: IrInstanceInitializerCall, data: PassedData): JsonElement {
-        val caption = ""
-        return jsonWithDefault("InstanceInitializerCall", caption, expression, data)
+        val jsonObj = jsonWithDefault("Instance Initializer Call", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitSetValue(expression: IrSetValue, data: PassedData): JsonElement {
-        val caption = "var: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
-        return jsonWithDefault("SetValue", caption, expression, data)
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Set Value", caption, expression, data)
+        jsonObj.add("OwnerName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        return jsonObj
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitSetField(expression: IrSetField, data: PassedData): JsonElement {
-        val captionBuilder = StringBuilder()
-        captionBuilder.append("field: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}")
-        expression.superQualifierSymbol?.let {
-            captionBuilder.append(" superQualifier: ${it.owner.name}")
-        }
-        captionBuilder.append(" origin: ${expression.origin}")
-        return jsonWithDefault("SetField", captionBuilder.toString(), expression, data)
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Set Field", caption, expression, data)
+        jsonObj.add("OwnerName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        return jsonObj
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitGetObjectValue(expression: IrGetObjectValue, data: PassedData): JsonElement {
-        val caption = "object: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
-        return jsonWithDefault("GetObjectValue", caption, expression, data)
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Get Object Value", caption, expression, data)
+        jsonObj.add("OwnerName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitGetEnumValue(expression: IrGetEnumValue, data: PassedData): JsonElement {
-        val caption = "enum: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
-        return jsonWithDefault("GetEnumValue", caption, expression, data)
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Get Enum Value", caption, expression, data)
+        jsonObj.add("OwnerName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
     }
 
     override fun visitDoWhileLoop(loop: IrDoWhileLoop, data: PassedData): JsonElement {
-        val caption = "label: ${loop.label}, origin: ${loop.origin}"
-        return jsonWithDefault("DoWhileLoop", caption, loop, data)
+        val caption = loop.label ?: ""
+        val jsonObj = jsonWithDefault("Do While Loop", caption, loop, data)
+        jsonObj.add("Type", JsonPrimitive(loop.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(loop.origin.toString()))
+        return jsonObj
     }
 
     override fun visitBreak(jump: IrBreak, data: PassedData): JsonElement {
-        val caption = "label: ${jump.label}, loop label: ${jump.loop.label}"
-        return jsonWithDefault("Break", caption, jump, data)
+        val caption = jump.label ?: ""
+        val jsonObj = jsonWithDefault("Break", caption, jump, data)
+        jsonObj.add("Type", JsonPrimitive(jump.type.render()))
+        return jsonObj
     }
 
     override fun visitContinue(jump: IrContinue, data: PassedData): JsonElement {
-        val caption = "label: ${jump.label}, loop label: ${jump.loop.label}"
-        return jsonWithDefault("Continue", caption, jump, data)
+        val caption = jump.label ?: ""
+        val jsonObj = jsonWithDefault("Continue", caption, jump, data)
+        jsonObj.add("Type", JsonPrimitive(jump.type.render()))
+        return jsonObj
     }
 
     override fun visitThrow(expression: IrThrow, data: PassedData): JsonElement {
-        val caption = "type: ${expression.type.render()}"
-        return jsonWithDefault("Throw", caption, expression, data)
+        val jsonObj = jsonWithDefault("Throw", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitFunctionReference(expression: IrFunctionReference, data: PassedData): JsonElement {
-        val caption =
-            "symbol: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}, origin: ${expression.origin}, reflectionTarget: ${
-                renderReflectionTarget(expression)
-            }"
-        return jsonWithDefault("FunctionReference", caption, expression, data)
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Function Reference", caption, expression, data)
+        jsonObj.add("FunctionName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        return jsonObj
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitRawFunctionReference(expression: IrRawFunctionReference, data: PassedData): JsonElement {
-        val caption = "symbol: ${expression.symbol.owner.name.asString()}, type: ${expression.type.render()}"
-        return jsonWithDefault("RawFunctionReference", caption, expression, data)
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Raw Function Reference", caption, expression, data)
+        jsonObj.add("FunctionName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+//....
+
+    override fun visitCatch(aCatch: IrCatch, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Catch", "", aCatch, data)
+        return jsonObj
+    }
+
+    override fun visitClassReference(expression: IrClassReference, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Class Reference", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitConstantArray(expression: IrConstantArray, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Constant Array", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitConstantObject(expression: IrConstantObject, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Constant Object", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitConstantPrimitive(expression: IrConstantPrimitive, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Constant Primitive", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitDynamicMemberExpression(expression: IrDynamicMemberExpression, data: PassedData): JsonElement {
+        val caption = expression.memberName
+        val jsonObj = jsonWithDefault("Dynamic Member Expression", caption, expression, data)
+        jsonObj.add("MemberName", JsonPrimitive(expression.memberName))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitDynamicOperatorExpression(expression: IrDynamicOperatorExpression, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Dynamic Operator Expression", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitErrorCallExpression(expression: IrErrorCallExpression, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Error Call Expression", "", expression, data)
+        jsonObj.add("Description", JsonPrimitive(expression.description))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitErrorDeclaration(declaration: IrErrorDeclaration, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Error Declaration", "", declaration, data)
+        jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
+        return jsonObj
+    }
+
+    override fun visitErrorExpression(expression: IrErrorExpression, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Error Expression", "", expression, data)
+        jsonObj.add("Description", JsonPrimitive(expression.description))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
+    }
+
+    override fun visitFunctionExpression(expression: IrFunctionExpression, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Function Expression", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        return jsonObj
+    }
+
+    override fun visitGetClass(expression: IrGetClass, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Get Class", "", expression, data)
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        return jsonObj
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    private fun renderReflectionTarget(expression: IrFunctionReference): String =
-        if (expression.symbol == expression.reflectionTarget)
-            "<same>"
-        else
-            expression.reflectionTarget?.owner?.name?.asString() ?: ""
+    override fun visitLocalDelegatedPropertyReference(expression: IrLocalDelegatedPropertyReference, data: PassedData): JsonElement {
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Local Delegated Property Reference", caption, expression, data)
+        jsonObj.add("OwnerName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Delegate", JsonPrimitive(expression.delegate.owner.name.toString()))
+        jsonObj.add("Getter", JsonPrimitive(expression.getter.owner.name.toString()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        return jsonObj
+    }
+
+    @OptIn(UnsafeDuringIrConstructionAPI::class)
+    override fun visitPropertyReference(expression: IrPropertyReference, data: PassedData): JsonElement {
+        val caption = expression.symbol.owner.name.asString()
+        val jsonObj = jsonWithDefault("Property Reference", caption, expression, data)
+        jsonObj.add("OwnerName", JsonPrimitive(expression.symbol.owner.name.asString()))
+        jsonObj.add("Type", JsonPrimitive(expression.type.render()))
+        jsonObj.add("Field", JsonPrimitive(expression.field?.owner?.name.toString()))
+        jsonObj.add("Getter", JsonPrimitive(expression.getter?.owner?.name.toString()))
+        jsonObj.add("Setter", JsonPrimitive(expression.setter?.owner?.name.toString()))
+        jsonObj.add("Origin", JsonPrimitive(expression.origin.toString()))
+        return jsonObj
+    }
+
+    override fun visitTry(aTry: IrTry, data: PassedData): JsonElement {
+        val jsonObj = jsonWithDefault("Try", "", aTry, data)
+        jsonObj.add("Type", JsonPrimitive(aTry.type.render()))
+        return jsonObj
+    }
+
+
+
+
 
 
     private fun jsonWithDefault(typeName: String, caption: String, irElement: IrElement, data: PassedData): JsonObject {
