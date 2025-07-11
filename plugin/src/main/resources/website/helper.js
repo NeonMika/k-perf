@@ -86,12 +86,12 @@ function setInfoDiv(nodeId) {
     }
 
 
-    if (nodeData.NodeName === "Function" || nodeData.NodeName === "Call") {
+    if ("FunctionIdentity" in nodeData) {
         const functionCallButton = document.createElement("button");
         functionCallButton.className = "optional";
-        if (nodeData.NodeName === "Function") {
+        if (!nodeData.NodeType.toLowerCase().includes("call")) {
             functionCallButton.textContent = "Expand all calls";
-        } else if (nodeData.NodeName === "Call") {
+        } else {
             functionCallButton.textContent = "Expand function";
         }
         functionCallButton.onclick = () => {
@@ -145,7 +145,7 @@ function removeAllDottedLines() {
 function getAllNodesWithFunctionIdentity(functionIdentity) {
     const nodes = [];
     for (const [, value] of Object.entries(nodeDict)) {
-        if (value.NodeName === "Function" || value.NodeName === "Call") {
+        if ("FunctionIdentity" in value) {
             if (value.FunctionIdentity === functionIdentity) {
                 nodes.push(value);
             }
@@ -159,25 +159,13 @@ function drawAllDottedLines(nodeGroup) {
     const nodeId = nodeGroup.querySelector("title").textContent.trim();
     const nodeData = nodeDict[nodeId];
 
-    if (nodeData.NodeName === "Call") {
+    if ("FunctionIdentity" in nodeData) {
         const nodes = getAllNodesWithFunctionIdentity(nodeData.FunctionIdentity);
         for (node of nodes) {
-            if (node.NodeName === "Function") {
-                const functionNode = getNodeByNodeId(node.nodeID)
-                if (functionNode) {
-                    drawDottedLine(nodeGroup, functionNode, svg, nodeData.nodeID, node.nodeID);
-                }
-            }
-        }
-    }
-
-    if (nodeData.NodeName === "Function") {
-        const nodes = getAllNodesWithFunctionIdentity(nodeData.FunctionIdentity);
-        for (node of nodes) {
-            if (node.NodeName === "Call") {
-                const functionNode = getNodeByNodeId(node.nodeID)
-                if (functionNode) {
-                    drawDottedLine(nodeGroup, functionNode, svg, nodeData.nodeID, node.nodeID);
+            if (nodeData.NodeType.toLowerCase().includes("call") !== node.NodeType.toLowerCase().includes("call")) {
+                const otherNode = getNodeByNodeId(node.nodeID)
+                if (otherNode) {
+                    drawDottedLine(nodeGroup, otherNode, svg, nodeData.nodeID, node.nodeID);
                 }
             }
         }
