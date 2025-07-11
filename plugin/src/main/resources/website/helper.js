@@ -259,38 +259,6 @@ function drawDottedLine(node1, node2, svg, nodeID1, nodeID2) {
     return line;
 }
 
-function getClusterColor(type) {
-    switch (type) {
-        case "IrFileImpl":
-            return "#e3f2fd";
-        case "IrFunctionImpl":
-            return "#e8f5e9";
-        case "IrBlockBodyImpl":
-            return "#fff8e1";
-        case "IrBlockImpl":
-            return "#fff8e1";
-        case "IrClassImpl":
-            return "#ffebee";
-    }
-    return "";
-}
-
-function getNodeShape(type) {
-    switch (type) {
-        case "IrFileImpl":
-            return "tra";
-        case "IrFunctionImpl":
-            return "diamond";
-        case "IrBlockBodyImpl":
-            return "hexagon";
-        case "IrBlockImpl":
-            return "hexagon";
-        case "IrClassImpl":
-            return "trapezium";
-    }
-    return "ellipse";
-}
-
 function setupWidthDragging() {
     const container = document.querySelector('.container');
     const cols = Array.from(container.querySelectorAll('.column'));

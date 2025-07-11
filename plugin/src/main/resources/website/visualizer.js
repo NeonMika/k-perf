@@ -33,6 +33,7 @@ function createDotSource(root) {
          rankdir=TB;      // Top-to-bottom layout
          nodesep=1;       // Horizontal spacing
          ranksep=0.75;    // Vertical spacing
+         fillcolor="white";
 `
     );
 
@@ -353,4 +354,36 @@ function groupArrays(tree) {
         const end = str.indexOf(']');
         return parseInt(str.substring(start + 1, end), 10);
     }
+}
+
+function getClusterColor(type) {
+    switch (type) {
+        case "IrFileImpl":
+            return "#e3f2fd";
+        case "IrFunctionImpl":
+            return "#e8f5e9";
+        case "IrBlockBodyImpl":
+            return "#fff8e1";
+        case "IrBlockImpl":
+            return "#fff8e1";
+        case "IrClassImpl":
+            return "#ffebee";
+    }
+    return "";
+}
+
+function getNodeShape(type) {
+    switch (type) {
+        case "IrFileImpl":
+            return "tra";
+        case "IrFunctionImpl":
+            return "diamond";
+        case "IrBlockBodyImpl":
+            return "hexagon";
+        case "IrBlockImpl":
+            return "hexagon";
+        case "IrClassImpl":
+            return "trapezium";
+    }
+    return "ellipse";
 }
