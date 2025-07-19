@@ -98,7 +98,6 @@ class IRVisualizeExtension : IrGenerationExtension {
         val functionOwners: MutableMap<Any, Int> = HashMap()
         val jsonTree = moduleFragment.accept(JSONIrTreeVisitor(), PassedData("", objects, functionOwners))
         val jsonString = GsonBuilder().setPrettyPrinting().create().toJson(jsonTree)
-
         val continueLatch = CountDownLatch(1)
 
         val server = embeddedServer(Netty, port = 0) {
@@ -164,11 +163,13 @@ class IRVisualizeExtension : IrGenerationExtension {
                 os.contains("win") -> listOf("rundll32", "url.dll,FileProtocolHandler", url.toString())
                 os.contains("mac") -> listOf("open", url.toString())
                 os.contains("nix") || os.contains("nux") || os.contains("aix") -> listOf("xdg-open", url.toString())
-                else -> throw UnsupportedOperationException("Unsupported OS: $os")
+                else -> null
             }
-            try {
-                ProcessBuilder(command).start()
-            } catch (_: Exception) {
+            if (command != null) {
+                try {
+                    ProcessBuilder(command).start()
+                } catch (_: Exception) {
+                }
             }
         }
     }
