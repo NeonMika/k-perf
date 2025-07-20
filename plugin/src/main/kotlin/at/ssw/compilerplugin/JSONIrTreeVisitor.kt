@@ -461,7 +461,6 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         jsonObj.add("Type", JsonPrimitive(expression.type.render()))
         return jsonObj
     }
-//....
 
     override fun visitCatch(aCatch: IrCatch, data: PassedData): JsonElement {
         val jsonObj = jsonWithDefault("Catch", "", aCatch, data)
