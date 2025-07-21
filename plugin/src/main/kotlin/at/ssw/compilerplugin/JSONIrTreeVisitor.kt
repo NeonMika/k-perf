@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.ir.util.sourceElement
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 import java.io.File
 
-data class PassedData(val property: String, val objects: MutableList<Any>, val functionOwners: MutableMap<Any, Int>) {
+data class PassedData(val relationship: String, val objects: MutableList<Any>, val functionOwners: MutableMap<Any, Int>) {
     fun getFunctionId(owner: Any): Int {
         var id = functionOwners[owner]
         if (id == null) {
@@ -292,7 +292,8 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         jsonObj.add("Type", JsonPrimitive(declaration.type.render()))
         jsonObj.add("IsVar", JsonPrimitive(declaration.isVar))
         jsonObj.add("Origin", JsonPrimitive(declaration.origin.toString()))
-        return jsonObj}
+        return jsonObj
+    }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun visitTypeAlias(declaration: IrTypeAlias, data: PassedData): JsonElement {
@@ -318,6 +319,7 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         jsonObj.add("VarargElementType", JsonPrimitive(expression.varargElementType.render()))
         return jsonObj
     }
+
     override fun visitSpreadElement(spread: IrSpreadElement, data: PassedData): JsonElement {
         return jsonWithDefault("Spread Element", "", spread, data)
     }
@@ -348,7 +350,10 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitDelegatingConstructorCall(expression: IrDelegatingConstructorCall, data: PassedData): JsonElement {
+    override fun visitDelegatingConstructorCall(
+        expression: IrDelegatingConstructorCall,
+        data: PassedData
+    ): JsonElement {
         val caption = expression.symbol.owner.name.asString()
         val jsonObj = jsonWithDefault("Delegating Constructor Call", caption, expression, data)
         jsonObj.add("ConstructorName", JsonPrimitive(expression.symbol.owner.name.asString()))
@@ -499,7 +504,10 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
         return jsonObj
     }
 
-    override fun visitDynamicOperatorExpression(expression: IrDynamicOperatorExpression, data: PassedData): JsonElement {
+    override fun visitDynamicOperatorExpression(
+        expression: IrDynamicOperatorExpression,
+        data: PassedData
+    ): JsonElement {
         val jsonObj = jsonWithDefault("Dynamic Operator Expression", "", expression, data)
         jsonObj.add("Type", JsonPrimitive(expression.type.render()))
         return jsonObj
@@ -539,7 +547,10 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
     }
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
-    override fun visitLocalDelegatedPropertyReference(expression: IrLocalDelegatedPropertyReference, data: PassedData): JsonElement {
+    override fun visitLocalDelegatedPropertyReference(
+        expression: IrLocalDelegatedPropertyReference,
+        data: PassedData
+    ): JsonElement {
         val caption = expression.symbol.owner.name.asString()
         val jsonObj = jsonWithDefault("Local Delegated Property Reference", caption, expression, data)
         jsonObj.add("OwnerName", JsonPrimitive(expression.symbol.owner.name.asString()))
@@ -570,10 +581,6 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
     }
 
 
-
-
-
-
     private fun jsonWithDefault(typeName: String, caption: String, irElement: IrElement, data: PassedData): JsonObject {
         data.objects.add(irElement)
         val jsonObj = JsonObject().apply {
@@ -589,7 +596,7 @@ class JSONIrTreeVisitor : IrElementVisitor<JsonElement, PassedData> {
             if (endOffset != null) {
                 add("EndOffset", JsonPrimitive(endOffset))
             }
-            add("Relationship", JsonPrimitive(data.property))
+            add("Relationship", JsonPrimitive(data.relationship))
             add("ObjectIdentity", JsonPrimitive(data.objects.size - 1))
             add("Children", JsonArray().also { childrenArray ->
                 irElement.acceptChildren(object : IrElementVisitor<Unit, PassedData> {
