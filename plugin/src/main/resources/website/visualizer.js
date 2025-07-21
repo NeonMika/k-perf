@@ -361,6 +361,8 @@ function getClusterColor(type) {
         case "IrFileImpl":
             return "#e3f2fd";
         case "IrFunctionImpl":
+        case "IrFunctionWithLateBindingImpl":
+        case "IrConstructorImpl":
             return "#e8f5e9";
         case "IrBlockBodyImpl":
             return "#fff8e1";
@@ -375,8 +377,10 @@ function getClusterColor(type) {
 function getNodeShape(type) {
     switch (type) {
         case "IrFileImpl":
-            return "tra";
+            return "rect";
         case "IrFunctionImpl":
+        case "IrFunctionWithLateBindingImpl":
+        case "IrConstructorImpl":
             return "diamond";
         case "IrBlockBodyImpl":
             return "hexagon";
