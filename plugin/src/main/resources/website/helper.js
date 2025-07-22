@@ -363,7 +363,7 @@ function zoomToNode(nodeId) {
 }
 
 function setUpDownloadButton(svg) {
-    document.getElementById("download-svg").addEventListener("click", function () {
+    document.getElementById("download-svg").onclick = function () {
         const svgData = new XMLSerializer().serializeToString(svg);
         const blob = new Blob([svgData], {type: "image/svg+xml"});
         const url = URL.createObjectURL(blob);
@@ -374,5 +374,5 @@ function setUpDownloadButton(svg) {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    });
+    };
 }
