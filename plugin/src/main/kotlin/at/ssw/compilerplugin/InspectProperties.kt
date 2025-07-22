@@ -1,6 +1,5 @@
 package at.ssw.compilerplugin
 
-import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 
@@ -16,12 +15,7 @@ fun inspectProperties(obj: Any, objects: MutableList<Any>): List<PropertyInfo> =
     obj::class.memberProperties.map { prop ->
         prop.isAccessible = true
 
-        val vis = when (prop.visibility) {
-            KVisibility.PUBLIC    -> "public"
-            KVisibility.PROTECTED -> "protected"
-            KVisibility.PRIVATE   -> "private"
-            else                  -> "internal"
-        }
+        val vis = prop.visibility?.name?.lowercase() ?: ""
 
         val typeStr = prop.returnType.toString()
 
