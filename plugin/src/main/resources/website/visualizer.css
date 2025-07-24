@@ -194,8 +194,20 @@ label {
 
 .active-filters {
     margin-top: 15px;
-    max-height: 150px;
+    max-height: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: visible;
+}
+
+#active-filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 120px;
     overflow-y: auto;
+    padding-right: 4px;
 }
 
 .filter-tag {
