@@ -216,7 +216,7 @@
                 nodeGroup.addEventListener("dblclick", function () {
                     const nodeId = nodeGroup.querySelector("title").textContent.trim();
                     const nodeData = nodeDict[nodeId];
-                    toggleChildren(nodeData, hasInvisibleChild(nodeData))
+                    setChildVisibility(nodeData, hasInvisibleChild(nodeData))
 
                     updateGraph()
                 });

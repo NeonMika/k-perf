@@ -219,7 +219,7 @@ function collapseByDepth(root, maxDepth) {
     traverse(root, 0);
 }
 
-function toggleChildren(node, visibility) {
+function setChildVisibility(node, visibility) {
     if (Array.isArray(node.Children)) {
         for (const child of node.Children) {
             child.visible = visibility;
