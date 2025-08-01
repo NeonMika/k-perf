@@ -193,8 +193,8 @@ class PerfMeasureExtension2General(
                             .joinToString(",\n") { (id, name) -> "\"$id\": \"$name\"" } + " }")
                         +bufferedSymbolsFileSink.flushSink()
                         +bufferedTraceFileSink.flushSink()
-                        +irPrintLn(pluginContext, bufferedTraceFileName)
-                        +irPrintLn(pluginContext, bufferedSymbolsFileName)
+                        +callPrintLn(pluginContext, bufferedTraceFileName)
+                        +callPrintLn(pluginContext, bufferedSymbolsFileName)
                     }
                 }
             }

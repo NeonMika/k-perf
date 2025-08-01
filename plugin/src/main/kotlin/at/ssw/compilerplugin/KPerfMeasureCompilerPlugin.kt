@@ -1167,6 +1167,21 @@ class PerfMeasureExtension2(
         }
         compareFieldDumps(oldBody.dump(), newBody.dump(), "testBodyWithTempVar")
 
+        val printLnIntCall = DeclarationIrBuilder(pluginContext, firstFile.symbol).getCall(pluginContext) {
+            callPrintLn(pluginContext, 42)
+        }
+        appendToDebugFile("printLn with Number: " + printLnIntCall + "\n\n")
+
+        val atomicIntegerClass = pluginContext.findClass("java/util/concurrent/atomic/AtomicInteger")!!
+        val constructor = atomicIntegerClass.findConstructor(pluginContext)!!
+        val counterField = pluginContext.createField(firstFile.symbol, "_globalCounter") { constructor() }
+        firstFile.declarations.add(counterField)
+        counterField.parent = firstFile
+        val printLnFieldCall = DeclarationIrBuilder(pluginContext, firstFile.symbol).getCall(pluginContext) {
+            callPrintLn(pluginContext, counterField)
+        }
+        appendToDebugFile("printLn with Field: " + printLnFieldCall + "\n\n")
+
         //myClass tests
         val myClass = pluginContext.findClass("test/MyClass")
 
