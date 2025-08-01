@@ -233,19 +233,33 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
     }
 
     /**
-     * Constructs an `IrFunctionAccessExpression` to print a value using the `println` function.
+     * Builds an `IrFunctionAccessExpression` that prints a value using the `println` function.
      *
-     * @param pluginContext The `IrPluginContext` used to find the `println` function symbol.
-     * @param value The value to be printed. Its type is determined dynamically.
-     * @return An `IrFunctionAccessExpression` representing the call to the `println` function.
-     *         If the specific println function for the value type is not found, it falls back to println(any?).
+     * Attempts to find a `println` overload matching the value's type. If not found and the value is an
+     * `IrPropertySymbol`, `IrFieldSymbol`, or `IrValueSymbol`, falls back to `println(any?)` and prints
+     * the result of `toString()` on the value. Otherwise, throws an exception.
+     *
+     * @param pluginContext The `IrPluginContext` used to resolve the `println` function symbol.
+     * @param value The value to print.
+     * @return An `IrFunctionAccessExpression` for the appropriate `println` call.
      */
-    fun irPrintLn(pluginContext: IrPluginContext, value: Any): IrFunctionAccessExpression {
+    fun callPrintLn(pluginContext: IrPluginContext, value: Any): IrFunctionAccessExpression {
         val paramType = extractType(value)
-        val printMethod = pluginContext.findFunction("kotlin/io/println($paramType)")
-            ?: pluginContext.findFunction("kotlin/io/println(any?)")!!
+        var printValue = value
+        val printMethod = try {
+            pluginContext.findFunction("kotlin/io/println($paramType)", ignoreNullability = true)
+        } catch (_: Exception) {
+            when(value) {
+                is IrProperty,
+                is IrField-> {
+                    printValue = (value as IrDeclaration).call("toString()")
+                    pluginContext.findFunction("kotlin/io/println(any?)")
+                }
+                else -> throw IllegalArgumentException("IrCallHelper: Not print function found for type $paramType")
+            }
+        } ?: throw IllegalArgumentException("IrCallHelper: Not print function found for type $paramType")
 
-        return printMethod(value)
+        return printMethod(printValue)
     }
 
     /**
