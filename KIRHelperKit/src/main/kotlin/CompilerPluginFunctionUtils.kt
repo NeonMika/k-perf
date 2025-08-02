@@ -169,7 +169,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
     fun IrFunctionAccessExpression.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
         return if (func is String) {
             val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
-            val funcSymbol = pluginContext.findFunction(func + params, this.type)
+            val funcSymbol = pluginContext.findFunctionOrNull(func + params, this.type)
                 ?: throw IllegalArgumentException("Function $func not found with params $params")
             this@IrCallDsl.call(funcSymbol, *args)
         } else {
@@ -228,7 +228,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     operator fun IrClassSymbol.invoke(vararg args: Any): IrFunctionAccessExpression {
         val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
-        return this.findConstructor(pluginContext, params)?.invoke(*args)
+        return this.findConstructorOrNull(pluginContext, params)?.invoke(*args)
             ?: throw IllegalArgumentException("IrCallHelper: Constructor wit params: $params not found in class ${this.owner.name}")
     }
 
@@ -247,13 +247,13 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         val paramType = extractType(value)
         var printValue = value
         val printMethod = try {
-            pluginContext.findFunction("kotlin/io/println($paramType)", ignoreNullability = true)
+            pluginContext.findFunctionOrNull("kotlin/io/println($paramType)", ignoreNullability = true)
         } catch (_: Exception) {
             when(value) {
                 is IrProperty,
                 is IrField-> {
                     printValue = (value as IrDeclaration).call("toString()")
-                    pluginContext.findFunction("kotlin/io/println(any?)")
+                    pluginContext.findFunctionOrNull("kotlin/io/println(any?)")
                 }
                 else -> throw IllegalArgumentException("IrCallHelper: Not print function found for type $paramType")
             }
@@ -400,12 +400,12 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
                 else -> throw IllegalArgumentException("Unsupported symbol type: ${symbol::class.simpleName}")
             } ?: throw IllegalArgumentException("Could not resolve class from symbol")
 
-            irClass.symbol.findFunction(pluginContext, funcSignature, extensionReceiverType ?: irClass.defaultType)
+            irClass.symbol.findFunctionOrNull(pluginContext, funcSignature, extensionReceiverType ?: irClass.defaultType)
         } else {
             if(!funcSignature.contains(".") && funcSignature.substringAfterLast("/").get(0).isUpperCase()) {
-                pluginContext.findConstructor(funcSignature)
+                pluginContext.findConstructorOrNull(funcSignature)
             } else {
-                pluginContext.findFunction(funcSignature, extensionReceiverType)
+                pluginContext.findFunctionOrNull(funcSignature, extensionReceiverType)
             }
         }
         return function ?: throw IllegalArgumentException("IrCallHelper: Function $funcSignature not found!")

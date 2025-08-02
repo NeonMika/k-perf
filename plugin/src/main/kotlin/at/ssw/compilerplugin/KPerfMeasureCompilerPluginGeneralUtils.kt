@@ -87,7 +87,7 @@ class PerfMeasureExtension2General(
     val STRINGBUILDER_MODE = false
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark") ?: error("Cannot find class kotlin.time.TimeMark")
+        val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark")
         val firstFile = moduleFragment.files[0]
         val stringBuilder = IrStringBuilder(pluginContext, firstFile)
         val randNr = (0..10000).random()
@@ -130,7 +130,7 @@ class PerfMeasureExtension2General(
                         } else {
                             +bufferedTraceFileSink.writeData(irConcat(">;", valueParameters[0], "\n"))
                         }
-                        +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic")!!.call("markNow()"))
+                        +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic").call("markNow()"))
                     }
                 }
             }
@@ -154,7 +154,7 @@ class PerfMeasureExtension2General(
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL(pluginContext) {
                         val elapsedDuration = irTemporary(valueParameters[1].call("elapsedNow()"))
-                        val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds") ?: throw IllegalStateException("Property 'inWholeMicroseconds' not found")
+                        val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.append("<;")

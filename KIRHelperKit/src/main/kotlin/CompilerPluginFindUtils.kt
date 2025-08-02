@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.utils.doNothing
  * @property packageName The package name of the signature.
  * @property className The class name of the signature.
  * @property memberName The member name of the signature.
- * @property packageForFindClass The package name for the [IrPluginContext.findClass] function.
+ * @property packageForFindClass The package name for the [IrPluginContext.findClassOrNull] function.
  */
 private data class SignatureParts(
     val packageName: String,
@@ -59,7 +59,7 @@ enum class SignatureType {
  * @throws IllegalArgumentException If the signature does not include a package path.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
+fun IrPluginContext.findClassOrNull(signature: String): IrClassSymbol? {
     val packageSearch = getTypePackage(signature.lowercase())
     val searchString = if (signature.contains('/')) {
         //check signature
@@ -83,11 +83,19 @@ fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
 
     //if not found try again and check if it's a java type
     if (result == null && !signature.contains('/') && !signature.startsWith("java")) {
-        return findClass("java$signature")
+        return findClassOrNull("java$signature")
     }
 
     return result
 }
+
+/**
+ * Finds a class by its signature. 
+ * See [findClassOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the class with the given signature is not found.
+ */
+fun IrPluginContext.findClass(signature: String): IrClassSymbol = this.findClassOrNull(signature) ?: throw IllegalArgumentException("Class with signature $signature not found")
 
 /**
  * Finds a function by its signature in the given class.
@@ -106,7 +114,7 @@ fun IrPluginContext.findClass(signature: String): IrClassSymbol? {
  */
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
+fun IrClassSymbol.findFunctionOrNull(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
     val (functionName, params, paramKinds) = parseFunctionParameters(pluginContext, signature)
 
     // search in class
@@ -141,13 +149,34 @@ fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String
 }
 
 /**
+ * Finds a function by its signature in the given class.
+ * See [findFunctionOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the function with the given signature is not found in the class.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrClassSymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol =
+    this.findFunctionOrNull(pluginContext, signature, extensionReceiverType, ignoreNullability)
+        ?: throw IllegalArgumentException("Function with signature $signature not found in class ${this.owner.name.asString()}")
+
+/**
  * Finds a property by its name in the given class.
  *
  * @param signature The name of the property to find.
  * @return The found property symbol or null if it was not found.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrClassSymbol.findProperty(signature: String): IrPropertySymbol? = this.owner.properties.find { it.name.asString().lowercase() == signature.lowercase() }?.symbol
+fun IrClassSymbol.findPropertyOrNull(signature: String): IrPropertySymbol? = this.owner.properties.find { it.name.asString().lowercase() == signature.lowercase() }?.symbol
+
+/**
+ * Finds a property by its name in the given class.
+ * See [findPropertyOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the property with the given signature is not found in the class.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrClassSymbol.findProperty(signature: String): IrPropertySymbol = this.findPropertyOrNull(signature)
+    ?: throw IllegalArgumentException("Property with signature $signature not found in class ${this.owner.name.asString()}")
 
 /**
  * Finds a constructor by its signature in the given class.
@@ -164,7 +193,7 @@ fun IrClassSymbol.findProperty(signature: String): IrPropertySymbol? = this.owne
  * @throws IllegalStateException If multiple matching constructors are found.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: String = "()", ignoreNullability: Boolean = false): IrConstructorSymbol? {
+fun IrClassSymbol.findConstructorOrNull(pluginContext: IrPluginContext, signature: String = "()", ignoreNullability: Boolean = false): IrConstructorSymbol? {
     val (_, expectedParams, paramKinds) = parseFunctionParameters(pluginContext, "<init>$signature")
 
     val cons = this.constructors.filter { constructor ->
@@ -176,6 +205,17 @@ fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: Str
         else -> throw IllegalStateException("Multiple matching constructors found in class for signature: $signature")
     }
 }
+
+/**
+ * Finds a constructor by its signature in the given class.
+ * See [findConstructorOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the constructor with the given signature is not found in the class.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrClassSymbol.findConstructor(pluginContext: IrPluginContext, signature: String = "()", ignoreNullability: Boolean = false): IrConstructorSymbol =
+    this.findConstructorOrNull(pluginContext, signature, ignoreNullability)
+        ?: throw IllegalArgumentException("Constructor with signature $signature not found in class ${this.owner.name.asString()}")
 
 /**
  * Returns the class type of the variable if the type is a class type.
@@ -192,7 +232,17 @@ fun IrVariable.getTypeClass() = this.type.getClass() ?: throw IllegalArgumentExc
  * @return The found property symbol or `null` if the property is not found.
  * @throws IllegalArgumentException If the type of the variable is not a class.
  */
-fun IrVariable.findProperty(name: String): IrPropertySymbol? = this.getTypeClass().symbol.findProperty(name)
+fun IrVariable.findPropertyOrNull(name: String): IrPropertySymbol? = this.getTypeClass().symbol.findPropertyOrNull(name)
+
+/**
+ * Finds a property by its name in the class type of the variable.
+ * See [IrVariable.findPropertyOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the property with the given name is not found in the variable.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrVariable.findProperty(name: String): IrPropertySymbol = this.findPropertyOrNull(name)
+    ?: throw IllegalArgumentException("Property with name $name not found in variable ${this.name.asString()}")
 
 /**
  * Finds a function by its signature in the class type of the variable.
@@ -206,12 +256,23 @@ fun IrVariable.findProperty(name: String): IrPropertySymbol? = this.getTypeClass
  * @return The found function symbol or null if it was not found.
  * @throws IllegalStateException If multiple matching functions are found.
  */
-fun IrVariable.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false) = try {
+fun IrVariable.findFunctionOrNull(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false) = try {
         val classSymbol = this.getTypeClass().symbol
-        classSymbol.findFunction(pluginContext, signature, extensionReceiverType, ignoreNullability)
+        classSymbol.findFunctionOrNull(pluginContext, signature, extensionReceiverType, ignoreNullability)
     } catch (e: Exception) {
         null
     }
+
+/**
+ * Finds a function by its signature in the class type of the variable.
+ * See [IrVariable.findFunctionOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the function with the given signature is not found in the variable.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrVariable.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false) =
+    this.findFunctionOrNull(pluginContext, signature, extensionReceiverType, ignoreNullability)
+        ?: throw IllegalArgumentException("Function with signature $signature not found in variable ${this.name.asString()}")
 
 /**
  * Finds a constructor by its signature in the class type of the variable.
@@ -224,12 +285,24 @@ fun IrVariable.findFunction(pluginContext: IrPluginContext, signature: String, e
  * @return The found constructor symbol or null if it was not found.
  * @throws IllegalStateException If multiple matching constructors are found.
  */
-fun IrVariable.findConstructor(pluginContext: IrPluginContext, signature: String = "()", ignoreNullability: Boolean = false) = try {
+fun IrVariable.findConstructorOrNull(pluginContext: IrPluginContext, signature: String = "()", ignoreNullability: Boolean = false) = try {
     val classSymbol = this.getTypeClass().symbol
-    classSymbol.findConstructor(pluginContext, signature, ignoreNullability)
+    classSymbol.findConstructorOrNull(pluginContext, signature, ignoreNullability)
 } catch (e: Exception) {
     null
 }
+
+/**
+ * Finds a constructor by its signature in the class type of the variable.
+ * See [IrVariable.findConstructorOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the constructor with the given signature is not found in the variable.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrVariable.findConstructor(pluginContext: IrPluginContext, signature: String = "()", ignoreNullability: Boolean = false) =
+    this.findConstructorOrNull(pluginContext, signature, ignoreNullability)
+        ?: throw IllegalArgumentException("Constructor with signature $signature not found in variable ${this.name.asString()}")
+
 /**
  * Finds a function by its signature in the class type of the property.
  *
@@ -243,54 +316,75 @@ fun IrVariable.findConstructor(pluginContext: IrPluginContext, signature: String
  * @throws IllegalStateException If multiple matching functions are found.
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrPropertySymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false) = try {
+fun IrPropertySymbol.findFunctionOrNull(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false) = try {
     val classSymbol = this.owner.getter?.returnType?.getClass()?.symbol
-    classSymbol?.findFunction(pluginContext, signature, extensionReceiverType, ignoreNullability)
+    classSymbol?.findFunctionOrNull(pluginContext, signature, extensionReceiverType, ignoreNullability)
 } catch (e: Exception) {
     null
 }
 
-    /**
-     * Finds a constructor by its signature in the given package or class.
-     *
-     * @param signature The signature of the constructor to find. It should be in the format
-     *                  "package/outerClasses.ClassName(params?)".
-     *                  "*" can be used as parameter if from here the parameters are arbitrary. It can only be used once and only at the end of the signature.
-     *                  "G" can be used as a placeholder for generic parameters.
-     *                  Some standard packages are predefined, and if a package is not found in kotlin it is searched for in the java context.
-     *   See [getTypePackage] for predefined Packages
-     * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
-     * @return The found constructor symbol or null if it was not found.
-     * @throws IllegalStateException If multiple matching constructors are found.
-     */
-fun IrPluginContext.findConstructor(signature: String, ignoreNullability: Boolean = false): IrConstructorSymbol? {
+/**
+ * Finds a function by its signature in the class type of the property.
+ * See [IrPropertySymbol.findFunctionOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the function with the given signature is not found in the property.
+ */
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun IrPropertySymbol.findFunction(pluginContext: IrPluginContext, signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false) =
+    this.findFunctionOrNull(pluginContext, signature, extensionReceiverType, ignoreNullability)
+        ?: throw IllegalArgumentException("Function with signature $signature not found in property ${this.owner.name.asString()}")
+
+/**
+ * Finds a constructor by its signature in the given package or class.
+ *
+ * @param signature The signature of the constructor to find. It should be in the format
+ *                  "package/outerClasses.ClassName(params?)".
+ *                  "*" can be used as parameter if from here the parameters are arbitrary. It can only be used once and only at the end of the signature.
+ *                  "G" can be used as a placeholder for generic parameters.
+ *                  Some standard packages are predefined, and if a package is not found in kotlin it is searched for in the java context.
+ *   See [getTypePackage] for predefined Packages
+ * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
+ * @return The found constructor symbol or null if it was not found.
+ * @throws IllegalStateException If multiple matching constructors are found.
+ */
+fun IrPluginContext.findConstructorOrNull(signature: String, ignoreNullability: Boolean = false): IrConstructorSymbol? {
     val (_, outerClasses, constructorPart, packageForFindClass) = parseSignature(signature)
     val (className, _) = parseFunctionParameters(this, constructorPart)
 
     val classSymbol = if (className.isNotBlank()) {
-        findClass("$packageForFindClass/$outerClasses${if (outerClasses.isNotEmpty()) "." else ""}$className")
+        findClassOrNull("$packageForFindClass/$outerClasses${if (outerClasses.isNotEmpty()) "." else ""}$className")
     } else {
         null
     }
 
-    return classSymbol?.findConstructor(this, "(" +constructorPart.substringAfter("("), ignoreNullability)
+    return classSymbol?.findConstructorOrNull(this, "(" +constructorPart.substringAfter("("), ignoreNullability)
 }
 
-    /**
-     * Finds a function by its signature in the given package or class.
-     *
-     * @param signature The signature of the function to find. It should be in the format
-     *                  "package/outerClasses.ClassName.funcName(params?)".
-     *                  "*" can be used as parameter if from here the parameters are arbitrary. It can only be used once and only at the end of the signature.
-     *                  "G" can be used as a placeholder for generic parameters.
-     *                  Some standard packages are predefined, and if a package is not found in kotlin it is searched for in the java context.
-     *   See [getTypePackage] for predefined Packages
-     * @param extensionReceiverType The expected type of the extension receiver, if any.
-     * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
-     * @return The found function symbol or null if it was not found.
-     * @throws IllegalStateException If multiple matching constructors are found.
-     */
-    fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
+/**
+ * Finds a constructor by its signature.
+ * See [IrPluginContext.findConstructorOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the constructor with the given signature is not found.
+ */
+fun IrPluginContext.findConstructor(signature: String, ignoreNullability: Boolean = false): IrConstructorSymbol =
+    this.findConstructorOrNull(signature, ignoreNullability)
+        ?: throw IllegalArgumentException("Constructor with signature $signature not found in context")
+
+/**
+ * Finds a function by its signature in the given package or class.
+ *
+ * @param signature The signature of the function to find. It should be in the format
+ *                  "package/outerClasses.ClassName.funcName(params?)".
+ *                  "*" can be used as parameter if from here the parameters are arbitrary. It can only be used once and only at the end of the signature.
+ *                  "G" can be used as a placeholder for generic parameters.
+ *                  Some standard packages are predefined, and if a package is not found in kotlin it is searched for in the java context.
+ *   See [getTypePackage] for predefined Packages
+ * @param extensionReceiverType The expected type of the extension receiver, if any.
+ * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
+ * @return The found function symbol or null if it was not found.
+ * @throws IllegalStateException If multiple matching constructors are found.
+ */
+fun IrPluginContext.findFunctionOrNull(signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? {
     val (packageName, className, functionPart, packageForFindClass) = parseSignature(signature)
     val (functionName, params, paramKinds) = parseFunctionParameters(this, functionPart)
 
@@ -298,12 +392,12 @@ fun IrPluginContext.findConstructor(signature: String, ignoreNullability: Boolea
     var propertySymbol: IrPropertySymbol? = null
 
     if (className.isNotBlank()) {
-        classSymbol = findClass("$packageForFindClass/$className")
-        propertySymbol = findProperty("$packageForFindClass/$className")
+        classSymbol = findClassOrNull("$packageForFindClass/$className")
+        propertySymbol = findPropertyOrNull("$packageForFindClass/$className")
     }
 
-    val classSearch = classSymbol?.findFunction(this, functionPart, extensionReceiverType, ignoreNullability)
-                        ?: propertySymbol?.findFunction(this, functionPart, extensionReceiverType, ignoreNullability)
+    val classSearch = classSymbol?.findFunctionOrNull(this, functionPart, extensionReceiverType, ignoreNullability)
+                        ?: propertySymbol?.findFunctionOrNull(this, functionPart, extensionReceiverType, ignoreNullability)
 
     if (classSearch == null) {
         val plainSearch = referenceFunctions(CallableId(FqName(packageName), Name.identifier(functionName)))
@@ -319,28 +413,48 @@ fun IrPluginContext.findConstructor(signature: String, ignoreNullability: Boolea
     } else return classSearch
 }
 
-    /**
-     * Finds a property by its signature in the given package or class.
-     *
-     * @param signature The signature of the property to find. It should be in the format
-     *                  "package/outerClasses.ClassName.propertyName".
-     *                  Some standard packages are predefined, and if a package is not found in kotlin it is searched for in the java context.
-     *   See [getTypePackage] for predefined Packages
-     * @return The found property symbol or null if it was not found.
-     */
-fun IrPluginContext.findProperty(signature: String): IrPropertySymbol? {
+/**
+ * Finds a function by its signature.
+ * See [IrPluginContext.findFunctionOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the function with the given signature is not found.
+ */
+fun IrPluginContext.findFunction(signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol =
+    this.findFunctionOrNull(signature, extensionReceiverType, ignoreNullability)
+        ?: throw IllegalArgumentException("Function with signature $signature not found in context")
+
+/**
+ * Finds a property by its signature in the given package or class.
+ *
+ * @param signature The signature of the property to find. It should be in the format
+ *                  "package/outerClasses.ClassName.propertyName".
+ *                  Some standard packages are predefined, and if a package is not found in kotlin it is searched for in the java context.
+ *   See [getTypePackage] for predefined Packages
+ * @return The found property symbol or null if it was not found.
+ */
+fun IrPluginContext.findPropertyOrNull(signature: String): IrPropertySymbol? {
     val parts = parseSignature(signature)
 
     val classSymbol = if (parts.className.isNotBlank()) {
-        findClass("${parts.packageForFindClass}/${parts.className}")
+        findClassOrNull("${parts.packageForFindClass}/${parts.className}")
     } else {
         null
     }
 
-    return classSymbol?.findProperty(parts.memberName)
+    return classSymbol?.findPropertyOrNull(parts.memberName)
         ?: referenceProperties(CallableId(FqName(parts.packageName), Name.identifier(parts.memberName)))
             .singleOrNull()
 }
+
+/**
+ * Finds a property by its signature.
+ * See [IrPluginContext.findPropertyOrNull] for details.
+ *
+ * @throws IllegalArgumentException If the property with the given signature is not found.
+ */
+fun IrPluginContext.findProperty(signature: String): IrPropertySymbol =
+    this.findPropertyOrNull(signature)
+        ?: throw IllegalArgumentException("Property with signature $signature not found in context")
 
 /**
  * Attempts to resolve the IR type for a given type string. The method first checks for primitive types,
@@ -389,7 +503,7 @@ fun IrPluginContext.getIrType(typeString: String): IrType? {
         else -> {
             val fqName = getTypePackage(baseType)
 
-            val classSymbol = if (fqName == baseType) null else findClass(fqName)
+            val classSymbol = if (fqName == baseType) null else findClassOrNull(fqName)
             classSymbol?.defaultType ?: throw IllegalArgumentException("getIrType: Type $typeString not found in context")
         }
     }
@@ -474,7 +588,7 @@ private fun checkExtensionFunctionReceiverType(func: IrSimpleFunctionSymbol, ext
     /**
      * Parses a signature into its components.
      *
-     * The signature is split into four parts: the package name, the class name, the member name, and the package name as it should be used with [IrPluginContext.findClass].
+     * The signature is split into four parts: the package name, the class name, the member name, and the package name as it should be used with [IrPluginContext.findClassOrNull].
      *
      * @param signature The signature to parse. It should be in the format "package/outerClasses.Member".
      * @return The parsed signature parts.
