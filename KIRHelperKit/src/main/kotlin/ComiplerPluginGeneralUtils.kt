@@ -33,13 +33,13 @@ class IrStringBuilder(
     file: IrFile
 ) {
     private val stringBuilderField: IrField
-    private val sbClass = pluginContext.findClass("kotlin/text/StringBuilder")!!
-    private val deleteMethod = sbClass.findFunction(pluginContext, "delete(int, int)")!!
-    private val toStringMethod = sbClass.findFunction(pluginContext, "toString()")!!
+    private val sbClass = pluginContext.findClass("kotlin/text/StringBuilder")
+    private val deleteMethod = sbClass.findFunction(pluginContext, "delete(int, int)")
+    private val toStringMethod = sbClass.findFunction(pluginContext, "toString()")
 
     init {
         stringBuilderField = pluginContext.createField(file.symbol, "_stringBuilder_${StringBuilderCounter.next()}") {
-            sbClass.findConstructor(pluginContext)!!()
+            sbClass.findConstructor(pluginContext)()
         }
         file.declarations.add(stringBuilderField)
         stringBuilderField.parent = file
@@ -54,7 +54,7 @@ class IrStringBuilder(
      */
     fun append(value: Any): IrFunctionAccessExpression {
         val paramType = extractType(value)
-        val appendMethod = sbClass.findFunction(pluginContext, "append(${paramType})", ignoreNullability = true)
+        val appendMethod = sbClass.findFunctionOrNull(pluginContext, "append(${paramType})", ignoreNullability = true)
             ?: throw IllegalArgumentException("Method append($paramType) not found in StringBuilder")
 
         return DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall(pluginContext) {
@@ -72,7 +72,7 @@ class IrStringBuilder(
      */
     fun insert(index: Int, value: Any): IrFunctionAccessExpression {
         val paramType = extractType(value)
-        val insertMethod = sbClass.findFunction(pluginContext, "insert(int, ${paramType})", ignoreNullability = true)
+        val insertMethod = sbClass.findFunctionOrNull(pluginContext, "insert(int, ${paramType})", ignoreNullability = true)
             ?: throw IllegalArgumentException("Method insert(int, ${paramType}) not found in StringBuilder")
 
         return DeclarationIrBuilder(pluginContext, stringBuilderField.symbol, stringBuilderField.startOffset, stringBuilderField.endOffset).getCall(pluginContext) {
@@ -115,10 +115,10 @@ abstract class IrFileHandler(
     private val fileName: String
 ) {
     protected val filePathField: IrField
-    protected val systemFileSystemProperty = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")!!
+    protected val systemFileSystemProperty = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
 
     init {
-        val pathFunction = pluginContext.findFunction("kotlinx/io/files/Path(string)")!!
+        val pathFunction = pluginContext.findFunction("kotlinx/io/files/Path(string)")
         filePathField = pluginContext.createField(file.symbol, "_filePath_${FileCounter.next()}") {
             pathFunction(fileName)
         }
@@ -141,12 +141,12 @@ class IrFileReader(
     fileName: String
 ) : IrFileHandler(pluginContext, file, fileName) {
     private var sourceField: IrField? = null
-    private val readStringFunction = pluginContext.findFunction("kotlinx/io/readString()", extensionReceiverType = pluginContext.findClass("kotlinx/io/Source")!!.defaultType)!!
-    private val closeSourceFunction = pluginContext.findFunction("kotlinx/io/Source.close()")!!
+    private val readStringFunction = pluginContext.findFunction("kotlinx/io/readString()", extensionReceiverType = pluginContext.findClass("kotlinx/io/Source").defaultType)
+    private val closeSourceFunction = pluginContext.findFunction("kotlinx/io/Source.close()")
 
     init {
-        val sourceFunction = systemFileSystemProperty.findFunction(pluginContext, "source(*)")!!
-        val bufferedSourceFunction = pluginContext.findFunction("kotlinx/io/buffered()", sourceFunction.owner.returnType)!!
+        val sourceFunction = systemFileSystemProperty.findFunction(pluginContext, "source(*)")
+        val bufferedSourceFunction = pluginContext.findFunction("kotlinx/io/buffered()", sourceFunction.owner.returnType)
 
         if (Path(fileName).exists()) {
             sourceField = pluginContext.createField(file.symbol, "_fileSource_${FileCounter.next()}") {
@@ -187,13 +187,13 @@ class IrFileWriter(
     fileName: String
 ) : IrFileHandler(pluginContext, file, fileName) {
     private var sinkField: IrField? = null
-    private val writeStringFunction = pluginContext.findFunction("kotlinx/io/writeString(string, int, int)")!!
-    private val flushFunction = pluginContext.findFunction("kotlinx/io/Sink.flush()")!!
-    private val closeSinkFunction = pluginContext.findFunction("kotlinx/io/Sink.close()")!!
+    private val writeStringFunction = pluginContext.findFunction("kotlinx/io/writeString(string, int, int)")
+    private val flushFunction = pluginContext.findFunction("kotlinx/io/Sink.flush()")
+    private val closeSinkFunction = pluginContext.findFunction("kotlinx/io/Sink.close()")
 
     init {
-        val sinkFunction = systemFileSystemProperty.findFunction(pluginContext, "sink(*)")!!
-        val bufferedSinkFunction = pluginContext.findFunction("kotlinx/io/buffered()", sinkFunction.owner.returnType)!!
+        val sinkFunction = systemFileSystemProperty.findFunction(pluginContext, "sink(*)")
+        val bufferedSinkFunction = pluginContext.findFunction("kotlinx/io/buffered()", sinkFunction.owner.returnType)
 
         sinkField = pluginContext.createField(file.symbol, "_fileSink_${FileCounter.next()}") {
             systemFileSystemProperty.call(sinkFunction, filePathField).call(bufferedSinkFunction)

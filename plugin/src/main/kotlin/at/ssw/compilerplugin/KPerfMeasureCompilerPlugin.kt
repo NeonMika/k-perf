@@ -831,65 +831,65 @@ class PerfMeasureExtension2(
                            firstFile: IrFile, stringBuilder: IrField, sinkFunc: IrSimpleFunctionSymbol, bufferedFunc: IrSimpleFunctionSymbol, writeStringFunc: IrSimpleFunctionSymbol, flushFunc: IrSimpleFunctionSymbol, toStringFunc: IrSimpleFunctionSymbol, randomDefaultObjectClass: IrClassSymbol, nextIntFunc: IrSimpleFunctionSymbol, randomNumber: IrField, bufferedTraceFileName: IrField, bufferedTraceFileSink: IrField, bufferedSymbolsFileName: IrField, bufferedSymbolsFileSink: IrField,
                            timeSourceMonotonicClass: IrClassSymbol, funMarkNow: IrSimpleFunctionSymbol, enterMethod: IrSimpleFunction, funElapsedNow: IrSimpleFunctionSymbol, symbol: IrSimpleFunctionSymbol, startOffset: Int, endOffset: Int, valueParam0: IrValueParameter, valueParam1: IrValueParameter, oldBody: IrBlockBody) {
 
-        val timeMarkClassNew = pluginContext.findClass("kotlin/time/TimeMark")
+        val timeMarkClassNew = pluginContext.findClassOrNull("kotlin/time/TimeMark")
         compareClassSymbols(timeMarkClass, timeMarkClassNew)
 
-        val stringBuilderClassNew = pluginContext.findClass("kotlin/text/StringBuilder")
+        val stringBuilderClassNew = pluginContext.findClassOrNull("kotlin/text/StringBuilder")
         compareClassSymbols(stringBuilderClass, stringBuilderClassNew)
 
-        val stringClass = pluginContext.findClass("string")
-        val stringEqualsFunc = stringClass?.findFunction(pluginContext, "equals()")
+        val stringClass = pluginContext.findClassOrNull("string")
+        val stringEqualsFunc = stringClass?.findFunctionOrNull(pluginContext, "equals()")
 
         //basic constructor test
-        val stringBuilderConstructorNew = stringBuilderClassNew?.findConstructor(pluginContext)
+        val stringBuilderConstructorNew = stringBuilderClassNew?.findConstructorOrNull(pluginContext)
         compareConstructorSymbols(stringBuilderConstructor, stringBuilderConstructorNew)
 
         //multiple parameter constructor test with java class
-        val fileClassNew = pluginContext.findClass("java/io/File")
+        val fileClassNew = pluginContext.findClassOrNull("java/io/File")
         val fileConstructor = fileClassNew?.constructors?.singleOrNull() { it.owner.valueParameters.size == 2 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() && it.owner.valueParameters[1].type == pluginContext.irBuiltIns.stringType.makeNullable() }
-        val fileConstructorNew = fileClassNew?.findConstructor(pluginContext, "(String?, String?)")
+        val fileConstructorNew = fileClassNew?.findConstructorOrNull(pluginContext, "(String?, String?)")
         compareConstructorSymbols(fileConstructor!!, fileConstructorNew)
 
         //single parameter test with kotlin class
-        val regexClass = pluginContext.findClass("kotlin/text/Regex")!!
+        val regexClass = pluginContext.findClass("kotlin/text/Regex")
         val regexConstructor = regexClass.constructors.singleOrNull { it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType }
-        val regexConstructorNew = regexClass.findConstructor(pluginContext, "(String)")
+        val regexConstructorNew = regexClass.findConstructorOrNull(pluginContext, "(String)")
         compareConstructorSymbols(regexConstructor!!, regexConstructorNew)
 
         //subclass constructor test
-        val defaultClass = pluginContext.findClass("kotlin/random/Random.Default")
-        val defaultClassConstructor = defaultClass?.findConstructor(pluginContext)
+        val defaultClass = pluginContext.findClassOrNull("kotlin/random/Random.Default")
+        val defaultClassConstructor = defaultClass?.findConstructorOrNull(pluginContext)
 
-        val defaultClassConstructorDirect = pluginContext.findConstructor("kotlin/random/Random.Default()")
+        val defaultClassConstructorDirect = pluginContext.findConstructorOrNull("kotlin/random/Random.Default()")
         compareConstructorSymbols(defaultClassConstructor!!, defaultClassConstructorDirect)
 
-        val findFunctionDefaultTestWithout = pluginContext.findFunction("kotlin/collections/joinToString(*)", pluginContext.getIrType("bytearray"))
-        val findFunctionDefaultTestWith1 = pluginContext.findFunction("kotlin/collections/joinToString(charsequence, *)", pluginContext.getIrType("bytearray"))
+        val findFunctionDefaultTestWithout = pluginContext.findFunctionOrNull("kotlin/collections/joinToString(*)", pluginContext.getIrType("bytearray"))
+        val findFunctionDefaultTestWith1 = pluginContext.findFunctionOrNull("kotlin/collections/joinToString(charsequence, *)", pluginContext.getIrType("bytearray"))
         compareFunctionSymbols(findFunctionDefaultTestWithout!!, findFunctionDefaultTestWith1)
 
         //non existin constructor test
-        val nonExistentConstructorNew = stringBuilderClassNew?.findConstructor(pluginContext, "(Boolean, String)")
+        val nonExistentConstructorNew = stringBuilderClassNew?.findConstructorOrNull(pluginContext, "(Boolean, String)")
         appendToDebugFile("NonExistingTest for constructor (should be null): $nonExistentConstructorNew \n\n")
 
-        val stringBuilderAppendIntFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(int)")
+        val stringBuilderAppendIntFuncNew = stringBuilderClassNew?.findFunctionOrNull(pluginContext, "append(int)")
         compareFunctionSymbols(stringBuilderAppendIntFunc, stringBuilderAppendIntFuncNew, true)
 
-        val stringBuilderAppendLongFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(long)")
+        val stringBuilderAppendLongFuncNew = stringBuilderClassNew?.findFunctionOrNull(pluginContext, "append(long)")
         compareFunctionSymbols(stringBuilderAppendLongFunc, stringBuilderAppendLongFuncNew, true)
 
-        val stringBuilderAppendStringFuncNew = stringBuilderClassNew?.findFunction(pluginContext, "append(string?)")
+        val stringBuilderAppendStringFuncNew = stringBuilderClassNew?.findFunctionOrNull(pluginContext, "append(string?)")
         compareFunctionSymbols(stringBuilderAppendStringFunc, stringBuilderAppendStringFuncNew, true)
 
-        val printlnFuncNew = pluginContext.findFunction("kotlin/io/println(any?)")
+        val printlnFuncNew = pluginContext.findFunctionOrNull("kotlin/io/println(any?)")
         compareFunctionSymbols(printlnFunc, printlnFuncNew)
 
         //negative example for function:
-        val nonExistingFunc = pluginContext.findFunction("kotlin/io/blabliblup()")
+        val nonExistingFunc = pluginContext.findFunctionOrNull("kotlin/io/blabliblup()")
         appendToDebugFile("NonExistingTest for function: $nonExistingFunc \n\n")
 
         //no parenthesis test for function (this should fail):
         runCatching {
-            pluginContext.findFunction("kotlin/io/println")
+            pluginContext.findFunctionOrNull("kotlin/io/println")
         }.onFailure { _ ->
             appendToDebugFile("NoParenthesisTest for function failed successfully \n\n")
         }.onSuccess {
@@ -898,7 +898,7 @@ class PerfMeasureExtension2(
 
         //only package test for function (this should fail):
         runCatching {
-            pluginContext.findFunction("kotlin/io/")
+            pluginContext.findFunctionOrNull("kotlin/io/")
         }.onFailure { _ ->
             appendToDebugFile("onlyPackageTest for function failed successfully \n\n")
         }.onSuccess {
@@ -906,55 +906,55 @@ class PerfMeasureExtension2(
         }
 
         //negative example for class:
-        val nonExistingClass = pluginContext.findClass("kotlin/io/Blabliblup")
+        val nonExistingClass = pluginContext.findClassOrNull("kotlin/io/Blabliblup")
         appendToDebugFile("NonExistingTest for class: $nonExistingClass \n\n")
 
         //only package test for class (this should fail):
         runCatching {
-            pluginContext.findClass("kotlin/text/")
+            pluginContext.findClassOrNull("kotlin/text/")
         }.onFailure { _ ->
             appendToDebugFile("onlyPackageTest for class failed successfully \n\n")
         }.onSuccess {
             appendToDebugFile("ERROR: onlyPackageTest for class did not fail! \n\n")
         }
 
-        val rawSinkClassNew = pluginContext.findClass("kotlinx/io/RawSink")
+        val rawSinkClassNew = pluginContext.findClassOrNull("kotlinx/io/RawSink")
         compareClassSymbols(rawSinkClass, rawSinkClassNew)
-        val pathConstructionFuncNew = pluginContext.findFunction("kotlinx/io/files/Path(string)")
+        val pathConstructionFuncNew = pluginContext.findFunctionOrNull("kotlinx/io/files/Path(string)")
         compareFunctionSymbols(pathConstructionFunc, pathConstructionFuncNew)
 
         //Test findProperty toplevel
-        val systemFileSystemNew = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystemNew = pluginContext.findPropertyOrNull("kotlinx/io/files/SystemFileSystem")
         comparePropertySymbols(systemFileSystem, systemFileSystemNew)
-        val sizePropertyNew = pluginContext.findProperty("kotlin/collections/ArrayList.size")
+        val sizePropertyNew = pluginContext.findPropertyOrNull("kotlin/collections/ArrayList.size")
         comparePropertySymbols(sizeProperty, sizePropertyNew)
 
         //Test findProperty on IrClass
-        val arrayListClass = pluginContext.findClass("kotlin/collections/ArrayList")
-        val sizePropertyNewClass = arrayListClass?.findProperty("size")
+        val arrayListClass = pluginContext.findClassOrNull("kotlin/collections/ArrayList")
+        val sizePropertyNewClass = arrayListClass?.findPropertyOrNull("size")
         comparePropertySymbols(sizePropertyNewClass!!, sizeProperty, true)
 
         //Test findProperty with function call
-        val functionCallTest = arrayListClass.findProperty("size()")
+        val functionCallTest = arrayListClass.findPropertyOrNull("size()")
         appendToDebugFile("FunctionCallTest for property (null): $functionCallTest\n\n")
 
         //negative example for property:
-        val nonExistingProperty = pluginContext.findProperty("kotlin/io/Blabliblup")
+        val nonExistingProperty = pluginContext.findPropertyOrNull("kotlin/io/Blabliblup")
         appendToDebugFile("NonExistingTest for property: $nonExistingProperty \n\n")
 
-        val sinkFuncNew = systemFileSystem.findFunction(pluginContext, "sink(*)")
+        val sinkFuncNew = systemFileSystem.findFunctionOrNull(pluginContext, "sink(*)")
         compareFunctionSymbols(sinkFunc, sinkFuncNew)
 
-        val bufferedFuncNew = pluginContext.findFunction("kotlinx/io/buffered()", sinkFunc.owner.returnType)
+        val bufferedFuncNew = pluginContext.findFunctionOrNull("kotlinx/io/buffered()", sinkFunc.owner.returnType)
         compareFunctionSymbols(bufferedFunc, bufferedFuncNew)
 
-        val writeStringFuncNew = pluginContext.findFunction("kotlinx/io/writeString(string,int,int)")
+        val writeStringFuncNew = pluginContext.findFunctionOrNull("kotlinx/io/writeString(string,int,int)")
         compareFunctionSymbols(writeStringFunc, writeStringFuncNew)
 
-        val flushFuncNew = pluginContext.findFunction("kotlinx/io/Sink.flush()")
+        val flushFuncNew = pluginContext.findFunctionOrNull("kotlinx/io/Sink.flush()")
         compareFunctionSymbols(flushFunc, flushFuncNew)
 
-        val toStringFuncNew = pluginContext.findFunction("kotlin/toString()")
+        val toStringFuncNew = pluginContext.findFunctionOrNull("kotlin/toString()")
         compareFunctionSymbols(toStringFunc, toStringFuncNew)
 
         val stringBuilderNew: IrField = pluginContext.irFactory.buildField {
@@ -998,10 +998,10 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(stringBuilderSimpleField)
         stringBuilderSimpleField.parent = firstFile
 
-        val randomDefaultObjectClassNew = pluginContext.findClass("kotlin/random/Random.Default")
+        val randomDefaultObjectClassNew = pluginContext.findClassOrNull("kotlin/random/Random.Default")
         compareClassSymbols(randomDefaultObjectClass, randomDefaultObjectClassNew)
 
-        val nextIntFuncNew = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()")
+        val nextIntFuncNew = pluginContext.findFunctionOrNull("kotlin/random/Random.Default.nextInt()")
         compareFunctionSymbols(nextIntFunc, nextIntFuncNew)
 
         val randomNumber2 = pluginContext.irFactory.buildField {
@@ -1110,10 +1110,10 @@ class PerfMeasureExtension2(
         bufferedSymbolsFileSink2.parent = firstFile
         compareFieldDumps(bufferedSymbolsFileSink.dump(), bufferedSymbolsFileSink2.dump(), "bufferedSymbolsFileSink")
 
-        val timeSourceMonotonicClassNew = pluginContext.findClass("kotlin/time/TimeSource.Monotonic")
+        val timeSourceMonotonicClassNew = pluginContext.findClassOrNull("kotlin/time/TimeSource.Monotonic")
         compareClassSymbols(timeSourceMonotonicClass, timeSourceMonotonicClassNew)
 
-        val funMarkNowNew = pluginContext.findFunction("kotlin/time/TimeSource.Monotonic.markNow()")
+        val funMarkNowNew = pluginContext.findFunctionOrNull("kotlin/time/TimeSource.Monotonic.markNow()")
         compareFunctionSymbols(funMarkNow, funMarkNowNew)
 
         val enterMethodNew = pluginContext.irFactory.buildFun {
@@ -1145,13 +1145,13 @@ class PerfMeasureExtension2(
         }
         compareFieldDumps(enterMethod.dump(), enterMethodNew.dump(), "_enter_method")
 
-        val funElapsedNowNew = pluginContext.findFunction("kotlin/time/TimeMark.elapsedNow()")
+        val funElapsedNowNew = pluginContext.findFunctionOrNull("kotlin/time/TimeMark.elapsedNow()")
         compareFunctionSymbols(funElapsedNow, funElapsedNowNew)
 
         val newBody = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
             enableCallDSL(pluginContext) {
                 val elapsedDuration = irTemporary(valueParam1.call(funElapsedNow))
-                val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds") ?: throw IllegalStateException("Property 'inWholeMicroseconds' not found")
+                val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds")
                 val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
 
                 if (STRINGBUILDER_MODE) {
@@ -1172,8 +1172,8 @@ class PerfMeasureExtension2(
         }
         appendToDebugFile("printLn with Number: " + printLnIntCall + "\n\n")
 
-        val atomicIntegerClass = pluginContext.findClass("java/util/concurrent/atomic/AtomicInteger")!!
-        val constructor = atomicIntegerClass.findConstructor(pluginContext)!!
+        val atomicIntegerClass = pluginContext.findClass("java/util/concurrent/atomic/AtomicInteger")
+        val constructor = atomicIntegerClass.findConstructor(pluginContext)
         val counterField = pluginContext.createField(firstFile.symbol, "_globalCounter") { constructor() }
         firstFile.declarations.add(counterField)
         counterField.parent = firstFile
@@ -1183,12 +1183,12 @@ class PerfMeasureExtension2(
         appendToDebugFile("printLn with Field: " + printLnFieldCall + "\n\n")
 
         //myClass tests
-        val myClass = pluginContext.findClass("test/MyClass")
+        val myClass = pluginContext.findClassOrNull("test/MyClass")
 
         if(myClass != null) {
             appendToDebugFile("myClass found\n")
             // Test for a generic function with one type parameter
-            val genericFunction = myClass.findFunction(pluginContext, "genericFunction(*)")
+            val genericFunction = myClass.findFunctionOrNull(pluginContext, "genericFunction(*)")
             if (genericFunction != null) {
                 appendToDebugFile("genericFunction found\n")
             } else {
@@ -1196,7 +1196,7 @@ class PerfMeasureExtension2(
             }
 
             // Test for a generic function with a different type parameter
-            val anotherGenericFunction = myClass.findFunction(pluginContext, "anotherGenericFunction(G)")
+            val anotherGenericFunction = myClass.findFunctionOrNull(pluginContext, "anotherGenericFunction(G)")
             if (anotherGenericFunction != null) {
                 appendToDebugFile("anotherGenericFunction found\n")
             } else {
@@ -1204,7 +1204,7 @@ class PerfMeasureExtension2(
             }
 
             // Test for a static function in the companion object
-            val staticFunction = myClass.findFunction(pluginContext, "staticFunction()")
+            val staticFunction = myClass.findFunctionOrNull(pluginContext, "staticFunction()")
             if (staticFunction != null) {
                 appendToDebugFile("staticFunction found\n")
             } else {
@@ -1212,7 +1212,7 @@ class PerfMeasureExtension2(
             }
 
             // Test a normal function in a class with similar other function
-            val normalFunction = myClass.findFunction(pluginContext, "normalFunction(int)")
+            val normalFunction = myClass.findFunctionOrNull(pluginContext, "normalFunction(int)")
             if (normalFunction != null) {
                 appendToDebugFile("normalFunction found\n")
             } else {
@@ -1220,7 +1220,7 @@ class PerfMeasureExtension2(
             }
 
             // Test a normal function in a class with all default parameters given
-            val defaultParamFunction = myClass.findFunction(pluginContext, "normalFunction(Int, String)", ignoreNullability = true)
+            val defaultParamFunction = myClass.findFunctionOrNull(pluginContext, "normalFunction(Int, String)", ignoreNullability = true)
             if (defaultParamFunction != null) {
                 appendToDebugFile("Function with default params found\n")
             } else {
@@ -1228,7 +1228,7 @@ class PerfMeasureExtension2(
             }
 
             // Test for a top-level function with a primitive type parameter
-            val topLevelFunction = pluginContext.findFunction("test/topLevelFunction(Int)")
+            val topLevelFunction = pluginContext.findFunctionOrNull("test/topLevelFunction(Int)")
             if (topLevelFunction != null) {
                 appendToDebugFile("topLevelFunction found\n")
             } else {

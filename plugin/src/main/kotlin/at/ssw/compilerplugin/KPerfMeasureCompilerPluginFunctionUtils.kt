@@ -27,7 +27,6 @@ import org.jetbrains.kotlin.platform.presentableDescription
 import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 import at.ssw.helpers.*
-import org.jetbrains.kotlin.ir.builders.declarations.buildField
 
 object ExampleConfigurationKeysFunction {
     val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled.function")
@@ -89,17 +88,17 @@ class PerfMeasureExtension2Function(
     val STRINGBUILDER_MODE = false
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark") ?: error("Cannot find class kotlin.time.TimeMark")
-        val stringBuilderClass = pluginContext.findClass("kotlin/text/StringBuilder") ?: error("Cannot find class kotlin.text.StringBuilder")
-        val stringBuilderAppendIntFunc = stringBuilderClass.findFunction(pluginContext, "append(int)") ?: error("Cannot find function append(int) in StringBuilder")
-        val stringBuilderAppendStringFunc = stringBuilderClass.findFunction(pluginContext, "append(string?)") ?: error("Cannot find function append(string) in StringBuilder")
-        val writeStringFunc = pluginContext.findFunction("kotlinx/io/writeString(string,int,int)") ?: error("Cannot find function writeString(string,int,int) in kotlinx.io")
-        val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(string)") ?: error("Cannot find function Path(string) in kotlinx.io.files")
-        val flushFunc = pluginContext.findFunction("kotlinx/io/Sink.flush()") ?: error("Cannot find function Sink.flush() in kotlinx.io")
-        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem") ?: error("Cannot find property SystemFileSystem in kotlinx.io.files")
+        val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark")
+        val stringBuilderClass = pluginContext.findClass("kotlin/text/StringBuilder")
+        val stringBuilderAppendIntFunc = stringBuilderClass.findFunction(pluginContext, "append(int)")
+        val stringBuilderAppendStringFunc = stringBuilderClass.findFunction(pluginContext, "append(string?)")
+        val writeStringFunc = pluginContext.findFunction("kotlinx/io/writeString(string,int,int)")
+        val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(string)")
+        val flushFunc = pluginContext.findFunction("kotlinx/io/Sink.flush()")
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
         val firstFile = moduleFragment.files[0]
-        val stringBuilder = pluginContext.createField(firstFile.symbol, "_stringBuilder")  { stringBuilderClass.findConstructor(pluginContext)!!() }
-        val randomDefaultObjectClass = pluginContext.findClass("kotlin/random/Random.Default") ?: error("Cannot find class kotlin.random.Random.Default")
+        val stringBuilder = pluginContext.createField(firstFile.symbol, "_stringBuilder")  { stringBuilderClass.findConstructor(pluginContext)() }
+        val randomDefaultObjectClass = pluginContext.findClass("kotlin/random/Random.Default")
         val randomNumber = pluginContext.createField(firstFile.symbol, "_randomNumber") {randomDefaultObjectClass.call("nextInt()")}
         firstFile.declarations.add(randomNumber)
         randomNumber.parent = firstFile
@@ -161,7 +160,7 @@ class PerfMeasureExtension2Function(
                         } else {
                             +bufferedTraceFileSink.call(writeStringFunc, irConcat(">;", valueParameters[0], "\n"))
                         }
-                        +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic")!!.call("markNow()"))
+                        +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic").call("markNow()"))
                     }
                 }
             }
@@ -185,7 +184,7 @@ class PerfMeasureExtension2Function(
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL(pluginContext) {
                         val elapsedDuration = irTemporary(valueParameters[1].call("elapsedNow()"))
-                        val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds") ?: throw IllegalStateException("Property 'inWholeMicroseconds' not found")
+                        val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
                         if (STRINGBUILDER_MODE) {
                             +stringBuilder.call(stringBuilderAppendStringFunc, "<;")
