@@ -1,3 +1,3 @@
-fun main() {
+/*fun main() {
     game.gol.play()
-}
+}*/

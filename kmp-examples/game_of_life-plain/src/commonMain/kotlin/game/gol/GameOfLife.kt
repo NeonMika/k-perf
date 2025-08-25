@@ -1,12 +1,5 @@
 package game.gol
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlin.time.TimeSource
 
 class GameOfLife(
@@ -86,13 +79,14 @@ class GameOfLife(
                 appendLine(row.map { if (it) liveChar else emptyChar }.joinToString(""))
             }
         }
+        /*
         CoroutineScope(Dispatchers.Default).launch {
             val client = HttpClient()
             print(client.request("https://echo.zuplo.io/") {
                 method = HttpMethod.Post
                 setBody(text)
             }.body<String>())
-        }
+        }*/
         println(text)
         println()
 

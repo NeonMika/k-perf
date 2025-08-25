@@ -18,7 +18,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation(kotlin("compiler-embeddable"))
+    compileOnly(kotlin("compiler-embeddable"))
     // https://youtrack.jetbrains.com/issue/KT-47897/Official-Kotlin-Gradle-plugin-api
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.0.20") // Use the appropriate version
     implementation(gradleApi())
