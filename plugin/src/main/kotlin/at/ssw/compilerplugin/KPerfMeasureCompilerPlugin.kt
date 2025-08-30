@@ -259,51 +259,34 @@ class PerfMeasureExtension2(
         fun findClass(name: String): IrClassSymbol = pluginContext.findClass(name)
         fun findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name)
         fun findProperty(name: String): IrPropertySymbol = pluginContext.findProperty(name)
-        fun IrClassSymbol.findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name, this)
-        fun IrClass.findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name, this.symbol)
-        fun IrClassSymbol.findConstructor(name: String): IrConstructorSymbol = pluginContext.findConstructor(name, this)
-        fun IrClass.findConstructor(name: String): IrConstructorSymbol = pluginContext.findConstructor(name, this.symbol)
 
-        fun IrBuilderWithScope.call(function: IrFunction, receiver : Any?, vararg parameters: Any?) = this.call(pluginContext, function, receiver, *parameters)
-        fun IrBuilderWithScope.call(function: IrSimpleFunctionSymbol, receiver : Any?, vararg parameters: Any?) = this.call(pluginContext, function, receiver, *parameters)
-        fun IrBuilderWithScope.call(function: String, receiver : Any?, vararg parameters: Any?) = this.call(pluginContext, findFunction(function), receiver, *parameters)
+        fun IrBuilderWithScope.call(function: IrSimpleFunctionSymbol, receiver: Any?, vararg parameters: Any?) = this.call(pluginContext, function, receiver, *parameters)
         fun IrBuilderWithScope.concat(vararg parameters: Any?) = this.irConcat(pluginContext, *parameters)
-        // #endregion local shortcuts
+        // #endregion
 
-        val timeMarkClass: IrClassSymbol
-            = findClass("kotlin/time/TimeMark") // Test Case 101
+        val timeMarkClass = findClass("kotlin/time/TimeMark")
 
         // In JVM, StringBuilder is a type alias (see https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.text/-string-builder/)
-        // In native and JS, StringBuilder is a class
-        val stringBuilderClass: IrClassSymbol =
-            findClass("kotlin/text/StringBuilder") // Test Case 102
-        val stringBuilderConstructor =
-            stringBuilderClass.findConstructor("kotlin/text/StringBuilder()") // Test Case 103
-        val stringBuilderAppendIntFunc =
-            stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(Int)") // Test Case 104
-        val stringBuilderAppendLongFunc =
-            stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(Long)") // Test Case 105
-        val stringBuilderAppendStringFunc =
-            stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(String?)") // Test Case 106
-        val printlnFunc =
-            findFunction("kotlin/io/println(String)") // Test Case 107
+        val stringBuilderClass = findClass("kotlin/text/StringBuilder")
+        val stringBuilderConstructor = stringBuilderClass.findConstructor("kotlin/text/StringBuilder()")
+        val stringBuilderAppendIntFunc = stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(Int)")
+        val stringBuilderAppendLongFunc = stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(Long)")
+        val stringBuilderAppendStringFunc = stringBuilderClass.findFunction("kotlin/text/StringBuilder.append(String?)")
+        val printlnFunc = findFunction("kotlin/io/println(String)")
 
         val debugFile = File("./DEBUG.txt")
         debugFile.delete()
 
-//      val pathClass =
-//          pluginContext.referenceClass(ClassId.fromString("kotlinx/io/files/Path"))!!
-        val rawSinkClass =
-            findClass("kotlinx/io/RawSink") // Test Case 109
+        val rawSinkClass = findClass("kotlinx/io/RawSink")
 
         // Watch out, Path does not use constructors but functions to build
-        val pathConstructionFunc = findFunction("kotlinx/io/files/Path(?)") // Test Case 110
+        val pathConstructionFunc = findFunction("kotlinx/io/files/Path(?)")
 
-        val systemFileSystem = findProperty("kotlinx/io/files/SystemFileSystem") // Test Case 111
+        val systemFileSystem = findProperty("kotlinx/io/files/SystemFileSystem")
 
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
-        val sinkFunc = systemFileSystemClass.findFunction("sink(*)") // Test Case 120
-        val bufferedFunc = findFunction("kotlinx/io/buffered: kotlinx/io/Sink") // Test Case 112
+        val sinkFunc = systemFileSystemClass.findFunction("sink(*)")
+        val bufferedFunc = findFunction("kotlinx/io/buffered: kotlinx/io/Sink")
 
         debugFile.appendText("1")
         debugFile.appendText(pluginContext.referenceFunctions(
@@ -313,12 +296,12 @@ class PerfMeasureExtension2(
             )
         ).joinToString(";") { it.owner.valueParameters.joinToString(",") { it.type.classFqName.toString() } })
 
-        val writeStringFunc = pluginContext.findFunction("kotlinx/io/writeString(String, Int, Int)") // Test Case 113
+        val writeStringFunc = pluginContext.findFunction("kotlinx/io/writeString(String, Int, Int)")
 
-        val flushFunc = pluginContext.findFunction("kotlinx/io/Sink.flush") // Test Case 114
+        val flushFunc = pluginContext.findFunction("kotlinx/io/Sink.flush")
 
         debugFile.appendText("2")
-        val toStringFunc = pluginContext.findFunction("kotlin/toString") // Test Case 115
+        val toStringFunc = pluginContext.findFunction("kotlin/toString")
         debugFile.appendText("3")
 
         val STRINGBUILDER_MODE = false
@@ -353,8 +336,7 @@ class PerfMeasureExtension2(
 
          */
 
-        // Todo: umwadeln!
-        val stringBuilder: IrField = pluginContext.irFactory.buildField { // Test Case 201
+        val stringBuilder: IrField = pluginContext.irFactory.buildField {
             name = Name.identifier("_stringBuilder")
             type = stringBuilderClass.defaultType
             isFinal = false
@@ -375,26 +357,25 @@ class PerfMeasureExtension2(
         val currentMillis = System.currentTimeMillis()
 
         val randomDefaultObjectClass =
-            pluginContext.findClass("kotlin/random/Random.Default") // Test Case 116
+            pluginContext.findClass("kotlin/random/Random.Default")
 
-        val nextIntFunc = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()") // Test Case 117
+        val nextIntFunc = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()")
 
-        // ☼ Todo: convert!
-        val randomNumber = pluginContext.irFactory.buildField { // Test Case 202
+        val randomNumber = pluginContext.irFactory.buildField {
             name = Name.identifier("_randNumber")
             type = pluginContext.irBuiltIns.intType
             isFinal = false
             isStatic = true
         }.apply {
             initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                irExprBody(this.call(pluginContext, nextIntFunc, randomDefaultObjectClass))
+                irExprBody(call(pluginContext, nextIntFunc, randomDefaultObjectClass))
             }
         }
 
         firstFile.declarations.add(randomNumber)
         randomNumber.parent = firstFile
 
-        val bufferedTraceFileName = pluginContext.irFactory.buildField { // Test Case 203
+        val bufferedTraceFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileName")
             type = pluginContext.irBuiltIns.stringType
             isFinal = false
@@ -410,7 +391,7 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedTraceFileName)
         bufferedTraceFileName.parent = firstFile
 
-        val bufferedTraceFileSink = pluginContext.irFactory.buildField { // Test Case 204
+        val bufferedTraceFileSink = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedTraceFileSink")
             type = rawSinkClass.defaultType
             isFinal = false
@@ -423,7 +404,7 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedTraceFileSink)
         bufferedTraceFileSink.parent = firstFile
 
-        val bufferedSymbolsFileName = pluginContext.irFactory.buildField { // Test Case 205
+        val bufferedSymbolsFileName = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileName")
             type = pluginContext.irBuiltIns.stringType
             isFinal = false
@@ -438,7 +419,7 @@ class PerfMeasureExtension2(
         firstFile.declarations.add(bufferedSymbolsFileName)
         bufferedSymbolsFileName.parent = firstFile
 
-        val bufferedSymbolsFileSink = pluginContext.irFactory.buildField { // Test Case 206
+        val bufferedSymbolsFileSink = pluginContext.irFactory.buildField {
             name = Name.identifier("_bufferedSymbolsFileSink")
             type = rawSinkClass.defaultType
             isFinal = false
@@ -456,8 +437,7 @@ class PerfMeasureExtension2(
         var currMethodId = 0
 
         fun buildEnterMethodFunction(): IrFunction {
-            val timeSourceMonotonicClass: IrClassSymbol =
-                pluginContext.findClass("kotlin/time/TimeSource.Monotonic") // Test Case 118
+            val timeSourceMonotonicClass = pluginContext.findClass("kotlin/time/TimeSource.Monotonic")
 
             /*
             classMonotonic.functions.forEach {
@@ -478,7 +458,7 @@ class PerfMeasureExtension2(
 
             /* val funMarkNowViaClass = classMonotonic.functions.find { it.owner.name.asString() == "markNow" }!! */
 
-            val funMarkNow = pluginContext.findFunction("kotlin/time/TimeSource.Monotonic.markNow") // Test Case 119
+            val funMarkNow = pluginContext.findFunction("kotlin/time/TimeSource.Monotonic.markNow")
 
             // assertion: funMarkNowViaClass == funMarkNow
 
@@ -488,9 +468,9 @@ class PerfMeasureExtension2(
             }.apply {
                 addValueParameter {
                     /*
-                    name = Name.identifier("method")
-                    type = pluginContext.irBuiltIns.stringType
-                    */
+                name = Name.identifier("method")
+                type = pluginContext.irBuiltIns.stringType
+                */
                     name = Name.identifier("methodId")
                     type = pluginContext.irBuiltIns.intType
                 }
@@ -518,19 +498,19 @@ class PerfMeasureExtension2(
                         })
                     }
                     */
-                    /*
-                    +irCall(stringBuilderAppendStringFunc).apply {
-                        dispatchReceiver = irGetField(null, stringBuilder)
-                        putValueArgument(0, irConcat().apply {
-                            addArgument(irCall(repeatFunc).apply {
-                                extensionReceiver = irString("-")
-                                putValueArgument(0, irGetField(null, depth))
-                            })
-                            addArgument(irString("> "))
-                            addArgument(irGet(valueParameters[0]))
+                /*
+                +irCall(stringBuilderAppendStringFunc).apply {
+                    dispatchReceiver = irGetField(null, stringBuilder)
+                    putValueArgument(0, irConcat().apply {
+                        addArgument(irCall(repeatFunc).apply {
+                            extensionReceiver = irString("-")
+                            putValueArgument(0, irGetField(null, depth))
                         })
-                    }
-                    */
+                        addArgument(irString("> "))
+                        addArgument(irGet(valueParameters[0]))
+                    })
+                }
+                */
 
                     if (STRINGBUILDER_MODE) {
                         +call(stringBuilderAppendStringFunc, stringBuilder, ">;")
@@ -577,15 +557,9 @@ class PerfMeasureExtension2(
 
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     // Duration
-                    val elapsedDuration = irTemporary(irCall(funElapsedNow).apply {
-                        dispatchReceiver = irGet(valueParameters[1])
-                    })
-                    val elapsedMicrosProp : IrProperty =
-                        elapsedDuration.type.findProperty("inWholeMicroseconds").owner
-
-                    val elapsedMicros = irTemporary(irCall(elapsedMicrosProp.getter!!).apply {
-                        dispatchReceiver = irGet(elapsedDuration)
-                    })
+                    val elapsedDuration = irTemporary(call(pluginContext, funElapsedNow, valueParameters[1]))
+                    val elapsedMicrosProp: IrProperty = elapsedDuration.type.findProperty("inWholeMicroseconds").owner
+                    val elapsedMicros = irTemporary(call(pluginContext, elapsedMicrosProp.getter!!, elapsedDuration))
 
                     /*
                     val concat = irConcat()
@@ -711,14 +685,8 @@ class PerfMeasureExtension2(
                 }
 
                 +call(flushFunc, bufferedTraceFileSink)
-                // ☼ TODO??
-                //Wish: flushFunc.withThis(bufferedTraceFileSink).call()
-                +irCall(flushFunc).apply {
-                    dispatchReceiver = irGetField(null, bufferedTraceFileSink)
-                }
-
+                +call(flushFunc, null, bufferedTraceFileSink)
                 +call(printlnFunc, null, bufferedSymbolsFileName)
-
                 +call(writeStringFunc, bufferedSymbolsFileSink, "{ " + methodIdMap.map { (name, id) -> id to name }
                     .sortedBy { (id, _) -> id }
                     .joinToString(",\n") { (id, name) -> "\"$id\": \"$name\"" } + " }")
