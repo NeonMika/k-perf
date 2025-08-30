@@ -1,0 +1,1 @@
+val funMarkNow = pluginContext.findFunction("kotlin/time/TimeSource.Monotonic/markNow")
