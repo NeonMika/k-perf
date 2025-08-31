@@ -4,29 +4,9 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
-import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
-import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.ir.builders.*
-import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
-import org.jetbrains.kotlin.ir.builders.declarations.buildFun
-import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrFunction
-import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
-import org.jetbrains.kotlin.ir.expressions.addArgument
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
-import org.jetbrains.kotlin.ir.symbols.IrConstructorSymbol
-import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
-import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.util.dump
-import org.jetbrains.kotlin.name.CallableId
-import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.util.collectionUtils.concat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -96,6 +76,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         """)
 
         // language="kotlin", prefix="override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) { val actual: String; val expected: String", suffix="}"
+        @OptIn(ExperimentalCompilerApi::class)
         private val testCasesFind = listOf("""
         // 101
 
@@ -144,6 +125,27 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         actual = stringBuilderClass.findFunction("append(String?)")
         expected = stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
     """, """
+        // 106a
+
+        val stringBuilderClass = findClass("kotlin/text/StringBuilder")
+        
+        actual = stringBuilderClass.findFunction("append(String)")
+        expected = stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
+    """, """
+        // 106b
+
+        val stringBuilderClass = findClass("kotlin/text/StringBuilder")
+        
+        actual = stringBuilderClass.findFunction("append(String?)")
+        expected = stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
+    """, """
+        // 106c
+
+        val stringBuilderClass = findClass("kotlin/text/StringBuilder")
+        
+        actual = stringBuilderClass.findFunction("append(String, String)")
+        expected = stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].isVararg }
+    """, """
         // 107
 
         actual = findFunction("kotlin/io/println(Any?)")
@@ -155,14 +157,15 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         assert(actual != findFunction("kotlin/io/println(Int)"))
     """, """
         // 107a
-        error = "org.opentest4j.AssertionFailedError(\"<FUN IR_EXTERNAL_DECLARATION_STUB name:println visibility:public modality:FINAL <> (message:kotlin.Int) returnType:kotlin.Unit [inline]>\")"
+        
+        error = org.opentest4j.AssertionFailedError("expected: <FUN IR_EXTERNAL_DECLARATION_STUB name:println visibility:public modality:FINAL <> (message:kotlin.Int) returnType:kotlin.Unit [inline]> but was: <FUN IR_EXTERNAL_DECLARATION_STUB name:println visibility:public modality:FINAL <> (message:kotlin.Any?) returnType:kotlin.Unit [inline]>")
 
         actual = findFunction("kotlin/io/println(Any?)")
         expected = findFunction("kotlin/io/println(Int)")
-
-        org.junit.jupiter.api.Assertions.assertEquals(actual, expected)
     """, """
         // 107b
+        
+        error = org.opentest4j.AssertionFailedError("expected: <FUN IR_EXTERNAL_DECLARATION_STUB name:println visibility:public modality:FINAL <> (message:kotlin.Int) returnType:kotlin.Unit [inline]> but was: <FUN IR_EXTERNAL_DECLARATION_STUB name:println visibility:public modality:FINAL <> (message:kotlin.Any?) returnType:kotlin.Unit [inline]>")
 
         actual = findFunction("kotlin/io/println(Any?)")
         expected = findFunction("kotlin/io/println(Int)")
@@ -172,17 +175,15 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     """, """
         // 107c
 
-        error("Was wollte ich da nochmal machen?")
-
         actual = findClass("kotlin/text/StringBuilder").findFunction("append(String?)")
-        expected = findFunction("kotlin/io/println(kotlin/text/String?)")
+        expected = findFunction("kotlin/text/StringBuilder.append(String?)")
     """, """
-        // 107c
+        // 107d
 
-        error("Was wollte ich da nochmal machen?")
+        error = org.opentest4j.AssertionFailedError("expected: <FUN IR_EXTERNAL_JAVA_DECLARATION_STUB name:append visibility:public modality:OPEN <> (\${'$'}this:java.lang.StringBuilder, p0:@[FlexibleNullability] kotlin.Any?) returnType:@[FlexibleNullability] java.lang.StringBuilder?> but was: <FUN IR_EXTERNAL_JAVA_DECLARATION_STUB name:append visibility:public modality:OPEN <> (\${'$'}this:java.lang.StringBuilder, p0:@[FlexibleNullability] kotlin.String?) returnType:@[FlexibleNullability] java.lang.StringBuilder?>")
 
         actual = findClass("kotlin/text/StringBuilder").findFunction("append(String?)")
-        expected = findFunction("kotlin/io/println(kotlin/text/String?)")
+        expected = findFunction("kotlin/text/StringBuilder.append(Any?)")
     """, """
         // 108
 
@@ -366,6 +367,19 @@ class KPerfMeasureCompilerPluginExtensionsTest {
             )
         ).single()
     """, """
+        // 119a
+        val clazz = pluginContext.findClass("kotlin/time/TimeSource")
+
+        actual = clazz.findFunction("TimeSource.Monotonic.markNow")
+        expected = pluginContext.findFunction("kotlin/time/TimeSource.Monotonic.markNow")
+    """, """
+        // 119b
+        val clazzActual = pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeSource.Monotonic"))!!
+        val clazzExpected = pluginContext.findClass("kotlin/time/TimeSource")
+
+        actual = clazzActual.findFunction("TimeSource.Monotonic.markNow")
+        expected = (clazzExpected.findFunction("TimeSource.Monotonic.markNow") as IrSimpleFunctionSymbolWrapper).content
+    """, """
         // 120
 
         val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
@@ -384,11 +398,13 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     """, """
         // 120b
 
+        error = java.lang.IllegalStateException("function not found: sink(?)")
+
         val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
 
         actual = systemFileSystemClass.findFunction("sink(?)")
-        expected = systemFileSystemClass.findFunction("sink(*)")
+        //expected = java.lang.IllegalStateException("function not found: sink(?)")
     """, """
         // 120c
 
@@ -396,7 +412,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
 
         actual = systemFileSystemClass.findFunction("sink(?, ?)")
-        expected = systemFileSystemClass.findFunction("sink(?)")
+        expected = systemFileSystemClass.findFunction("sink(*)")
     """, """
         // 120d
 
@@ -404,7 +420,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
 
         actual = systemFileSystemClass.findFunction("sink(?, *)")
-        expected = systemFileSystemClass.findFunction("sink(?)")
+        expected = systemFileSystemClass.findFunction("sink(*)")
     """, """
         // 120e
 
@@ -412,6 +428,22 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
         
         actual = systemFileSystemClass.findFunction("sink(kotlinx/io/files/Path, Boolean)")
+        expected = systemFileSystemClass.findFunction("sink(kotlinx/io/files/Path)")
+    """, """
+        // 120f
+
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+        
+        actual = systemFileSystemClass.findFunction("kotlinx/io/files/SystemFileSystem/sink(kotlinx/io/files/Path)")
+        expected = systemFileSystemClass.findFunction("sink(kotlinx/io/files/Path)")
+    """, """
+        // 120g
+
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
+        val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
+        
+        actual = pluginContext.findClass("kotlinx/io/files/SystemFileSystem").findFunction("sink(kotlinx/io/files/Path)")
         expected = systemFileSystemClass.findFunction("sink(kotlinx/io/files/Path)")
     """)
 
@@ -422,7 +454,6 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val firstFile = moduleFragment.files[0]
         val stringBuilderClass: IrClassSymbol = pluginContext.findClass("kotlin/text/StringBuilder")
         val stringBuilderConstructor = stringBuilderClass.findConstructor("kotlin/text/StringBuilder()")
-        // ☼ Todo: umwadeln!
         actual = pluginContext.irFactory.buildField {
             name = Name.identifier("_stringBuilder")
             type = stringBuilderClass.defaultType
@@ -458,7 +489,6 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val nextIntFunc = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()")
         val bufferedFunc = pluginContext.findFunction("kotlinx/io/buffered(): kotlinx/io/Sink")
         val randomDefaultObjectClass = pluginContext.findClass("kotlin/random/Random.Default")
-        // ☼ Todo: umwadeln!
         actual = pluginContext.irFactory.buildField {
             name = Name.identifier("_randNumber")
             type = pluginContext.irBuiltIns.intType
@@ -475,8 +505,17 @@ class KPerfMeasureCompilerPluginExtensionsTest {
             isFinal = false
             isStatic = true
         }.apply {
-            initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
-                irExprBody(this.call(pluginContext, nextIntFunc, randomDefaultObjectClass))
+            this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
+                irExprBody(irCall(bufferedFunc).apply {
+                    extensionReceiver = irCall(sinkFunc).apply {
+                        dispatchReceiver = irCall(systemFileSystem.owner.getter!!)
+                        putValueArgument(
+                            0,
+                            irCall(pathConstructionFunc).apply {
+                                putValueArgument(0, irGetField(null, bufferedSymbolsFileName))
+                            })
+                    }
+                })
             }
         }.dump()
     """, """
@@ -532,7 +571,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val firstFile = moduleFragment.files[0]
         val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
-        val sinkFunc = systemFileSystemClass.findFunction("sink()")
+        val sinkFunc = systemFileSystemClass.findFunction("sink")
         val bufferedFunc = pluginContext.findFunction("kotlinx/io/buffered(): kotlinx/io/Sink")
         val randomDefaultObjectClass = pluginContext.findClass("kotlin/random/Random.Default")
         val rawSinkClass = pluginContext.findClass("kotlinx/io/RawSink")
@@ -650,7 +689,7 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val rawSinkClass = pluginContext.findClass("kotlinx/io/RawSink")
         val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
         val systemFileSystemClass = systemFileSystem.owner.getter!!.returnType.classOrFail
-        val sinkFunc = systemFileSystemClass.findFunction("sink()")
+        val sinkFunc = systemFileSystemClass.findFunction("sink")
         val bufferedFunc = pluginContext.findFunction("kotlinx/io/buffered(): kotlinx/io/Sink")
         val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(String)")
         val nextIntFunc = pluginContext.findFunction("kotlin/random/Random.Default.nextInt()")
@@ -712,7 +751,54 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     """)
 
         // language="kotlin", prefix="override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) { val actual: String; val expected: String", suffix="}"
-        private val testCasesConcat: List<String> = listOf(/)
+        private val testCasesCall = listOf("""
+            // 301
+
+            actual = call(pluginContext, stringBuilderAppendStringFunc, stringBuilder, "<;")
+            expected = irCall(stringBuilderAppendStringFunc).apply {
+                dispatchReceiver = irGetField(null, stringBuilder)
+                putValueArgument(0, irString("<;"))
+            }
+    """, """
+            // 302
+
+            actual = call(pluginContext, stringBuilderAppendFunc, stringBuilder, valueParameters[0])
+            expected = irCall(stringBuilderAppendFunc).apply {
+                dispatchReceiver = irGetField(null, stringBuilder)
+                putValueArgument(0, irGet(valueParameters[0]))
+            }
+    """, """
+            // 303
+
+            actual = call(pluginContext, stringBuilderAppendStringFunc, stringBuilder, ";")
+            expected = irCall(stringBuilderAppendStringFunc).apply {
+                dispatchReceiver = irGetField(null, stringBuilder)
+                putValueArgument(0, irString(";"))
+            }
+    """, """
+            // 304
+
+            actual = call(pluginContext, stringBuilderAppendLongFunc, stringBuilder, elapsedMicros)
+            expected = irCall(stringBuilderAppendLongFunc).apply {
+                dispatchReceiver = irGetField(null, stringBuilder)
+                putValueArgument(0, irGet(elapsedMicros))
+            }
+    """, """
+            // 305
+
+            actual = call(pluginContext, stringBuilderAppendStringFunc, stringBuilder, "\n")
+            expected = irCall(stringBuilderAppendStringFunc).apply {
+                dispatchReceiver = irGetField(null, stringBuilder)
+                putValueArgument(0, irString("\n"))
+            }
+    """
+        )
+
+        // language="kotlin", prefix="override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) { val actual: String; val expected: String", suffix="}"
+        private val testCasesConcat: List<String> = listOf(/*"""
+            actual =
+            expected =
+    """*/)
     }
 
     //#region unit tests
@@ -723,8 +809,13 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-104`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-105`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-106`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-106a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-106b`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-107`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-107a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-107b`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-107c`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-107d`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-108`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-108a`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-109`() = test()
@@ -739,12 +830,15 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-117`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-118`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-119`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-119a`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120a`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120b`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120c`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120d`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120e`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120f`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-120g`() = test()
 
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-201`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-202`() = test()
@@ -753,14 +847,26 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-205`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-206`() = test()
 
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-301`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-302`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-303`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-304`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-305`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 1-306`() = test()
+
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-101`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-102`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-103`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-104`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-105`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-106`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-106a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-106b`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-107`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-107a`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-107b`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-107c`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-107d`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-108`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-108a`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-109`() = test()
@@ -775,12 +881,15 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-117`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-118`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-119`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-119a`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120a`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120b`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120c`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120d`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120e`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120f`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-120g`() = test()
 
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-201`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-202`() = test()
@@ -788,6 +897,13 @@ class KPerfMeasureCompilerPluginExtensionsTest {
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-204`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-205`() = test()
     @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-206`() = test()
+
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-301`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-302`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-303`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-304`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-305`() = test()
+    @Test @OptIn(ExperimentalCompilerApi::class) fun `Test 2-306`() = test()
 
     //#endregion
 
@@ -798,7 +914,8 @@ class KPerfMeasureCompilerPluginExtensionsTest {
         val list = when (testName[0] - '0') {
             1 -> testCasesFind
             2 -> testCasesBuild
-            3 -> testCasesConcat
+            3 -> testCasesCall
+            4 -> testCasesConcat
             else -> error("unknown test set")
         }
 
@@ -837,6 +954,8 @@ class ${className}: PerfMeasureExtensionTest() {
         fun IrClass.findFunction(name: String): IrSimpleFunctionSymbol = pluginContext.findFunction(name, this.symbol)
         fun IrClassSymbol.findConstructor(name: String): IrConstructorSymbol = pluginContext.findConstructor(name, this)
         fun IrClass.findConstructor(name: String): IrConstructorSymbol = pluginContext.findConstructor(name, this.symbol)
+        fun IrPropertySymbol.findFunction(name: String): IrSimpleFunctionSymbol = this.owner.findFunction(name)
+        fun IrProperty.findFunction(name: String): IrSimpleFunctionSymbol = this.getter!!.returnType.classOrFail.findFunction(name)
 
         fun IrBuilderWithScope.call(function: IrFunction, receiver : Any?, vararg parameters: Any?) = this.call(pluginContext, function, receiver, *parameters)
         fun IrBuilderWithScope.call(function: IrSimpleFunctionSymbol, receiver : Any?, vararg parameters: Any?) = this.call(pluginContext, function, receiver, *parameters)
@@ -862,28 +981,39 @@ class ${className}: PerfMeasureExtensionTest() {
             compilerPluginRegistrars = listOf(PerfMeasureComponentRegistrarTest(obj))
         }.compile()
 
-        if (obj.error == null) {
-            assertEquals(expectedKotlinCompilationResult, result.exitCode, result.messages)
-            assertEquals(obj.expected, obj.actual)
-        } else {
+        fun check() {
+            assertEquals(KotlinCompilation.ExitCode.values().firstOrNull { it.ordinal == obj.exitCode } ?: KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+            val actual = obj.actual
+            val expected = obj.expected
+            if (actual is IrPluginContextWrapper<*>) {
+                if (expected is IrPluginContextWrapper<*>) {
+                    assertEquals(expected.content, actual.content)
+                } else {
+                    assertEquals(expected, actual.content)
+                }
+            } else {
+                assertEquals(expected, actual)
+            }
+        }
+
+        if (obj.error != null) {
             val expected = obj.error
-            if (expected is Exception && result is Exception) {
-                assertEquals(expected::class, result::class)
-                assertEquals(expected.message, result.message)
+            if (expected is Throwable) {
+                val checked = if (obj.actual is Throwable) obj.actual as Throwable else try {
+                    check()
+                    error("Exception expected!")
+                } catch (ex: Throwable) {
+                    ex
+                }
+                assertEquals(expected::class, checked::class)
+                assertEquals(expected.message, checked.message)
+                return
             } else {
                 assertEquals(expected, result)
             }
         }
-    }
 
-    class MyClass {
-        fun fooFunc(sb: kotlin.text.StringBuilder, index: Int?) {
-        }
-    }
-
-    class Dummy {
-        fun fooFunc(sb: kotlin.text.StringBuilder, index: Int?) {
-        }
+        check()
     }
 }
 
@@ -898,4 +1028,5 @@ abstract class PerfMeasureExtensionTest: IrGenerationExtension {
     var expected: Any? = null
     var actual: Any? = null
     var error: Any? = null
+    var exitCode = 0
 }
