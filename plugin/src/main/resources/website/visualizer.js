@@ -5,14 +5,14 @@ function restructureTree(root) {
     function traverse(node, parent) {
 
         node.displayedData = Object.fromEntries(
-            Object.entries(node).filter(([key]) => !ignoreList.includes(key) && key !== "intermediate")
+            Object.entries(node).filter(([key]) => !ignoreList.includes(key) && key !== "groupNode")
         );
 
         node.nodeID = "node" + (idCount++);
         node.parent = parent;
         node.highlight = false;
-        if (!("intermediate" in node)) {
-            node.intermediate = false;
+        if (!("groupNode" in node)) {
+            node.groupNode = false;
         }
         if (Array.isArray(node.Children)) {
             for (const child of node.Children) {
@@ -58,7 +58,7 @@ function createDotSource(root) {
                             style="filled,rounded";
                             color="grey";
                             margin=25;`);
-            if(!node.intermediate){
+            if(!node.groupNode){
                 dotBuilder.push(`fillcolor="${clusterColor}"`);
             }
         }
@@ -73,7 +73,7 @@ function createDotSource(root) {
             label += `<BR/><FONT FACE="Courier New" >${escapeDotSymbols(caption)}</FONT>`;
         }
 
-        if (node.NodeType === "IrConstImpl" && !node.intermediate) {
+        if (node.NodeType === "IrConstImpl" && !node.groupNode) {
             // noinspection XmlDeprecatedElement,HtmlDeprecatedTag
             label += `<BR/><FONT FACE="Courier New" >${truncate(escapeDotSymbols(node.Value), 30)}</FONT>`;
         }
@@ -119,7 +119,7 @@ function nodeAttributes(node, label) {
 
     const styles = [];
     if (node.highlight) styles.push('filled');
-    if (node.intermediate) styles.push('dotted');
+    if (node.groupNode) styles.push('dotted');
     if (styles.length) attrs.push(`style="${styles.join(',')}"`);
 
     return attrs.join(', ');
@@ -329,7 +329,7 @@ function groupArrays(tree) {
                 NodeName: `${type} Group`,
                 Caption: "",
                 Dump: `Group of ${prop} (type=${type})`,
-                intermediate: true,
+                groupNode: true,
                 Relationship: prop + `[${extractArrayIndex(run[0].Relationship)}..${extractArrayIndex(run[run.length - 1].Relationship)}]`,
                 Type: type,
                 Children: run

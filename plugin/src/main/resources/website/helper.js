@@ -61,7 +61,7 @@ function setInfoDiv(nodeId) {
     dumpParagraph.appendChild(document.createTextNode(`: ${nodeData.Dump}`));
     infoDiv.appendChild(dumpParagraph);
 
-    if (!nodeData.intermediate) {
+    if (!nodeData.groupNode) {
         const sourcecodeButton = document.createElement("button");
         sourcecodeButton.textContent = "Show Sourcecode";
         sourcecodeButton.className = "optional";
@@ -125,7 +125,7 @@ function setCodeInspector(nodeId) {
     const fileNode = getFileNodeOfNode(nodeData);
     if (fileNode) {
         inspector.setFileNode(fileNode);
-        if (!nodeData.intermediate) {
+        if (!nodeData.groupNode) {
             inspector.highlightUnit({start: nodeData.StartOffset, end: nodeData.EndOffset});
         } else {
             inspector.highlightUnit({start: -1, end: -1})
