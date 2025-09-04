@@ -236,10 +236,10 @@ function expandAll(node) {
     }
 }
 
-function expandAllParents(node) {
+function expandAllAncestors(node) {
     node.visible = true;
     if (node.parent) {
-        expandAllParents(node.parent);
+        expandAllAncestors(node.parent);
     }
 }
 

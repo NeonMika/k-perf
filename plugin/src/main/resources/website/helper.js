@@ -98,7 +98,7 @@ function setInfoDiv(nodeId) {
             const nodes = getAllNodesWithFunctionIdentity(nodeData.FunctionIdentity);
             for (let node of nodes) {
                 if (nodeData.NodeName !== node.NodeName) {
-                    expandAllParents(node);
+                    expandAllAncestors(node);
                 }
             }
             updateGraph();

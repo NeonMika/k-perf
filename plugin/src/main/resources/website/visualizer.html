@@ -380,7 +380,7 @@
     inspector.addEventListener('unitSelected', e => {
         console.log('User clicked unit:', e.detail);
         selectedNodeId = e.detail.nodeID;
-        expandAllParents(nodeDict[e.detail.nodeID]);
+        expandAllAncestors(nodeDict[e.detail.nodeID]);
         autoZoomToNode = true;
         updateGraph();
         setInfoDiv(selectedNodeId);
