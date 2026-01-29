@@ -1,7 +1,7 @@
+# KIRHelperKit: Simplifying Kotlin Compiler Plugin Development
 
-# Simplifying Kotlin Compiler Plugin Development
-
-This project aims to simplify and enhance the process of developing Kotlin compiler plugins. It provides a set of tools and utilities designed to make working with Kotlin's Intermediate Representation (IR) more accessible and efficient.
+This project aims to simplify and enhance the process of developing Kotlin compiler plugins.
+**KIRHelperKit** provides a set of tools and utilities designed to make working with Kotlin's Intermediate Representation (IR) more accessible and efficient.
 
 ## What it Does
 
@@ -21,67 +21,70 @@ This project streamlines various aspects of Kotlin compiler plugin development, 
     *   `IrStringBuilder`: Offers a simpler way to manage a `StringBuilder` within the Kotlin IR context, providing methods like `append()`, `insert()`, and `delete()` that generate the corresponding IR operations.
     *   `IrFileIOHandler`: Provides simplified file input/output operations within the Kotlin IR, abstracting away the complexities of direct file manipulation in the IR.
 
-## How to Use
+## How to Build and Use
 
-To use this compiler plugin in your Kotlin projects, follow these steps:
+To first build and then use this library in your Kotlin projects, follow these steps:
 
-### 1. Configure JDK in `gradle.properties`
+### 1. Configure JDK in KIRHelperKit's `gradle.properties`
 
-Before building, ensure your `gradle.properties` file points to the correct Java Development Kit (JDK) installation. This is crucial for Gradle to function correctly.
-
-**Important:** Update the path `C:/Users/User/.jdks/jdk.version` to the actual location of your JDK.
+Before building, if you encounter problems, ensure this project's `gradle.properties` file points to the correct Java Development Kit (JDK) installation. This is crucial for Gradle to function correctly.
 
 ### 2. Build the Project
 
 Navigate to the root directory of this project in your terminal and execute the following Gradle command to build the project:
-bash
+```bash
 ./gradlew build
+```
 
-This command compiles the source code, runs tests, and packages the plugin.
+This command compiles the source code, runs tests, and packages KIRHelperKit as a `jar` file.
 
 ### 3. Publish to Maven Local
 
-After a successful build, publish the plugin to your local Maven repository. This makes the plugin accessible to other projects on your machine.
-bash
+After a successful build, publish KIRHelperKit to your local Maven repository. This makes KIRHelperKit accessible to other projects on your machine.
+
+```bash
 ./gradlew publishToMavenLocal
+```
 
-This command will install the plugin's artifacts (including the `KIRHelperKit` AAR and sources JAR) into your local Maven repository, typically located at `~/.m2/repository`.
+This command will install KIRHelperKit's artifacts (including the `KIRHelperKit` JAR and sources JAR) into your local Maven repository, typically located at `~/.m2/repository`.
 
-### 4. Include the Plugin in Your Project
+### 4. Include KIRHelperKit in Your Project
 
-To use this compiler plugin in another Kotlin project, you need to declare it as a dependency in that project's `build.gradle.kts` file.
+To use KIRHelperKit in another Kotlin (Gradle) project, you need to declare it as a dependency in that project's `build.gradle.kts` file.
 
-First, ensure your project's `settings.gradle.kts` includes `mavenLocal()` in its plugin repositories:
+But first, ensure your project's `settings.gradle.kts` includes `mavenLocal()` in its `repositories` sections:
 
 ```
 // settings.gradle.kts
 pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenLocal() // Add this line
-    }
+  repositories {
+    gradlePluginPortal()
+    mavenLocal() // Make sure this exists
+  }
+}
+
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    mavenCentral()
+    mavenLocal() // Make sure this exists
+  }
 }
 ```
 
 
-Then, in the `build.gradle.kts` of the project where you want to use the plugin, apply the plugin and add the necessary dependencies. Replace `"at.ssw"` and `"KIRHelperKit"` with your actual `groupId` and `artifactId` if they differ.
+Then, in the `build.gradle.kts` of the project where you want to use KIRHelperKit, apply the plugin and add the necessary dependencies.
 ```
 // build.gradle.kts of your consuming project
 plugins {
     kotlin("jvm") version "2.0.20" // Or your desired Kotlin version
-    id("at.ssw.KIRHelperKit") version "0.0.2" // Apply your plugin
-}
-
-repositories {
-    mavenCentral()
-    mavenLocal() // Make sure mavenLocal is included here as well
+    // ... other plugins ...
 }
 
 dependencies {
-    // Other dependencies
-    implementation(kotlin("stdlib"))
+    implementation("at.jku.ssw:KIRHelperKit:0.1.0") // <---
+    // ... other dependencies ...
 }
 ```
 
 Now, your project will have access to the functionalities provided by the `KIRHelperKit` compiler plugin.html
-

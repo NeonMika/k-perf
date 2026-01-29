@@ -1,4 +1,4 @@
-import at.ssw.compilerplugin.PerfMeasureComponentRegistrar
+import at.jku.ssw.compilerplugin.KPerfComponentRegistrar
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -8,13 +8,38 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class KPerfMeasureCompilerPluginTest {
-    @OptIn(ExperimentalCompilerApi::class)
-    @Test
-    fun `plugin success`() {
-        val result = compile(
-            SourceFile.kotlin(
-                "main.kt",
-                """
+
+  @OptIn(ExperimentalCompilerApi::class)
+  @Test
+  fun `SSP (Symposium for Software Performance) simple example`() {
+    val result = compile(
+      SourceFile.kotlin(
+        "main.kt",
+        """
+                    fun main() {
+                      sayHello()
+                      sayHello("Hi", "SSP")
+                    }
+
+                    fun sayHello(greeting: String = "Hello", name: String = "World") {
+                        val result = "${'$'}greeting, ${'$'}name!"
+                        println(result)
+                    }
+                    """
+      )
+    )
+    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+
+    result.main()
+  }
+
+  @OptIn(ExperimentalCompilerApi::class)
+  @Test
+  fun `Big example`() {
+    val result = compile(
+      SourceFile.kotlin(
+        "main.kt",
+        """
 
                     annotation class MyAnnotation
 
@@ -62,44 +87,20 @@ class KPerfMeasureCompilerPluginTest {
                       }
                     }
                     """
-            )
-        )
-        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+      )
+    )
+    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
 
-        result.main()
-    }
+    result.main()
+  }
 
-    @OptIn(ExperimentalCompilerApi::class)
-    @Test
-    fun `SSP example`() {
-        val result = compile(
-            SourceFile.kotlin(
-                "main.kt",
-                """
-                    fun main() {
-                      sayHello()
-                      sayHello("Hi", "SSP")
-                    }
-
-                    fun sayHello(greeting: String = "Hello", name: String = "World") {
-                        val result = "${'$'}greeting, ${'$'}name!"
-                        println(result)
-                    }
-                    """
-            )
-        )
-        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
-
-        result.main()
-    }
-
-    @OptIn(ExperimentalCompilerApi::class)
-    @Test
-    fun `Class example`() {
-        val result = compile(
-            SourceFile.kotlin(
-                "main.kt",
-                """
+  @OptIn(ExperimentalCompilerApi::class)
+  @Test
+  fun `Complex class example`() {
+    val result = compile(
+      SourceFile.kotlin(
+        "main.kt",
+        """
                     package test
 
                     class MyClass<T>(val value: T) {
@@ -141,38 +142,38 @@ class KPerfMeasureCompilerPluginTest {
                         val topLevelResult = topLevelFunction(10)
                     }
                 """
-            )
-        )
-        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
-        result.main("test")
-    }
+      )
+    )
+    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+    result.main("test")
+  }
 
-    @OptIn(ExperimentalCompilerApi::class)
-    fun compile(
-        sourceFiles: List<SourceFile>,
-        compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrar(),
-    ): JvmCompilationResult {
-        return KotlinCompilation().apply {
-            // To have access to kotlinx.io
-            inheritClassPath = true
-            sources = sourceFiles
-            compilerPluginRegistrars = listOf(compilerPluginRegistrar)
-            // commandLineProcessors = ...
-            // inheritClassPath = true
-        }.compile()
-    }
+  @OptIn(ExperimentalCompilerApi::class)
+  fun compile(
+    sourceFiles: List<SourceFile>,
+    compilerPluginRegistrar: CompilerPluginRegistrar = KPerfComponentRegistrar(),
+  ): JvmCompilationResult {
+    return KotlinCompilation().apply {
+      // To have access to kotlinx.io
+      inheritClassPath = true
+      sources = sourceFiles
+      compilerPluginRegistrars = listOf(compilerPluginRegistrar)
+      // commandLineProcessors = ...
+      // inheritClassPath = true
+    }.compile()
+  }
 
-    @OptIn(ExperimentalCompilerApi::class)
-    fun compile(
-        sourceFile: SourceFile,
-        compilerPluginRegistrar: CompilerPluginRegistrar = PerfMeasureComponentRegistrar(),
-    ) = compile(listOf(sourceFile), compilerPluginRegistrar)
+  @OptIn(ExperimentalCompilerApi::class)
+  fun compile(
+    sourceFile: SourceFile,
+    compilerPluginRegistrar: CompilerPluginRegistrar = KPerfComponentRegistrar(),
+  ) = compile(listOf(sourceFile), compilerPluginRegistrar)
 }
 
 @OptIn(ExperimentalCompilerApi::class)
 private fun JvmCompilationResult.main(packageName: String = "") {
-    val className = if (packageName.isNotEmpty()) "$packageName.MainKt" else "MainKt"
-    val kClazz = classLoader.loadClass(className)
-    val main = kClazz.declaredMethods.single { it.name.endsWith("main") && it.parameterCount == 0 }
-    main.invoke(null)
+  val className = if (packageName.isNotEmpty()) "$packageName.MainKt" else "MainKt"
+  val kClazz = classLoader.loadClass(className)
+  val main = kClazz.declaredMethods.single { it.name.endsWith("main") && it.parameterCount == 0 }
+  main.invoke(null)
 }

@@ -27,7 +27,7 @@ Open the project in IntelliJ for development and refresh the Gradle cache.
 Gradle run tasks encompass `jvmRun`, `jsRun` and `runReleaseExecutableMingwX64` (and other native targets).
 
 *How does `kmp-examples/game_of_life-tracing` differ from `kmp-examples/game_of_life-plain`?*
-In `build.gradle.kts`, section `plugins`, the "tracing version" has a dependency on the `at.ssw.k-perf-measure-plugin` compiler plugin.
+In `build.gradle.kts`, section `plugins`, the "tracing version" has a dependency on the `at.jku.ssw.k-perf-measure-plugin` compiler plugin.
 Further, it has a dependency to `kotlinx-io` so that the plugin can write to file.
 If you want to use this version, you first have to publish the compiler plugin to local Maven, see section _Plugin_.
 

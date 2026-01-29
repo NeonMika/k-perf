@@ -1,7 +1,3 @@
-printLn with Number: org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl@5d9d8ecf
-
-printLn with Field: org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl@7fe0ca60
-
 Class kotlin.time.TimeMark: MATCH
 
 Class java.lang.StringBuilder: MATCH
@@ -101,4 +97,8 @@ fields _enter_method match
 Function elapsedNow: MATCH
 
 fields testBodyWithTempVar match
+
+printLn with Number: org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl@6fa9e6db
+
+printLn with Field: org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl@1749ed56
 

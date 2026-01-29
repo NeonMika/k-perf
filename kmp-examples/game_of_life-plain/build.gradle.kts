@@ -4,11 +4,11 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithHostTests
 
 plugins {
     kotlin("multiplatform") version "2.0.20"
-    // id("at.ssw.k-perf-measure-plugin") version "0.0.2" // dependency on the k-perf-measure-plugin plugin
+    // id("at.jku.ssw.k-perf-plugin") version "0.0.3" // dependency on the k-perf-plugin plugin
 }
 
-group = "at.ssw"
-version = "0.0.2"
+group = "at.jku.ssw"
+version = "0.0.3"
 
 repositories {
     mavenCentral()

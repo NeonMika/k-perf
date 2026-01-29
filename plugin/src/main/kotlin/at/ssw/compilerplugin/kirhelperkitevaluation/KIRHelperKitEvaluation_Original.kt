@@ -1,6 +1,6 @@
-package at.ssw.compilerplugin
-import at.ssw.compilerplugin.ExampleConfigurationKeysOriginal.KEY_ENABLED
-import at.ssw.compilerplugin.ExampleConfigurationKeysOriginal.LOG_ANNOTATION_KEY
+package at.jku.ssw.compilerplugin
+import at.jku.ssw.compilerplugin.ExampleConfigurationKeysOriginal.KEY_ENABLED
+import at.jku.ssw.compilerplugin.ExampleConfigurationKeysOriginal.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -29,7 +29,6 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.presentableDescription
-import java.io.File
 import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 object ExampleConfigurationKeysOriginal {
@@ -38,8 +37,8 @@ object ExampleConfigurationKeysOriginal {
         CompilerConfigurationKey.create("measure.annotation.original")
 }
 @OptIn(ExperimentalCompilerApi::class)
-class KPerfMeasureCommandLineProcessorOriginal : CommandLineProcessor {
-    override val pluginId: String = "k-perf-measure-compiler-plugin-original"
+class KPerfCommandLineProcessorOriginal : CommandLineProcessor {
+    override val pluginId: String = "k-perf-compiler-plugin-original"
     override val pluginOptions: Collection<CliOption> = listOf(
         CliOption(
             "enabled",
@@ -55,38 +54,38 @@ class KPerfMeasureCommandLineProcessorOriginal : CommandLineProcessor {
         )
     )
     init {
-        println("KPerfMeasureCommandLineProcessorOriginal - init")
+        println("KPerfCommandLineProcessorOriginal - init")
     }
     override fun processOption(
         option: AbstractCliOption,
         value: String,
         configuration: CompilerConfiguration
     ) {
-        println("KPerfMeasureCommandLineProcessorOriginal - processOption ($option, $value)")
+        println("KPerfCommandLineProcessorOriginal - processOption ($option, $value)")
         when (option.optionName) {
             "enabled" -> configuration.put(KEY_ENABLED, value.toBoolean())
             "annotation" -> {
                 configuration.putIfAbsent(LOG_ANNOTATION_KEY, mutableListOf()).add(value)
             }
-            else -> throw CliOptionProcessingException("KPerfMeasureCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
+            else -> throw CliOptionProcessingException("KPerfCommandLineProcessorOriginal.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
         }
     }
 }
 @OptIn(ExperimentalCompilerApi::class)
-class PerfMeasureComponentRegistrarOriginal : CompilerPluginRegistrar() {
+class KPerfComponentRegistrarOriginal : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
     init {
-        println("PerfMeasureComponentRegistrarOriginal - init")
+        println("KPerfComponentRegistrarOriginal - init")
     }
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         if (configuration[KEY_ENABLED] == false) {
             return
         }
         val messageCollector = configuration.get(CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY)!!
-        IrGenerationExtension.registerExtension(PerfMeasureExtension2(MessageCollector.NONE))
+        IrGenerationExtension.registerExtension(KPerfExtensionOriginal(MessageCollector.NONE))
     }
 }
-class PerfMeasureExtension2Original(
+class KPerfExtensionOriginal(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
     val STRINGBUILDER_MODE = false

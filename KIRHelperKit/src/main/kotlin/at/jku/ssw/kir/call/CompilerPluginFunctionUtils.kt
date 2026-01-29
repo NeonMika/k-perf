@@ -1,5 +1,11 @@
-package at.ssw.helpers
+package at.jku.ssw.kir.call
 
+import at.jku.ssw.kir.call.callExpression
+import at.jku.ssw.kir.find.extractFQTypeNameFromIrNode
+import at.jku.ssw.kir.find.irclasssymbol.findConstructorOrNull
+import at.jku.ssw.kir.find.irclasssymbol.findFunctionOrNull
+import at.jku.ssw.kir.find.irplugincontext.findConstructorOrNull
+import at.jku.ssw.kir.find.irplugincontext.findFunctionOrNull
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.*
@@ -20,8 +26,8 @@ import org.jetbrains.kotlin.name.Name
  * @param block A lambda with a receiver of type `IrCallDsl` used to define
  *              the IR call expressions to be included in the block body.
  */
-fun IrBlockBodyBuilder.enableCallDSL(pluginContext: IrPluginContext, block: IrCallDsl.() -> Unit) {
-    IrCallDsl(this, pluginContext).block()
+fun IrBlockBodyBuilder.enableCallDSL(pluginContext: IrPluginContext, block: at.jku.ssw.kir.call.IrCallDsl.() -> Unit) {
+    _root_ide_package_.at.jku.ssw.kir.call.IrCallDsl(this, pluginContext).block()
 }
 
 
@@ -33,8 +39,8 @@ fun IrBlockBodyBuilder.enableCallDSL(pluginContext: IrPluginContext, block: IrCa
  *              the IR call expression to be included in the expression body.
  * @return An `IrExpressionBody` containing the constructed IR expression.
  */
-fun DeclarationIrBuilder.callExpression(pluginContext: IrPluginContext, block: IrCallDsl.() -> IrExpression): IrExpressionBody {
-    return irExprBody(IrCallDsl(this, pluginContext).block())
+fun DeclarationIrBuilder.callExpression(pluginContext: IrPluginContext, block: at.jku.ssw.kir.call.IrCallDsl.() -> IrExpression): IrExpressionBody {
+    return irExprBody(_root_ide_package_.at.jku.ssw.kir.call.IrCallDsl(this, pluginContext).block())
 }
 
 /**
@@ -44,8 +50,8 @@ fun DeclarationIrBuilder.callExpression(pluginContext: IrPluginContext, block: I
  * @param block A lambda with a receiver of type `IrCallDsl` to define the IR function access expression.
  * @return The constructed `IrFunctionAccessExpression`.
  */
-fun DeclarationIrBuilder.getCall(pluginContext: IrPluginContext, block: IrCallDsl.() -> IrFunctionAccessExpression): IrFunctionAccessExpression {
-    return IrCallDsl(this, pluginContext).block()
+fun DeclarationIrBuilder.getCall(pluginContext: IrPluginContext, block: at.jku.ssw.kir.call.IrCallDsl.() -> IrFunctionAccessExpression): IrFunctionAccessExpression {
+    return _root_ide_package_.at.jku.ssw.kir.call.IrCallDsl(this, pluginContext).block()
 }
 
 /**
@@ -64,7 +70,7 @@ fun IrPluginContext.createField(
     fieldName: String,
     isFinal: Boolean = true,
     isStatic: Boolean = true,
-    initializerBlock: IrCallDsl.() -> IrExpression
+    initializerBlock: at.jku.ssw.kir.call.IrCallDsl.() -> IrExpression
 ): IrField {
     val initializerExpression = DeclarationIrBuilder(this, parentSymbol).callExpression(this) {
         initializerBlock()
@@ -168,7 +174,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      */
     fun IrFunctionAccessExpression.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
         return if (func is String) {
-            val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
+            val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractFQTypeNameFromIrNode(it) }
             val funcSymbol = pluginContext.findFunctionOrNull(func + params, this.type)
                 ?: throw IllegalArgumentException("Function $func not found with params $params")
             this@IrCallDsl.call(funcSymbol, *args)
@@ -227,7 +233,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     operator fun IrClassSymbol.invoke(vararg args: Any): IrFunctionAccessExpression {
-        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractType(it) }
+        val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractFQTypeNameFromIrNode(it) }
         return this.findConstructorOrNull(pluginContext, params)?.invoke(*args)
             ?: throw IllegalArgumentException("IrCallHelper: Constructor wit params: $params not found in class ${this.owner.name}")
     }
@@ -244,7 +250,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
      * @return An `IrFunctionAccessExpression` for the appropriate `println` call.
      */
     fun callPrintLn(pluginContext: IrPluginContext, value: Any): IrFunctionAccessExpression {
-        val paramType = extractType(value)
+        val paramType = extractFQTypeNameFromIrNode(value)
         var printValue = value
         val printMethod = try {
             pluginContext.findFunctionOrNull("kotlin/io/println($paramType)", ignoreNullability = true)

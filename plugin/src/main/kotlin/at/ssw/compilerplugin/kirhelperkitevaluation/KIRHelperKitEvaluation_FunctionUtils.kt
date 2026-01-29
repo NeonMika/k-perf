@@ -1,6 +1,15 @@
-package at.ssw.compilerplugin
-import at.ssw.compilerplugin.ExampleConfigurationKeysGeneral.KEY_ENABLED
-import at.ssw.compilerplugin.ExampleConfigurationKeysGeneral.LOG_ANNOTATION_KEY
+package at.jku.ssw.compilerplugin
+
+import at.jku.ssw.kir.call.createField
+import at.jku.ssw.kir.call.enableCallDSL
+import at.jku.ssw.kir.find.irclasssymbol.findConstructor
+import at.jku.ssw.kir.find.irclasssymbol.findFunction
+import at.jku.ssw.kir.find.irplugincontext.findClass
+import at.jku.ssw.kir.find.irplugincontext.findFunction
+import at.jku.ssw.kir.find.irplugincontext.findProperty
+import at.jku.ssw.kir.find.irvariable.findProperty
+import at.jku.ssw.compilerplugin.ExampleConfigurationKeys.KEY_ENABLED
+import at.jku.ssw.compilerplugin.ExampleConfigurationKeys.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -14,27 +23,32 @@ import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
-import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.ADAPTER_FOR_CALLABLE_REFERENCE
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.declarations.name
 import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.types.*
-import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.util.dump
+import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.util.kotlinFqName
+import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.presentableDescription
-import kotlin.collections.set
 import kotlin.time.ExperimentalTime
-import at.ssw.helpers.*
-object ExampleConfigurationKeysGeneral {
-    val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled.general")
+
+object ExampleConfigurationKeysFunction {
+    val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled.function")
     val LOG_ANNOTATION_KEY: CompilerConfigurationKey<MutableList<String>> =
-        CompilerConfigurationKey.create("measure.annotation.general")
+        CompilerConfigurationKey.create("measure.annotation.function")
 }
 @OptIn(ExperimentalCompilerApi::class)
-class KPerfMeasureCommandLineProcessorGeneral : CommandLineProcessor {
-    override val pluginId: String = "k-perf-measure-compiler-plugin-General"
+class KPerfMeasureCommandLineProcessorFunction : CommandLineProcessor {
+    override val pluginId: String = "k-perf-compiler-plugin-Function"
     override val pluginOptions: Collection<CliOption> = listOf(
         CliOption(
             "enabled",
@@ -50,14 +64,14 @@ class KPerfMeasureCommandLineProcessorGeneral : CommandLineProcessor {
         )
     )
     init {
-        println("KPerfMeasureCommandLineProcessorGeneral - init")
+        println("KPerfMeasureCommandLineProcessorFunction - init")
     }
     override fun processOption(
         option: AbstractCliOption,
         value: String,
         configuration: CompilerConfiguration
     ) {
-        println("KPerfMeasureCommandLineProcessorGeneral - processOption ($option, $value)")
+        println("KPerfMeasureCommandLineProcessorFunction - processOption ($option, $value)")
         when (option.optionName) {
             "enabled" -> configuration.put(KEY_ENABLED, value.toBoolean())
             "annotation" -> {
@@ -68,33 +82,62 @@ class KPerfMeasureCommandLineProcessorGeneral : CommandLineProcessor {
     }
 }
 @OptIn(ExperimentalCompilerApi::class)
-class PerfMeasureComponentRegistrarGeneral : CompilerPluginRegistrar() {
+class PerfMeasureComponentRegistrarFunctionUtil : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
     init {
-        println("PerfMeasureComponentRegistrarGeneral - init")
+        println("PerfMeasureComponentRegistrarFunctionUtil - init")
     }
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         if (configuration[KEY_ENABLED] == false) {
             return
         }
         val messageCollector = configuration.get(CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY)!!
-        IrGenerationExtension.registerExtension(PerfMeasureExtension2(MessageCollector.NONE))
+        IrGenerationExtension.registerExtension(PerfMeasureExtensionFunctionUtil(MessageCollector.NONE))
     }
 }
-class PerfMeasureExtension2General(
+class PerfMeasureExtensionFunctionUtil(
     private val messageCollector: MessageCollector
 ) : IrGenerationExtension {
     val STRINGBUILDER_MODE = false
     @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         val timeMarkClass: IrClassSymbol = pluginContext.findClass("kotlin/time/TimeMark")
+        val stringBuilderClass = pluginContext.findClass("kotlin/text/StringBuilder")
+        val stringBuilderAppendIntFunc = stringBuilderClass.findFunction(pluginContext, "append(int)")
+        val stringBuilderAppendStringFunc = stringBuilderClass.findFunction(pluginContext, "append(string?)")
+        val writeStringFunc = pluginContext.findFunction("kotlinx/io/writeString(string,int,int)")
+        val pathConstructionFunc = pluginContext.findFunction("kotlinx/io/files/Path(string)")
+        val flushFunc = pluginContext.findFunction("kotlinx/io/Sink.flush()")
+        val systemFileSystem = pluginContext.findProperty("kotlinx/io/files/SystemFileSystem")
         val firstFile = moduleFragment.files[0]
-        val stringBuilder = IrStringBuilder(pluginContext, firstFile)
-        val randNr = (0..10000).random()
-        val bufferedTraceFileName = "./trace_${pluginContext.platform!!.presentableDescription}_$randNr.txt"
-        val bufferedTraceFileSink = IrFileWriter(pluginContext, firstFile, bufferedTraceFileName)
-        val bufferedSymbolsFileName = "./symbols_${pluginContext.platform!!.presentableDescription}_$randNr.txt"
-        val bufferedSymbolsFileSink = IrFileWriter(pluginContext, firstFile, bufferedSymbolsFileName)
+        val stringBuilder = pluginContext.createField(firstFile.symbol, "_stringBuilder")  { stringBuilderClass.findConstructor(pluginContext)() }
+        val randomDefaultObjectClass = pluginContext.findClass("kotlin/random/Random.Default")
+        val randomNumber = pluginContext.createField(firstFile.symbol, "_randomNumber") {randomDefaultObjectClass.call("nextInt()")}
+        firstFile.declarations.add(randomNumber)
+        randomNumber.parent = firstFile
+        val bufferedTraceFileName = pluginContext.createField(firstFile.symbol, "_bufferedTraceFileName") {
+            irConcat("./trace_${pluginContext.platform!!.presentableDescription}_", randomNumber, ".txt")
+        }
+        firstFile.declarations.add(bufferedTraceFileName)
+        bufferedTraceFileName.parent = firstFile
+        val bufferedTraceFileSink = pluginContext.createField(firstFile.symbol, "_bufferedTraceFileSink") {
+            systemFileSystem.call("sink(*)", pathConstructionFunc(bufferedTraceFileName))
+                .call("kotlinx/io/buffered()")
+        }
+        firstFile.declarations.add(bufferedTraceFileSink)
+        bufferedTraceFileSink.parent = firstFile
+        val bufferedSymbolsFileName = pluginContext.createField(firstFile.symbol, "_bufferedSymbolsFileName") {
+            irConcat("./symbols_${pluginContext.platform!!.presentableDescription}_", randomNumber, ".txt")
+        }
+        firstFile.declarations.add(bufferedSymbolsFileName)
+        bufferedSymbolsFileName.parent = firstFile
+        val bufferedSymbolsFileSink = pluginContext.createField(firstFile.symbol, "_bufferedSymbolsFileSink") {
+            systemFileSystem.call("sink(*)", pathConstructionFunc(bufferedSymbolsFileName))
+                .call("kotlinx/io/buffered()")
+        }
+        firstFile.declarations.add(bufferedSymbolsFileSink)
+        bufferedSymbolsFileSink.parent = firstFile
+
         val methodMap = mutableMapOf<String, IrFunction>()
         val methodIdMap = mutableMapOf<String, Int>()
         var currMethodId = 0
@@ -124,11 +167,11 @@ class PerfMeasureExtension2General(
                 ).irBlockBody {
                     enableCallDSL(pluginContext) {
                         if (STRINGBUILDER_MODE) {
-                            +stringBuilder.append(">;")
-                            +stringBuilder.append(valueParameters[0])
-                            +stringBuilder.append("\n")
+                            +stringBuilder.call(stringBuilderAppendStringFunc, ">;")
+                            +stringBuilder.call(stringBuilderAppendIntFunc, valueParameters[0])
+                            +stringBuilder.call(stringBuilderAppendStringFunc, "\n")
                         } else {
-                            +bufferedTraceFileSink.writeData(irConcat(">;", valueParameters[0], "\n"))
+                            +bufferedTraceFileSink.call(writeStringFunc, irConcat(">;", valueParameters[0], "\n"))
                         }
                         +irReturn(pluginContext.findClass("kotlin/time/TimeSource.Monotonic").call("markNow()"))
                     }
@@ -157,13 +200,13 @@ class PerfMeasureExtension2General(
                         val elapsedMicrosProp = elapsedDuration.findProperty("inWholeMicroseconds")
                         val elapsedMicros = irTemporary(elapsedDuration.call(elapsedMicrosProp))
                         if (STRINGBUILDER_MODE) {
-                            +stringBuilder.append("<;")
-                            +stringBuilder.append(valueParameters[0])
-                            +stringBuilder.append(";")
-                            +stringBuilder.append(elapsedMicros)
-                            +stringBuilder.append("\n")
+                            +stringBuilder.call(stringBuilderAppendStringFunc, "<;")
+                            +stringBuilder.call(stringBuilderAppendIntFunc, valueParameters[0])
+                            +stringBuilder.call(stringBuilderAppendStringFunc, ";")
+                            +stringBuilder.call("append(long)", elapsedMicros)
+                            +stringBuilder.call(stringBuilderAppendStringFunc, "\n")
                         } else {
-                            +bufferedTraceFileSink.writeData(irConcat("<;", valueParameters[0], ";", elapsedMicros, "\n"))
+                            +bufferedTraceFileSink.call(writeStringFunc, irConcat("<;", valueParameters[0], ";", elapsedMicros, "\n"))
                         }
                     }
                 }
@@ -183,18 +226,18 @@ class PerfMeasureExtension2General(
                 }
                 body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
                     enableCallDSL(pluginContext) {
-                        +bufferedTraceFileSink.flushSink()
+                        +bufferedTraceFileSink.call(flushFunc)
                         +exitFunc(methodIdMap["main"]!!, valueParameters[0])
                         if (STRINGBUILDER_MODE) {
-                            +bufferedTraceFileSink.writeData(stringBuilder.irToString())
+                            +bufferedTraceFileSink.call(writeStringFunc, stringBuilder.call("kotlin/toString()"))
                         }
-                        +bufferedSymbolsFileSink.writeData("{ " + methodIdMap.map { (name, id) -> id to name }
+                        +bufferedSymbolsFileSink.call(writeStringFunc, "{ " + methodIdMap.map { (name, id) -> id to name }
                             .sortedBy { (id, _) -> id }
                             .joinToString(",\n") { (id, name) -> "\"$id\": \"$name\"" } + " }")
-                        +bufferedSymbolsFileSink.flushSink()
-                        +bufferedTraceFileSink.flushSink()
-                        +callPrintLn(pluginContext, bufferedTraceFileName)
-                        +callPrintLn(pluginContext, bufferedSymbolsFileName)
+                        +bufferedSymbolsFileSink.call(flushFunc)
+                        +bufferedTraceFileSink.call(flushFunc)
+                        +call("kotlin/io/println(any?)", bufferedTraceFileName)
+                        +call("kotlin/io/println(any?)", bufferedSymbolsFileName)
                     }
                 }
             }
