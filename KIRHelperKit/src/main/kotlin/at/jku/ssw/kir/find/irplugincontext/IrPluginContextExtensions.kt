@@ -6,6 +6,7 @@ import at.jku.ssw.kir.find.resolveDefaultTypeNameToFQTypeName
 import at.jku.ssw.kir.find.irclasssymbol.findConstructorOrNull
 import at.jku.ssw.kir.find.irclasssymbol.findFunctionOrNull
 import at.jku.ssw.kir.find.irclasssymbol.findPropertyOrNull
+import at.jku.ssw.kir.find.irplugincontext.IrPluginContextExtensions.findClassOrNull
 import at.jku.ssw.kir.find.irpropertysymbol.findFunctionOrNull
 import at.jku.ssw.kir.find.parseFunctionParameters
 import at.jku.ssw.kir.find.parseSignature
@@ -20,47 +21,51 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-/**
- * Finds a class by its signature.
- *
- * The signature is a string that uniquely identifies a class. It consists of the package name and the class name.
- * The class name is the last part of the signature, and the package name is everything before the last '/'.
- * If the class is not found in Kotlin, it attempts to find it in the Java context.
- * See [at.jku.ssw.kir.find.resolveDefaultTypeNameToFQTypeName] for predefined packages.
- *
- * @param signature The signature of the class to find in the form "package/outerClasses.ClassName".
- * @return The found class symbol or null if it was not found.
- * @throws IllegalArgumentException If the signature does not include a package path.
- */
-@OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrPluginContext.findClassOrNull(signature: String): IrClassSymbol? {
-  val packageSearch = resolveDefaultTypeNameToFQTypeName(signature.lowercase())
-  val searchString = if (signature.contains('/')) {
-    //check signature
-    signature
-  } else {
-    if (packageSearch != signature.lowercase()) {
-      packageSearch
+object IrPluginContextExtensions {
+
+  /**
+   * Finds a class by its signature.
+   *
+   * The signature is a string that uniquely identifies a class. It consists of the package name and the class name.
+   * The class name is the last part of the signature, and the package name is everything before the last '/'.
+   * If the class is not found in Kotlin, it attempts to find it in the Java context.
+   * See [at.jku.ssw.kir.find.resolveDefaultTypeNameToFQTypeName] for predefined packages.
+   *
+   * @param signature The signature of the class to find in the form "package/outerClasses.ClassName".
+   * @return The found class symbol or null if it was not found.
+   * @throws IllegalArgumentException If the signature does not include a package path.
+   */
+  @OptIn(UnsafeDuringIrConstructionAPI::class)
+  fun IrPluginContext.findClassOrNull(signature: String): IrClassSymbol? {
+    val packageSearch = resolveDefaultTypeNameToFQTypeName(signature.lowercase())
+    val searchString = if (signature.contains('/')) {
+      //check signature
+      signature
     } else {
-      throw IllegalArgumentException("Package path must be included in findClass signature")
+      if (packageSearch != signature.lowercase()) {
+        packageSearch
+      } else {
+        throw IllegalArgumentException("Package path must be included in findClass signature")
+      }
     }
+    val classId = ClassId.fromString(searchString)
+
+    //try to resolve type alias since it's more specific
+    val typeAlias = referenceTypeAlias(classId)
+    if (typeAlias != null) {
+      return typeAlias.owner.expandedType.classOrNull
+    }
+
+    val result = referenceClass(classId)
+
+    //if not found try again and check if it's a java type
+    if (result == null && !signature.contains('/') && !signature.startsWith("java")) {
+      return findClassOrNull("java$signature")
+    }
+
+    return result
   }
-  val classId = ClassId.fromString(searchString)
 
-  //try to resolve type alias since it's more specific
-  val typeAlias = referenceTypeAlias(classId)
-  if (typeAlias != null) {
-    return typeAlias.owner.expandedType.classOrNull
-  }
-
-  val result = referenceClass(classId)
-
-  //if not found try again and check if it's a java type
-  if (result == null && !signature.contains('/') && !signature.startsWith("java")) {
-    return findClassOrNull("java$signature")
-  }
-
-  return result
 }
 
 /**

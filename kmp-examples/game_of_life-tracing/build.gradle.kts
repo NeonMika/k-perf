@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeOutputKind
+
 plugins {
   kotlin("multiplatform") version "2.0.20"
   id("at.jku.ssw.k-perf-plugin") version "0.0.3" // dependency on the k-perf-measure-plugin plugin
@@ -5,6 +7,11 @@ plugins {
 
 group = "at.jku.ssw"
 version = "0.0.3"
+
+repositories {
+  mavenCentral()
+  mavenLocal() // Add this line to include mavenLocal()
+}
 
 kotlin {
   jvm {
@@ -125,7 +132,6 @@ kotlin {
         // implementation("com.fleeksoft.ksoup:ksoup:0.1.2")
         // To be able to create files in the compiler plugin
         implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.5.3")
-        implementation("at.jku.ssw:KIRHelperKit:0.1.0")
       }
     }
     val commonTest by getting {
