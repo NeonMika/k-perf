@@ -2,35 +2,45 @@ package at.jku.ssw.gradle
 
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.kotlin.dsl.getByType
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 
+// This class contains all settings that can later be set in the Gradle build file via
+class KPerfGradleExtension() {
+  var enabled: Boolean = true
+  var testKIR: Boolean = false
+}
 
 // KotlinCompilerPluginSupportPlugin inherits from Plugin<Project>, which is the base class for Gradle Plugins
 class KPerfGradlePlugin : KotlinCompilerPluginSupportPlugin {
   override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
 
   override fun apply(target: Project) {
-    // Could be overridden
+    target.plugins.withId("org.jetbrains.kotlin.multiplatform") {
+      target.extensions
+        .getByType<KotlinMultiplatformExtension>()
+        .addDependencies()
+    }
+    target.extensions.add("kperf", KPerfGradleExtension())
     super.apply(target)
+  }
 
-    println("KPerfGradlePlugin - apply")
-
-    target.tasks.register("KPerfInfo") {
-      doLast {
-        println("KPerfGradlePlugin - KPerfInfo")
-      }
+  fun KotlinMultiplatformExtension.addDependencies() {
+    sourceSets.getByName("commonMain").dependencies {
+      // To be able to create files
+      implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.5.3")
     }
   }
 
   override fun applyToCompilation(
     kotlinCompilation: KotlinCompilation<*>
   ): Provider<List<SubpluginOption>> {
-    println("KPerfGradlePlugin - applyToCompilation (${kotlinCompilation.name})")
-
-    return kotlinCompilation.target.project.provider {
+    val project = kotlinCompilation.target.project
+    return project.provider {
       // internally the parameters defined in applyToCompilation are passed as
       // "-P plugin:<compilerPluginId>:<key>=<value>" on the command line
       // TODO: Extract options from build file
@@ -39,9 +49,13 @@ class KPerfGradlePlugin : KotlinCompilerPluginSupportPlugin {
       //   enabled = true
       //   ...
       // }
+      val extension = project.extensions.findByName("kperf") as? KPerfGradleExtension
+      if(extension == null) {
+        error("kperf gradle extension not found!")
+      }
       listOf(
-        SubpluginOption("enabled", "true"),
-        SubpluginOption("annotation", "at.jku.ssw.Measure")
+        SubpluginOption("enabled", extension.enabled.toString()),
+        SubpluginOption("testKIR", extension.testKIR.toString()),
       )
     }
   }

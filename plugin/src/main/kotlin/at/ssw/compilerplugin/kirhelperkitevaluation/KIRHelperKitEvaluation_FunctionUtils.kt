@@ -1,5 +1,7 @@
 package at.jku.ssw.compilerplugin
 
+import at.jku.ssw.compilerplugin.ExampleConfigurationKeysFunction.KEY_ENABLED
+import at.jku.ssw.compilerplugin.ExampleConfigurationKeysFunction.LOG_ANNOTATION_KEY
 import at.jku.ssw.kir.call.createField
 import at.jku.ssw.kir.call.enableCallDSL
 import at.jku.ssw.kir.find.irclasssymbol.findConstructor
@@ -8,8 +10,6 @@ import at.jku.ssw.kir.find.irplugincontext.findClass
 import at.jku.ssw.kir.find.irplugincontext.findFunction
 import at.jku.ssw.kir.find.irplugincontext.findProperty
 import at.jku.ssw.kir.find.irvariable.findProperty
-import at.jku.ssw.compilerplugin.ExampleConfigurationKeys.KEY_ENABLED
-import at.jku.ssw.compilerplugin.ExampleConfigurationKeys.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext

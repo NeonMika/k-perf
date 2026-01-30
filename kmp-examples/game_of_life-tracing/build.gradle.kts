@@ -13,6 +13,11 @@ repositories {
   mavenLocal() // Add this line to include mavenLocal()
 }
 
+kperf {
+  enabled = true
+  testKIR = false
+}
+
 kotlin {
   jvm {
 
@@ -130,8 +135,8 @@ kotlin {
         // implementation("io.ktor:ktor-client-core:2.3.12")
         // To parse HTML
         // implementation("com.fleeksoft.ksoup:ksoup:0.1.2")
-        // To be able to create files in the compiler plugin
-        implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.5.3")
+        // To be able to create files in the compiler plugin (not needed because k-perf adds this automatically)
+        // implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.5.3")
       }
     }
     val commonTest by getting {

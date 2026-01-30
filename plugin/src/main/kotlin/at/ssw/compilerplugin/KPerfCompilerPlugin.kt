@@ -1,8 +1,5 @@
 package at.jku.ssw.compilerplugin
 
-import at.jku.ssw.compilerplugin.ExampleConfigurationKeys.KEY_ENABLED
-import at.jku.ssw.compilerplugin.ExampleConfigurationKeys.LOG_ANNOTATION_KEY
-import at.jku.ssw.kir.find.irplugincontext.*
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -22,12 +19,9 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.ADAPTE
 import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.addArgument
-import org.jetbrains.kotlin.ir.symbols.*
-import org.jetbrains.kotlin.ir.types.classFqName
-import org.jetbrains.kotlin.ir.types.classOrFail
-import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.types.makeNullable
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
@@ -37,10 +31,9 @@ import org.jetbrains.kotlin.platform.presentableDescription
 import java.io.File
 import kotlin.time.ExperimentalTime
 
-object ExampleConfigurationKeys {
-  val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled")
-  val LOG_ANNOTATION_KEY: CompilerConfigurationKey<MutableList<String>> =
-    CompilerConfigurationKey.create("measure annotation")
+object KPerfConfigurationKeys {
+  val ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("enabled")
+  val TEST_KIR: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("testKIR")
 }
 
 /*
@@ -48,43 +41,39 @@ Commandline processor to process options.
 This is the entry point for the compiler plugin.
 It is found via a ServiceLoader.
 Thus, we need an entry in META-INF/services/org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
-that reads at.jku.ssw.compilerplugin.KPerfMeasureCommandLineProcessor
+that reads at.jku.ssw.compilerplugin.KPerfCommandLineProcessor
  */
 @OptIn(ExperimentalCompilerApi::class)
 class KPerfCommandLineProcessor : CommandLineProcessor {
   override val pluginId: String = "k-perf-compiler-plugin"
+
   override val pluginOptions: Collection<CliOption> = listOf(
     CliOption(
       "enabled",
       "<true|false>",
-      "whether plugin is enabled"
+      "whether plugin is enabled",
+      false,
+      false
     ),
     CliOption(
-      "annotation",
-      "<fully qualified annotation name>",
-      "methods that are annotated with this name will be measured",
-      required = true,
-      allowMultipleOccurrences = true
+      "testKIR",
+      "<true|false>",
+      "whether KIRHelperKit should be tested using KIRHelperKitTestingExtension",
+      false,
+      false
     )
   )
-
-  init {
-    println("KPerfMeasureCommandLineProcessor - init")
-  }
 
   override fun processOption(
     option: AbstractCliOption,
     value: String,
     configuration: CompilerConfiguration
   ) {
-    println("KPerfMeasureCommandLineProcessor - processOption ($option, $value)")
+    println("KPerfCommandLineProcessor - processOption ($option, $value)")
     when (option.optionName) {
-      "enabled" -> configuration.put(KEY_ENABLED, value.toBoolean())
-      "annotation" -> {
-        configuration.putIfAbsent(LOG_ANNOTATION_KEY, mutableListOf()).add(value)
-      }
-
-      else -> throw CliOptionProcessingException("KPerfMeasureCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
+      "enabled" -> configuration.put(KPerfConfigurationKeys.ENABLED, value.toBoolean())
+      "testKIR" -> configuration.put(KPerfConfigurationKeys.TEST_KIR, value.toBoolean())
+      else -> throw CliOptionProcessingException("KPerfCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
     }
   }
 }
@@ -100,10 +89,6 @@ class KPerfComponentRegistrar : CompilerPluginRegistrar() {
   override val supportsK2: Boolean = true
 
   override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
-    if (configuration[KEY_ENABLED] == false) {
-      return
-    }
-
     // org.jetbrains.kotlin.cli.common.CLIConfigurationKeys contains default configuration keys
     val messageCollector = configuration.get(CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY)!!
 
@@ -186,10 +171,15 @@ class KPerfComponentRegistrar : CompilerPluginRegistrar() {
     )
     */
 
-    // Backend plugin
-    IrGenerationExtension.registerExtension(KPerfExtension(MessageCollector.NONE))
+    val enabled = configuration[KPerfConfigurationKeys.ENABLED] ?: true
+    val testKIR = configuration[KPerfConfigurationKeys.TEST_KIR] ?: false
 
-    IrGenerationExtension.registerExtension(KIRHelperKitTestingExtension(MessageCollector.NONE))
+    if (enabled) {
+      IrGenerationExtension.registerExtension(KPerfExtension(MessageCollector.NONE))
+    }
+    if (testKIR) {
+      IrGenerationExtension.registerExtension(KIRHelperKitTestingExtension(MessageCollector.NONE))
+    }
   }
 }
 
@@ -694,9 +684,13 @@ class KPerfExtension(
           flushTraceFile()
 
           +irCall(exitFunc).apply {
+            val mainName = methodMap.keys.single {
+              it == "main" || it.endsWith(".main") // also consider main methods in packages
+            }
+
             putValueArgument(
               0,
-              methodIdMap["main"]!!.toIrConst(pluginContext.irBuiltIns.intType)
+              methodIdMap[mainName]!!.toIrConst(pluginContext.irBuiltIns.intType)
             )
             putValueArgument(1, irGet(valueParameters[0]))
           }

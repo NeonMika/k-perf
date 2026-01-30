@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class KPerfMeasureCompilerPluginTest {
+class KPerfCompilerPluginTest {
 
   @OptIn(ExperimentalCompilerApi::class)
   @Test

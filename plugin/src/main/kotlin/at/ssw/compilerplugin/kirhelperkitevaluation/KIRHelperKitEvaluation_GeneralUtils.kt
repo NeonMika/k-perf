@@ -1,12 +1,12 @@
 package at.jku.ssw.compilerplugin
 
+import at.jku.ssw.compilerplugin.ExampleConfigurationKeysGeneral.KEY_ENABLED
+import at.jku.ssw.compilerplugin.ExampleConfigurationKeysGeneral.LOG_ANNOTATION_KEY
 import at.jku.ssw.kir.call.enableCallDSL
 import at.jku.ssw.kir.find.irplugincontext.findClass
 import at.jku.ssw.kir.find.irvariable.findProperty
 import at.jku.ssw.kir.general.IrFileWriter
 import at.jku.ssw.kir.general.IrStringBuilder
-import at.jku.ssw.compilerplugin.ExampleConfigurationKeys.KEY_ENABLED
-import at.jku.ssw.compilerplugin.ExampleConfigurationKeys.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext

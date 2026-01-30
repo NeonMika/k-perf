@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.files
+
 // Example: https://github.com/JetBrains/kotlin/tree/master/libraries/examples/kotlin-gradle-subplugin-example
 
 plugins {
@@ -14,10 +16,10 @@ version = "0.0.3"
 
 dependencies {
   implementation("at.jku.ssw:KIRHelperKit:0.1.0")
-  implementation(kotlin("stdlib"))
+  compileOnly(kotlin("stdlib"))
   compileOnly(kotlin("compiler-embeddable"))
   // https://youtrack.jetbrains.com/issue/KT-47897/Official-Kotlin-Gradle-plugin-api
-  implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.0.20") // Use the appropriate version
+  implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.20") // Use the appropriate version
   implementation(gradleApi())
   // must also be in target program!
   // this is here for the tests to run
@@ -44,7 +46,7 @@ project.extra.properties.forEach { (key, value) -> println("- $key: $value")  }
 
 gradlePlugin {
   plugins {
-    create("KPerf") { // this name defines how the Gradle publish commands are named (in this case publishKPerfMeasurePluginMarkerMavenPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
+    create("KPerf") { // this name defines how the Gradle publish commands are named (in this case publishKPerfPluginMarkerMavenPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
       id =
         "at.jku.ssw.k-perf-plugin" // to use this plugin later in other projects we will use plugins { id("at.jku.ssw.k-perf-plugin") }
       implementationClass = "at.jku.ssw.gradle.KPerfGradlePlugin"

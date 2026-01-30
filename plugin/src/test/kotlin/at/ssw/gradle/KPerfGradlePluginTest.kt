@@ -19,16 +19,15 @@ class KPerfGradlePluginTest {
   }
 
   @Test
-  fun `plugin do not find task without registration`() {
-    val project = ProjectBuilder.builder().build()
-
-    assertNull(project.tasks.findByName("KPerfInfo"))
+  fun `do not find kperf extension in empty Gradle project`() {
+    val emptyProject = ProjectBuilder.builder().build()
+    assertNull(emptyProject.extensions.findByName("kperf"))
   }
 
   @Test
-  fun `plugin find task after registration with plugin id`() {
-    val task = project.tasks.findByName("KPerfInfo")
-    assertNotNull(task)
+  fun `find kperf extension in Gradle project that appies k-perf-plugin`() {
+    val extension = project.extensions.findByName("kperf")
+    assertNotNull(extension)
   }
 
   @Test
