@@ -84,6 +84,8 @@ fabric.properties
 .idea/kotlinc.xml
 /.idea/misc.xml
 /.idea/inspectionProfiles/Project_Default.xml
-/plugin/symbols_JVM*
-/plugin/trace_JVM*
+symbols_*
+trace_*
+*DEBUG*
 /.idea/vcs.xml
+*.hprof
