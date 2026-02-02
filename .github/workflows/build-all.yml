@@ -7,12 +7,12 @@ on:
 
 jobs:
   build:
-    name: Build all (\${{ matrix.os }})
-    runs-on: \${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+    name: "${{ matrix.os }}: Build all" 
+    runs-on: "${{ matrix.os }}"
 
     steps:
       - name: Checkout
