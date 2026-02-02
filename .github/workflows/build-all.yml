@@ -1,0 +1,39 @@
+name: build-all
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build all (\${{ matrix.os }})
+    runs-on: \${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Make Linux build script executable
+        if: runner.os == 'Linux'
+        run: chmod +x ./buildAll.sh
+
+      - name: Run Linux build script
+        if: runner.os == 'Linux'
+        run: ./buildAll.sh
+
+      - name: Run Windows build script
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\buildAll.ps1
