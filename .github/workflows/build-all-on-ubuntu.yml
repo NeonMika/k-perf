@@ -6,6 +6,9 @@ jobs:
   build_all_on_ubuntu:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
       - uses: actions/checkout@v6
 
