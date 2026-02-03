@@ -101,10 +101,11 @@ class KPerfComponentRegistrar : CompilerPluginRegistrar() {
     */
 
     val enabled = configuration[KPerfConfigurationKeys.ENABLED] ?: true
+    val flushEarly = configuration[KPerfConfigurationKeys.FLUSH_EARLY] ?: false
     val testKIR = configuration[KPerfConfigurationKeys.TEST_KIR] ?: false
 
     if (enabled) {
-      IrGenerationExtension.registerExtension(KPerfExtension(MessageCollector.NONE))
+      IrGenerationExtension.registerExtension(KPerfExtension(MessageCollector.NONE, flushEarly))
     }
     if (testKIR) {
       IrGenerationExtension.registerExtension(KIRHelperKitTestingExtension(MessageCollector.NONE))

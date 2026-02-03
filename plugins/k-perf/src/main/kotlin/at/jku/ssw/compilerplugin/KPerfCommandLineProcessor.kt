@@ -27,6 +27,13 @@ class KPerfCommandLineProcessor : CommandLineProcessor {
       false
     ),
     CliOption(
+      "flushEarly",
+      "<true|false>",
+      "whether the plugin should flush after every trace state (true) or only once at the end (false)",
+      false,
+      false
+    ),
+    CliOption(
       "testKIR",
       "<true|false>",
       "whether KIRHelperKit should be tested using KIRHelperKitTestingExtension",
@@ -43,6 +50,7 @@ class KPerfCommandLineProcessor : CommandLineProcessor {
     println("KPerfCommandLineProcessor - processOption ($option, $value)")
     when (option.optionName) {
       "enabled" -> configuration.put(KPerfConfigurationKeys.ENABLED, value.toBoolean())
+      "flushEarly" -> configuration.put(KPerfConfigurationKeys.FLUSH_EARLY, value.toBoolean())
       "testKIR" -> configuration.put(KPerfConfigurationKeys.TEST_KIR, value.toBoolean())
       else -> throw CliOptionProcessingException("KPerfCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
     }

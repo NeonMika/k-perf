@@ -119,9 +119,11 @@ run_gradle "Building instrumentation-overhead-analyzer plugin" "./plugins/instru
 run_gradle "Building k-perf plugin" "./plugins/k-perf" build publishToMavenLocal
 
 # KMP examples
-run_kmp_build "Building game-of-life-kmp example" "./kmp-examples/game-of-life-kmp"
-run_kmp_build "Building game-of-life-kmp-ioa example" "./kmp-examples/game-of-life-kmp-ioa"
-run_kmp_build "Building game-of-life-kmp-k-perf example" "./kmp-examples/game-of-life-kmp-k-perf"
+run_kmp_build "Building game-of-life-kmp-commonmain example" "./kmp-examples/game-of-life-kmp-commonmain"
+run_kmp_build "Building game-of-life-kmp-commonmain-ioa example" "./kmp-examples/game-of-life-kmp-commonmain-ioa"
+run_kmp_build "Building game-of-life-kmp-commonmain-k-perf example" "./kmp-examples/game-of-life-kmp-commonmain-k-perf"
+run_kmp_build "Building game-of-life-kmp-dedicatedmain example" "./kmp-examples/game-of-life-kmp-dedicatedmain"
+run_kmp_build "Building game-of-life-kmp-dedicatedmain-k-perf example" "./kmp-examples/game-of-life-kmp-dedicatedmain-k-perf"
 
 echo ""
 echo "=========================================="

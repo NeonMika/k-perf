@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 // This class contains all settings that can later be set in the Gradle build file via
 class KPerfGradleExtension() {
   var enabled: Boolean = true
+  var flushEarly: Boolean = false
   var testKIR: Boolean = false
 }
 
@@ -55,6 +56,7 @@ class KPerfGradlePlugin : KotlinCompilerPluginSupportPlugin {
       }
       listOf(
         SubpluginOption("enabled", extension.enabled.toString()),
+        SubpluginOption("flushEarly", extension.flushEarly.toString()),
         SubpluginOption("testKIR", extension.testKIR.toString()),
       )
     }

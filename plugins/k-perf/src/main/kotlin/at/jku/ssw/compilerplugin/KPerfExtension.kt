@@ -28,7 +28,8 @@ import java.io.File
 import kotlin.time.ExperimentalTime
 
 class KPerfExtension(
-  private val messageCollector: MessageCollector
+  private val messageCollector: MessageCollector,
+  private val flushEarly: Boolean
 ) : IrGenerationExtension {
 
   val STRINGBUILDER_MODE = false
@@ -219,6 +220,12 @@ class KPerfExtension(
     firstFile.declarations.add(bufferedTraceFileSink)
     bufferedTraceFileSink.parent = firstFile
 
+    fun IrBlockBodyBuilder.flushTraceFile() {
+      +irCall(flushFunc).apply {
+        dispatchReceiver = irGetField(null, bufferedTraceFileSink)
+      }
+    }
+
     val bufferedSymbolsFileName = pluginContext.irFactory.buildField {
       name = Name.identifier("_bufferedSymbolsFileName")
       type = pluginContext.irBuiltIns.stringType
@@ -291,6 +298,8 @@ class KPerfExtension(
           )
         ).single()
 
+
+
       // assertion: funMarkNowViaClass == funMarkNow
 
       return pluginContext.irFactory.buildFun {
@@ -333,6 +342,9 @@ class KPerfExtension(
                 addArgument(irGet(valueParameters[0]))
                 addArgument(irString("\n"))
               })
+            }
+            if(flushEarly) {
+              flushTraceFile()
             }
           }
           +irReturn(irCall(funMarkNow).also { call ->
@@ -430,12 +442,6 @@ class KPerfExtension(
     exitFunc.parent = firstFile
 
     fun buildMainExitFunction(): IrSimpleFunction {
-      fun IrBlockBodyBuilder.flushTraceFile() {
-        +irCall(flushFunc).apply {
-          dispatchReceiver = irGetField(null, bufferedTraceFileSink)
-        }
-      }
-
       fun IrBlockBodyBuilder.writeAndFlushSymbolsFile() {
         +irCall(writeStringFunc).apply {
           extensionReceiver = irGetField(null, bufferedSymbolsFileSink)
