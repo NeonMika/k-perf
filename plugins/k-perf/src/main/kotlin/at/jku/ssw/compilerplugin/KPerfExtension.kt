@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.ADAPTER_FOR_CALLABLE_REFERENCE
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin.Companion.DEFAULT_PROPERTY_ACCESSOR
 import org.jetbrains.kotlin.ir.expressions.IrBody
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.addArgument
@@ -29,7 +30,8 @@ import kotlin.time.ExperimentalTime
 
 class KPerfExtension(
   private val messageCollector: MessageCollector,
-  private val flushEarly: Boolean
+  private val flushEarly: Boolean,
+  private val instrumentPropertyAccessors: Boolean
 ) : IrGenerationExtension {
 
   val STRINGBUILDER_MODE = false
@@ -299,7 +301,6 @@ class KPerfExtension(
         ).single()
 
 
-
       // assertion: funMarkNowViaClass == funMarkNow
 
       return pluginContext.irFactory.buildFun {
@@ -343,7 +344,7 @@ class KPerfExtension(
                 addArgument(irString("\n"))
               })
             }
-            if(flushEarly) {
+            if (flushEarly) {
               flushTraceFile()
             }
           }
@@ -516,8 +517,6 @@ class KPerfExtension(
     exitMainFunc.parent = firstFile
 
     fun buildBodyWithMeasureCode(func: IrFunction): IrBody {
-
-      println("# Wrapping body of ${func.name} (origin: ${func.origin})")
       return DeclarationIrBuilder(pluginContext, func.symbol).irBlockBody {
         // no +needed on irTemporary as it is automatically added to the builder
         val startTime = irTemporary(irCall(enterFunc).apply {
@@ -561,6 +560,7 @@ class KPerfExtension(
             declaration.name.asString() == "_exit_main" ||
             body == null ||
             declaration.origin == ADAPTER_FOR_CALLABLE_REFERENCE ||
+            (!instrumentPropertyAccessors && declaration.origin == DEFAULT_PROPERTY_ACCESSOR) ||
             declaration.fqNameWhenAvailable?.asString()?.contains("<init>") != false ||
             declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false
           ) {
@@ -568,12 +568,15 @@ class KPerfExtension(
             println("# Do not wrap body of ${declaration.name} (${declaration.fqNameWhenAvailable?.asString()}):\n${declaration.dump()}")
             return declaration
           }
+          println("# Wrap body of ${declaration.name} (${declaration.fqNameWhenAvailable?.asString()}, origin: ${declaration.origin})):\n${declaration.dump()}")
           declaration.body = buildBodyWithMeasureCode(declaration)
 
           return super.visitFunctionNew(declaration)
         }
       }, null)
-      println("---${file.name}---")
+      println("--- Transformation completed ---")
+      println("--- File: ${file.name} ---")
+      println("--------------------------------")
       println(file.dump())
     }
   }

@@ -11,18 +11,11 @@ repositories {
   mavenLocal() // Add this line to include mavenLocal()
 }
 
-kperf {
-  enabled = true
-  flushEarly = providers.gradleProperty("kperfFlushEarly")
-    .map { it.toBoolean() }
-    .getOrElse(false)
-  testKIR = providers.gradleProperty("kperfTestKIR")
-    .map { it.toBoolean() }
-    .getOrElse(false)
-}
-
-// 1. Calculate the generic flags once at the top
 val kperfFlushEarly = providers.gradleProperty("kperfFlushEarly")
+  .map { it.toBoolean() }
+  .getOrElse(false)
+
+val kperfInstrumentPropertyAccessors = providers.gradleProperty("kperfInstrumentPropertyAccessors")
   .map { it.toBoolean() }
   .getOrElse(false)
 
@@ -30,7 +23,14 @@ val kperfTestKIR = providers.gradleProperty("kperfTestKIR")
   .map { it.toBoolean() }
   .getOrElse(false)
 
-// Define the suffix logic centrally
+kperf {
+  enabled = true
+  flushEarly = kperfFlushEarly
+  instrumentPropertyAccessors = kperfInstrumentPropertyAccessors
+  testKIR = kperfTestKIR
+}
+
+
 val flushEarlyTag = if (kperfFlushEarly) "true" else "false"
 val outputSuffix = "flushEarly-$flushEarlyTag"
 
@@ -71,7 +71,9 @@ kotlin {
 
   js(IR) {
     moduleName = "${project.name}-$outputSuffix"
-    nodejs()
+    nodejs {
+      passProcessArgvToMainFunction()
+    }
     binaries.executable()
   }
 

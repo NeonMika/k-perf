@@ -3,16 +3,31 @@ param(
   [int]$RepetitionCount = 50,
   [bool]$CleanBuild = $true,
   [int]$StepCount = 10,
-  [string[]]$Filters = @("common", "dedicated", "flushEarlyTrue", "flushEarlyFalse", "jar", "js", "native")
+  [string[]]$Filters = @("common", "dedicated", "flushEarlyFalse", "jar", "js", "native")
 )
 
 # Import common utility functions
 . "$PSScriptRoot\..\utils.ps1"
 . "$PSScriptRoot\..\build.ps1"
 
+# Collect machine and environment information for reproducibility
+Write-Host "=========================================="
+Write-Host "# Collecting System Information..."
+Write-Host "=========================================="
+
+$machineInfo = Get-MachineInfo -GradleProjectPath "..\..\kmp-examples\game-of-life-kmp-commonmain"
+
+Write-Host "System Information collected:"
+foreach ($key in $machineInfo.Keys) {
+  Write-Host "  $key : $($machineInfo[$key])"
+}
+Write-Host ""
+
 # Build phase: Compile dependencies and the application
 $buildTimes = @{}
 if ($CleanBuild) {
+  Write-Host "=========================================="
+  Write-Host "# Building k-perf benchmark dependencies..."
   Write-Host "=========================================="
   Write-Host "# Building k-perf benchmark dependencies..."
   Write-Host "=========================================="
@@ -164,6 +179,31 @@ if (Test-Path $measurementDir) {
 # Create the measurement directory
 New-Item -ItemType Directory -Path $measurementDir -Force | Out-Null
 
+# Clean up any existing trace and symbol files
+Write-Host ""
+Write-Host "Cleaning up existing trace and symbol files..."
+$existingTraceFiles = Get-ChildItem -Path "." -Filter "trace*.txt" -ErrorAction SilentlyContinue
+$existingSymbolFiles = Get-ChildItem -Path "." -Filter "symbol*.txt" -ErrorAction SilentlyContinue
+$cleanedFiles = @()
+
+foreach ($file in $existingTraceFiles) {
+  Remove-Item -Path $file.FullName -Force
+  $cleanedFiles += $file.Name
+}
+
+foreach ($file in $existingSymbolFiles) {
+  Remove-Item -Path $file.FullName -Force
+  $cleanedFiles += $file.Name
+}
+
+if ($cleanedFiles.Count -gt 0) {
+  Write-Host "Deleted: $($cleanedFiles -join ', ')"
+}
+else {
+  Write-Host "No existing trace/symbol files found."
+}
+Write-Host ""
+
 # Initialize array to collect CSV results
 $csvRecords = @()
 
@@ -181,6 +221,7 @@ foreach ($executable in $executables) {
 
   # Run the loop for the specified number of repetitions
   for ($i = 1; $i -le $RepetitionCount; $i++) {
+    Write-Host ""
     Write-Host "Running iteration $i of $RepetitionCount for $($executable.Name):"
 
     # Run the program and capture the output based on its type
@@ -224,13 +265,67 @@ foreach ($executable in $executables) {
       $elapsedTime = $elapsedTime.Trim()
 
       # Print the result for the current iteration
-      Write-Host "$elapsedTime"
+      Write-Host ("- Ran {0:N3} ms" -f ([long]$elapsedTime / 1000))
 
       # Add to the array
       $elapsedTimes += $elapsedTime
     }
     else {
-      Write-Host "Elapsed time not found in iteration $i"
+      Write-Host "- Elapsed time not found in iteration $i"
+    }
+
+    # Process trace and symbol files generated during this iteration
+    $traceFiles = Get-ChildItem -Path "." -Filter "trace*.txt" -ErrorAction SilentlyContinue
+    $symbolFiles = Get-ChildItem -Path "." -Filter "symbol*.txt" -ErrorAction SilentlyContinue
+    $deletedFiles = @()
+
+    foreach ($traceFile in $traceFiles) {
+      Write-Host "- Processing trace file: $($traceFile.Name)"
+
+      # Call the graph visualizer script
+      
+      $graphVisualizerPath = "..\..\analyzers\call_graph_visualizer\graph-visualizer.py"
+      python $graphVisualizerPath $traceFile.FullName *>&1 | Out-Null
+
+      if ($LASTEXITCODE -eq 0) {
+        # Find the generated PNG (most recently created)
+        $pngFiles = Get-ChildItem -Path "." -Filter "*.png" -ErrorAction SilentlyContinue | Sort-Object -Property CreationTime -Descending | Select-Object -First 1
+
+        if ($pngFiles) {  
+          Write-Host "-- Generated call graph PNG"
+        
+          $pngFile = $pngFiles
+          # Rename it based on executable name and iteration number
+          $newPngName = "$($executable.Name)_$i.png"
+          $newPngPath = Join-Path "." $newPngName
+          Rename-Item -Path $pngFile.FullName -NewName $newPngName -Force
+
+          # Copy to measurements folder
+          Copy-Item -Path $newPngPath -Destination $measurementDir -Force
+          Write-Host "-- Copied $newPngName to measurements folder"
+
+          # Delete the PNG from current directory
+          Remove-Item -Path $newPngPath -Force
+        }
+      }
+      else {
+        Write-Host "-- ERROR: graph-visualizer.py failed for $($traceFile.Name)"
+      }
+
+      # Delete the trace file
+      Remove-Item -Path $traceFile.FullName -Force
+      $deletedFiles += $traceFile.Name
+    }
+
+    # Delete any symbol files
+    foreach ($symbolFile in $symbolFiles) {
+      Remove-Item -Path $symbolFile.FullName -Force
+      $deletedFiles += $symbolFile.Name
+    }
+
+    # Output summary of deleted files
+    if ($deletedFiles.Count -gt 0) {
+      Write-Host "-- Deleted: $($deletedFiles -join ', ')"
     }
   } # End of iteration loop
 
@@ -252,6 +347,7 @@ foreach ($executable in $executables) {
       StepCount       = $StepCount
       Filters         = $Filters
     }
+    machineInfo = $machineInfo
     buildTimeMs = $relevantBuildTime
     executable  = $executable.Name
     repetitions = $RepetitionCount
@@ -266,15 +362,61 @@ foreach ($executable in $executables) {
 
   # Collect statistics for CSV
   $csvRecord = [ordered]@{
-    executable  = $executable.Name
-    repetitions = $RepetitionCount
-    mean        = $stats.mean
-    median      = $stats.median
-    stddev      = $stats.stddev
-    min         = $stats.min
-    max         = $stats.max
-    ci95_lower  = $stats.ci95.lower
-    ci95_upper  = $stats.ci95.upper
+    executable                        = $executable.Name
+    buildTimeMs                       = $relevantBuildTime
+    RepetitionCount                   = $RepetitionCount
+    CleanBuild                        = $CleanBuild
+    StepCount                         = $StepCount
+    CollectionTimestamp               = $machineInfo.CollectionTimestamp
+    GitCommitHash                     = $machineInfo.GitCommitHash
+    GitBranch                         = $machineInfo.GitBranch
+    DeviceManufacturer                = $machineInfo.DeviceManufacturer
+    DeviceModel                       = $machineInfo.DeviceModel
+    IsVirtualMachine                  = $machineInfo.IsVirtualMachine
+    OS                                = $machineInfo.OS
+    OSArchitecture                    = $machineInfo.OSArchitecture
+    WindowsBuildNumber                = $machineInfo.WindowsBuildNumber
+    TimeZone                          = $machineInfo.TimeZone
+    Username                          = $machineInfo.Username
+    BIOSVersion                       = $machineInfo.BIOSVersion
+    BIOSManufacturer                  = $machineInfo.BIOSManufacturer
+    SecureBootEnabled                 = $machineInfo.SecureBootEnabled
+    HyperVEnabled                     = $machineInfo.HyperVEnabled
+    CPU                               = $machineInfo.CPU
+    CPUCores                          = $machineInfo.CPUCores
+    CPULogicalProcessors              = $machineInfo.CPULogicalProcessors
+    CPUMaxClockSpeedMHz               = $machineInfo.CPUMaxClockSpeedMHz
+    TotalRAMGB                        = $machineInfo.TotalRAMGB
+    AvailableRAMGB                    = $machineInfo.AvailableRAMGB
+    RAMModuleCount                    = $machineInfo.RAMModuleCount
+    RAMSpeedMHz                       = $machineInfo.RAMSpeedMHz
+    RAMManufacturer                   = $machineInfo.RAMManufacturer
+    RAMPartNumber                     = $machineInfo.RAMPartNumber
+    RAMModuleCapacitiesGB             = $machineInfo.RAMModuleCapacitiesGB
+    DiskModel                         = $machineInfo.DiskModel
+    DiskSizeGB                        = $machineInfo.DiskSizeGB
+    DiskMediaType                     = $machineInfo.DiskMediaType
+    DiskInterfaceType                 = $machineInfo.DiskInterfaceType
+    SystemDriveFreeSpaceGB            = $machineInfo.SystemDriveFreeSpaceGB
+    PowerPlan                         = $machineInfo.PowerPlan
+    SystemUptimeHours                 = $machineInfo.SystemUptimeHours
+    RunningProcessCount               = $machineInfo.RunningProcessCount
+    WindowsDefenderEnabled            = $machineInfo.WindowsDefenderEnabled
+    WindowsDefenderRealTimeProtection = $machineInfo.WindowsDefenderRealTimeProtection
+    PowerShellVersion                 = $machineInfo.PowerShellVersion
+    JavaVersion                       = $machineInfo.JavaVersion
+    JavaDistribution                  = $machineInfo.JavaDistribution
+    NodeVersion                       = $machineInfo.NodeVersion
+    PythonVersion                     = $machineInfo.PythonVersion
+    GradleVersion                     = $machineInfo.GradleVersion
+    KotlinVersion                     = $machineInfo.KotlinVersion
+    mean                              = $stats.mean
+    median                            = $stats.median
+    stddev                            = $stats.stddev
+    min                               = $stats.min
+    max                               = $stats.max
+    ci95_lower                        = $stats.ci95.lower
+    ci95_upper                        = $stats.ci95.upper
   }
   $csvRecords += $csvRecord
 

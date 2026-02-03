@@ -16,6 +16,10 @@ val kperfFlushEarly = providers.gradleProperty("kperfFlushEarly")
   .map { it.toBoolean() }
   .getOrElse(false)
 
+val kperfInstrumentPropertyAccessors = providers.gradleProperty("kperfInstrumentPropertyAccessors")
+  .map { it.toBoolean() }
+  .getOrElse(false)
+
 val kperfTestKIR = providers.gradleProperty("kperfTestKIR")
   .map { it.toBoolean() }
   .getOrElse(false)
@@ -24,6 +28,7 @@ val kperfTestKIR = providers.gradleProperty("kperfTestKIR")
 kperf {
   enabled = true
   flushEarly = kperfFlushEarly
+  instrumentPropertyAccessors = kperfInstrumentPropertyAccessors
   testKIR = kperfTestKIR
 }
 
@@ -65,7 +70,9 @@ kotlin {
   }
   js(IR) {
     moduleName = "${project.name}-$outputSuffix"
-    nodejs()
+    nodejs {
+      passProcessArgvToMainFunction()
+    }
     binaries.executable()
   }
 

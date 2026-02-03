@@ -34,6 +34,13 @@ class KPerfCommandLineProcessor : CommandLineProcessor {
       false
     ),
     CliOption(
+      "instrumentPropertyAccessors",
+      "<true|false>",
+      "whether the plugin should trace property accessors, i.e., getters and setters, or not (note: compilation backends such as JVM backend may decide to remove getter calls and directly access backing fields as performance optimization)",
+      false,
+      false
+    ),
+    CliOption(
       "testKIR",
       "<true|false>",
       "whether KIRHelperKit should be tested using KIRHelperKitTestingExtension",
@@ -51,6 +58,7 @@ class KPerfCommandLineProcessor : CommandLineProcessor {
     when (option.optionName) {
       "enabled" -> configuration.put(KPerfConfigurationKeys.ENABLED, value.toBoolean())
       "flushEarly" -> configuration.put(KPerfConfigurationKeys.FLUSH_EARLY, value.toBoolean())
+      "instrumentPropertyAccessors" -> configuration.put(KPerfConfigurationKeys.INSTRUMENT_PROPERTY_ACCESSORS, value.toBoolean())
       "testKIR" -> configuration.put(KPerfConfigurationKeys.TEST_KIR, value.toBoolean())
       else -> throw CliOptionProcessingException("KPerfCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
     }

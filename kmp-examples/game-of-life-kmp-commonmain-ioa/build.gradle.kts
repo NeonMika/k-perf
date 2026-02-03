@@ -57,7 +57,9 @@ kotlin {
         }
     }
     */
-    nodejs()
+    nodejs {
+      passProcessArgvToMainFunction()
+    }
     binaries.executable()
   }
   val hostOs = System.getProperty("os.name")

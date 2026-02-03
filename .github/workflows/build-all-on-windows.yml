@@ -1,4 +1,4 @@
-name: "windows-latest: buildAll.sh"
+name: Build all on Windows
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build_all_on_windows:
     runs-on: windows-latest
 
     permissions:
@@ -20,18 +20,9 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
           cache: gradle
 
-      - name: Make Linux build script executable
-        if: runner.os == 'Linux'
-        run: chmod +x ./buildAll.sh
-
-      - name: Run Linux build script
-        if: runner.os == 'Linux'
-        run: ./buildAll.sh
-
-      - name: Run Windows build script
-        if: runner.os == 'Windows'
+      - name: Run buildAll.ps1
         shell: pwsh
         run: .\buildAll.ps1

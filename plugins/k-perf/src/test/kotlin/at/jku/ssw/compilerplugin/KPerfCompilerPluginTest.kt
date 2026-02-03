@@ -35,6 +35,29 @@ class KPerfCompilerPluginTest {
 
   @OptIn(ExperimentalCompilerApi::class)
   @Test
+  fun `Are getters functions_yes they are`() {
+    val result = compile(
+      SourceFile.kotlin(
+        "main.kt",
+        """
+                    val x = 10 // Check whether the getter of this recognized as an IrFunction --> Yes: FUN DEFAULT_PROPERTY_ACCESSOR name:<get-x> ...
+                    // Attention: JVM backend nevertheless eliminates the getter call and directly accesses the backing field.
+                    // JS and Native backend represent every property access as function call. Thus, instrumenting functions with origin DEFAULT_PROPERTY_ACCESSOR leads to
+                    // higher overhead for JS and Native than for JVM.
+
+                    fun main() {
+                      println(x)
+                    }
+                    """
+      )
+    )
+    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+
+    result.main()
+  }
+
+  @OptIn(ExperimentalCompilerApi::class)
+  @Test
   fun `Big example`() {
     val result = compile(
       SourceFile.kotlin(

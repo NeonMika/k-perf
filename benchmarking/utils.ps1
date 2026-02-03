@@ -190,3 +190,261 @@ function Merge-Hashtable {
 
   return $Target
 }
+
+function Get-MachineInfo {
+  param(
+    [string]$GradleProjectPath = "..\..\kmp-examples\game-of-life-kmp-commonmain"
+  )
+
+  $machineInfo = [ordered]@{}
+
+  # Computer/Device Information
+  $computerSystem = Get-CimInstance Win32_ComputerSystem
+  $machineInfo.DeviceManufacturer = $computerSystem.Manufacturer
+  $machineInfo.DeviceModel = $computerSystem.Model
+
+  # Operating System
+  $os = Get-CimInstance Win32_OperatingSystem
+  $machineInfo.OS = "$($os.Caption) $($os.Version)"
+  $machineInfo.OSArchitecture = $os.OSArchitecture
+
+  # CPU
+  $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+  $machineInfo.CPU = $cpu.Name.Trim()
+  $machineInfo.CPUCores = $cpu.NumberOfCores
+  $machineInfo.CPULogicalProcessors = $cpu.NumberOfLogicalProcessors
+  $machineInfo.CPUMaxClockSpeedMHz = $cpu.MaxClockSpeed
+
+  # RAM
+  $totalRAMGB = [math]::Round($computerSystem.TotalPhysicalMemory / 1GB, 2)
+  $machineInfo.TotalRAMGB = $totalRAMGB
+
+  # Detailed RAM information
+  $ramModules = Get-CimInstance Win32_PhysicalMemory
+  if ($ramModules) {
+    $machineInfo.RAMModuleCount = $ramModules.Count
+    $firstModule = $ramModules | Select-Object -First 1
+    if ($firstModule.Speed) {
+      $machineInfo.RAMSpeedMHz = $firstModule.Speed
+    }
+    if ($firstModule.Manufacturer) {
+      $machineInfo.RAMManufacturer = $firstModule.Manufacturer.Trim()
+    }
+    if ($firstModule.PartNumber) {
+      $machineInfo.RAMPartNumber = $firstModule.PartNumber.Trim()
+    }
+    # Get capacity of each module
+    $moduleCapacities = $ramModules | ForEach-Object { [math]::Round($_.Capacity / 1GB, 2) }
+    $machineInfo.RAMModuleCapacitiesGB = ($moduleCapacities -join ' + ')
+  }
+
+  # Disk
+  $disk = Get-CimInstance Win32_DiskDrive | Where-Object { $_.DeviceID -eq "\\.\PHYSICALDRIVE0" } | Select-Object -First 1
+  if ($disk) {
+    $machineInfo.DiskModel = $disk.Model.Trim()
+    $machineInfo.DiskSizeGB = [math]::Round($disk.Size / 1GB, 2)
+    $machineInfo.DiskMediaType = $disk.MediaType
+    if ($disk.InterfaceType) {
+      $machineInfo.DiskInterfaceType = $disk.InterfaceType
+    }
+  }
+
+  # Available Disk Space
+  try {
+    $systemDrive = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DeviceID -eq "C:" }
+    if ($systemDrive) {
+      $machineInfo.SystemDriveFreeSpaceGB = [math]::Round($systemDrive.FreeSpace / 1GB, 2)
+    }
+  }
+  catch {
+    $machineInfo.SystemDriveFreeSpaceGB = "Not available"
+  }
+
+  # Available Free RAM
+  try {
+    $availableRAMGB = [math]::Round($os.FreePhysicalMemory / 1MB, 2)
+    $machineInfo.AvailableRAMGB = $availableRAMGB
+  }
+  catch {
+    $machineInfo.AvailableRAMGB = "Not available"
+  }
+
+  # Power Plan
+  try {
+    $activePowerPlan = Get-CimInstance -Namespace root\cimv2\power -ClassName Win32_PowerPlan -ErrorAction SilentlyContinue | Where-Object { $_.IsActive -eq $true }
+    if ($activePowerPlan) {
+      $machineInfo.PowerPlan = $activePowerPlan.ElementName
+    }
+    else {
+      $machineInfo.PowerPlan = "Not available"
+    }
+  }
+  catch {
+    $machineInfo.PowerPlan = "Not available"
+  }
+
+  # System Uptime
+  try {
+    $uptime = (Get-Date) - $os.LastBootUpTime
+    $machineInfo.SystemUptimeHours = [math]::Round($uptime.TotalHours, 2)
+  }
+  catch {
+    $machineInfo.SystemUptimeHours = "Not available"
+  }
+
+  # Windows Build Number
+  $machineInfo.WindowsBuildNumber = $os.BuildNumber
+
+  # Time Zone
+  $machineInfo.TimeZone = (Get-TimeZone).Id
+
+  # Current User
+  $machineInfo.Username = $env:USERNAME
+
+  # BIOS/UEFI Information
+  try {
+    $bios = Get-CimInstance Win32_BIOS
+    if ($bios) {
+      $machineInfo.BIOSVersion = $bios.SMBIOSBIOSVersion
+      $machineInfo.BIOSManufacturer = $bios.Manufacturer
+    }
+  }
+  catch {
+    $machineInfo.BIOSVersion = "Not available"
+  }
+
+  # Virtualization Status
+  try {
+    $isVM = $false
+    $computerModel = $computerSystem.Model
+    if ($computerModel -match "Virtual|VMware|VirtualBox|Hyper-V|KVM|QEMU") {
+      $isVM = $true
+    }
+    $machineInfo.IsVirtualMachine = $isVM
+  }
+  catch {
+    $machineInfo.IsVirtualMachine = "Unknown"
+  }
+
+  # Hyper-V Status
+  try {
+    $hyperV = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -ErrorAction SilentlyContinue
+    if ($hyperV) {
+      $machineInfo.HyperVEnabled = ($hyperV.State -eq "Enabled")
+    }
+  }
+  catch {
+    $machineInfo.HyperVEnabled = "Unknown"
+  }
+
+  # Secure Boot Status
+  try {
+    $secureBoot = Confirm-SecureBootUEFI -ErrorAction SilentlyContinue
+    $machineInfo.SecureBootEnabled = $secureBoot
+  }
+  catch {
+    $machineInfo.SecureBootEnabled = "Unknown"
+  }
+
+  # Running Process Count
+  try {
+    $processCount = (Get-Process).Count
+    $machineInfo.RunningProcessCount = $processCount
+  }
+  catch {
+    $machineInfo.RunningProcessCount = "Not available"
+  }
+
+  # Windows Defender Status
+  try {
+    $defender = Get-MpComputerStatus -ErrorAction SilentlyContinue
+    if ($defender) {
+      $machineInfo.WindowsDefenderEnabled = $defender.AntivirusEnabled
+      $machineInfo.WindowsDefenderRealTimeProtection = $defender.RealTimeProtectionEnabled
+    }
+  }
+  catch {
+    $machineInfo.WindowsDefenderEnabled = "Unknown"
+  }
+
+  # PowerShell Version
+  $machineInfo.PowerShellVersion = "$($PSVersionTable.PSVersion.Major).$($PSVersionTable.PSVersion.Minor).$($PSVersionTable.PSVersion.Patch)"
+
+  # Java Version and Distribution
+  try {
+    $javaVersionOutput = java -version 2>&1
+    $javaVersionLine = $javaVersionOutput | Select-Object -First 1
+    if ($javaVersionLine -match '"(.+?)"') {
+      $machineInfo.JavaVersion = $Matches[1]
+    }
+    # Try to detect JDK distribution
+    $javaDistLine = $javaVersionOutput | Select-Object -Skip 1 -First 2
+    if ($javaDistLine -match "OpenJDK|Oracle|Adoptium|Temurin|Azul|Amazon|GraalVM") {
+      $machineInfo.JavaDistribution = $Matches[0]
+    }
+  }
+  catch {
+    $machineInfo.JavaVersion = "Not available"
+    $machineInfo.JavaDistribution = "Not available"
+  }
+
+  # Node.js Version
+  try {
+    $nodeVersion = node --version 2>&1
+    $machineInfo.NodeVersion = $nodeVersion.ToString().Trim()
+  }
+  catch {
+    $machineInfo.NodeVersion = "Not available"
+  }
+
+  # Python Version
+  try {
+    $pythonVersionOutput = python --version 2>&1
+    $machineInfo.PythonVersion = $pythonVersionOutput.ToString().Trim()
+  }
+  catch {
+    $machineInfo.PythonVersion = "Not available"
+  }
+
+  # Gradle Version (from one of the projects)
+  try {
+    $gradleVersionOutput = & "$GradleProjectPath\gradlew.bat" --version 2>&1 | Select-String "Gradle "
+    if ($gradleVersionOutput) {
+      $machineInfo.GradleVersion = $gradleVersionOutput.ToString().Trim()
+    }
+  }
+  catch {
+    $machineInfo.GradleVersion = "Not available"
+  }
+
+  # Kotlin Version
+  try {
+    $kotlinVersionOutput = & "$GradleProjectPath\gradlew.bat" --version 2>&1 | Select-String "Kotlin:"
+    if ($kotlinVersionOutput) {
+      $machineInfo.KotlinVersion = $kotlinVersionOutput.ToString().Trim()
+    }
+  }
+  catch {
+    $machineInfo.KotlinVersion = "Not available"
+  }
+
+  # Git Commit Hash
+  try {
+    $gitCommit = git rev-parse HEAD 2>&1
+    if ($LASTEXITCODE -eq 0) {
+      $machineInfo.GitCommitHash = $gitCommit.ToString().Trim()
+      $gitBranch = git rev-parse --abbrev-ref HEAD 2>&1
+      if ($LASTEXITCODE -eq 0) {
+        $machineInfo.GitBranch = $gitBranch.ToString().Trim()
+      }
+    }
+  }
+  catch {
+    $machineInfo.GitCommitHash = "Not available"
+  }
+
+  # Timestamp
+  $machineInfo.CollectionTimestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+
+  return $machineInfo
+}
