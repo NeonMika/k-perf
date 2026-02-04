@@ -8,6 +8,7 @@ import at.jku.ssw.kir.find.irplugincontext.findFunction
 import at.jku.ssw.kir.find.irplugincontext.findFunctionOrNull
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.buildField
 import org.jetbrains.kotlin.ir.declarations.*
@@ -83,10 +84,11 @@ fun IrPluginContext.createField(
   }
 
   return this.irFactory.buildField {
-    name = Name.identifier(fieldName)
-    type = initializerExpression.expression.type
+    this.name = Name.identifier(fieldName)
+    this.type = initializerExpression.expression.type
     this.isFinal = isFinal
     this.isStatic = isStatic
+    this.visibility = DescriptorVisibilities.PRIVATE
   }.apply {
     this.initializer = DeclarationIrBuilder(this@createField, parentSymbol).irExprBody(initializerExpression.expression)
   }
@@ -112,13 +114,20 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
   fun call(func: Any, vararg args: Any): IrFunctionAccessExpression {
     val function = extractFunctionSymbol(func)
 
-    val nonDefaultParameters = function.owner.valueParameters.filter { !it.hasDefaultValue() }
+    val nonDefaultParameters = function.owner.parameters.filter { it.kind == IrParameterKind.Regular && !it.hasDefaultValue() }
     require(nonDefaultParameters.size == args.size) { "Expected ${nonDefaultParameters.size} arguments, got ${args.size}" }
 
     val newArgs = args.map { convertArgToIrExpression(it) }.toList()
 
+    val firstArgumentIndex = function.owner.parameters.firstOrNull {
+      it.kind !in setOf(
+        IrParameterKind.DispatchReceiver,
+        IrParameterKind.ExtensionReceiver
+      )
+    }?.indexInParameters ?: 0
+
     return builder.irCall(function).apply {
-      newArgs.forEachIndexed { index, value -> putValueArgument(index, value) }
+      newArgs.forEachIndexed { index, value -> this.arguments[firstArgumentIndex + index] = value }
     }
   }
 
@@ -211,7 +220,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
    * @param args The arguments to be passed to the function
    * @return An IrCall that can be further chained
    */
-  operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this.symbol.call(this.symbol, *args)
+  operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this@IrCallDsl.call(this.symbol, *args)
 
   /**
    * Calls this function with the given arguments and returns an IrCall to continue building
@@ -220,7 +229,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
    * @param args The arguments to be passed to the function
    * @return An IrCall that can be further chained
    */
-  operator fun IrFunctionSymbol.invoke(vararg args: Any): IrFunctionAccessExpression = this.call(this, *args)
+  operator fun IrFunctionSymbol.invoke(vararg args: Any): IrFunctionAccessExpression = this@IrCallDsl.call(this, *args)
 
   /**
    * Invokes the constructor of the `IrClass` using the provided arguments.
@@ -368,7 +377,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
       is IrValueDeclaration -> builder.irGet(toProcess) // this includes IrValueParameter and IrVariable
       is IrClass -> builder.irGetObject(toProcess.symbol)
       is IrStringConcatenation -> return toProcess
-      is IrConst<*> -> toProcess
+      is IrConst -> toProcess
       is IrExpression -> toProcess
 
       else -> error("IrCallHelper-convertToIrExpression: Cannot convert $toProcess to IrExpression")
@@ -509,11 +518,11 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
    */
   @OptIn(UnsafeDuringIrConstructionAPI::class)
   private fun IrFunctionAccessExpression.setReceivers(r1: IrExpression, r2: IrExpression? = null) = this.apply {
-    dispatchReceiver = if (this.symbol.owner.dispatchReceiverParameter != null) {
-      r1
-    } else null
-    extensionReceiver = if (this.symbol.owner.extensionReceiverParameter != null) {
-      r2 ?: r1
-    } else null
+    // Set the first receiver, which is either a dispatch receiver or an extension receiver
+    this.arguments[0] = r1
+    if (r2 != null) {
+      // Since setReceivers was called with two arguments, we expect  set r2 as the extension receiver at index 1
+      this.arguments[1] = r2
+    }
   }
 }

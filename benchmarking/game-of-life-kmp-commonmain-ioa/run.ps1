@@ -35,7 +35,9 @@ if ($CleanBuild) {
   Write-Host "=========================================="
 
   Clean-KirHelperKit
+  Clean-InstrumentationOverheadAnalyzerPlugin
   Clean-GameOfLifeCommonMainReference
+  Clean-GameOfLifeCommonMainIoa
   Write-Host ""
 }
 else {
@@ -51,9 +53,9 @@ Write-Host "# Building IOA benchmark dependencies..."
 Write-Host "=========================================="
 
 $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KirHelperKit)
-$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-InstrumentationOverheadAnalyzerPlugin -CleanBuild $CleanBuild)
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-InstrumentationOverheadAnalyzerPlugin)
 $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainReference)
-$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainIoa -CleanBuild $CleanBuild)
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainIoa)
 
 Write-Host ""
 Write-Host "=========================================="

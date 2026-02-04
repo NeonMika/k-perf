@@ -1,10 +1,7 @@
 package at.jku.ssw.kir.find
 
 import at.jku.ssw.kir.find.irtype.equalsIgnorePlatform
-import org.jetbrains.kotlin.ir.declarations.IrField
-import org.jetbrains.kotlin.ir.declarations.IrProperty
-import org.jetbrains.kotlin.ir.declarations.IrValueParameter
-import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.expressions.IrStringConcatenation
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
@@ -23,7 +20,7 @@ import org.jetbrains.kotlin.ir.types.classFqName
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun checkExtensionFunctionReceiverType(func: IrSimpleFunctionSymbol, extensionReceiverType: IrType? = null) =
   extensionReceiverType?.let {
-    func.owner.extensionReceiverParameter?.type?.equalsIgnorePlatform(it)
+    func.owner.parameters.firstOrNull { p -> p.kind == IrParameterKind.ExtensionReceiver }?.type?.equalsIgnorePlatform(it)
   } ?: true
 
 /**

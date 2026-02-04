@@ -1,6 +1,8 @@
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+
 plugins {
-  kotlin("multiplatform") version "2.0.20"
-  id("at.jku.ssw.k-perf-plugin") version "0.1.0" // dependency on the k-perf-measure-plugin plugin
+  kotlin("multiplatform") version "2.3.0"
+  id("at.jku.ssw.k-perf-plugin") version "0.1.0" // dependency on the k-perf-plugin plugin
 }
 
 group = "at.jku.ssw"
@@ -30,7 +32,6 @@ kperf {
   testKIR = kperfTestKIR
 }
 
-
 val flushEarlyTag = if (kperfFlushEarly) "true" else "false"
 val instrumentPropertyAccessorsTag = if (kperfInstrumentPropertyAccessors) "true" else "false"
 val testKIRTag = if (kperfTestKIR) "true" else "false"
@@ -38,7 +39,6 @@ val outputSuffix = "flushEarly-$flushEarlyTag-propAccessors-$instrumentPropertyA
 
 kotlin {
   jvm {
-
     compilations.all { }
     /*
     testRuns["test"].executionTask.configure {
@@ -60,7 +60,6 @@ kotlin {
         }
         archiveClassifier.set(outputSuffix)
         doLast {
-
           copy {
             from("build/libs")
             from(runtimeDependencyFiles.files)
@@ -70,18 +69,19 @@ kotlin {
       }
     }
   }
-
+  
+  @OptIn(org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalMainFunctionArgumentsDsl::class)
   js(IR) {
-    moduleName = "${project.name}-$outputSuffix"
+    outputModuleName.set("${project.name}-$outputSuffix")
     nodejs {
       passProcessArgvToMainFunction()
     }
     binaries.executable()
   }
 
-  val hostOs = System.getProperty("os.name")
-  val isArm64 = System.getProperty("os.arch") == "aarch64"
-  val isMingwX64 = hostOs.startsWith("Windows")
+  // val hostOs = System.getProperty("os.name")
+  // val isArm64 = System.getProperty("os.arch") == "aarch64"
+  // val isMingwX64 = hostOs.startsWith("Windows")
 
   /* https://kotlinlang.org/docs/multiplatform-dsl-reference.html#targets:
   A target that is not supported by the current host is ignored during building and, therefore, not published.

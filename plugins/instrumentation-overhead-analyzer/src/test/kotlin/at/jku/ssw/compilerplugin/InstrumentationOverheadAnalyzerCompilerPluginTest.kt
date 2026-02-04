@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCompilerApi::class)
+
 import at.jku.ssw.compilerplugin.InstrumentationOverheadAnalyzerComponentRegistrar
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
@@ -9,7 +11,6 @@ import org.junit.jupiter.api.Test
 
 class InstrumentationOverheadAnalyzerCompilerPluginTest {
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `Plugin test`() {
     val result = compile(
@@ -65,7 +66,6 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
     result.main("test")
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   fun compile(
     sourceFiles: List<SourceFile>,
     compilerPluginRegistrar: CompilerPluginRegistrar = InstrumentationOverheadAnalyzerComponentRegistrar(),
@@ -79,14 +79,12 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
     }.compile()
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   fun compile(
     sourceFile: SourceFile,
     compilerPluginRegistrar: CompilerPluginRegistrar = InstrumentationOverheadAnalyzerComponentRegistrar(),
   ) = compile(listOf(sourceFile), compilerPluginRegistrar)
 }
 
-@OptIn(ExperimentalCompilerApi::class)
 private fun JvmCompilationResult.main(packageName: String = "") {
   val className = if (packageName.isNotEmpty()) "$packageName.MainKt" else "MainKt"
   val kClazz = classLoader.loadClass(className)

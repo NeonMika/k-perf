@@ -1,3 +1,4 @@
+/*
 package at.jku.ssw.compilerplugin
 
 import at.jku.ssw.compilerplugin.ExampleConfigurationKeysFunction.KEY_ENABLED
@@ -287,3 +288,4 @@ class PerfMeasureExtensionFunctionUtil(
         }
     }
 }
+*/

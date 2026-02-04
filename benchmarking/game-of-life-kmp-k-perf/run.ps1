@@ -78,7 +78,7 @@ Write-Host "# K-perf Configurations to Build"
 Write-Host "=========================================="
 foreach ($config in $kPerfCombinations) {
   $suffix = Get-KPerfSuffix -Config $config
-  Write-Host "  - $suffix"
+  Write-Host "- $suffix"
 }
 
 # Clean phase

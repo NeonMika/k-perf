@@ -2,7 +2,6 @@ package at.jku.ssw.gradle
 
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
@@ -19,13 +18,14 @@ class KPerfGradleExtension() {
 
 // KotlinCompilerPluginSupportPlugin inherits from Plugin<Project>, which is the base class for Gradle Plugins
 class KPerfGradlePlugin : KotlinCompilerPluginSupportPlugin {
+  lateinit var target : Project
+
   override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
 
   override fun apply(target: Project) {
+    this.target = target
     target.plugins.withId("org.jetbrains.kotlin.multiplatform") {
-      target.extensions
-        .getByType<KotlinMultiplatformExtension>()
-        .addDependencies()
+      target.extensions.getByType(KotlinMultiplatformExtension::class.java).addDependencies()
     }
     target.extensions.add("kperf", KPerfGradleExtension())
     super.apply(target)
@@ -92,6 +92,6 @@ class KPerfGradlePlugin : KotlinCompilerPluginSupportPlugin {
     // 3. at.jku.ssw.k-perf
     // - Defined here
     // - Basically is the .jar file that contains the compiler plugin
-    return SubpluginArtifact(groupId = "at.jku.ssw", artifactId = "k-perf", version = "0.0.3")
+    return SubpluginArtifact(groupId = "at.jku.ssw", artifactId = "k-perf", version = target.project.version.toString())
   }
 }

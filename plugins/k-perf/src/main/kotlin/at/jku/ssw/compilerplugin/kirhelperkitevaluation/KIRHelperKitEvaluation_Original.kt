@@ -1,4 +1,6 @@
+/*
 package at.jku.ssw.compilerplugin
+
 import at.jku.ssw.compilerplugin.ExampleConfigurationKeysOriginal.KEY_ENABLED
 import at.jku.ssw.compilerplugin.ExampleConfigurationKeysOriginal.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -526,3 +528,4 @@ class KPerfExtensionOriginal(
         }
     }
 }
+*/

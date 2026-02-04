@@ -1,6 +1,8 @@
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+
 plugins {
-  kotlin("multiplatform") version "2.0.20"
-  id("at.jku.ssw.instrumentation-overhead-analyzer") version "0.1.0" // dependency on the k-perf-measure-plugin plugin
+  kotlin("multiplatform") version "2.3.0"
+  id("at.jku.ssw.instrumentation-overhead-analyzer") version "0.1.0" // dependency on the instrumentation-overhead-analyzer plugin
 }
 
 group = "at.jku.ssw"
@@ -17,7 +19,6 @@ instrumentationOverheadAnalyzer {
 
 kotlin {
   jvm {
-
     compilations.all { }
     /*
     testRuns["test"].executionTask.configure {
@@ -47,24 +48,18 @@ kotlin {
       }
     }
   }
+  
+  @OptIn(org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalMainFunctionArgumentsDsl::class)
   js(IR) {
-    /*
-    browser {
-        commonWebpackConfig {
-            cssSupport {
-                enabled.set(true)
-            }
-        }
-    }
-    */
     nodejs {
       passProcessArgvToMainFunction()
     }
     binaries.executable()
   }
-  val hostOs = System.getProperty("os.name")
-  val isArm64 = System.getProperty("os.arch") == "aarch64"
-  val isMingwX64 = hostOs.startsWith("Windows")
+
+  // val hostOs = System.getProperty("os.name")
+  // val isArm64 = System.getProperty("os.arch") == "aarch64"
+  // val isMingwX64 = hostOs.startsWith("Windows")
 
   /* https://kotlinlang.org/docs/multiplatform-dsl-reference.html#targets:
   A target that is not supported by the current host is ignored during building and, therefore, not published.
@@ -76,52 +71,14 @@ kotlin {
   val mingwX64 = mingwX64()
 
   listOf(
-    // macosArm64,
     macosX64,
-    // linuxArm64,
     linuxX64,
     mingwX64
   ).forEach { target ->
-    // target.compilerOptions {
-    // verbose = true
-    // freeCompilerArgs.add("-Xsave-llvm-ir-after=Codegen")
-    // freeCompilerArgs.add("-Xsave-llvm-ir-directory=llvm-ir")
-    // }
-
     target.binaries {
       executable {
         entryPoint = "main"
-        // compilerOptions {
-        // verbose = true
-        // freeCompilerArgs.add("-Xsave-llvm-ir-after=Codegen")
-        // freeCompilerArgs.add("-Xsave-llvm-ir-directory=llvm-ir")
-        // }
       }
-      /*
-      sharedLib {
-          compilerOptions {
-              verbose = true
-              // freeCompilerArgs.add("-Xsave-llvm-ir-after=Codegen")
-              // freeCompilerArgs.add("-Xsave-llvm-ir-directory=llvm-ir")
-          }
-      }
-      staticLib {
-          compilerOptions {
-              verbose = true
-              // freeCompilerArgs.add("-Xsave-llvm-ir-after=Codegen")
-              // freeCompilerArgs.add("-Xsave-llvm-ir-directory=llvm-ir")
-          }
-      }
-      if (hostOs == "Mac OS X") {
-          framework {
-              compilerOptions {
-                  verbose = true
-                  // freeCompilerArgs.add("-Xsave-llvm-ir-after=Codegen")
-                  // freeCompilerArgs.add("-Xsave-llvm-ir-directory=llvm-ir")
-              }
-          }
-      }
-      */
     }
   }
 
