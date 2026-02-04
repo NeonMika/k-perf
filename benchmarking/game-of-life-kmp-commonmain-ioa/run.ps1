@@ -79,10 +79,10 @@ if (-not ($JVM -or $JS -or $Native)) {
 $executables = @()
 
 if ($Reference -and $JVM) {
-  $executables += @{ Name = "commonmain_plain_jar"; Path = "$commonMainBuildRoot\lib\game-of-life-kmp-commonmain-jvm-0.0.3.jar"; Type = "jar" }
+  $executables += @{ Name = "commonmain_plain_jar"; Path = "$commonMainBuildRoot\lib\game-of-life-kmp-commonmain-jvm-0.1.0.jar"; Type = "jar" }
 }
 if ($IOA -and $JVM) {
-  $executables += @{ Name = "commonmain_ioa_jar"; Path = "$commonMainIoaBuildRoot\lib\game-of-life-kmp-commonmain-ioa-jvm-0.0.1.jar"; Type = "jar" }
+  $executables += @{ Name = "commonmain_ioa_jar"; Path = "$commonMainIoaBuildRoot\lib\game-of-life-kmp-commonmain-ioa-jvm-0.1.0.jar"; Type = "jar" }
 }
 if ($Reference -and $Native) {
   $executables += @{ Name = "commonmain_plain_exe"; Path = "$commonMainBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain.exe"; Type = "exe" }

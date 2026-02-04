@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "at.jku.ssw"
-version = "0.0.3"
+version = "0.1.0"
 
 dependencies {
   implementation("at.jku.ssw:KIRHelperKit:0.1.0")

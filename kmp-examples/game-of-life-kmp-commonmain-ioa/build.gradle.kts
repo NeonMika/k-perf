@@ -1,10 +1,10 @@
 plugins {
   kotlin("multiplatform") version "2.0.20"
-  id("at.jku.ssw.instrumentation-overhead-analyzer") version "0.0.1" // dependency on the k-perf-measure-plugin plugin
+  id("at.jku.ssw.instrumentation-overhead-analyzer") version "0.1.0" // dependency on the k-perf-measure-plugin plugin
 }
 
 group = "at.jku.ssw"
-version = "0.0.1"
+version = "0.1.0"
 
 repositories {
   mavenCentral()

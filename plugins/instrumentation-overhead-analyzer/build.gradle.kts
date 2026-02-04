@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "at.jku.ssw"
-version = "0.0.1"
+version = "0.1.0"
 
 dependencies {
   compileOnly(kotlin("stdlib"))

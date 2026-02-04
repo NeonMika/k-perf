@@ -1,10 +1,10 @@
 plugins {
   kotlin("multiplatform") version "2.0.20"
-  // id("at.jku.ssw.k-perf-plugin") version "0.0.3" // dependency on the k-perf-plugin plugin
+  // id("at.jku.ssw.k-perf-plugin") version "0.1.0" // dependency on the k-perf-plugin plugin
 }
 
 group = "at.jku.ssw"
-version = "0.0.3"
+version = "0.1.0"
 
 repositories {
   mavenCentral()
