@@ -32,7 +32,9 @@ kperf {
 
 
 val flushEarlyTag = if (kperfFlushEarly) "true" else "false"
-val outputSuffix = "flushEarly-$flushEarlyTag"
+val instrumentPropertyAccessorsTag = if (kperfInstrumentPropertyAccessors) "true" else "false"
+val testKIRTag = if (kperfTestKIR) "true" else "false"
+val outputSuffix = "flushEarly-$flushEarlyTag-propAccessors-$instrumentPropertyAccessorsTag-testKIR-$testKIRTag"
 
 kotlin {
   jvm {

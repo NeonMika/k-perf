@@ -3,96 +3,112 @@ param(
   [int]$RepetitionCount = 50,
   [bool]$CleanBuild = $true,
   [int]$StepCount = 10,
-  [string[]]$Filters = @("common", "jar", "js", "native")
+  [bool]$Reference = $true,
+  [bool]$IOA = $true,
+  [bool]$JVM = $true,
+  [bool]$JS = $true,
+  [bool]$Native = $true
 )
 
 # Import common utility functions
 . "$PSScriptRoot\..\utils.ps1"
 . "$PSScriptRoot\..\build.ps1"
 
-# Build phase: Compile dependencies and the application
-$buildTimes = @{}
+# Collect machine and environment information for reproducibility
+Write-Host "=========================================="
+Write-Host "# Collecting System Information..."
+Write-Host "=========================================="
+
+$machineInfo = Get-MachineInfo -GradleProjectPath "..\..\kmp-examples\game-of-life-kmp-commonmain"
+
+Write-Host "System Information collected:"
+foreach ($key in $machineInfo.Keys) {
+  Write-Host "  $key : $($machineInfo[$key])"
+}
+Write-Host ""
+
+# Clean phase
 if ($CleanBuild) {
-  Write-Host "=========================================="
-  Write-Host "# Building IOA benchmark dependencies..."
-  Write-Host "=========================================="
-
-  $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KirHelperKit -CleanBuild $CleanBuild)
-  $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-InstrumentationOverheadAnalyzerPlugin -CleanBuild $CleanBuild)
-  $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainReference -CleanBuild $CleanBuild)
-  $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainIoa -CleanBuild $CleanBuild)
-
   Write-Host ""
   Write-Host "=========================================="
-  Write-Host "# Build phase completed successfully!"
+  Write-Host "# Cleaning IOA benchmark dependencies..."
   Write-Host "=========================================="
+
+  Clean-KirHelperKit
+  Clean-GameOfLifeCommonMainReference
+  Write-Host ""
 }
 else {
-  Write-Host "Skipping build phase (CleanBuild = false)"
+  Write-Host "Skipping clean phase (CleanBuild = false)"
+  Write-Host ""
 }
+
+# Build phase: Compile dependencies and the application
+$buildTimes = @{}
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "# Building IOA benchmark dependencies..."
+Write-Host "=========================================="
+
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KirHelperKit)
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-InstrumentationOverheadAnalyzerPlugin -CleanBuild $CleanBuild)
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainReference)
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainIoa -CleanBuild $CleanBuild)
+
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "# Build phase completed successfully!"
+Write-Host "=========================================="
 
 # Define build output roots to shorten executable paths
 $commonMainBuildRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain\build"
 $commonMainIoaBuildRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa\build"
 
+# Validate selection parameters
+if (-not ($Reference -or $IOA)) {
+  Write-Host "ERROR: At least one of -Reference or -IOA must be true."
+  exit 1
+}
+
+if (-not ($JVM -or $JS -or $Native)) {
+  Write-Host "ERROR: At least one of -JVM, -JS, or -Native must be true."
+  exit 1
+}
+
 # Define a list of all executables to be benchmarked.
-# Each item now has a 'Name' property for creating a unique and readable output file.
-# Each item has 'Tags' to allow filtering by category
-$executables = @(
-  # Commonmain versions
-  @{ Name = "commonmain_plain_jar"; Path = "$commonMainBuildRoot\lib\game-of-life-kmp-commonmain-jvm-0.0.3.jar"; Type = "jar"; Tags = @("common", "jar") },
-  @{ Name = "commonmain_ioa_jar"; Path = "$commonMainIoaBuildRoot\lib\game-of-life-kmp-commonmain-ioa-jvm-0.0.1.jar"; Type = "jar"; Tags = @("common", "jar") },
-  @{ Name = "commonmain_plain_exe"; Path = "$commonMainBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain.exe"; Type = "exe"; Tags = @("common", "native") },
-  @{ Name = "commonmain_ioa_exe"; Path = "$commonMainIoaBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain-ioa.exe"; Type = "exe"; Tags = @("common", "native") },
-  @{ Name = "commonmain_plain_node"; Path = "$commonMainBuildRoot\js\packages\game-of-life-kmp-commonmain\kotlin\game-of-life-kmp-commonmain.js"; Type = "node"; Tags = @("common", "js") },
-  @{ Name = "commonmain_ioa_node"; Path = "$commonMainIoaBuildRoot\js\packages\game-of-life-kmp-commonmain-ioa\kotlin\game-of-life-kmp-commonmain-ioa.js"; Type = "node"; Tags = @("common", "js") }
-)
+$executables = @()
+
+if ($Reference -and $JVM) {
+  $executables += @{ Name = "commonmain_plain_jar"; Path = "$commonMainBuildRoot\lib\game-of-life-kmp-commonmain-jvm-0.0.3.jar"; Type = "jar" }
+}
+if ($IOA -and $JVM) {
+  $executables += @{ Name = "commonmain_ioa_jar"; Path = "$commonMainIoaBuildRoot\lib\game-of-life-kmp-commonmain-ioa-jvm-0.0.1.jar"; Type = "jar" }
+}
+if ($Reference -and $Native) {
+  $executables += @{ Name = "commonmain_plain_exe"; Path = "$commonMainBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain.exe"; Type = "exe" }
+}
+if ($IOA -and $Native) {
+  $executables += @{ Name = "commonmain_ioa_exe"; Path = "$commonMainIoaBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain-ioa.exe"; Type = "exe" }
+}
+if ($Reference -and $JS) {
+  $executables += @{ Name = "commonmain_plain_node"; Path = "$commonMainBuildRoot\js\packages\game-of-life-kmp-commonmain\kotlin\game-of-life-kmp-commonmain.js"; Type = "node" }
+}
+if ($IOA -and $JS) {
+  $executables += @{ Name = "commonmain_ioa_node"; Path = "$commonMainIoaBuildRoot\js\packages\game-of-life-kmp-commonmain-ioa\kotlin\game-of-life-kmp-commonmain-ioa.js"; Type = "node" }
+}
 
 # Create a test suite name from the executable names
 $testSuiteName = "game-of-life-kmp-commonmain-ioa"
 
-# Validate and normalize filters
-if ($Filters.Count -eq 0 -or $Filters -eq @("")) {
-  $Filters = @("common", "jar", "js", "native")
-}
-
-Write-Host ""
-Write-Host "========================================="
-Write-Host "## Filter Configuration"
-Write-Host "========================================="
-Write-Host "Filters: $($Filters -join ', ')"
-Write-Host ""
-
-# Filter executables based on provided filters
-# An executable is selected if ALL its tags match at least one filter
-$filteredExecutables = @()
-foreach ($executable in $executables) {
-  $allTagsMatch = $true
-  foreach ($tag in $executable.Tags) {
-    if ($tag -notin $Filters) {
-      $allTagsMatch = $false
-      break
-    }
-  }
-  if ($allTagsMatch) {
-    $filteredExecutables += $executable
-  }
-}
-
-if ($filteredExecutables.Count -eq 0) {
-  Write-Host "ERROR: No executables match the provided filters!"
-  Write-Host "Available filter options: common, jar, js, native"
+if ($executables.Count -eq 0) {
+  Write-Host "ERROR: No executables match the provided parameters."
   exit 1
 }
 
-Write-Host "Selected $($filteredExecutables.Count) executables for benchmarking:"
-foreach ($exec in $filteredExecutables) {
-  Write-Host "  - $($exec.Name) (Tags: $($exec.Tags -join ', '))"
+Write-Host "Selected $($executables.Count) executables for benchmarking:"
+foreach ($exec in $executables) {
+  Write-Host "  - $($exec.Name)"
 }
-Write-Host ""
-
-# Use filtered executables for the rest of the script
-$executables = $filteredExecutables
 Write-Host ""
 Write-Host "=========================================="
 Write-Host "Validating executables..."
@@ -203,7 +219,7 @@ foreach ($executable in $executables) {
       $elapsedTime = $elapsedTime.Trim()
 
       # Print the result for the current iteration
-      Write-Host "$elapsedTime"
+      Write-Host ("- Ran {0:N3} ms" -f ([long]$elapsedTime / 1000))
 
       # Add to the array
       $elapsedTimes += $elapsedTime
@@ -229,8 +245,13 @@ foreach ($executable in $executables) {
       RepetitionCount = $RepetitionCount
       CleanBuild      = $CleanBuild
       StepCount       = $StepCount
-      Filters         = $Filters
+      Reference       = $Reference
+      IOA             = $IOA
+      JVM             = $JVM
+      JS              = $JS
+      Native          = $Native
     }
+    machineInfo = $machineInfo
     buildTimeMs = $relevantBuildTime
     executable  = $executable.Name
     repetitions = $RepetitionCount
@@ -245,15 +266,66 @@ foreach ($executable in $executables) {
 
   # Collect statistics for CSV
   $csvRecord = [ordered]@{
-    executable  = $executable.Name
-    repetitions = $RepetitionCount
-    mean        = $stats.mean
-    median      = $stats.median
-    stddev      = $stats.stddev
-    min         = $stats.min
-    max         = $stats.max
-    ci95_lower  = $stats.ci95.lower
-    ci95_upper  = $stats.ci95.upper
+    executable                        = $executable.Name
+    buildTimeMs                       = $relevantBuildTime
+    RepetitionCount                   = $RepetitionCount
+    CleanBuild                        = $CleanBuild
+    StepCount                         = $StepCount
+    Reference                         = $Reference
+    IOA                               = $IOA
+    JVM                               = $JVM
+    JS                                = $JS
+    Native                            = $Native
+    CollectionTimestamp               = $machineInfo.CollectionTimestamp
+    GitCommitHash                     = $machineInfo.GitCommitHash
+    GitBranch                         = $machineInfo.GitBranch
+    DeviceManufacturer                = $machineInfo.DeviceManufacturer
+    DeviceModel                       = $machineInfo.DeviceModel
+    IsVirtualMachine                  = $machineInfo.IsVirtualMachine
+    OS                                = $machineInfo.OS
+    OSArchitecture                    = $machineInfo.OSArchitecture
+    WindowsBuildNumber                = $machineInfo.WindowsBuildNumber
+    TimeZone                          = $machineInfo.TimeZone
+    Username                          = $machineInfo.Username
+    BIOSVersion                       = $machineInfo.BIOSVersion
+    BIOSManufacturer                  = $machineInfo.BIOSManufacturer
+    SecureBootEnabled                 = $machineInfo.SecureBootEnabled
+    HyperVEnabled                     = $machineInfo.HyperVEnabled
+    CPU                               = $machineInfo.CPU
+    CPUCores                          = $machineInfo.CPUCores
+    CPULogicalProcessors              = $machineInfo.CPULogicalProcessors
+    CPUMaxClockSpeedMHz               = $machineInfo.CPUMaxClockSpeedMHz
+    TotalRAMGB                        = $machineInfo.TotalRAMGB
+    AvailableRAMGB                    = $machineInfo.AvailableRAMGB
+    RAMModuleCount                    = $machineInfo.RAMModuleCount
+    RAMSpeedMHz                       = $machineInfo.RAMSpeedMHz
+    RAMManufacturer                   = $machineInfo.RAMManufacturer
+    RAMPartNumber                     = $machineInfo.RAMPartNumber
+    RAMModuleCapacitiesGB             = $machineInfo.RAMModuleCapacitiesGB
+    DiskModel                         = $machineInfo.DiskModel
+    DiskSizeGB                        = $machineInfo.DiskSizeGB
+    DiskMediaType                     = $machineInfo.DiskMediaType
+    DiskInterfaceType                 = $machineInfo.DiskInterfaceType
+    SystemDriveFreeSpaceGB            = $machineInfo.SystemDriveFreeSpaceGB
+    PowerPlan                         = $machineInfo.PowerPlan
+    SystemUptimeHours                 = $machineInfo.SystemUptimeHours
+    RunningProcessCount               = $machineInfo.RunningProcessCount
+    WindowsDefenderEnabled            = $machineInfo.WindowsDefenderEnabled
+    WindowsDefenderRealTimeProtection = $machineInfo.WindowsDefenderRealTimeProtection
+    PowerShellVersion                 = $machineInfo.PowerShellVersion
+    JavaVersion                       = $machineInfo.JavaVersion
+    JavaDistribution                  = $machineInfo.JavaDistribution
+    NodeVersion                       = $machineInfo.NodeVersion
+    PythonVersion                     = $machineInfo.PythonVersion
+    GradleVersion                     = $machineInfo.GradleVersion
+    KotlinVersion                     = $machineInfo.KotlinVersion
+    mean                              = $stats.mean
+    median                            = $stats.median
+    stddev                            = $stats.stddev
+    min                               = $stats.min
+    max                               = $stats.max
+    ci95_lower                        = $stats.ci95.lower
+    ci95_upper                        = $stats.ci95.upper
   }
   $csvRecords += $csvRecord
 

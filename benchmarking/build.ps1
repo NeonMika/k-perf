@@ -2,21 +2,142 @@
 
 . "$PSScriptRoot\utils.ps1"
 
+# Define GameType enum
+enum GameType {
+  CommonMain
+  DedicatedMain
+}
+# Map GameType enum values to their string representations and tags
+$gameTypeTagMap = @{
+  [GameType]::CommonMain    = "common"
+  [GameType]::DedicatedMain = "dedicated"
+}
+
+# Map GameType enum values to their string representations
+$gameTypeStringMap = @{
+  [GameType]::CommonMain    = "commonmain"
+  [GameType]::DedicatedMain = "dedicatedmain"
+}
+
+class KPerfConfig {
+  [bool]$FlushEarly
+  [bool]$InstrumentPropertyAccessors
+  [bool]$TestKIR
+
+  KPerfConfig([bool]$FlushEarly, [bool]$InstrumentPropertyAccessors, [bool]$TestKIR) {
+    $this.FlushEarly = $FlushEarly
+    $this.InstrumentPropertyAccessors = $InstrumentPropertyAccessors
+    $this.TestKIR = $TestKIR
+  }
+}
+
+function Get-KPerfSuffix {
+  param([KPerfConfig]$Config)
+
+  return "flushEarly-$(if ($Config.FlushEarly) { 'true' } else { 'false' })-propAccessors-$(if ($Config.InstrumentPropertyAccessors) { 'true' } else { 'false' })-testKIR-$(if ($Config.TestKIR) { 'true' } else { 'false' })"
+}
+
+function Clean-KirHelperKit {
+  Write-Host ""
+  Write-Host "## Cleaning KIRHelperKit..."
+  Push-Location "..\..\KIRHelperKit"
+  try {
+    & .\gradlew clean | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host "ERROR: KIRHelperKit clean failed!"
+      exit 1
+    }
+  }
+  finally {
+    Pop-Location
+  }
+}
+
+function Clean-KPerfPlugin {
+  Write-Host ""
+  Write-Host "## Cleaning k-perf (Kotlin compiler plugin)..."
+  Push-Location "..\..\plugins\k-perf"
+  try {
+    & .\gradlew clean | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host "ERROR: k-perf clean failed!"
+      exit 1
+    }
+  }
+  finally {
+    Pop-Location
+  }
+}
+
+function Clean-GameOfLifeCommonMainReference {
+  Write-Host ""
+  Write-Host "## Cleaning game-of-life-kmp-commonmain reference application..."
+  Push-Location "..\..\kmp-examples\game-of-life-kmp-commonmain"
+  try {
+    & .\gradlew clean | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host "ERROR: game-of-life-kmp-commonmain clean failed!"
+      exit 1
+    }
+  }
+  finally {
+    Pop-Location
+  }
+}
+
+function Clean-GameOfLifeDedicatedMainReference {
+  Write-Host ""
+  Write-Host "## Cleaning game-of-life-kmp-dedicatedmain reference application..."
+  Push-Location "..\..\kmp-examples\game-of-life-kmp-dedicatedmain"
+  try {
+    & .\gradlew clean | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host "ERROR: game-of-life-kmp-dedicatedmain clean failed!"
+      exit 1
+    }
+  }
+  finally {
+    Pop-Location
+  }
+}
+
+function Clean-GameOfLifeCommonKPerfVariant {
+  Write-Host ""
+  Write-Host "## Cleaning game-of-life-kmp-commonmain-k-perf..."
+  Push-Location "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf"
+  try {
+    & .\gradlew clean | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host "ERROR: game-of-life-kmp-commonmain-k-perf clean failed!"
+      exit 1
+    }
+  }
+  finally {
+    Pop-Location
+  }
+}
+
+function Clean-GameOfLifeDedicatedKPerfVariant {
+  Write-Host ""
+  Write-Host "## Cleaning game-of-life-kmp-dedicatedmain-k-perf..."
+  Push-Location "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf"
+  try {
+    & .\gradlew clean | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host "ERROR: game-of-life-kmp-dedicatedmain-k-perf clean failed!"
+      exit 1
+    }
+  }
+  finally {
+    Pop-Location
+  }
+}
+
 function Build-KirHelperKit {
-  param([bool]$CleanBuild = $true)
-  
   Write-Host ""
   Write-Host "## Building KIRHelperKit..."
   Push-Location "..\..\KIRHelperKit"
   try {
-    if ($CleanBuild) {
-      & .\gradlew clean | Out-Host
-      if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: KIRHelperKit clean failed!"
-        exit 1
-      }
-    }
-    
     $buildStartTime = Get-Date
     & .\gradlew build publishToMavenLocal | Out-Host
     $buildEndTime = Get-Date
@@ -34,21 +155,11 @@ function Build-KirHelperKit {
   return [ordered]@{ KirHelperKit = $buildDuration }
 }
 
-function Build-KperfPlugin {
-  param([bool]$CleanBuild = $true)
-  
+function Build-KPerfPlugin {
   Write-Host ""
   Write-Host "## Building k-perf (Kotlin compiler plugin)..."
   Push-Location "..\..\plugins\k-perf"
   try {
-    if ($CleanBuild) {
-      & .\gradlew clean | Out-Host
-      if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: k-perf clean failed!"
-        exit 1
-      }
-    }
-    
     $buildStartTime = Get-Date
     & .\gradlew build publishToMavenLocal | Out-Host
     $buildEndTime = Get-Date
@@ -63,7 +174,7 @@ function Build-KperfPlugin {
   }
   $buildDuration = ($buildEndTime - $buildStartTime).TotalMilliseconds
   Write-Host "k-perf build completed successfully in $([math]::Round($buildDuration, 2)) ms."
-  return [ordered]@{ KperfPlugin = $buildDuration }
+  return [ordered]@{ KPerfPlugin = $buildDuration }
 }
 
 function Build-InstrumentationOverheadAnalyzerPlugin {
@@ -99,11 +210,9 @@ function Build-InstrumentationOverheadAnalyzerPlugin {
 }
 
 function Build-GameOfLifeCommonMainReference {
-  param([bool]$CleanBuild = $true)
-  
   Write-Host ""
   Write-Host "## Building game-of-life-kmp-commonmain reference application (without plugin)..."
-  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-commonmain reference application" -Path "..\..\kmp-examples\game-of-life-kmp-commonmain" -CleanBuild $CleanBuild
+  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-commonmain reference application" -Path "..\..\kmp-examples\game-of-life-kmp-commonmain" -CleanBuild $false
   $buildTimes = [ordered]@{}
   if ($timings.Contains('jvm')) {
     $buildTimes['commonmain-plain-jar'] = $timings.jvm
@@ -122,11 +231,9 @@ function Build-GameOfLifeCommonMainReference {
 }
 
 function Build-GameOfLifeDedicatedMainReference {
-  param([bool]$CleanBuild = $true)
-  
   Write-Host ""
   Write-Host "## Building game-of-life-kmp-dedicatedmain reference application (without plugin)..."
-  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-dedicatedmain reference application" -Path "..\..\kmp-examples\game-of-life-kmp-dedicatedmain" -CleanBuild $CleanBuild
+  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-dedicatedmain reference application" -Path "..\..\kmp-examples\game-of-life-kmp-dedicatedmain" -CleanBuild $false
   $buildTimes = [ordered]@{}
   if ($timings.Contains('jvm')) { $buildTimes['dedicatedmain-plain-jar'] = $timings.jvm }
   if ($timings.Contains('js')) { $buildTimes['dedicatedmain-plain-node'] = $timings.js }
@@ -135,7 +242,7 @@ function Build-GameOfLifeDedicatedMainReference {
   return $buildTimes
 }
 
-function Build-GameOfLifeCommonMainKperfFlushEarlyTrue {
+function Build-GameOfLifeCommonMainKPerfFlushEarlyTrue {
   param([bool]$CleanBuild = $true)
   
   Write-Host ""
@@ -149,7 +256,7 @@ function Build-GameOfLifeCommonMainKperfFlushEarlyTrue {
   return $buildTimes
 }
 
-function Build-GameOfLifeCommonMainKperfFlushEarlyFalse {
+function Build-GameOfLifeCommonMainKPerfFlushEarlyFalse {
   param([bool]$CleanBuild = $true)
   
   Write-Host ""
@@ -163,7 +270,7 @@ function Build-GameOfLifeCommonMainKperfFlushEarlyFalse {
   return $buildTimes
 }
 
-function Build-GameOfLifeDedicatedMainKperfFlushEarlyTrue {
+function Build-GameOfLifeDedicatedMainKPerfFlushEarlyTrue {
   param([bool]$CleanBuild = $true)
   
   Write-Host ""
@@ -177,7 +284,7 @@ function Build-GameOfLifeDedicatedMainKperfFlushEarlyTrue {
   return $buildTimes
 }
 
-function Build-GameOfLifeDedicatedMainKperfFlushEarlyFalse {
+function Build-GameOfLifeDedicatedMainKPerfFlushEarlyFalse {
   param([bool]$CleanBuild = $true)
   
   Write-Host ""
@@ -292,4 +399,41 @@ function Invoke-KmpBuildWithTimings {
 
   Write-Host "$Title completed successfully."
   return $timings
+}
+
+function Build-GameOfLifeKPerfVariant {
+  param(
+    [GameType]$GameType,
+    [KPerfConfig]$Config
+  )
+  
+  $projectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-k-perf" } else { "game-of-life-kmp-dedicatedmain-k-perf" }
+  $projectPath = if ($GameType -eq [GameType]::CommonMain) { "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf" } else { "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf" }
+  $suffix = Get-KPerfSuffix -Config $Config
+  $gradleArgs = @(
+    "-PkperfFlushEarly=$($Config.FlushEarly)"
+    "-PkperfInstrumentPropertyAccessors=$($Config.InstrumentPropertyAccessors)"
+    "-PkperfTestKIR=$($Config.TestKIR)"
+  )
+  
+  Write-Host ""
+  Write-Host "## Building $projectName with suffix: $suffix..."
+  $title = "$projectName ($suffix)"
+  $timings = Invoke-KmpBuildWithTimings -Title $title -Path $projectPath -CleanBuild $false -GradleArgs $gradleArgs
+  
+  $buildTimes = [ordered]@{}
+  $gameTypeString = $gameTypeStringMap[$GameType]
+  
+  if ($timings.Contains('jvm')) { 
+    $buildTimes["$gameTypeString-k-perf-$suffix-jar"] = $timings.jvm 
+  }
+  if ($timings.Contains('js')) { 
+    $buildTimes["$gameTypeString-k-perf-$suffix-node"] = $timings.js 
+  }
+  if ($timings.Contains('windows')) { 
+    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.windows 
+  }
+  
+  Write-Host "$projectName build with $suffix completed successfully."
+  return $buildTimes
 }
