@@ -7,11 +7,10 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
-import kotlin.reflect.KClass
 
 
 // KotlinCompilerPluginSupportPlugin inherits from Plugin<Project>, which is the base class for Gradle Plugins
-class InstrumentationOverheadAnalyzerGradlePlugin : KotlinCompilerPluginSupportPlugin {
+class IoaGradlePlugin : KotlinCompilerPluginSupportPlugin {
   lateinit var target : Project
   
   override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
@@ -21,7 +20,7 @@ class InstrumentationOverheadAnalyzerGradlePlugin : KotlinCompilerPluginSupportP
     target.plugins.withId("org.jetbrains.kotlin.multiplatform") {
       target.extensions.getByType(KotlinMultiplatformExtension::class.java).addDependencies()
     }
-    target.extensions.add("instrumentationOverheadAnalyzer", InstrumentationOverheadAnalyzerGradleExtension())
+    target.extensions.add("instrumentationOverheadAnalyzer", IoaGradleExtension())
     super.apply(target)
   }
 
@@ -45,11 +44,11 @@ class InstrumentationOverheadAnalyzerGradlePlugin : KotlinCompilerPluginSupportP
       //   enabled = true
       //   ...
       // }
-      val extension =
-        project.extensions.findByName("instrumentationOverheadAnalyzer") as? InstrumentationOverheadAnalyzerGradleExtension
+      val extension = project.extensions.findByName("instrumentationOverheadAnalyzer") as? IoaGradleExtension
       if (extension == null) {
         error("instrumentationOverheadAnalyzer gradle extension not found!")
       }
+
       listOf(
         SubpluginOption("enabled", extension.enabled.toString()),
         SubpluginOption("kind", extension.kind.toString()),
