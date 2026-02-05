@@ -1,5 +1,7 @@
 package at.jku.ssw.compilerplugin
 
+import at.jku.ssw.compilerplugin.instrumentation.IoaContext
+import at.jku.ssw.compilerplugin.instrumentation.modifyFunction
 import at.jku.ssw.shared.IoaKind
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -10,6 +12,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.name
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
+import org.jetbrains.kotlin.ir.util.addChild
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import java.io.File
@@ -19,6 +22,8 @@ class IoaGnerationExtension(private val kind: IoaKind) : IrGenerationExtension {
   val debugFile = File("./DEBUG.txt")
 
   init {
+    IoaContext.instrumentationKind = kind
+
     debugFile.delete()
   }
 
@@ -28,6 +33,18 @@ class IoaGnerationExtension(private val kind: IoaKind) : IrGenerationExtension {
 
   @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
+    IoaContext.pluginContext = pluginContext
+
+    if (IoaContext.sutField != null) {
+      val file = moduleFragment.files.firstOrNull()
+      if (file == null) {
+        appendToDebugFile("No files in module fragment, can not store SUT!\n")
+      } else {
+        appendToDebugFile("Storing SUT in ${file.name}.\n")
+        file.addChild(IoaContext.sutField!!)
+      }
+    }
+
     // IrElementVisitor / IrElementVisitorVoid
     // IrElementTransformer / IrElementTransformerVoid / IrElementTransformerVoidWithContext
     // IrElementTransformerVoidWithContext().visitfile(file, null)
@@ -47,8 +64,7 @@ class IoaGnerationExtension(private val kind: IoaKind) : IrGenerationExtension {
             return declaration
           }
 
-          // TODO: modify declaration according to kind
-          appendToDebugFile("### In the future I will modify the body of ${declaration.name}() (${declaration.fqNameWhenAvailable?.asString()}) to introduce specific overhead:\n${declaration.dump()}")
+          modifyFunction(declaration)
 
           return super.visitFunctionNew(declaration)
         }

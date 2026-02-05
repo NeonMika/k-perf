@@ -2,4 +2,7 @@ package at.jku.ssw.shared
 
 enum class IoaKind {
   None,
+
+  StandardOut,
+
 }
