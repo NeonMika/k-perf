@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalCompilerApi::class)
 
-import at.jku.ssw.compilerplugin.InstrumentationOverheadAnalyzerComponentRegistrar
+import at.jku.ssw.compilerplugin.IoaComponentRegistrar
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -16,7 +16,7 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
     val result = compile(
       SourceFile.kotlin(
         "main.kt",
-        """
+        $$"""
                     package test
 
                     class MyClass<T>(val value: T) {
@@ -29,25 +29,25 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
                         }
 
                         fun normalFunction(param: Int, param2: String? = "Test"): String {
-                            return "Normal Function: ${'$'}param"
+                            return "Normal Function: $param"
                         }
 
                         fun normalFunction(param: Int): String {
-                            return "Normal Function: ${'$'}param"
+                            return "Normal Function: $param"
                         }
 
-                        fun String.foo(x: Int): String = "Host($this) + ${'$'}x"
+                        fun String.foo(x: Int): String = "Host($this) + $x"
             
                         companion object {
                             fun staticFunction() = "Static Function"
                         }
                     }
                     fun topLevelFunction(param: Int, param2: String? = "Test"): String {
-                        return "Top Level Function: ${'$'}param"
+                        return "Top Level Function: $param"
                     }
 
                     fun topLevelFunction(param: Int): String {
-                        return "Top Level Function: ${'$'}param"
+                        return "Top Level Function: $param"
                     }
             
                     fun main() {
@@ -68,7 +68,7 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
 
   fun compile(
     sourceFiles: List<SourceFile>,
-    compilerPluginRegistrar: CompilerPluginRegistrar = InstrumentationOverheadAnalyzerComponentRegistrar(),
+    compilerPluginRegistrar: CompilerPluginRegistrar = IoaComponentRegistrar(),
   ): JvmCompilationResult {
     return KotlinCompilation().apply {
       // To have access to kotlinx.io
@@ -81,7 +81,7 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
 
   fun compile(
     sourceFile: SourceFile,
-    compilerPluginRegistrar: CompilerPluginRegistrar = InstrumentationOverheadAnalyzerComponentRegistrar(),
+    compilerPluginRegistrar: CompilerPluginRegistrar = IoaComponentRegistrar(),
   ) = compile(listOf(sourceFile), compilerPluginRegistrar)
 }
 

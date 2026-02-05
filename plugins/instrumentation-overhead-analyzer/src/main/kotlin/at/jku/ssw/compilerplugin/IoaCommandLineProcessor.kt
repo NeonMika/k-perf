@@ -1,6 +1,6 @@
 package at.jku.ssw.compilerplugin
 
-import at.jku.ssw.shared.InstrumentationOverheadAnalyzerKind
+import at.jku.ssw.shared.IoaKind
 import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
 import org.jetbrains.kotlin.compiler.plugin.CliOption
 import org.jetbrains.kotlin.compiler.plugin.CliOptionProcessingException
@@ -13,10 +13,10 @@ Commandline processor to process options.
 This is the entry point for the compiler plugin.
 It is found via a ServiceLoader.
 Thus, we need an entry in META-INF/services/org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
-that reads at.jku.ssw.compilerplugin.InsturmentationOverheadAnalyzerCommandLineProcessor
+that reads at.jku.ssw.compilerplugin.IoaCommandLineProcessor
  */
 @OptIn(ExperimentalCompilerApi::class)
-class InstrumentationOverheadAnalyzerCommandLineProcessor : CommandLineProcessor {
+class IoaCommandLineProcessor : CommandLineProcessor {
   override val pluginId: String = "instrumentation-overhead-analyzer-plugin"
 
   override val pluginOptions: Collection<CliOption> = listOf(
@@ -24,15 +24,15 @@ class InstrumentationOverheadAnalyzerCommandLineProcessor : CommandLineProcessor
       "enabled",
       "<true|false>",
       "whether plugin is enabled",
-      false,
-      false
+      required = false,
+      allowMultipleOccurrences = false
     ),
     CliOption(
       "kind",
-      "<${InstrumentationOverheadAnalyzerKind.values().joinToString("|")}>",
+      "<${IoaKind.entries.joinToString("|")}>",
       "the kind of instrumentation that should be analyzed",
-      true,
-      false
+      required = true,
+      allowMultipleOccurrences = false
     )
   )
 
@@ -42,9 +42,8 @@ class InstrumentationOverheadAnalyzerCommandLineProcessor : CommandLineProcessor
     configuration: CompilerConfiguration
   ) {
     when (option.optionName) {
-      "enabled" -> configuration.put(InstrumentationOverheadAnalyzerConfigurationKeys.ENABLED, value.toBoolean())
-      "kind" -> configuration.put(InstrumentationOverheadAnalyzerConfigurationKeys.KIND,
-        InstrumentationOverheadAnalyzerKind.valueOf(value))
+      "enabled" -> configuration.put(IoaConfigurationKeys.ENABLED, value.toBoolean())
+      "kind" -> configuration.put(IoaConfigurationKeys.KIND, IoaKind.valueOf(value))
       else -> throw CliOptionProcessingException("command line processor encountered unknown CLI compiler plugin option: ${option.optionName}")
     }
   }
