@@ -1,5 +1,6 @@
 import math
 import os
+import platform
 import re
 import statistics
 import subprocess
@@ -73,7 +74,6 @@ def get_benchmark_statistics(values: list[float]) -> Dict[str, Optional[float | 
         'ci98': ci98
     }
 
-
 def find_first_gradle_task(task_list: str, candidates: list[str]) -> Optional[str]:
     for candidate in candidates:
         pattern = rf"(?m)^(?:\s*:)?{candidate}\b"
@@ -81,7 +81,6 @@ def find_first_gradle_task(task_list: str, candidates: list[str]) -> Optional[st
             return candidate
 
     return None
-
 
 def invoke_gradle_task_if_present(task: Optional[str], title: str):
     if not task:
@@ -95,7 +94,10 @@ def invoke_gradle_task_if_present(task: Optional[str], title: str):
     print("==========================================")
 
     # execute ./gradlew <task> and check return code
-    result = subprocess.run(['./gradlew', task], capture_output=True, text=True)
+    if platform.system() == "Windows":
+        result = subprocess.run(['./gradlew.bat', task], capture_output=True, text=True)
+    else:
+        result = subprocess.run(['./gradlew', task], capture_output=True, text=True)
 
     if result.returncode != 0:
         raise Exception(f"Failed to execute task {task} with exit code {result.returncode}: {result.stderr}")
@@ -134,7 +136,3 @@ def invoke_kmp_build(title: str, path: str, clean_build: bool = True):
         invoke_gradle_task_if_present(mac_task, f"{title} - macOS Build")
 
     print(f"{title} completed successfully.")
-
-def get_machine_info(gradle_project_path: str = '../../kmp-examples/game-of-life-kmp-commonmain') -> Dict[str, str]:
-    machine_info = {}
-
