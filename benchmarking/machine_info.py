@@ -2,10 +2,8 @@ import getpass
 import json
 import platform
 import re
-import shutil
 import subprocess
 import time
-from collections.abc import Callable
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -28,12 +26,31 @@ def run(cmd: List[str]):
         return 1, "", str(e)
 
 
-def which_binary(name: str) -> Optional[str]:
-    return shutil.which(name)
+def _read_first_line(path: str) -> Optional[str]:
+    try:
+        with open(path) as fh:
+            return fh.readline().strip() or None
+    except FileNotFoundError:
+        return None
+    except PermissionError:
+        return None
 
 
-def by_os(os: str, windows: Optional[Callable], darwin: Optional[Callable], linux: Optional[Callable]):
-    (windows if os == "Windows" else darwin if os == "Darwin" else linux)()
+def _pwsh_json(script: str) -> Optional[dict]:
+    rc, out, _ = run(['powershell', '-NoProfile', '-NonInteractive', '-Command', script])
+    if rc != 0 or not out:
+        return None
+    try:
+        return json.loads(out)
+    except json.JSONDecodeError:
+        return None
+
+
+def _pwsh_text(script: str) -> Optional[str]:
+    rc, out, _ = run(['powershell', '-NoProfile', '-NonInteractive', '-Command', script])
+    if rc != 0 or not out:
+        return None
+    return out.strip()
 
 
 def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
@@ -48,32 +65,55 @@ def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
         'architecture': platform.machine()
     }
 
-    # Prepare system profiler results for macOS
-    if os == "Darwin":
+    if os == "Windows":
+        pass
+    elif os == "Darwin": # Prepare system profiler results for macOS
         result, out, _ = run(
             ["system_profiler", "SPHardwareDataType", "SPMemoryDataType", "-json"])
         if result != 0 or not out:
             raise Exception("Failed to get system profiler results")
 
-        data = json.loads(out)
+        system_profiler_data = json.loads(out)
+    else: # Prepare /etc/os-release data for Linux
+        os_release_data: Dict[str, str] = {}
+        try:
+            with open('/etc/os-release') as fh:
+                for line in fh:
+                    if '=' in line:
+                        k, v = line.strip().split('=', 1)
+                        os_release_data[k] = v.strip('"')
+        except FileNotFoundError:
+            pass
 
     # Additional OS information
     if os == "Windows":
-        pass
+        os_info = _pwsh_json('Get-CimInstance Win32_OperatingSystem | Select-Object Caption,Version,OSArchitecture,BuildNumber | ConvertTo-Json -Compress') or {}
+        machine_info['os'].update({
+            'caption': os_info.get('Caption'),
+            'build_number': os_info.get('BuildNumber'),
+            'architecture': os_info.get('OSArchitecture') or machine_info['os']['architecture'],
+        })
     elif os == "Darwin":
         result, out, _ = run(['sw_vers'])
         if result == 0 and out:
             version = re.search(r"ProductVersion:\s+(\d+(?:\.\d+)*)", out)
             machine_info['os']['macos_version'] = version.group(1) if version else None
     else:  # Linux
-        pass
+        # noinspection PyUnboundLocalVariable
+        machine_info['os']['distro'] = os_release_data.get('NAME')
+        machine_info['os']['distro_version'] = os_release_data.get('VERSION') or os_release_data.get('VERSION_ID')
 
     # Device
     if os == "Windows":
-        pass
+        cs = _pwsh_json('Get-CimInstance Win32_ComputerSystem | Select-Object Manufacturer,Model | ConvertTo-Json -Compress') or {}
+        machine_info['device'] = {
+            'manufacturer': cs.get('Manufacturer'),
+            'model': cs.get('Model'),
+            'identifier': platform.node()
+        }
     elif os == "Darwin":
         # noinspection PyUnboundLocalVariable
-        hardware = data['SPHardwareDataType'][0]
+        hardware = system_profiler_data['SPHardwareDataType'][0]
 
         machine_info['device'] = {
             'manufacturer': 'Apple Inc.',
@@ -82,19 +122,35 @@ def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
         }
         pass
     else:  # Linux
-        pass
+        machine_info['device'] = {
+            'manufacturer': _read_first_line('/sys/devices/virtual/dmi/id/sys_vendor'),
+            'model': _read_first_line('/sys/devices/virtual/dmi/id/product_name'),
+            'identifier': _read_first_line('/sys/devices/virtual/dmi/id/product_version') or platform.node()
+        }
 
     # CPU
     logical_cores = psutil.cpu_count()
     physical_cores = psutil.cpu_count(logical=False)
     max_frequency = psutil.cpu_freq().max
 
+    cpu_name = None
     if os == "Windows":
-        pass
+        cpu_info = _pwsh_json('Get-CimInstance Win32_Processor | Select-Object -First 1 Name,NumberOfCores,NumberOfLogicalProcessors,MaxClockSpeed | ConvertTo-Json -Compress') or {}
+        cpu_name = cpu_info.get('Name')
+        physical_cores = cpu_info.get('NumberOfCores') or physical_cores
+        logical_cores = cpu_info.get('NumberOfLogicalProcessors') or logical_cores
+        max_frequency = cpu_info.get('MaxClockSpeed') or max_frequency
     elif os == "Darwin":
-        cpu_name = data['SPHardwareDataType'][0]['chip_type']
+        cpu_name = system_profiler_data['SPHardwareDataType'][0]['chip_type']
     else:  # Linux
-        pass
+        try:
+            with open('/proc/cpuinfo') as fh:
+                for line in fh:
+                    if line.lower().startswith('model name'):
+                        cpu_name = line.split(':', 1)[1].strip()
+                        break
+        except FileNotFoundError:
+            pass
 
     machine_info['cpu'] = {
         'name': cpu_name,
@@ -109,9 +165,12 @@ def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
     free_ram = virtual_memory.available // 1_048_576
 
     if os == "Windows":
-        pass
+        ram_info = _pwsh_json('Get-CimInstance Win32_PhysicalMemory | Select-Object -First 1 Manufacturer,MemoryType,Speed,ConfiguredClockSpeed,PartNumber | ConvertTo-Json -Compress') or {}
+        ram_manufacturer = ram_info.get('Manufacturer')
+        ram_type = str(ram_info.get('MemoryType')) if ram_info.get('MemoryType') is not None else None
+        ram_speed = ram_info.get('ConfiguredClockSpeed') or ram_info.get('Speed')
     elif os == "Darwin":
-        memory = data['SPMemoryDataType'][0]
+        memory = system_profiler_data['SPMemoryDataType'][0]
 
         ram_manufacturer = memory['dimm_manufacturer']
         ram_type = memory['dimm_type']
@@ -125,7 +184,9 @@ def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
                     ram_speed = int(mm.group(1))
                     break
     else:  # Linux
-        pass
+        ram_manufacturer = _read_first_line('/sys/devices/virtual/dmi/id/board_vendor')
+        ram_type = None
+        ram_speed = None
 
     machine_info['memory'] = {
         'total': total_ram,
@@ -173,7 +234,16 @@ def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
 
     # Virtualization and Hypervisor
     if os == "Windows":
-        pass
+        vm_info = _pwsh_json('Get-CimInstance Win32_ComputerSystem | Select-Object Model,Manufacturer | ConvertTo-Json -Compress') or {}
+        mm = f"{vm_info.get('Model','')} {vm_info.get('Manufacturer','')}"
+        likely_vm = bool(re.search(r"Virtual|VMware|VirtualBox|Hyper-V|KVM|QEMU", mm, re.I))
+
+        hypervisor_flag = _pwsh_text('Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -ErrorAction SilentlyContinue')
+
+        machine_info['virtualization'] = {
+            'hypervisor': hypervisor_flag and 'Enabled' in hypervisor_flag,
+            'vm': likely_vm,
+        }
     elif os == "Darwin":
         _, hw_model, _ = run(['sysctl', '-n', 'hw.model'])
         _, brand, _ = run(['sysctl', '-n', 'machdep.cpu.brand_string'])
@@ -189,66 +259,39 @@ def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
             'vm': likely_vm,
         }
     else:  # Linux
-        pass
+        hypervisor_flag = False
+        try:
+            with open('/proc/cpuinfo') as fh:
+                cpuinfo = fh.read()
+                hypervisor_flag = 'hypervisor' in cpuinfo
+        except FileNotFoundError:
+            cpuinfo = ''
 
-    # Process Status
-    machine_info['prcesses'] = len(psutil.pids())
+        virt_type = None
+        rc, out, _ = run(['systemd-detect-virt'])
+        if rc == 0 and out:
+            virt_type = out.strip()
 
-    # Versions
-    machine_info['versions'] = {}
-
-    result, _, err = run(['java', '-version'])
-    if result == 0 and err:
-        m = re.search(r"version \"(.+?)\"", err.splitlines()[0])
-        java_version = m.group(1) if m else None
-
-        m = re.search("OpenJDK|Oracle|Adoptium|Temurin|Azul|Amazon|GraalVM", err)
-        java_distribution = m.group(0) if m else None
-
-        machine_info['versions']['java'] = {
-            'version': java_version,
-            'distribution': java_distribution
+        likely_vm = hypervisor_flag or bool(virt_type and virt_type != 'none')
+        machine_info['virtualization'] = {
+            'hypervisor': hypervisor_flag,
+            'vm': likely_vm,
+            'type': virt_type
         }
-
-    result, out, _ = run(['node', '--version'])
-    if result == 0 and out:
-        machine_info['versions']['node'] = out.strip()
-
-    result, out, _ = run(['python', '--version'])
-    if result == 0 and out:
-        machine_info['versions']['python'] = out.strip()
-
-    with in_dir(gradle_project_path):
-        if os == "Windows":
-            result, out, _ = run(['./gradlew.bat', '--version'])
-        else:
-            result, out, _ = run(['./gradlew', '--version'])
-
-    if result == 0 and out:
-        m = re.search(r"Gradle ((\d+\.)+\d+)", out)
-        gradle_version = m.group(1) if m else None
-
-        m = re.search(r"Kotlin:\s*((\d+\.)+\d+)", out)
-        kotlin_version = m.group(1) if m else None
-
-        machine_info['versions']['gradle'] = gradle_version
-        machine_info['versions']['kotlin'] = kotlin_version
-
-    # Git
-    _, git_hash, _ = run(['git', 'rev-parse', 'HEAD'])
-    _, branch, _ = run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
-    machine_info['git'] = {
-        'hash': git_hash,
-        'branch': branch
-    }
 
     # OS Specific
     if os == "Windows":
-        pass
+        machine_info['os_specific'] = {
+            'power_plan': _pwsh_text('(Get-CimInstance -Namespace root\\cimv2\\power -ClassName Win32_PowerPlan -ErrorAction SilentlyContinue | Where-Object {$_.IsActive -eq $true} | Select-Object -First 1 -ExpandProperty ElementName)'),
+        }
     elif os == "Darwin":
         pass
     else:  # Linux
-        pass
+        machine_info['os_specific'] = {
+            'pretty_name': os_release_data.get('PRETTY_NAME'),
+            'kernel': platform.release(),
+            'hostname': platform.node()
+        }
 
     # Timestamp
 
