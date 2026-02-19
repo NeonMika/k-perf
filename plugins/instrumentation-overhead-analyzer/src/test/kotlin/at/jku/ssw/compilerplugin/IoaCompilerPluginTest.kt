@@ -1,10 +1,14 @@
 @file:OptIn(ExperimentalCompilerApi::class)
 
+import at.jku.ssw.compilerplugin.IoaCommandLineProcessor
 import at.jku.ssw.compilerplugin.IoaComponentRegistrar
+import at.jku.ssw.shared.IoaKind
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.PluginOption
 import com.tschuchort.compiletesting.SourceFile
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
+import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -49,7 +53,7 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
                     fun topLevelFunction(param: Int): String {
                         return "Top Level Function: $param"
                     }
-            
+
                     fun main() {
                         val instance = MyClass(42)
                         val result = instance.genericFunction(100)
@@ -60,7 +64,8 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
                         repeat(1000) { topLevelFunction(17) }
                     }
                 """
-      )
+      ),
+      IoaKind.None
     )
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
     result.main("test")
@@ -69,20 +74,39 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
   fun compile(
     sourceFiles: List<SourceFile>,
     compilerPluginRegistrar: CompilerPluginRegistrar = IoaComponentRegistrar(),
+    commandLineProcessor: CommandLineProcessor = IoaCommandLineProcessor(),
+    pluginOptions: List<PluginOption> = listOf(
+      PluginOption("instrumentation-overhead-analyzer-plugin", "kind", "None")
+    ),
   ): JvmCompilationResult {
     return KotlinCompilation().apply {
       // To have access to kotlinx.io
       inheritClassPath = true
       sources = sourceFiles
       compilerPluginRegistrars = listOf(compilerPluginRegistrar)
-      // commandLineProcessors = ...
+      commandLineProcessors = listOf(commandLineProcessor)
+      this.pluginOptions = pluginOptions
     }.compile()
   }
 
   fun compile(
     sourceFile: SourceFile,
     compilerPluginRegistrar: CompilerPluginRegistrar = IoaComponentRegistrar(),
-  ) = compile(listOf(sourceFile), compilerPluginRegistrar)
+    commandLineProcessor: CommandLineProcessor = IoaCommandLineProcessor(),
+    pluginOptions: List<PluginOption> = listOf(
+      PluginOption("instrumentation-overhead-analyzer-plugin", "kind", "None")
+    ),
+  ) = compile(listOf(sourceFile), compilerPluginRegistrar, commandLineProcessor, pluginOptions)
+
+
+  fun compile(
+    sourceFile: SourceFile,
+    ioaKind: IoaKind = IoaKind.None,
+  ): JvmCompilationResult {
+    return compile(sourceFile, pluginOptions = listOf(
+      PluginOption("instrumentation-overhead-analyzer-plugin", "kind", ioaKind.name)
+    ))
+  }
 }
 
 private fun JvmCompilationResult.main(packageName: String = "") {
