@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.ir.util.statements
 
 fun modifyMainFunction(function: IrFunction) = with(IoaContext.pluginContext) {
   when (IoaContext.instrumentationKind) {
-    IoaKind.None, IoaKind.IncrementIntCounter, IoaKind.StandardOut -> {}
+    IoaKind.None, IoaKind.IncrementIntCounter, IoaKind.RandomValue, IoaKind.StandardOut -> {}
     IoaKind.IncrementIntCounterAndPrint,  IoaKind.AppendToStringBuilder -> modifyMainFunctionPrintSut(function)
   }
 }

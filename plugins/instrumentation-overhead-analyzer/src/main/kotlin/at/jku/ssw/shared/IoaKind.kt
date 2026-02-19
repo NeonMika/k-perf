@@ -6,6 +6,8 @@ enum class IoaKind {
   IncrementIntCounter,
   IncrementIntCounterAndPrint,
 
+  RandomValue,
+
   StandardOut,
   AppendToStringBuilder,
 }

@@ -32,6 +32,26 @@ object IoaContext {
     ).single { it.owner.hasShape(dispatchReceiver = true, regularParameters = 0) }
   }
 
+  val randomDefaultClass by lazy {
+    pluginContext.referenceClass(
+      ClassId(
+        FqName("kotlin.random"),
+        FqName("Random.Default"),
+        false
+      )
+    )!!
+  }
+
+  val randomNextIntFunction by lazy {
+    pluginContext.referenceFunctions(
+      CallableId(
+        FqName("kotlin.random"),
+        FqName("Random.Default"),
+        Name.identifier("nextInt")
+      )
+    ).single { it.owner.hasShape(dispatchReceiver = true, regularParameters = 0) }
+  }
+
   val printlnFunction by lazy {
     pluginContext.referenceFunctions(
       CallableId(
