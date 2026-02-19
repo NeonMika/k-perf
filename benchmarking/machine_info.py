@@ -279,6 +279,57 @@ def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
             'type': virt_type
         }
 
+    # Process Status
+    machine_info['prcesses'] = len(psutil.pids())
+
+    # Versions
+    machine_info['versions'] = {}
+
+    result, _, err = run(['java', '-version'])
+    if result == 0 and err:
+        m = re.search(r"version \"(.+?)\"", err.splitlines()[0])
+        java_version = m.group(1) if m else None
+
+        m = re.search("OpenJDK|Oracle|Adoptium|Temurin|Azul|Amazon|GraalVM", err)
+        java_distribution = m.group(0) if m else None
+
+        machine_info['versions']['java'] = {
+            'version': java_version,
+            'distribution': java_distribution
+        }
+
+    result, out, _ = run(['node', '--version'])
+    if result == 0 and out:
+        machine_info['versions']['node'] = out.strip()
+
+    result, out, _ = run(['python', '--version'])
+    if result == 0 and out:
+        machine_info['versions']['python'] = out.strip()
+
+    with in_dir(gradle_project_path):
+        if os == "Windows":
+            result, out, _ = run(['./gradlew.bat', '--version'])
+        else:
+            result, out, _ = run(['./gradlew', '--version'])
+
+    if result == 0 and out:
+        m = re.search(r"Gradle ((\d+\.)+\d+)", out)
+        gradle_version = m.group(1) if m else None
+
+        m = re.search(r"Kotlin:\s*((\d+\.)+\d+)", out)
+        kotlin_version = m.group(1) if m else None
+
+        machine_info['versions']['gradle'] = gradle_version
+        machine_info['versions']['kotlin'] = kotlin_version
+
+    # Git
+    _, git_hash, _ = run(['git', 'rev-parse', 'HEAD'])
+    _, branch, _ = run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+    machine_info['git'] = {
+        'hash': git_hash,
+        'branch': branch
+    }
+
     # OS Specific
     if os == "Windows":
         machine_info['os_specific'] = {
@@ -294,6 +345,7 @@ def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
         }
 
     # Timestamp
+    machine_info['timestamp'] = datetime.now().isoformat()
 
     return machine_info
 
