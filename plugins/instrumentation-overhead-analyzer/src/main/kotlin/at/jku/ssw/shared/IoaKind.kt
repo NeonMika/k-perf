@@ -7,4 +7,5 @@ enum class IoaKind {
   IncrementIntCounterAndPrint,
 
   StandardOut,
+  AppendToStringBuilder,
 }

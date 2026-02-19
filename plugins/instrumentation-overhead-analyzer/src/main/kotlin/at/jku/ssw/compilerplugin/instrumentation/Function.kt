@@ -19,6 +19,7 @@ fun modifyFunction(function: IrFunction) = with(IoaContext.pluginContext) {
     IoaKind.None -> {}
     IoaKind.IncrementIntCounter, IoaKind.IncrementIntCounterAndPrint -> modifyFunctionIncreaseCounter(function)
     IoaKind.StandardOut -> modifyFunctionStandardOut(function)
+    IoaKind.AppendToStringBuilder -> modifyFunctionAppendToStringBuilder(function)
   }
 }
 
@@ -38,6 +39,19 @@ fun IrPluginContext.modifyFunctionStandardOut(function: IrFunction) {
   function.body = DeclarationIrBuilder(this, function.symbol).irBlockBody {
     +irCall(IoaContext.printlnFunction).apply {
       arguments[0] = irString("Entering function ${function.name.asString()}")
+    }
+
+    for (statement in function.body!!.statements) {
+      +statement
+    }
+  }
+}
+
+fun IrPluginContext.modifyFunctionAppendToStringBuilder(function: IrFunction) {
+  function.body = DeclarationIrBuilder(this, function.symbol).irBlockBody {
+    +irCall(IoaContext.stringBuilderAppendStringFunction).apply {
+      dispatchReceiver = irGetField(null, IoaContext.sutField!!)
+      arguments[1] = irString("Entering function ${function.name.asString()}\n")
     }
 
     for (statement in function.body!!.statements) {
