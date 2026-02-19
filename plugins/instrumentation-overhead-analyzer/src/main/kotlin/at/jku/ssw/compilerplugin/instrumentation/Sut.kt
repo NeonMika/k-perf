@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.name.Name
 fun createSut(): IrField? = with(IoaContext.pluginContext) {
   return when (IoaContext.instrumentationKind) {
     IoaKind.None, IoaKind.StandardOut -> null
+    IoaKind.IncrementIntCounter, IoaKind.IncrementIntCounterAndPrint -> createFieldOfType(irBuiltIns.intType)
   }
 }
 

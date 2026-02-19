@@ -2,6 +2,7 @@ package at.jku.ssw.compilerplugin
 
 import at.jku.ssw.compilerplugin.instrumentation.IoaContext
 import at.jku.ssw.compilerplugin.instrumentation.modifyFunction
+import at.jku.ssw.compilerplugin.instrumentation.modifyMainFunction
 import at.jku.ssw.shared.IoaKind
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -18,7 +19,7 @@ import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import java.io.File
 import kotlin.time.ExperimentalTime
 
-class IoaGnerationExtension(private val kind: IoaKind) : IrGenerationExtension {
+class IoaGnerationExtension(kind: IoaKind) : IrGenerationExtension {
   val debugFile = File("./DEBUG.txt")
 
   init {
@@ -65,6 +66,11 @@ class IoaGnerationExtension(private val kind: IoaKind) : IrGenerationExtension {
           }
 
           modifyFunction(declaration)
+
+          // If this is the main function, we also want to modify it, e.g., to print out the SUT before or after the main function is executed.
+          if (declaration.name.asString() == "main") {
+            modifyMainFunction(declaration)
+          }
 
           return super.visitFunctionNew(declaration)
         }
