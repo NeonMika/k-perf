@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.ir.util.statements
 
 fun modifyFunction(function: IrFunction) = with(IoaContext.pluginContext) {
   when (IoaContext.instrumentationKind) {
+    IoaKind.TryFinally -> modifyFunctionTryFinally(function)
     IoaKind.IncrementIntCounter, IoaKind.IncrementIntCounterAndPrint -> modifyFunctionIncrementCounter(function)
     IoaKind.IncrementAtomicIntCounter -> modifyFunctionIncrementAtomicCounter(function)
     IoaKind.RandomValue -> modifyFunctionRandomValue(function)
@@ -21,7 +22,7 @@ fun modifyFunction(function: IrFunction) = with(IoaContext.pluginContext) {
   }
 }
 
-fun IrPluginContext.modifyFunctionAtBegining(function: IrFunction, block: IrBlockBodyBuilder.() -> Unit) {
+fun IrPluginContext.modifyFunctionAtBeginning(function: IrFunction, block: IrBlockBodyBuilder.() -> Unit) {
   function.body = DeclarationIrBuilder(this, function.symbol).irBlockBody {
     block()
 
@@ -31,31 +32,48 @@ fun IrPluginContext.modifyFunctionAtBegining(function: IrFunction, block: IrBloc
   }
 }
 
-fun IrPluginContext.modifyFunctionIncrementCounter(function: IrFunction) = modifyFunctionAtBegining(function) {
+fun IrPluginContext.modifyFunctionTryFinally(function: IrFunction) {
+  function.body = DeclarationIrBuilder(this, function.symbol).irBlockBody {
+    +irTry(
+      function.returnType,
+      irBlock(resultType = function.returnType) {
+        for (statement in function.body!!.statements) {
+          +statement
+        }
+      },
+      listOf(),
+      irBlock {
+        +irSetField(null, IoaContext.sutField!!, irInt(0))
+      }
+    )
+  }
+}
+
+fun IrPluginContext.modifyFunctionIncrementCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irSetField(null, IoaContext.sutField!!, irCall(IoaContext.incrementIntFunction).apply {
     dispatchReceiver = irGetField(null, IoaContext.sutField!!)
   })
 }
 
-fun IrPluginContext.modifyFunctionIncrementAtomicCounter(function: IrFunction) = modifyFunctionAtBegining(function) {
+fun IrPluginContext.modifyFunctionIncrementAtomicCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.fetchAndIncrementFunction).apply {
     arguments[0] = irGetField(null, IoaContext.sutField!!)
   }
 }
 
-fun IrPluginContext.modifyFunctionRandomValue(function: IrFunction) = modifyFunctionAtBegining(function) {
+fun IrPluginContext.modifyFunctionRandomValue(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irSetField(null, IoaContext.sutField!!, irCall(IoaContext.randomNextIntFunction).apply {
     dispatchReceiver = irGetObject(IoaContext.randomDefaultClass)
   })
 }
 
-fun IrPluginContext.modifyFunctionStandardOut(function: IrFunction) = modifyFunctionAtBegining(function) {
+fun IrPluginContext.modifyFunctionStandardOut(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.printlnFunction).apply {
     arguments[0] = irString("Entering function ${function.name.asString()}")
   }
 }
 
-fun IrPluginContext.modifyFunctionAppendToStringBuilder(function: IrFunction) = modifyFunctionAtBegining(function) {
+fun IrPluginContext.modifyFunctionAppendToStringBuilder(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.stringBuilderAppendStringFunction).apply {
     dispatchReceiver = irGetField(null, IoaContext.sutField!!)
     arguments[1] = irString("Entering function ${function.name.asString()}\n")

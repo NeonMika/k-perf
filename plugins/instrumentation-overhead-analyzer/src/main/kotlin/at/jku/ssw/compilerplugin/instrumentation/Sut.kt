@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.name.Name
 
 fun createSut(): IrField? = with(IoaContext.pluginContext) {
   return when (IoaContext.instrumentationKind) {
-    IoaKind.IncrementIntCounter, IoaKind.IncrementIntCounterAndPrint, IoaKind.RandomValue -> createFieldOfType(irBuiltIns.intType)
+    IoaKind.TryFinally, IoaKind.IncrementIntCounter, IoaKind.IncrementIntCounterAndPrint, IoaKind.RandomValue -> createFieldOfType(irBuiltIns.intType)
 
     IoaKind.IncrementAtomicIntCounter -> createFieldOfType(IoaContext.atomicIntegerClass.defaultType) {
       DeclarationIrBuilder(this, it.symbol)
