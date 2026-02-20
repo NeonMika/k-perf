@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classOrFail
+import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.functions
@@ -30,6 +31,28 @@ object IoaContext {
         Name.identifier("inc")
       )
     ).single { it.owner.hasShape(dispatchReceiver = true, regularParameters = 0) }
+  }
+
+  val atomicIntegerClass by lazy {
+    pluginContext.referenceClass(
+      ClassId(
+        FqName("kotlin.concurrent.atomics"),
+        Name.identifier("AtomicInt")
+      )
+    )!!
+  }
+
+  val atomicIntegerConstructor by lazy {
+    atomicIntegerClass.constructors.single { it.owner.hasShape(regularParameters = 1) && it.owner.parameters[0].type == pluginContext.irBuiltIns.intType }
+  }
+
+  val fetchAndIncrementFunction by lazy {
+    pluginContext.referenceFunctions(
+      CallableId(
+        FqName("kotlin.concurrent.atomics"),
+        Name.identifier("fetchAndIncrement")
+      )
+    ).single { it.owner.hasShape(extensionReceiver = true, regularParameters = 0) && it.owner.parameters[0].type == atomicIntegerClass.defaultType }
   }
 
   val randomDefaultClass by lazy {

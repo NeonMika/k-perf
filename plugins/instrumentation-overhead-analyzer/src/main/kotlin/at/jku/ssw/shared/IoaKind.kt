@@ -5,6 +5,7 @@ enum class IoaKind {
 
   IncrementIntCounter,
   IncrementIntCounterAndPrint,
+  IncrementAtomicIntCounter,
 
   RandomValue,
 

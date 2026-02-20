@@ -1,7 +1,7 @@
 @file:OptIn(ExperimentalCompilerApi::class)
 
-import at.jku.ssw.compilerplugin.IoaCommandLineProcessor
-import at.jku.ssw.compilerplugin.IoaComponentRegistrar
+package at.jku.ssw.compilerplugin
+
 import at.jku.ssw.shared.IoaKind
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
