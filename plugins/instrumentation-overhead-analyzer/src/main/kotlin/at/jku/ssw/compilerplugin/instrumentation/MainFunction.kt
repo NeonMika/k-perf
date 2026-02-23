@@ -24,7 +24,7 @@ fun IrPluginContext.modifyMainFunctionPrintSut(function: IrFunction) {
     +irCall(IoaContext.printlnFunction).apply {
       arguments[0] = irConcat().apply {
         addArgument(irString("Sut fields after execution: "))
-        IoaContext.sutFields.drop(1).forEach {
+        IoaContext.sutFields.forEach {
           addArgument(irString("\n - ${it.name} = "))
           addArgument(irGetField(null, it))
         }
