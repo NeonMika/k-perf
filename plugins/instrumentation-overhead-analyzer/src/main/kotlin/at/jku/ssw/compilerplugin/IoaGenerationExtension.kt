@@ -19,12 +19,10 @@ import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import java.io.File
 import kotlin.time.ExperimentalTime
 
-class IoaGenerationExtension(kind: IoaKind) : IrGenerationExtension {
+class IoaGenerationExtension(val kind: IoaKind) : IrGenerationExtension {
   val debugFile = File("./DEBUG.txt")
 
   init {
-    IoaContext.instrumentationKind = kind
-
     debugFile.delete()
   }
 
@@ -35,6 +33,7 @@ class IoaGenerationExtension(kind: IoaKind) : IrGenerationExtension {
   @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
     IoaContext.pluginContext = pluginContext
+    IoaContext.instrumentationKind = kind
 
     if (IoaContext.sutFields.isNotEmpty()) {
       val file = moduleFragment.files.firstOrNull()
