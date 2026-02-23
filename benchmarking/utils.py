@@ -59,10 +59,10 @@ def get_benchmark_statistics(values: list[float]) -> Dict[str, Optional[float | 
         ci_half_width = stderr * t_score
         # --- FIX ENDS HERE ---
 
-        ci98 = {'lower': mean - ci_half_width, 'upper': mean + ci_half_width}
+        ci95 = {'lower': mean - ci_half_width, 'upper': mean + ci_half_width}
     else:
         stddev = 0.0
-        ci98 = {'lower': mean, 'upper': mean}
+        ci95 = {'lower': mean, 'upper': mean}
 
     return {
         'count': count,
@@ -71,7 +71,7 @@ def get_benchmark_statistics(values: list[float]) -> Dict[str, Optional[float | 
         'stddev': stddev,
         'min': min_value,
         'max': max_value,
-        'ci98': ci98
+        'ci95': ci95
     }
 
 def find_first_gradle_task(task_list: str, candidates: list[str]) -> Optional[str]:

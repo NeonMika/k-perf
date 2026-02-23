@@ -43,7 +43,7 @@ fun IrPluginContext.modifyFunctionTryFinally(function: IrFunction) {
       },
       listOf(),
       irBlock {
-        +irSetField(null, IoaContext.sutField!!, irInt(0))
+        //+irSetField(null, IoaContext.sutField!!, irInt(0))
       }
     )
   }
