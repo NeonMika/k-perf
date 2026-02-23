@@ -6,7 +6,6 @@ enum class IoaKind {
   TryFinally,
 
   IncrementIntCounter,
-  IncrementIntCounterAndPrint,
   IncrementAtomicIntCounter,
 
   RandomValue,

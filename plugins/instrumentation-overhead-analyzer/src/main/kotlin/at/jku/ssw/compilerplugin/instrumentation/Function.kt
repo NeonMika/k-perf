@@ -9,11 +9,13 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.statements
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 fun modifyFunction(function: IrFunction) = with(IoaContext.pluginContext) {
   when (IoaContext.instrumentationKind) {
     IoaKind.TryFinally -> modifyFunctionTryFinally(function)
-    IoaKind.IncrementIntCounter, IoaKind.IncrementIntCounterAndPrint -> modifyFunctionIncrementCounter(function)
+    IoaKind.IncrementIntCounter -> modifyFunctionIncrementCounter(function)
     IoaKind.IncrementAtomicIntCounter -> modifyFunctionIncrementAtomicCounter(function)
     IoaKind.RandomValue -> modifyFunctionRandomValue(function)
     IoaKind.StandardOut -> modifyFunctionStandardOut(function)
@@ -43,26 +45,26 @@ fun IrPluginContext.modifyFunctionTryFinally(function: IrFunction) {
       },
       listOf(),
       irBlock {
-        //+irSetField(null, IoaContext.sutField!!, irInt(0))
+        +irSetField(null, IoaContext.sutField, irInt(0))
       }
     )
   }
 }
 
 fun IrPluginContext.modifyFunctionIncrementCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
-  +irSetField(null, IoaContext.sutField!!, irCall(IoaContext.incrementIntFunction).apply {
-    dispatchReceiver = irGetField(null, IoaContext.sutField!!)
+  +irSetField(null, IoaContext.sutField, irCall(IoaContext.incrementIntFunction).apply {
+    dispatchReceiver = irGetField(null, IoaContext.sutField)
   })
 }
 
 fun IrPluginContext.modifyFunctionIncrementAtomicCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.fetchAndIncrementFunction).apply {
-    arguments[0] = irGetField(null, IoaContext.sutField!!)
+    arguments[0] = irGetField(null, IoaContext.sutField)
   }
 }
 
 fun IrPluginContext.modifyFunctionRandomValue(function: IrFunction) = modifyFunctionAtBeginning(function) {
-  +irSetField(null, IoaContext.sutField!!, irCall(IoaContext.randomNextIntFunction).apply {
+  +irSetField(null, IoaContext.sutField, irCall(IoaContext.randomNextIntFunction).apply {
     dispatchReceiver = irGetObject(IoaContext.randomDefaultClass)
   })
 }
@@ -75,7 +77,7 @@ fun IrPluginContext.modifyFunctionStandardOut(function: IrFunction) = modifyFunc
 
 fun IrPluginContext.modifyFunctionAppendToStringBuilder(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.stringBuilderAppendStringFunction).apply {
-    dispatchReceiver = irGetField(null, IoaContext.sutField!!)
+    dispatchReceiver = irGetField(null, IoaContext.sutField)
     arguments[1] = irString("Entering function ${function.name.asString()}\n")
   }
 }

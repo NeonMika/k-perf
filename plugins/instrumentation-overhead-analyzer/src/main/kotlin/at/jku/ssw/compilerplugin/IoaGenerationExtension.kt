@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import java.io.File
 import kotlin.time.ExperimentalTime
 
-class IoaGnerationExtension(kind: IoaKind) : IrGenerationExtension {
+class IoaGenerationExtension(kind: IoaKind) : IrGenerationExtension {
   val debugFile = File("./DEBUG.txt")
 
   init {
@@ -36,13 +36,15 @@ class IoaGnerationExtension(kind: IoaKind) : IrGenerationExtension {
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
     IoaContext.pluginContext = pluginContext
 
-    if (IoaContext.sutField != null) {
+    if (IoaContext.sutFields.isNotEmpty()) {
       val file = moduleFragment.files.firstOrNull()
       if (file == null) {
         appendToDebugFile("No files in module fragment, can not store SUT!\n")
       } else {
-        appendToDebugFile("Storing SUT in ${file.name}.\n")
-        file.addChild(IoaContext.sutField!!)
+        appendToDebugFile("Storing SUTs in ${file.name}.\n")
+        IoaContext.sutFields.forEach { field ->
+          file.addChild(field)
+        }
       }
     }
 

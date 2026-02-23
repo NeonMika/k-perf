@@ -14,28 +14,28 @@ import org.jetbrains.kotlin.ir.types.defaultType
 import org.jetbrains.kotlin.name.Name
 
 
-fun createSut(): IrField? = with(IoaContext.pluginContext) {
+fun createSuts(): List<IrField> = with(IoaContext.pluginContext) {
   return when (IoaContext.instrumentationKind) {
-    IoaKind.TryFinally, IoaKind.IncrementIntCounter, IoaKind.IncrementIntCounterAndPrint, IoaKind.RandomValue -> createFieldOfType(irBuiltIns.intType)
+    IoaKind.TryFinally, IoaKind.IncrementIntCounter, IoaKind.RandomValue -> listOf(createFieldOfType(irBuiltIns.intType))
 
-    IoaKind.IncrementAtomicIntCounter -> createFieldOfType(IoaContext.atomicIntegerClass.defaultType) {
+    IoaKind.IncrementAtomicIntCounter -> listOf(createFieldOfType(IoaContext.atomicIntegerClass.defaultType) {
       DeclarationIrBuilder(this, it.symbol)
         .irCallConstructor(IoaContext.atomicIntegerConstructor, listOf(irBuiltIns.intType))
         .apply { arguments[0] = DeclarationIrBuilder(this@with, it.symbol).irInt(0) }
-    }
+    })
 
-    IoaKind.AppendToStringBuilder -> createFieldOfType(IoaContext.stringBuilderClass.defaultType) {
-      DeclarationIrBuilder(this, it.symbol)
-        .irCallConstructor(IoaContext.stringBuilderConstructor, listOf())
-    }
+    IoaKind.AppendToStringBuilder -> listOf(createFieldOfType(IoaContext.stringBuilderClass.defaultType) {
+        DeclarationIrBuilder(this, it.symbol)
+            .irCallConstructor(IoaContext.stringBuilderConstructor, listOf())
+    })
 
-    else -> null
+    else -> emptyList()
   }
 }
 
-fun IrPluginContext.createFieldOfType(type: IrType, initializer: ((IrField) -> IrExpression)? = null): IrField {
+fun IrPluginContext.createFieldOfType(type: IrType, suffix: String = "0", initializer: ((IrField) -> IrExpression)? = null): IrField {
   return irFactory.buildField {
-    this.name = Name.identifier("__ioa_sut")
+    this.name = Name.identifier("__ioa_sut_$suffix")
     this.type = type
     this.isStatic = true
   }.also {

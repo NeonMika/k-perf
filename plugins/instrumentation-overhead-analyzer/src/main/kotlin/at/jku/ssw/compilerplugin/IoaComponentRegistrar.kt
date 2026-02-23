@@ -23,7 +23,7 @@ class IoaComponentRegistrar : CompilerPluginRegistrar() {
     val kind = configuration[IoaConfigurationKeys.KIND] ?: IoaKind.None
 
     if (enabled) {
-      IrGenerationExtension.registerExtension(IoaGnerationExtension(kind))
+      IrGenerationExtension.registerExtension(IoaGenerationExtension(kind))
     }
   }
 }

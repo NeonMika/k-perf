@@ -19,9 +19,17 @@ import org.jetbrains.kotlin.name.Name
 object IoaContext {
 
   lateinit var pluginContext: IrPluginContext
-  lateinit var instrumentationKind: IoaKind
+  var instrumentationKind: IoaKind = IoaKind.None
+    set(value) {
+      field = value
+      sutFields = createSuts()
+    }
 
-  val sutField: IrField? by lazy { createSut() }
+  lateinit var sutFields: List<IrField>
+    private set
+
+  val sutField: IrField
+    get() = sutFields.single()
 
   val incrementIntFunction by lazy {
     pluginContext.referenceFunctions(
@@ -52,7 +60,12 @@ object IoaContext {
         FqName("kotlin.concurrent.atomics"),
         Name.identifier("fetchAndIncrement")
       )
-    ).single { it.owner.hasShape(extensionReceiver = true, regularParameters = 0) && it.owner.parameters[0].type == atomicIntegerClass.defaultType }
+    ).single {
+      it.owner.hasShape(
+        extensionReceiver = true,
+        regularParameters = 0
+      ) && it.owner.parameters[0].type == atomicIntegerClass.defaultType
+    }
   }
 
   val randomDefaultClass by lazy {
