@@ -15,9 +15,13 @@ repositories {
   mavenLocal() // Add this line to include mavenLocal()
 }
 
+val ioaKind = providers.gradleProperty("ioaKind")
+    .map { IoaKind.valueOf(it) }
+    .getOrElse(IoaKind.None)
+
 instrumentationOverheadAnalyzer {
   enabled = true
-  kind = IoaKind.None
+  kind = ioaKind
 }
 
 kotlin {
