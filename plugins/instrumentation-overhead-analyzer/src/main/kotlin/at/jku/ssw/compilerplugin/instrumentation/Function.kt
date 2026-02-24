@@ -9,28 +9,19 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.statements
-import kotlin.random.Random
-import kotlin.random.nextInt
 
 fun modifyFunction(function: IrFunction) = with(IoaContext.pluginContext) {
   when (IoaContext.instrumentationKind) {
     IoaKind.TryFinally -> modifyFunctionTryFinally(function)
+    IoaKind.TimeClock -> modifyFunctionTimeClock(function)
+    IoaKind.TimeMonotonicFunction -> modifyFunctionTimeMonotonicFunction(function)
+    IoaKind.TimeMonotonicGlobal -> modifyFunctionTimeMonotonicGlobal(function)
     IoaKind.IncrementIntCounter -> modifyFunctionIncrementCounter(function)
     IoaKind.IncrementAtomicIntCounter -> modifyFunctionIncrementAtomicCounter(function)
     IoaKind.RandomValue -> modifyFunctionRandomValue(function)
     IoaKind.StandardOut -> modifyFunctionStandardOut(function)
     IoaKind.AppendToStringBuilder -> modifyFunctionAppendToStringBuilder(function)
     else -> {}
-  }
-}
-
-fun IrPluginContext.modifyFunctionAtBeginning(function: IrFunction, block: IrBlockBodyBuilder.() -> Unit) {
-  function.body = DeclarationIrBuilder(this, function.symbol).irBlockBody {
-    block()
-
-    for (statement in function.body!!.statements) {
-      +statement
-    }
   }
 }
 
@@ -49,6 +40,48 @@ fun IrPluginContext.modifyFunctionTryFinally(function: IrFunction) {
       }
     )
   }
+}
+
+fun IrPluginContext.modifyFunctionTimeClock(function: IrFunction) = setFunctionBody(function) {
+  val start = irTemporary(irCall(IoaContext.clockNowFunction).apply {
+    dispatchReceiver = irGetObject(IoaContext.clockSystemClass)
+  })
+
+  addAllStatements(function)
+
+  +irSetField(null, IoaContext.sutField, irCall(IoaContext.instantMinusFunction).apply {
+    dispatchReceiver = irCall(IoaContext.clockNowFunction).apply {
+      dispatchReceiver = irGetObject(IoaContext.clockSystemClass)
+    }
+    arguments[1] = irGet(start)
+  })
+}
+
+fun IrPluginContext.modifyFunctionTimeMonotonicFunction(function: IrFunction) = setFunctionBody(function) {
+  val now = irTemporary(irCall(IoaContext.timeSourceMonotonicMarkNowFunction).apply {
+    dispatchReceiver = irGetObject(IoaContext.timeSourceMonotonicClass)
+  })
+
+  addAllStatements(function)
+
+  +irSetField(null, IoaContext.sutField, irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+    dispatchReceiver = irGet(now)
+  })
+}
+
+fun IrPluginContext.modifyFunctionTimeMonotonicGlobal(function: IrFunction) = setFunctionBody(function) {
+  val elapseStart = irTemporary(irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+    dispatchReceiver = irGetField(null, IoaContext.sutFields[0])
+  })
+
+  addAllStatements(function)
+
+  +irSetField(null, IoaContext.sutFields[1], irCall(IoaContext.durationMinusFunction).apply {
+    dispatchReceiver = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+      dispatchReceiver = irGetField(null, IoaContext.sutFields[0])
+    }
+    arguments[1] = irGet(elapseStart)
+  })
 }
 
 fun IrPluginContext.modifyFunctionIncrementCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {

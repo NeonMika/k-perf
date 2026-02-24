@@ -31,6 +31,66 @@ object IoaContext {
   val sutField: IrField
     get() = sutFields.single()
 
+  // <editor-fold desc="Time and Clock">
+  val clockSystemClass by lazy {
+    pluginContext.referenceClass(ClassId(FqName("kotlin.time"), FqName("Clock.System"), false))!!
+  }
+
+  val clockNowFunction by lazy {
+    clockSystemClass.functions.single {
+      it.owner.hasShape(dispatchReceiver = true, regularParameters = 0)
+          && it.owner.name.asString() == "now"
+    }
+  }
+
+  val instantClass by lazy {
+    pluginContext.referenceClass(ClassId(FqName("kotlin.time"), Name.identifier("Instant")))!!
+  }
+
+  val instantMinusFunction by lazy {
+    instantClass.functions.single {
+      it.owner.hasShape(dispatchReceiver = true, regularParameters = 1)
+          && it.owner.name.asString() == "minus"
+          && it.owner.parameters[1].type == instantClass.defaultType
+    }
+  }
+
+  val durationClass by lazy {
+    pluginContext.referenceClass(ClassId(FqName("kotlin.time"), Name.identifier("Duration")))!!
+  }
+
+  val durationMinusFunction by lazy {
+    durationClass.functions.single {
+      it.owner.hasShape(dispatchReceiver = true, regularParameters = 1)
+          && it.owner.name.asString() == "minus"
+          && it.owner.parameters[1].type == durationClass.defaultType
+    }
+  }
+
+  val timeSourceMonotonicClass by lazy {
+    pluginContext.referenceClass(ClassId(FqName("kotlin.time"), FqName("TimeSource.Monotonic"), false))!!
+  }
+
+  val timeSourceMonotonicMarkNowFunction by lazy {
+    timeSourceMonotonicClass.functions.single {
+      it.owner.hasShape(dispatchReceiver = true, regularParameters = 0)
+          && it.owner.name.asString() == "markNow"
+    }
+  }
+
+  val valueTimeMarkerClass by lazy {
+    pluginContext.referenceClass(ClassId(FqName("kotlin.time"), FqName("TimeSource.Monotonic.ValueTimeMark"), false))!!
+  }
+
+  val valueTimeMarkerElapsedNowFunction by lazy {
+    valueTimeMarkerClass.functions.single {
+      it.owner.hasShape(dispatchReceiver = true, regularParameters = 0)
+          && it.owner.name.asString() == "elapsedNow"
+    }
+  }
+  // </editor-fold>
+
+  // <editor-fold desc="Integer and Atomic Integer">
   val incrementIntFunction by lazy {
     pluginContext.referenceFunctions(
       CallableId(
@@ -67,7 +127,9 @@ object IoaContext {
       ) && it.owner.parameters[0].type == atomicIntegerClass.defaultType
     }
   }
+  // </editor-fold>
 
+  // <editor-fold desc="Random">
   val randomDefaultClass by lazy {
     pluginContext.referenceClass(
       ClassId(
@@ -87,7 +149,9 @@ object IoaContext {
       )
     ).single { it.owner.hasShape(dispatchReceiver = true, regularParameters = 0) }
   }
+  // </editor-fold>
 
+  // <editor-fold desc="println">
   val printlnFunction by lazy {
     pluginContext.referenceFunctions(
       CallableId(
@@ -99,7 +163,9 @@ object IoaContext {
           it.owner.parameters[0].type == pluginContext.irBuiltIns.anyNType
     }
   }
+  // </editor-fold>
 
+  // <editor-fold desc="StringBuilder">
   val stringBuilderClass by lazy {
     val classId = ClassId(FqName("kotlin.text"), Name.identifier("StringBuilder"))
     pluginContext.referenceTypeAlias(classId)?.owner?.expandedType?.classOrFail
@@ -117,5 +183,6 @@ object IoaContext {
           it.owner.parameters[1].type == pluginContext.irBuiltIns.stringType.makeNullable()
     }
   }
+  // </editor-fold>
 
 }

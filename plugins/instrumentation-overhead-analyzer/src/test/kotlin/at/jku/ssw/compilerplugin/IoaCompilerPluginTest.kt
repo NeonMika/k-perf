@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-class InstrumentationOverheadAnalyzerCompilerPluginTest {
+class IoaCompilerPluginTest {
 
   @Language("kotlin")
   private val code = $$"""
@@ -89,6 +89,15 @@ class InstrumentationOverheadAnalyzerCompilerPluginTest {
 
   @Test
   fun `test try finally kind`() = testKind(IoaKind.TryFinally)
+
+  @Test
+  fun `test time clock kind`() = testKind(IoaKind.TimeClock)
+
+  @Test
+  fun `test time monotonic function kind`() = testKind(IoaKind.TimeMonotonicFunction)
+
+  @Test
+  fun `test time monotonic global kind`() = testKind(IoaKind.TimeMonotonicGlobal)
 
   @Test
   fun `test increment int counter kind`() = testKind(IoaKind.IncrementIntCounter)

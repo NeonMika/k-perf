@@ -5,6 +5,10 @@ enum class IoaKind {
 
   TryFinally,
 
+  TimeClock,
+  TimeMonotonicFunction,
+  TimeMonotonicGlobal,
+
   IncrementIntCounter,
   IncrementAtomicIntCounter,
 
