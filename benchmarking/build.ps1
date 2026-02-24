@@ -37,6 +37,20 @@ function Get-KPerfSuffix {
   return "flushEarly-$(if ($Config.FlushEarly) { 'true' } else { 'false' })-propAccessors-$(if ($Config.InstrumentPropertyAccessors) { 'true' } else { 'false' })-testKIR-$(if ($Config.TestKIR) { 'true' } else { 'false' })"
 }
 
+class IoaConfig {
+  [string]$Kind
+
+  IoaConfig([string]$Kind) {
+    $this.Kind = $Kind
+  }
+}
+
+function Get-IoaSuffix {
+  param([IoaConfig]$Config)
+
+  return "kind-$($Config.Kind)"
+}
+
 function Clean-KirHelperKit {
   Write-Host ""
   Write-Host "=========================================="
@@ -301,6 +315,39 @@ function Build-GameOfLifeCommonMainIoa {
   if ($timings.Contains('js')) { $buildTimes['commonmain_ioa_node'] = $timings.js }
   if ($timings.Contains('windows')) { $buildTimes['commonmain_ioa_exe'] = $timings.windows }
   Write-Host "game-of-life-kmp-commonmain-ioa build completed successfully."
+  return $buildTimes
+}
+
+function Build-GameOfLifeCommonMainIoaVariant {
+  param(
+    [IoaConfig]$Config
+  )
+
+  $projectName = "game-of-life-kmp-commonmain-ioa"
+  $projectPath = "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa"
+  $suffix = Get-IoaSuffix -Config $Config
+  $gradleArgs = @(
+    "-PioaKind=$($Config.Kind)"
+  )
+
+  Write-Host ""
+  Write-Host "## Building $projectName with suffix: $suffix..."
+  $title = "$projectName ($suffix)"
+  $timings = Invoke-KmpBuildWithTimings -Title $title -Path $projectPath -GradleArgs $gradleArgs
+
+  $buildTimes = [ordered]@{}
+
+  if ($timings.Contains('jvm')) {
+    $buildTimes["commonmain_ioa_$suffix-jar"] = $timings.jvm
+  }
+  if ($timings.Contains('js')) {
+    $buildTimes["commonmain_ioa_$suffix-node"] = $timings.js
+  }
+  if ($timings.Contains('windows')) {
+    $buildTimes["commonmain_ioa_$suffix-exe"] = $timings.windows
+  }
+
+  Write-Host "$projectName build with $suffix completed successfully."
   return $buildTimes
 }
 

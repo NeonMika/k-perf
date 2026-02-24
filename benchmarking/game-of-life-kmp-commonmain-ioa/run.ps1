@@ -7,7 +7,8 @@ param(
   [bool]$IOA = $true,
   [bool]$JVM = $true,
   [bool]$JS = $true,
-  [bool]$Native = $true
+  [bool]$Native = $true,
+  [string[]]$IoaKinds = @("None")
 )
 
 # Import common utility functions
@@ -26,6 +27,27 @@ foreach ($key in $machineInfo.Keys) {
   Write-Host "  $key : $($machineInfo[$key])"
 }
 Write-Host ""
+
+# Validate IOA parameter arrays
+if ($IoaKinds.Count -eq 0) {
+  Write-Host "ERROR: -IoaKinds must contain at least one value."
+  exit 1
+}
+
+# Generate combinations of IoaKind configurations
+$ioaConfigurations = @()
+foreach ($ioaKind in $IoaKinds) {
+  $ioaConfigurations += [IoaConfig]::new($ioaKind)
+}
+
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "# IOA Configurations to Build"
+Write-Host "=========================================="
+foreach ($config in $ioaConfigurations) {
+  $suffix = Get-IoaSuffix -Config $config
+  Write-Host "- $suffix"
+}
 
 # Clean phase
 if ($CleanBuild) {
@@ -55,7 +77,11 @@ Write-Host "=========================================="
 $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KirHelperKit)
 $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-InstrumentationOverheadAnalyzerPlugin)
 $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainReference)
-$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainIoa)
+
+# Build IOA variants for all configurations
+foreach ($config in $ioaConfigurations) {
+  $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainIoaVariant -Config $config)
+}
 
 Write-Host ""
 Write-Host "=========================================="
@@ -77,27 +103,79 @@ if (-not ($JVM -or $JS -or $Native)) {
   exit 1
 }
 
-# Define a list of all executables to be benchmarked.
-$executables = @()
+# Function to get executables
+function Get-Executables {
+  param()
 
-if ($Reference -and $JVM) {
-  $executables += @{ Name = "commonmain_plain_jar"; Path = "$commonMainBuildRoot\lib\game-of-life-kmp-commonmain-jvm-0.1.0.jar"; Type = "jar" }
+  $executables = @()
+
+  # Add reference (plain) versions if requested
+  if ($Reference -and $JVM) {
+    $executables += @{
+      Name   = "commonmain_plain_jar"
+      Path   = "$commonMainBuildRoot\lib\game-of-life-kmp-commonmain-jvm-0.1.0.jar"
+      Type   = "jar"
+      Config = $null
+    }
+  }
+
+  if ($Reference -and $JS) {
+    $executables += @{
+      Name   = "commonmain_plain_node"
+      Path   = "$commonMainBuildRoot\js\packages\game-of-life-kmp-commonmain\kotlin\game-of-life-kmp-commonmain.js"
+      Type   = "node"
+      Config = $null
+    }
+  }
+
+  if ($Reference -and $Native) {
+    $executables += @{
+      Name   = "commonmain_plain_exe"
+      Path   = "$commonMainBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain.exe"
+      Type   = "exe"
+      Config = $null
+    }
+  }
+
+  # Add IOA variants
+  if ($IOA) {
+    foreach ($config in $ioaConfigurations) {
+      $suffix = Get-IoaSuffix -Config $config
+
+      if ($JVM) {
+        $executables += @{
+          Name   = "commonmain_ioa_$suffix-jar"
+          Path   = "$commonMainIoaBuildRoot\lib\game-of-life-kmp-commonmain-ioa-jvm-0.1.0-$suffix.jar"
+          Type   = "jar"
+          Config = $config
+        }
+      }
+
+      if ($JS) {
+        $executables += @{
+          Name   = "commonmain_ioa_$suffix-node"
+          Path   = "$commonMainIoaBuildRoot\js\packages\game-of-life-kmp-commonmain-ioa-$suffix\kotlin\game-of-life-kmp-commonmain-ioa-$suffix.js"
+          Type   = "node"
+          Config = $config
+        }
+      }
+
+      if ($Native) {
+        $executables += @{
+          Name   = "commonmain_ioa_$suffix-exe"
+          Path   = "$commonMainIoaBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain-ioa-$suffix.exe"
+          Type   = "exe"
+          Config = $config
+        }
+      }
+    }
+  }
+
+  return $executables
 }
-if ($IOA -and $JVM) {
-  $executables += @{ Name = "commonmain_ioa_jar"; Path = "$commonMainIoaBuildRoot\lib\game-of-life-kmp-commonmain-ioa-jvm-0.1.0.jar"; Type = "jar" }
-}
-if ($Reference -and $Native) {
-  $executables += @{ Name = "commonmain_plain_exe"; Path = "$commonMainBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain.exe"; Type = "exe" }
-}
-if ($IOA -and $Native) {
-  $executables += @{ Name = "commonmain_ioa_exe"; Path = "$commonMainIoaBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain-ioa.exe"; Type = "exe" }
-}
-if ($Reference -and $JS) {
-  $executables += @{ Name = "commonmain_plain_node"; Path = "$commonMainBuildRoot\js\packages\game-of-life-kmp-commonmain\kotlin\game-of-life-kmp-commonmain.js"; Type = "node" }
-}
-if ($IOA -and $JS) {
-  $executables += @{ Name = "commonmain_ioa_node"; Path = "$commonMainIoaBuildRoot\js\packages\game-of-life-kmp-commonmain-ioa\kotlin\game-of-life-kmp-commonmain-ioa.js"; Type = "node" }
-}
+
+# Get executables matching the specified parameters
+$executables = Get-Executables
 
 # Create a test suite name from the executable names
 $testSuiteName = "game-of-life-kmp-commonmain-ioa"
@@ -252,6 +330,7 @@ foreach ($executable in $executables) {
       JVM             = $JVM
       JS              = $JS
       Native          = $Native
+      IoaKinds        = $IoaKinds
     }
     machineInfo = $machineInfo
     buildTimeMs = $relevantBuildTime
@@ -268,6 +347,13 @@ foreach ($executable in $executables) {
 
   # Collect statistics for CSV
   $csvRecord = [ordered]@{
+    mean                              = $stats.mean
+    median                            = $stats.median
+    stddev                            = $stats.stddev
+    min                               = $stats.min
+    max                               = $stats.max
+    ci95_lower                        = $stats.ci95.lower
+    ci95_upper                        = $stats.ci95.upper
     executable                        = $executable.Name
     buildTimeMs                       = $relevantBuildTime
     RepetitionCount                   = $RepetitionCount
@@ -278,6 +364,7 @@ foreach ($executable in $executables) {
     JVM                               = $JVM
     JS                                = $JS
     Native                            = $Native
+    IoaKinds                          = $IoaKinds
     CollectionTimestamp               = $machineInfo.CollectionTimestamp
     GitCommitHash                     = $machineInfo.GitCommitHash
     GitBranch                         = $machineInfo.GitBranch

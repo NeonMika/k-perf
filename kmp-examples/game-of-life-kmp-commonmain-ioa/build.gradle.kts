@@ -19,6 +19,8 @@ val ioaKind = providers.gradleProperty("ioaKind")
     .map { IoaKind.valueOf(it) }
     .getOrElse(IoaKind.None)
 
+val outputSuffix = "kind-${ioaKind.name.lowercase()}"
+
 instrumentationOverheadAnalyzer {
   enabled = true
   kind = ioaKind
@@ -45,6 +47,7 @@ kotlin {
               "Class-Path" to runtimeDependencyFiles.files.joinToString(" ") { it.name })
           }
         }
+        archiveClassifier.set(outputSuffix)
         doLast {
           copy {
             from("build/libs")
@@ -58,6 +61,7 @@ kotlin {
   
   @OptIn(org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalMainFunctionArgumentsDsl::class)
   js(IR) {
+    outputModuleName.set("${project.name}-$outputSuffix")
     nodejs {
       passProcessArgvToMainFunction()
     }
@@ -85,6 +89,7 @@ kotlin {
     target.binaries {
       executable {
         entryPoint = "main"
+        baseName = "$baseName-$outputSuffix"
       }
     }
   }

@@ -25,6 +25,14 @@ class KPerfConfig:
         )
 
 
+@dataclass
+class IoaConfig:
+    kind: str
+
+    def suffix(self) -> str:
+        return f"kind-{self.kind.lower()}"
+
+
 def _gradle_wrapper(cwd: Path) -> str:
     if platform.system() == "Windows":
         candidate = cwd / "gradlew.bat"
@@ -293,6 +301,29 @@ def build_game_of_life_commonmain_ioa() -> Dict[str, float]:
     if "windows" in timings:
         build_times["commonmain_ioa_exe"] = timings["windows"]
     print("game-of-life-kmp-commonmain-ioa build completed successfully.")
+    return build_times
+
+
+def build_game_of_life_commonmain_ioa_variant(config: IoaConfig) -> Dict[str, float]:
+    project_name = "game-of-life-kmp-commonmain-ioa"
+    project_path = ROOT_DIR / "kmp-examples" / project_name
+    suffix = config.suffix()
+    gradle_args = [f"-PioaKind={config.kind}"]
+
+    print("")
+    print(f"## Building {project_name} with suffix: {suffix}...")
+    title = f"{project_name} ({suffix})"
+    timings = _invoke_kmp_build_with_timings(title, project_path, gradle_args)
+
+    build_times: Dict[str, float] = {}
+
+    if "jvm" in timings:
+        build_times[f"commonmain_ioa_{suffix}-jar"] = timings["jvm"]
+    if "js" in timings:
+        build_times[f"commonmain_ioa_{suffix}-node"] = timings["js"]
+    if "windows" in timings:
+        build_times[f"commonmain_ioa_{suffix}-exe"] = timings["windows"]
+    print(f"{project_name} build with {suffix} completed successfully.")
     return build_times
 
 
