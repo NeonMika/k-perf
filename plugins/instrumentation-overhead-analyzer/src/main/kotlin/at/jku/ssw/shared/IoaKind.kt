@@ -16,4 +16,7 @@ enum class IoaKind {
 
   StandardOut,
   AppendToStringBuilder,
+
+  FileEagerFlush,
+  FileLazyFlush,
 }

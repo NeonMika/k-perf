@@ -37,6 +37,17 @@ fun createSuts(): List<IrField> = with(IoaContext.pluginContext) {
       irCallConstructor(IoaContext.stringBuilderConstructor, listOf())
     })
 
+    IoaKind.FileEagerFlush, IoaKind.FileLazyFlush -> listOf(createFieldOfType(IoaContext.sinkClass.defaultType) {
+      irCall(IoaContext.sinkBufferedFunction).apply {
+        arguments[0] = irCall(IoaContext.fileSystemSinkFunction).apply {
+          arguments[0] = irCall(IoaContext.systemFileSystemProperty.owner.getter!!)
+          arguments[1] = irCall(IoaContext.pathFunction).apply {
+            arguments[0] = irString("__ioa_out.txt")
+          }
+        }
+      }
+    })
+
     else -> emptyList()
   }
 }

@@ -179,4 +179,72 @@ object IoaContext {
   }
   // </editor-fold>
 
+  // <editor-fold desc="File Handling">
+  val pathFunction by lazy {
+    pluginContext.referenceFunctions(
+      CallableId(
+        FqName("kotlinx.io.files"),
+        Name.identifier("Path")
+      )
+    ).single {
+      it.owner.hasShape(regularParameters = 1) &&
+          it.owner.parameters[0].type == pluginContext.irBuiltIns.stringType
+    }
+  }
+
+  val systemFileSystemProperty by lazy {
+    pluginContext.referenceProperties(
+      CallableId(
+        FqName("kotlinx.io.files"),
+        Name.identifier("SystemFileSystem")
+      )
+    ).single()
+  }
+
+  val fileSystemClass by lazy {
+    pluginContext.referenceClass(
+      ClassId(
+        FqName("kotlinx.io.files"),
+        Name.identifier("FileSystem")
+      )
+    )!!
+  }
+
+  val fileSystemSinkFunction by lazy { fileSystemClass.functions.single { it.owner.name.asString() == "sink" } }
+  val sinkClass by lazy { fileSystemSinkFunction.owner.returnType.classOrFail }
+
+  val sinkBufferedFunction by lazy {
+    pluginContext.referenceFunctions(
+      CallableId(
+        FqName("kotlinx.io"),
+        Name.identifier("buffered")
+      )
+    ).single {
+      it.owner.hasShape(extensionReceiver = true, regularParameters = 0) &&
+          it.owner.parameters[0].type == sinkClass.defaultType
+    }
+  }
+
+  val sinkWriteStringFunction by lazy {
+    pluginContext.referenceFunctions(
+      CallableId(
+        FqName("kotlinx.io"),
+        Name.identifier("writeString")
+      )
+    ).single {
+      it.owner.hasShape(extensionReceiver = true, regularParameters = 3) &&
+          it.owner.parameters[1].type == pluginContext.irBuiltIns.stringType &&
+          it.owner.parameters[2].type == pluginContext.irBuiltIns.intType &&
+          it.owner.parameters[3].type == pluginContext.irBuiltIns.intType
+    }
+  }
+
+  val sinkFlushFunction by lazy {
+    sinkClass.functions.single {
+      it.owner.name.asString() == "flush" &&
+          it.owner.hasShape(dispatchReceiver = true, regularParameters = 0)
+    }
+  }
+  // </editor-fold>
+
 }

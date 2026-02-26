@@ -24,3 +24,9 @@ fun IrPluginContext.modifyFunctionAtBeginning(function: IrFunction, block: IrBlo
     block()
     addAllStatements(function)
   }
+
+fun IrPluginContext.modifyFunctionAtEnd(function: IrFunction, block: IrBlockBodyBuilder.() -> Unit) =
+  setFunctionBody(function) {
+    addAllStatements(function)
+    block()
+  }

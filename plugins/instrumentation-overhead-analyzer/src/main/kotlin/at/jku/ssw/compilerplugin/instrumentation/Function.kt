@@ -21,6 +21,8 @@ fun modifyFunction(function: IrFunction) = with(IoaContext.pluginContext) {
     IoaKind.RandomValue -> modifyFunctionRandomValue(function)
     IoaKind.StandardOut -> modifyFunctionStandardOut(function)
     IoaKind.AppendToStringBuilder -> modifyFunctionAppendToStringBuilder(function)
+    IoaKind.FileEagerFlush -> modifyFunctionFileEagerFlush(function)
+    IoaKind.FileLazyFlush -> modifyFunctionFileLazyFlush(function)
     else -> {}
   }
 }
@@ -111,6 +113,23 @@ fun IrPluginContext.modifyFunctionStandardOut(function: IrFunction) = modifyFunc
 fun IrPluginContext.modifyFunctionAppendToStringBuilder(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.stringBuilderAppendStringFunction).apply {
     dispatchReceiver = irGetField(null, IoaContext.sutField)
+    arguments[1] = irString("Entering function ${function.name.asString()}\n")
+  }
+}
+
+fun IrPluginContext.modifyFunctionFileEagerFlush(function: IrFunction) = modifyFunctionAtBeginning(function) {
+  +irCall(IoaContext.sinkWriteStringFunction).apply {
+    arguments[0] = irGetField(null, IoaContext.sutField)
+    arguments[1] = irString("Entering function ${function.name.asString()}\n")
+  }
+  +irCall(IoaContext.sinkFlushFunction).apply {
+    dispatchReceiver = irGetField(null, IoaContext.sutField)
+  }
+}
+
+fun IrPluginContext.modifyFunctionFileLazyFlush(function: IrFunction) = modifyFunctionAtBeginning(function) {
+  +irCall(IoaContext.sinkWriteStringFunction).apply {
+    arguments[0] = irGetField(null, IoaContext.sutField)
     arguments[1] = irString("Entering function ${function.name.asString()}\n")
   }
 }

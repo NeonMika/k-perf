@@ -114,6 +114,11 @@ class IoaCompilerPluginTest {
   @Test
   fun `test append to string builder kind`() = testKind(IoaKind.AppendToStringBuilder)
 
+  @Test
+  fun `test file eager flush kind`() = testKind(IoaKind.FileEagerFlush)
+
+  @Test
+  fun `test file lazy flush kind`() = testKind(IoaKind.FileLazyFlush)
 
   fun compile(
     sourceFiles: List<SourceFile>,
