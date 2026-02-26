@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.addArgument
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 
-fun modifyMainFunction(function: IrFunction) = with(IoaContext.pluginContext) {
+fun modifyMainFunction(function: IrFunction) {
   when (IoaContext.instrumentationKind) {
     IoaKind.FileLazyFlush -> modifyMainFunctionFileLazyFlush(function)
     else -> {}
@@ -21,14 +21,14 @@ fun modifyMainFunction(function: IrFunction) = with(IoaContext.pluginContext) {
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrPluginContext.modifyMainFunctionFileLazyFlush(function: IrFunction) = modifyFunctionAtEnd(function) {
+fun modifyMainFunctionFileLazyFlush(function: IrFunction) = modifyFunctionBeforeEachReturn(function) {
   +irCall(IoaContext.sinkFlushFunction).apply {
     dispatchReceiver = IoaContext.sutFields[0]
   }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrPluginContext.modifyMainFunctionPrintSut(function: IrFunction) = modifyFunctionAtEnd(function) {
+fun modifyMainFunctionPrintSut(function: IrFunction) = modifyFunctionBeforeEachReturn(function) {
   +irCall(IoaContext.printlnFunction).apply {
     arguments[0] = irConcat().apply {
       addArgument(irString("Sut fields after execution: "))

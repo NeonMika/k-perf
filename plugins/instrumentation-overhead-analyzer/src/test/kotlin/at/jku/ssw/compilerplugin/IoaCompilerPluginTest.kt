@@ -37,6 +37,12 @@ class IoaCompilerPluginTest {
         fun normalFunction(param: Int): String {
             return "Normal Function: $param"
         }
+      
+        fun multipleStatementsFunction(param: Int): String {
+            val intermediate = param * 2
+            println("Intermediate value: $intermediate")
+            return "Multiple Statements Function: $intermediate"
+        }
 
         fun String.foo(x: Int): String = "Host($this) + $x"
 

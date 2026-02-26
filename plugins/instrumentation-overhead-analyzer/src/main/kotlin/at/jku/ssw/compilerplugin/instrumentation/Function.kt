@@ -7,10 +7,11 @@ import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.util.statements
 
-fun modifyFunction(function: IrFunction) = with(IoaContext.pluginContext) {
+fun modifyFunction(function: IrFunction) =
   when (IoaContext.instrumentationKind) {
     IoaKind.TryFinally -> modifyFunctionTryFinally(function)
     IoaKind.TimeClock -> modifyFunctionTimeClock(function)
@@ -25,16 +26,13 @@ fun modifyFunction(function: IrFunction) = with(IoaContext.pluginContext) {
     IoaKind.FileLazyFlush -> modifyFunctionFileLazyFlush(function)
     else -> {}
   }
-}
 
-fun IrPluginContext.modifyFunctionTryFinally(function: IrFunction) {
-  function.body = DeclarationIrBuilder(this, function.symbol).irBlockBody {
+fun modifyFunctionTryFinally(function: IrFunction) {
+  setFunctionBody(function) {
     +irTry(
       function.returnType,
       irBlock(resultType = function.returnType) {
-        for (statement in function.body!!.statements) {
-          +statement
-        }
+        addAllStatements(function)
       },
       listOf(),
       irBlock {
@@ -44,80 +42,89 @@ fun IrPluginContext.modifyFunctionTryFinally(function: IrFunction) {
   }
 }
 
-fun IrPluginContext.modifyFunctionTimeClock(function: IrFunction) = setFunctionBody(function) {
-  val start = irTemporary(irCall(IoaContext.clockNowFunction).apply {
-    dispatchReceiver = irGetObject(IoaContext.clockSystemClass)
-  })
-
-  addAllStatements(function)
-
-  IoaContext.sutFields[0] = irCall(IoaContext.instantMinusFunction).apply {
-    dispatchReceiver = irCall(IoaContext.clockNowFunction).apply {
+fun modifyFunctionTimeClock(function: IrFunction) {
+  var start: IrVariable? = null
+  modifyFunctionAtBeginning(function) {
+    start = irTemporary(irCall(IoaContext.clockNowFunction).apply {
       dispatchReceiver = irGetObject(IoaContext.clockSystemClass)
+    })
+  }
+
+  modifyFunctionBeforeEachReturn(function) {
+    IoaContext.sutFields[0] = irCall(IoaContext.instantMinusFunction).apply {
+      dispatchReceiver = irCall(IoaContext.clockNowFunction).apply {
+        dispatchReceiver = irGetObject(IoaContext.clockSystemClass)
+      }
+      arguments[1] = irGet(start!!)
     }
-    arguments[1] = irGet(start)
   }
 }
 
-fun IrPluginContext.modifyFunctionTimeMonotonicFunction(function: IrFunction) = setFunctionBody(function) {
-  val now = irTemporary(irCall(IoaContext.timeSourceMonotonicMarkNowFunction).apply {
-    dispatchReceiver = irGetObject(IoaContext.timeSourceMonotonicClass)
-  })
+fun modifyFunctionTimeMonotonicFunction(function: IrFunction) {
+  var now: IrVariable? = null
+  modifyFunctionAtBeginning(function) {
+     now = irTemporary(irCall(IoaContext.timeSourceMonotonicMarkNowFunction).apply {
+      dispatchReceiver = irGetObject(IoaContext.timeSourceMonotonicClass)
+    })
+  }
 
-  addAllStatements(function)
-
-  IoaContext.sutFields[0] = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
-    dispatchReceiver = irGet(now)
+  modifyFunctionBeforeEachReturn(function) {
+    IoaContext.sutFields[0] = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+      dispatchReceiver = irGet(now!!)
+    }
   }
 }
 
-fun IrPluginContext.modifyFunctionTimeMonotonicGlobal(function: IrFunction) = setFunctionBody(function) {
-  val elapseStart = irTemporary(irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
-    dispatchReceiver = IoaContext.sutFields[0]
-  })
-
-  addAllStatements(function)
-
-  IoaContext.sutFields[1] = irCall(IoaContext.durationMinusFunction).apply {
-    dispatchReceiver = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+fun modifyFunctionTimeMonotonicGlobal(function: IrFunction) {
+  var elapseStart: IrVariable? = null
+  modifyFunctionAtBeginning(function) {
+     elapseStart = irTemporary(irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
       dispatchReceiver = IoaContext.sutFields[0]
-    }
-    arguments[1] = irGet(elapseStart)
+    })
+  }
+
+  modifyFunctionBeforeEachReturn(function) {
+      IoaContext.sutFields[1] = irCall(IoaContext.durationMinusFunction).apply {
+        dispatchReceiver = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+          dispatchReceiver = IoaContext.sutFields[0]
+        }
+        arguments[1] = irGet(elapseStart!!)
+      }
   }
 }
 
-fun IrPluginContext.modifyFunctionIncrementCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
+fun modifyFunctionIncrementCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
   IoaContext.sutFields[0] = irCall(IoaContext.intIncrementFunction).apply {
     dispatchReceiver = IoaContext.sutFields[0]
   }
 }
 
-fun IrPluginContext.modifyFunctionIncrementAtomicCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
+fun modifyFunctionIncrementAtomicCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.atomicIntFetchAndIncrementFunction).apply {
     arguments[0] = IoaContext.sutFields[0]
   }
 }
 
-fun IrPluginContext.modifyFunctionRandomValue(function: IrFunction) = modifyFunctionAtBeginning(function) {
+fun modifyFunctionRandomValue(function: IrFunction) = modifyFunctionAtBeginning(function) {
   IoaContext.sutFields[0] = irCall(IoaContext.randomNextIntFunction).apply {
     dispatchReceiver = irGetObject(IoaContext.randomDefaultClass)
   }
 }
 
-fun IrPluginContext.modifyFunctionStandardOut(function: IrFunction) = modifyFunctionAtBeginning(function) {
+fun modifyFunctionStandardOut(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.printlnFunction).apply {
     arguments[0] = irString("Entering function ${function.name.asString()}")
   }
 }
 
-fun IrPluginContext.modifyFunctionAppendToStringBuilder(function: IrFunction) = modifyFunctionAtBeginning(function) {
+fun modifyFunctionAppendToStringBuilder(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.stringBuilderAppendStringFunction).apply {
     dispatchReceiver = IoaContext.sutFields[0]
     arguments[1] = irString("Entering function ${function.name.asString()}\n")
   }
 }
 
-fun IrPluginContext.modifyFunctionFileEagerFlush(function: IrFunction) = modifyFunctionAtBeginning(function) {
+fun modifyFunctionFileEagerFlush(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.sinkWriteStringFunction).apply {
     arguments[0] = IoaContext.sutFields[0]
     arguments[1] = irString("Entering function ${function.name.asString()}\n")
@@ -127,7 +134,7 @@ fun IrPluginContext.modifyFunctionFileEagerFlush(function: IrFunction) = modifyF
   }
 }
 
-fun IrPluginContext.modifyFunctionFileLazyFlush(function: IrFunction) = modifyFunctionAtBeginning(function) {
+fun modifyFunctionFileLazyFlush(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.sinkWriteStringFunction).apply {
     arguments[0] = IoaContext.sutFields[0]
     arguments[1] = irString("Entering function ${function.name.asString()}\n")
