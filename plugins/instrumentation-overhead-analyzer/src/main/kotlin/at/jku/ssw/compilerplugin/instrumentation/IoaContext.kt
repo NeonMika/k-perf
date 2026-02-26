@@ -33,7 +33,13 @@ object IoaContext {
 
   // <editor-fold desc="Time and Clock">
   val clockSystemClass by lazy {
-    pluginContext.referenceClass(ClassId(FqName("kotlin.time"), FqName("Clock.System"), false))!!
+    pluginContext.referenceClass(
+      ClassId(
+        FqName("kotlin.time"),
+        FqName("Clock.System"),
+        false
+      )
+    )!!
   }
 
   val clockNowFunction by lazy {
@@ -43,10 +49,7 @@ object IoaContext {
     }
   }
 
-  val instantClass by lazy {
-    pluginContext.referenceClass(ClassId(FqName("kotlin.time"), Name.identifier("Instant")))!!
-  }
-
+  val instantClass by lazy { clockNowFunction.owner.returnType.classOrFail }
   val instantMinusFunction by lazy {
     instantClass.functions.single {
       it.owner.hasShape(dispatchReceiver = true, regularParameters = 1)
@@ -55,10 +58,7 @@ object IoaContext {
     }
   }
 
-  val durationClass by lazy {
-    pluginContext.referenceClass(ClassId(FqName("kotlin.time"), Name.identifier("Duration")))!!
-  }
-
+  val durationClass by lazy { instantMinusFunction.owner.returnType.classOrFail }
   val durationMinusFunction by lazy {
     durationClass.functions.single {
       it.owner.hasShape(dispatchReceiver = true, regularParameters = 1)
@@ -78,10 +78,7 @@ object IoaContext {
     }
   }
 
-  val valueTimeMarkerClass by lazy {
-    pluginContext.referenceClass(ClassId(FqName("kotlin.time"), FqName("TimeSource.Monotonic.ValueTimeMark"), false))!!
-  }
-
+  val valueTimeMarkerClass by lazy { timeSourceMonotonicMarkNowFunction.owner.returnType.classOrFail }
   val valueTimeMarkerElapsedNowFunction by lazy {
     valueTimeMarkerClass.functions.single {
       it.owner.hasShape(dispatchReceiver = true, regularParameters = 0)
@@ -91,7 +88,7 @@ object IoaContext {
   // </editor-fold>
 
   // <editor-fold desc="Integer and Atomic Integer">
-  val incrementIntFunction by lazy {
+  val intIncrementFunction by lazy {
     pluginContext.referenceFunctions(
       CallableId(
         FqName("kotlin"),
@@ -101,7 +98,7 @@ object IoaContext {
     ).single { it.owner.hasShape(dispatchReceiver = true, regularParameters = 0) }
   }
 
-  val atomicIntegerClass by lazy {
+  val atomicIntClass by lazy {
     pluginContext.referenceClass(
       ClassId(
         FqName("kotlin.concurrent.atomics"),
@@ -110,11 +107,11 @@ object IoaContext {
     )!!
   }
 
-  val atomicIntegerConstructor by lazy {
-    atomicIntegerClass.constructors.single { it.owner.hasShape(regularParameters = 1) && it.owner.parameters[0].type == pluginContext.irBuiltIns.intType }
+  val atomicIntConstructor by lazy {
+    atomicIntClass.constructors.single { it.owner.hasShape(regularParameters = 1) && it.owner.parameters[0].type == pluginContext.irBuiltIns.intType }
   }
 
-  val fetchAndIncrementFunction by lazy {
+  val atomicIntFetchAndIncrementFunction by lazy {
     pluginContext.referenceFunctions(
       CallableId(
         FqName("kotlin.concurrent.atomics"),
@@ -124,7 +121,7 @@ object IoaContext {
       it.owner.hasShape(
         extensionReceiver = true,
         regularParameters = 0
-      ) && it.owner.parameters[0].type == atomicIntegerClass.defaultType
+      ) && it.owner.parameters[0].type == atomicIntClass.defaultType
     }
   }
   // </editor-fold>
@@ -141,13 +138,10 @@ object IoaContext {
   }
 
   val randomNextIntFunction by lazy {
-    pluginContext.referenceFunctions(
-      CallableId(
-        FqName("kotlin.random"),
-        FqName("Random.Default"),
-        Name.identifier("nextInt")
-      )
-    ).single { it.owner.hasShape(dispatchReceiver = true, regularParameters = 0) }
+    randomDefaultClass.functions.single {
+      it.owner.name.asString() == "nextInt" &&
+          it.owner.hasShape(dispatchReceiver = true, regularParameters = 0)
+    }
   }
   // </editor-fold>
 

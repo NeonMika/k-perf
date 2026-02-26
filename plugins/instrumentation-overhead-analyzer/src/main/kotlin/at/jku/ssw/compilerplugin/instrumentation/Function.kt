@@ -85,13 +85,13 @@ fun IrPluginContext.modifyFunctionTimeMonotonicGlobal(function: IrFunction) = se
 }
 
 fun IrPluginContext.modifyFunctionIncrementCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
-  +irSetField(null, IoaContext.sutField, irCall(IoaContext.incrementIntFunction).apply {
+  +irSetField(null, IoaContext.sutField, irCall(IoaContext.intIncrementFunction).apply {
     dispatchReceiver = irGetField(null, IoaContext.sutField)
   })
 }
 
 fun IrPluginContext.modifyFunctionIncrementAtomicCounter(function: IrFunction) = modifyFunctionAtBeginning(function) {
-  +irCall(IoaContext.fetchAndIncrementFunction).apply {
+  +irCall(IoaContext.atomicIntFetchAndIncrementFunction).apply {
     arguments[0] = irGetField(null, IoaContext.sutField)
   }
 }

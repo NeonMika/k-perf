@@ -28,8 +28,8 @@ fun createSuts(): List<IrField> = with(IoaContext.pluginContext) {
       createFieldOfType(IoaContext.durationClass.defaultType, suffix = "1")
     )
 
-    IoaKind.IncrementAtomicIntCounter -> listOf(createFieldOfType(IoaContext.atomicIntegerClass.defaultType) {
-      irCallConstructor(IoaContext.atomicIntegerConstructor, listOf(irBuiltIns.intType))
+    IoaKind.IncrementAtomicIntCounter -> listOf(createFieldOfType(IoaContext.atomicIntClass.defaultType) {
+      irCallConstructor(IoaContext.atomicIntConstructor, listOf(irBuiltIns.intType))
         .apply { arguments[0] = DeclarationIrBuilder(this@with, it.symbol).irInt(0) }
     })
 
