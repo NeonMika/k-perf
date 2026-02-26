@@ -43,6 +43,12 @@ tasks.test {
   useJUnitPlatform()
 }
 
+kotlin {
+  compilerOptions {
+    freeCompilerArgs.add("-Xcontext-parameters")
+  }
+}
+
 /*
 println("rootProject extras:")
 rootProject.extra.properties.forEach { (key, value) -> println("-: $key: $value")  }

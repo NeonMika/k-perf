@@ -2,7 +2,7 @@ package at.jku.ssw.compilerplugin.instrumentation
 
 import at.jku.ssw.shared.IoaKind
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.ir.declarations.IrField
+import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.classOrFail
 import org.jetbrains.kotlin.ir.types.defaultType
@@ -19,17 +19,16 @@ import org.jetbrains.kotlin.name.Name
 object IoaContext {
 
   lateinit var pluginContext: IrPluginContext
+  lateinit var firstFile: IrFile
+
   var instrumentationKind: IoaKind = IoaKind.None
     set(value) {
       field = value
       sutFields = createSuts()
     }
 
-  lateinit var sutFields: List<IrField>
+  var sutFields: SutFields = SutFields(emptyList())
     private set
-
-  val sutField: IrField
-    get() = sutFields.single()
 
   // <editor-fold desc="Time and Clock">
   val clockSystemClass by lazy {

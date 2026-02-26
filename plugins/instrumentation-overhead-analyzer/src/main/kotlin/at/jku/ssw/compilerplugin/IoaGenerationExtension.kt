@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 import org.jetbrains.kotlin.ir.declarations.name
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.util.addChild
 import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import java.io.File
@@ -28,28 +27,23 @@ class IoaGenerationExtension(val kind: IoaKind) : IrGenerationExtension {
 
   fun appendToDebugFile(str: String) {
     debugFile.appendText(str)
+    debugFile.appendText("\n")
   }
 
   @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
     IoaContext.pluginContext = pluginContext
-    IoaContext.instrumentationKind = kind
 
-    if (IoaContext.sutFields.isNotEmpty()) {
-      val file = moduleFragment.files.firstOrNull()
-      if (file == null) {
-        appendToDebugFile("No files in module fragment, can not store SUT!\n")
-      } else {
-        appendToDebugFile("Storing SUTs in ${file.name}.\n")
-        IoaContext.sutFields.forEach { field ->
-          file.addChild(field)
-        }
-      }
+    val file = moduleFragment.files.firstOrNull()
+    if (file == null) {
+      appendToDebugFile("No files in module fragment, nothing to instrument!")
+      return
+    } else {
+      appendToDebugFile("Storing first file for SUT in ${file.name}.")
+      IoaContext.firstFile = file
     }
 
-    // IrElementVisitor / IrElementVisitorVoid
-    // IrElementTransformer / IrElementTransformerVoid / IrElementTransformerVoidWithContext
-    // IrElementTransformerVoidWithContext().visitfile(file, null)
+    IoaContext.instrumentationKind = kind
 
     moduleFragment.files.forEach { file ->
       appendToDebugFile("# ---${file.name}---")
@@ -58,6 +52,7 @@ class IoaGenerationExtension(val kind: IoaKind) : IrGenerationExtension {
           val body = declaration.body
           if (body == null ||
             declaration.origin == ADAPTER_FOR_CALLABLE_REFERENCE ||
+            declaration.fqNameWhenAvailable?.asString()?.contains("__ioa_sut") != false ||
             declaration.fqNameWhenAvailable?.asString()?.contains("<init>") != false ||
             declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false
           ) {
