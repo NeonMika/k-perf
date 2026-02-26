@@ -1,7 +1,6 @@
 package at.jku.ssw.compilerplugin.instrumentation
 
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
-import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.IrBlockBodyBuilder
 import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
@@ -24,33 +23,47 @@ fun IrBlockBodyBuilder.addAllStatements(function: IrFunction) {
   }
 }
 
+fun IrBlockBuilder.addAllStatements(function: IrFunction) {
+  for (statement in function.body!!.statements) {
+    +statement
+  }
+}
+
 fun modifyFunctionAtBeginning(function: IrFunction, block: IrBlockBodyBuilder.() -> Unit) =
   setFunctionBody(function) {
     block()
     addAllStatements(function)
   }
 
-fun modifyFunctionBeforeEachReturn(function: IrFunction, block: IrBlockBuilder.() -> Unit) {
-  function.body = function.body!!.transform(BeforeEachReturnTransformer(function, block), null)
+fun modifyFunctionBeforeEachReturnOrAtEnd(function: IrFunction, block: IrBlockBodyBuilder.() -> Unit) {
+  val transformer = BeforeEachReturnTransformer(function, block)
+  function.body = function.body!!.transform(transformer, null)
+
+  if (!transformer.hasReturn) {
+    setFunctionBody(function) {
+      addAllStatements(function)
+      block()
+    }
+  }
 }
 
-class BeforeEachReturnTransformer(val function: IrFunction, val modify: IrBlockBuilder.() -> Unit) :
+class BeforeEachReturnTransformer(val function: IrFunction, val modify: IrBlockBodyBuilder.() -> Unit) :
   IrElementTransformerVoidWithContext() {
+
+  var hasReturn = false
 
   override fun visitReturn(expression: IrReturn): IrExpression {
     if (expression.returnTargetSymbol != function.symbol) return super.visitReturn(expression)
 
+    hasReturn = true
     return with(DeclarationIrBuilder(IoaContext.pluginContext, function.symbol)) {
       irBlock {
-        modify()
-        +expression
+        irBlockBody {
+          modify()
+          +expression
+        }
       }
     }
   }
 
-}
-
-fun modifyFunctionAtBeginningAndBeforeEachReturn(function: IrFunction, beginning: IrBlockBodyBuilder.() -> Unit, beforeReturn: IrBlockBuilder.() -> Unit) {
-  modifyFunctionAtBeginning(function, beginning)
-  modifyFunctionBeforeEachReturn(function, beforeReturn)
 }

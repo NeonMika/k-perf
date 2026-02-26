@@ -1,7 +1,6 @@
 package at.jku.ssw.compilerplugin.instrumentation
 
 import at.jku.ssw.shared.IoaKind
-import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irConcat
 import org.jetbrains.kotlin.ir.builders.irString
@@ -21,14 +20,14 @@ fun modifyMainFunction(function: IrFunction) {
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun modifyMainFunctionFileLazyFlush(function: IrFunction) = modifyFunctionBeforeEachReturn(function) {
+fun modifyMainFunctionFileLazyFlush(function: IrFunction) = modifyFunctionBeforeEachReturnOrAtEnd(function) {
   +irCall(IoaContext.sinkFlushFunction).apply {
     dispatchReceiver = IoaContext.sutFields[0]
   }
 }
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun modifyMainFunctionPrintSut(function: IrFunction) = modifyFunctionBeforeEachReturn(function) {
+fun modifyMainFunctionPrintSut(function: IrFunction) = modifyFunctionBeforeEachReturnOrAtEnd(function) {
   +irCall(IoaContext.printlnFunction).apply {
     arguments[0] = irConcat().apply {
       addArgument(irString("Sut fields after execution: "))

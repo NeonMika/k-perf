@@ -3,13 +3,10 @@
 package at.jku.ssw.compilerplugin.instrumentation
 
 import at.jku.ssw.shared.IoaKind
-import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
-import org.jetbrains.kotlin.ir.util.statements
 
 fun modifyFunction(function: IrFunction) =
   when (IoaContext.instrumentationKind) {
@@ -50,7 +47,7 @@ fun modifyFunctionTimeClock(function: IrFunction) {
     })
   }
 
-  modifyFunctionBeforeEachReturn(function) {
+  modifyFunctionBeforeEachReturnOrAtEnd(function) {
     IoaContext.sutFields[0] = irCall(IoaContext.instantMinusFunction).apply {
       dispatchReceiver = irCall(IoaContext.clockNowFunction).apply {
         dispatchReceiver = irGetObject(IoaContext.clockSystemClass)
@@ -68,7 +65,7 @@ fun modifyFunctionTimeMonotonicFunction(function: IrFunction) {
     })
   }
 
-  modifyFunctionBeforeEachReturn(function) {
+  modifyFunctionBeforeEachReturnOrAtEnd(function) {
     IoaContext.sutFields[0] = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
       dispatchReceiver = irGet(now!!)
     }
@@ -83,7 +80,7 @@ fun modifyFunctionTimeMonotonicGlobal(function: IrFunction) {
     })
   }
 
-  modifyFunctionBeforeEachReturn(function) {
+  modifyFunctionBeforeEachReturnOrAtEnd(function) {
       IoaContext.sutFields[1] = irCall(IoaContext.durationMinusFunction).apply {
         dispatchReceiver = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
           dispatchReceiver = IoaContext.sutFields[0]
