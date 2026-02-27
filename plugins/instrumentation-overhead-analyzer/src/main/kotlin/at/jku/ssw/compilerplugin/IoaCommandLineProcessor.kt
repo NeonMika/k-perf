@@ -1,11 +1,7 @@
 package at.jku.ssw.compilerplugin
 
 import at.jku.ssw.shared.IoaKind
-import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
-import org.jetbrains.kotlin.compiler.plugin.CliOption
-import org.jetbrains.kotlin.compiler.plugin.CliOptionProcessingException
-import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import org.jetbrains.kotlin.compiler.plugin.*
 import org.jetbrains.kotlin.config.CompilerConfiguration
 
 /*
@@ -33,6 +29,13 @@ class IoaCommandLineProcessor : CommandLineProcessor {
       "the kind of instrumentation that should be analyzed",
       required = true,
       allowMultipleOccurrences = false
+    ),
+    CliOption(
+      "instrumentPropertyAccessors",
+      "<true|false>",
+      "whether the plugin should instrument property accessors, i.e., getters and setters, or not (note: compilation backends such as JVM backend may decide to remove getter calls and directly access backing fields as performance optimization)",
+      required = false,
+      allowMultipleOccurrences = false
     )
   )
 
@@ -44,6 +47,11 @@ class IoaCommandLineProcessor : CommandLineProcessor {
     when (option.optionName) {
       "enabled" -> configuration.put(IoaConfigurationKeys.ENABLED, value.toBoolean())
       "kind" -> configuration.put(IoaConfigurationKeys.KIND, IoaKind.valueOf(value))
+      "instrumentPropertyAccessors" -> configuration.put(
+        IoaConfigurationKeys.INSTRUMENT_PROPERTY_ACCESSORS,
+        value.toBoolean()
+      )
+
       else -> throw CliOptionProcessingException("command line processor encountered unknown CLI compiler plugin option: ${option.optionName}")
     }
   }

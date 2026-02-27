@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.*
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrExpression
@@ -95,6 +96,7 @@ fun IrPluginContext.createPropertyOfType(
 
     addGetter {
       this.returnType = type
+      this.origin = IrDeclarationOrigin.DEFAULT_PROPERTY_ACCESSOR
     }.also {
       it.body = DeclarationIrBuilder(this@createPropertyOfType, it.symbol).irBlockBody {
         +irReturn(irGetField(null, backingField!!))
@@ -103,6 +105,7 @@ fun IrPluginContext.createPropertyOfType(
 
     addSetter {
       this.returnType = irBuiltIns.unitType
+      this.origin = IrDeclarationOrigin.DEFAULT_PROPERTY_ACCESSOR
     }.also {
       it.addValueParameter {
         this.name = Name.identifier("value")

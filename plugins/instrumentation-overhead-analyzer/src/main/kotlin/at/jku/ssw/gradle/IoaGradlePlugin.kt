@@ -52,6 +52,7 @@ class IoaGradlePlugin : KotlinCompilerPluginSupportPlugin {
       listOf(
         SubpluginOption("enabled", extension.enabled.toString()),
         SubpluginOption("kind", extension.kind.toString()),
+        SubpluginOption("instrumentPropertyAccessors", extension.instrumentPropertyAccessors.toString()),
       )
     }
   }

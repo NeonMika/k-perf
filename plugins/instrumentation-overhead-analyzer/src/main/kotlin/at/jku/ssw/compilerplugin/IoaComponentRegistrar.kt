@@ -21,9 +21,10 @@ class IoaComponentRegistrar : CompilerPluginRegistrar() {
   override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
     val enabled = configuration[IoaConfigurationKeys.ENABLED] ?: true
     val kind = configuration[IoaConfigurationKeys.KIND] ?: IoaKind.None
+    val instrumentPropertyAccessors = configuration[IoaConfigurationKeys.INSTRUMENT_PROPERTY_ACCESSORS] ?: false
 
     if (enabled) {
-      IrGenerationExtension.registerExtension(IoaGenerationExtension(kind))
+      IrGenerationExtension.registerExtension(IoaGenerationExtension(kind, instrumentPropertyAccessors))
     }
   }
 }
