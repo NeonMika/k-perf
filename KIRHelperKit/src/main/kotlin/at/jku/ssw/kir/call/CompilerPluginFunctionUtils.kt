@@ -24,11 +24,11 @@ import org.jetbrains.kotlin.name.Name
  * A helper function for building an IR block body using a DSL scope.
  *
  * @receiver The `IrBlockBodyBuilder` that constructs the IR block body.
- * @param block A lambda with a receiver of type `IrCallDsl` used to define
+ * @param block A lambda with a receiver of type `IrCallDSL` used to define
  *              the IR call expressions to be included in the block body.
  */
-fun IrBlockBodyBuilder.enableCallDSL(pluginContext: IrPluginContext, block: at.jku.ssw.kir.call.IrCallDsl.() -> Unit) {
-  _root_ide_package_.at.jku.ssw.kir.call.IrCallDsl(this, pluginContext).block()
+fun IrBlockBodyBuilder.enableCallDSL(pluginContext: IrPluginContext, block: at.jku.ssw.kir.call.IrCallDSL.() -> Unit) {
+  _root_ide_package_.at.jku.ssw.kir.call.IrCallDSL(this, pluginContext).block()
 }
 
 
@@ -36,29 +36,29 @@ fun IrBlockBodyBuilder.enableCallDSL(pluginContext: IrPluginContext, block: at.j
  * A helper function for constructing an IR expression body using a DSL scope.
  *
  * @receiver The `DeclarationIrBuilder` used to build the IR expression.
- * @param block A lambda with a receiver of type `IrCallDsl` used to define
+ * @param block A lambda with a receiver of type `IrCallDSL` used to define
  *              the IR call expression to be included in the expression body.
  * @return An `IrExpressionBody` containing the constructed IR expression.
  */
 fun DeclarationIrBuilder.callExpression(
   pluginContext: IrPluginContext,
-  block: at.jku.ssw.kir.call.IrCallDsl.() -> IrExpression
+  block: at.jku.ssw.kir.call.IrCallDSL.() -> IrExpression
 ): IrExpressionBody {
-  return irExprBody(_root_ide_package_.at.jku.ssw.kir.call.IrCallDsl(this, pluginContext).block())
+  return irExprBody(_root_ide_package_.at.jku.ssw.kir.call.IrCallDSL(this, pluginContext).block())
 }
 
 /**
  * Constructs and returns an `IrFunctionAccessExpression` using a DSL block.
  *
  * @receiver The `DeclarationIrBuilder` used to build the IR expression.
- * @param block A lambda with a receiver of type `IrCallDsl` to define the IR function access expression.
+ * @param block A lambda with a receiver of type `IrCallDSL` to define the IR function access expression.
  * @return The constructed `IrFunctionAccessExpression`.
  */
 fun DeclarationIrBuilder.getCall(
   pluginContext: IrPluginContext,
-  block: at.jku.ssw.kir.call.IrCallDsl.() -> IrFunctionAccessExpression
+  block: at.jku.ssw.kir.call.IrCallDSL.() -> IrFunctionAccessExpression
 ): IrFunctionAccessExpression {
-  return _root_ide_package_.at.jku.ssw.kir.call.IrCallDsl(this, pluginContext).block()
+  return _root_ide_package_.at.jku.ssw.kir.call.IrCallDSL(this, pluginContext).block()
 }
 
 /**
@@ -77,7 +77,7 @@ fun IrPluginContext.createField(
   fieldName: String,
   isFinal: Boolean = true,
   isStatic: Boolean = true,
-  initializerBlock: at.jku.ssw.kir.call.IrCallDsl.() -> IrExpression
+  initializerBlock: at.jku.ssw.kir.call.IrCallDSL.() -> IrExpression
 ): IrField {
   val initializerExpression = DeclarationIrBuilder(this, parentSymbol).callExpression(this) {
     initializerBlock()
@@ -100,7 +100,95 @@ fun IrPluginContext.createField(
  * @property builder The `IrBuilderWithScope` used to create IR call expressions.
  * @property pluginContext The `IrPluginContext` providing access to the IR plugin environment.
  */
-class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginContext: IrPluginContext) {
+class IrCallDSL(private val builder: IrBuilderWithScope, private val pluginContext: IrPluginContext) {
+
+  /**
+   * Finds a function by its signature without needing to explicitly call pluginContext.
+   * Delegates to [IrPluginContext.findFunction].
+   *
+   * @param signature The signature of the function to find.
+   * @param extensionReceiverType The expected type of the extension receiver, if any.
+   * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
+   * @return The found function symbol.
+   * @throws IllegalArgumentException If the function with the given signature is not found.
+   */
+  fun findFunction(signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol =
+    pluginContext.findFunction(signature, extensionReceiverType, ignoreNullability)
+
+  /**
+   * Finds a function by its signature, returning null if not found.
+   * Delegates to [IrPluginContext.findFunctionOrNull].
+   *
+   * @param signature The signature of the function to find.
+   * @param extensionReceiverType The expected type of the extension receiver, if any.
+   * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
+   * @return The found function symbol or null if it was not found.
+   */
+  fun findFunctionOrNull(signature: String, extensionReceiverType: IrType? = null, ignoreNullability: Boolean = false): IrSimpleFunctionSymbol? =
+    pluginContext.findFunctionOrNull(signature, extensionReceiverType, ignoreNullability)
+
+  /**
+   * Finds a class by its signature without needing to explicitly call pluginContext.
+   * Delegates to [IrPluginContext.findClass].
+   *
+   * @param signature The signature of the class to find.
+   * @return The found class symbol.
+   * @throws IllegalArgumentException If the class with the given signature is not found.
+   */
+  fun findClass(signature: String): IrClassSymbol =
+    pluginContext.findClassOrNull(signature) ?: throw IllegalArgumentException("Class with signature $signature not found")
+
+  /**
+   * Finds a class by its signature, returning null if not found.
+   * Delegates to [IrPluginContext.findClassOrNull].
+   *
+   * @param signature The signature of the class to find.
+   * @return The found class symbol or null if it was not found.
+   */
+  fun findClassOrNull(signature: String): IrClassSymbol? =
+    pluginContext.findClassOrNull(signature)
+
+  /**
+   * Finds a property by its signature without needing to explicitly call pluginContext.
+   * Delegates to [IrPluginContext.findProperty].
+   *
+   * @param signature The signature of the property to find.
+   * @return The found property symbol.
+   * @throws IllegalArgumentException If the property with the given signature is not found.
+   */
+  fun findProperty(signature: String): IrPropertySymbol =
+    pluginContext.findProperty(signature)
+
+  /**
+   * Finds a property by its signature, returning null if not found.
+   * Delegates to [IrPluginContext.findPropertyOrNull].
+   *
+   * @param signature The signature of the property to find.
+   * @return The found property symbol or null if it was not found.
+   */
+  fun findPropertyOrNull(signature: String): IrPropertySymbol? =
+    pluginContext.findPropertyOrNull(signature)
+
+  /**
+   * Finds a constructor by its signature without needing to explicitly call pluginContext.
+   * Delegates to [IrPluginContext.findConstructor].
+   *
+   * @param signature The signature of the constructor to find.
+   * @return The found constructor symbol.
+   * @throws IllegalArgumentException If the constructor with the given signature is not found.
+   */
+  fun findConstructor(signature: String): IrConstructorSymbol =
+    pluginContext.findConstructor(signature)
+
+  /**
+   * Finds a constructor by its signature, returning null if not found.
+   * Delegates to [IrPluginContext.findConstructorOrNull].
+   *
+   * @param signature The signature of the constructor to find.
+   * @return The found constructor symbol or null if it was not found.
+   */
+  fun findConstructorOrNull(signature: String): IrConstructorSymbol? =
+    pluginContext.findConstructorOrNull(signature)
 
   /**
    * Constructs an `IrFunctionAccessExpression` by calling the specified function with the given arguments.
@@ -142,9 +230,9 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
    */
   fun IrSymbol.call(func: Any, vararg args: Any): IrFunctionAccessExpression {
     val functionCall: IrFunctionAccessExpression = if (func is String) {
-      this@IrCallDsl.call(findFunction(func, this), *args)
+      this@IrCallDSL.call(resolveFunctionSymbol(func, this), *args)
     } else {
-      this@IrCallDsl.call(func, *args)
+      this@IrCallDSL.call(func, *args)
     }
     val receiver = this.convertReceiverToIrExpression()
     return functionCall.setReceivers(receiver)
@@ -170,9 +258,9 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
     //this is a very specific case: we expect the first symbol to be the dispatch receiver and the function in this case can only be found in the dispatch receiver
     //furthermore, must the searched function have an extension receiver of the second symbol type
     val functionCall: IrFunctionAccessExpression = if (func is String) {
-      this@IrCallDsl.call(findFunction(func, this.first, this.second.extractType()), *args)
+      this@IrCallDSL.call(resolveFunctionSymbol(func, this.first, this.second.extractType()), *args)
     } else {
-      this@IrCallDsl.call(func, *args)
+      this@IrCallDSL.call(func, *args)
     }
 
     return functionCall.setReceivers(
@@ -195,9 +283,9 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
       val params = args.joinToString(separator = ", ", prefix = "(", postfix = ")") { extractFQTypeNameFromIrNode(it) }
       val funcSymbol = pluginContext.findFunctionOrNull(func + params, this.type)
         ?: throw IllegalArgumentException("Function $func not found with params $params")
-      this@IrCallDsl.call(funcSymbol, *args)
+      this@IrCallDSL.call(funcSymbol, *args)
     } else {
-      this@IrCallDsl.call(func, *args)
+      this@IrCallDSL.call(func, *args)
     }.setReceivers(this)
   }
 
@@ -220,7 +308,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
    * @param args The arguments to be passed to the function
    * @return An IrCall that can be further chained
    */
-  operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this@IrCallDsl.call(this.symbol, *args)
+  operator fun IrFunction.invoke(vararg args: Any): IrFunctionAccessExpression = this@IrCallDSL.call(this.symbol, *args)
 
   /**
    * Calls this function with the given arguments and returns an IrCall to continue building
@@ -229,7 +317,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
    * @param args The arguments to be passed to the function
    * @return An IrCall that can be further chained
    */
-  operator fun IrFunctionSymbol.invoke(vararg args: Any): IrFunctionAccessExpression = this@IrCallDsl.call(this, *args)
+  operator fun IrFunctionSymbol.invoke(vararg args: Any): IrFunctionAccessExpression = this@IrCallDSL.call(this, *args)
 
   /**
    * Invokes the constructor of the `IrClass` using the provided arguments.
@@ -413,7 +501,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
         getter.symbol
       }
 
-      is String -> findFunction(func)
+      is String -> resolveFunctionSymbol(func)
       else -> throw IllegalArgumentException("IrCallHelper: Unsupported function type: ${func::class.simpleName}")
     }
 
@@ -432,7 +520,7 @@ class IrCallDsl(private val builder: IrBuilderWithScope, private val pluginConte
    * @throws IllegalArgumentException If the function cannot be found or the symbol type is unsupported.
    */
   @OptIn(UnsafeDuringIrConstructionAPI::class)
-  private fun findFunction(
+  private fun resolveFunctionSymbol(
     funcSignature: String,
     symbol: IrSymbol? = null,
     extensionReceiverType: IrType? = null

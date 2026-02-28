@@ -88,7 +88,7 @@ fun IrPluginContext.findClass(signature: String): IrClassSymbol =
  *   See [resolveDefaultTypeNameToFQTypeName] for predefined Packages
  * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
  * @return The found constructor symbol or null if it was not found.
- * @throws IllegalStateException If multiple matching constructors are found.
+ * @throws IllegalArgumentException If multiple matching constructors are found (ambiguous signature).
  */
 fun IrPluginContext.findConstructorOrNull(
   signature: String,
@@ -128,7 +128,7 @@ fun IrPluginContext.findConstructor(signature: String, ignoreNullability: Boolea
  * @param extensionReceiverType The expected type of the extension receiver, if any.
  * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
  * @return The found function symbol or null if it was not found.
- * @throws IllegalStateException If multiple matching constructors are found.
+ * @throws IllegalArgumentException If multiple matching functions are found (ambiguous signature).
  */
 fun IrPluginContext.findFunctionOrNull(
   signature: String,
@@ -158,7 +158,7 @@ fun IrPluginContext.findFunctionOrNull(
     return when (plainSearch.count()) {
       0 -> null
       1 -> plainSearch.single()
-      else -> throw IllegalStateException("Multiple matching constructors found in class for signature: $signature")
+      else -> throw IllegalArgumentException("Ambiguous signature: Multiple matching functions found for signature: $signature")
     }
   } else return classSearch
 }

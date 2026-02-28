@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.ir.types.getClass
  * @param extensionReceiverType The type of the extension receiver, if the function is an extension function.
  * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
  * @return The found function symbol or null if it was not found.
- * @throws IllegalStateException If multiple matching functions are found.
+ * @throws IllegalArgumentException If multiple matching functions are found (ambiguous signature).
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrPropertySymbol.findFunctionOrNull(
