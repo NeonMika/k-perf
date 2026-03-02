@@ -2,10 +2,7 @@ package at.jku.ssw.compilerplugin.instrumentation
 
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.ir.builders.IrBlockBodyBuilder
-import org.jetbrains.kotlin.ir.builders.IrBlockBuilder
-import org.jetbrains.kotlin.ir.builders.irBlock
-import org.jetbrains.kotlin.ir.builders.irBlockBody
+import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrReturn
@@ -35,7 +32,7 @@ fun modifyFunctionAtBeginning(function: IrFunction, block: IrBlockBodyBuilder.()
     addAllStatements(function)
   }
 
-fun modifyFunctionBeforeEachReturnOrAtEnd(function: IrFunction, block: IrBlockBodyBuilder.() -> Unit) {
+fun modifyFunctionBeforeEachReturnOrAtEnd(function: IrFunction, block: IrStatementsBuilder<*>.() -> Unit) {
   val transformer = BeforeEachReturnTransformer(function, block)
   function.body = function.body!!.transform(transformer, null)
 
@@ -47,7 +44,7 @@ fun modifyFunctionBeforeEachReturnOrAtEnd(function: IrFunction, block: IrBlockBo
   }
 }
 
-class BeforeEachReturnTransformer(val function: IrFunction, val modify: IrBlockBodyBuilder.() -> Unit) :
+class BeforeEachReturnTransformer(val function: IrFunction, val modify: IrStatementsBuilder<*>.() -> Unit) :
   IrElementTransformerVoidWithContext() {
 
   var hasReturn = false
@@ -58,10 +55,8 @@ class BeforeEachReturnTransformer(val function: IrFunction, val modify: IrBlockB
     hasReturn = true
     return with(DeclarationIrBuilder(IoaContext.pluginContext, function.symbol)) {
       irBlock {
-        irBlockBody {
-          modify()
-          +expression
-        }
+        modify()
+        +expression
       }
     }
   }
