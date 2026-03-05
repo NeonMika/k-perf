@@ -126,6 +126,15 @@ class IoaCompilerPluginTest {
   @Test
   fun `test file lazy flush kind`() = testKind(IoaKind.FileLazyFlush)
 
+  @Test
+  fun `test add to list kind`() = testKind(IoaKind.AddToList)
+
+  @Test
+  fun `test add duplicates to set kind`() = testKind(IoaKind.AddDuplicatesToSet)
+
+  @Test
+  fun `test add unique to set kind`() = testKind(IoaKind.AddUniqueToSet)
+
   fun compile(
     sourceFiles: List<SourceFile>,
     compilerPluginRegistrar: CompilerPluginRegistrar = IoaComponentRegistrar(),

@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.util.irCall
 import org.jetbrains.kotlin.name.Name
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -49,6 +50,27 @@ fun createSuts(): SutFields = SutFields(with(IoaContext.pluginContext) {
         }
       }
     })
+
+    IoaKind.AddToList -> listOf(createPropertyOfType(IoaContext.mutableListClass.defaultType) {
+      irCall(IoaContext.mutableListOfFunction).apply {
+        typeArguments[0] = irBuiltIns.intType
+      }
+    })
+
+    IoaKind.AddDuplicatesToSet -> listOf(createPropertyOfType(IoaContext.mutableSetClass.defaultType) {
+      irCall(IoaContext.mutableSetOfFunction).apply {
+        typeArguments[0] = irBuiltIns.intType
+      }
+    })
+
+    IoaKind.AddUniqueToSet -> listOf(
+      createPropertyOfType(IoaContext.mutableSetClass.defaultType) {
+        irCall(IoaContext.mutableSetOfFunction).apply {
+          typeArguments[0] = irBuiltIns.intType
+        }
+      },
+      createPropertyOfType(irBuiltIns.intType),
+    )
 
     else -> emptyList()
   }

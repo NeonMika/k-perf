@@ -21,6 +21,9 @@ fun modifyFunction(function: IrFunction) =
     IoaKind.AppendToStringBuilder -> modifyFunctionAppendToStringBuilder(function)
     IoaKind.FileEagerFlush -> modifyFunctionFileEagerFlush(function)
     IoaKind.FileLazyFlush -> modifyFunctionFileLazyFlush(function)
+    IoaKind.AddToList -> modifyFunctionAddToList(function)
+    IoaKind.AddDuplicatesToSet -> modifyFunctionAddDuplicatesToSet(function)
+    IoaKind.AddUniqueToSet -> modifyFunctionAddUniqueToSet(function)
     else -> {}
   }
 
@@ -135,5 +138,30 @@ fun modifyFunctionFileLazyFlush(function: IrFunction) = modifyFunctionAtBeginnin
   +irCall(IoaContext.sinkWriteStringFunction).apply {
     arguments[0] = IoaContext.sutFields[0]
     arguments[1] = irString("Entering function ${function.name.asString()}\n")
+  }
+}
+
+var methodCounter = 0
+fun modifyFunctionAddToList(function: IrFunction) = modifyFunctionAtBeginning(function) {
+  +irCall(IoaContext.mutableListAddFunction).apply {
+    dispatchReceiver = IoaContext.sutFields[0]
+    arguments[1] = irInt(methodCounter++)
+  }
+}
+
+fun modifyFunctionAddDuplicatesToSet(function: IrFunction) = modifyFunctionAtBeginning(function) {
+  +irCall(IoaContext.mutableSetAddFunction).apply {
+    dispatchReceiver = IoaContext.sutFields[0]
+    arguments[1] = irInt(methodCounter++)
+  }
+}
+
+fun modifyFunctionAddUniqueToSet(function: IrFunction) = modifyFunctionAtBeginning(function) {
+  +irCall(IoaContext.mutableSetAddFunction).apply {
+    dispatchReceiver = IoaContext.sutFields[0]
+    arguments[1] = IoaContext.sutFields[1]
+  }
+  IoaContext.sutFields[1] = irCall(IoaContext.intIncrementFunction).apply {
+    dispatchReceiver = IoaContext.sutFields[1]
   }
 }

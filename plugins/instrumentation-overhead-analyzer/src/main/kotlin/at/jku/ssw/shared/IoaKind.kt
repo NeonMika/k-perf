@@ -19,4 +19,8 @@ enum class IoaKind {
 
   FileEagerFlush,
   FileLazyFlush,
+
+  AddToList,
+  AddDuplicatesToSet,
+  AddUniqueToSet,
 }

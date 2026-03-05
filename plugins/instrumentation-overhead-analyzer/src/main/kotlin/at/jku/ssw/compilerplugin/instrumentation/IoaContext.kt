@@ -246,4 +246,56 @@ object IoaContext {
   }
   // </editor-fold>
 
+  // <editor-fold desc="Dynamic Data Structures">
+  val mutableListClass by lazy {
+    pluginContext.referenceClass(
+      ClassId(
+        FqName("kotlin.collections"),
+        Name.identifier("MutableList")
+      )
+    )!!
+  }
+
+  val mutableListOfFunction by lazy {
+    pluginContext.referenceFunctions(
+      CallableId(
+        FqName("kotlin.collections"),
+        Name.identifier("mutableListOf")
+      )
+    ).single { it.owner.hasShape(regularParameters = 0) && it.owner.returnType.classOrFail == mutableListClass }
+  }
+
+  val mutableListAddFunction by lazy {
+    mutableListClass.functions.single {
+      it.owner.name.asString() == "add" &&
+          it.owner.hasShape(dispatchReceiver = true, regularParameters = 1)
+    }
+  }
+
+  val mutableSetClass by lazy {
+    pluginContext.referenceClass(
+      ClassId(
+        FqName("kotlin.collections"),
+        Name.identifier("MutableSet")
+      )
+    )!!
+  }
+
+  val mutableSetOfFunction by lazy {
+    pluginContext.referenceFunctions(
+      CallableId(
+        FqName("kotlin.collections"),
+        Name.identifier("mutableSetOf")
+      )
+    ).single { it.owner.hasShape(regularParameters = 0) && it.owner.returnType.classOrFail == mutableSetClass }
+  }
+
+  val mutableSetAddFunction by lazy {
+    mutableSetClass.functions.single {
+      it.owner.name.asString() == "add" &&
+          it.owner.hasShape(dispatchReceiver = true, regularParameters = 1)
+    }
+  }
+  // </editor-fold>
+
 }
