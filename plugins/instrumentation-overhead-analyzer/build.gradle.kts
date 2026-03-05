@@ -41,6 +41,8 @@ dependencies {
 
 tasks.test {
   useJUnitPlatform()
+  maxHeapSize = "2g"
+  jvmArgs("-XX:MaxMetaspaceSize=512m")
 }
 
 kotlin {
