@@ -1,0 +1,11 @@
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib
+    volumes:
+      - ./collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - "4318:4318" # HTTP
+  jaeger:
+    image: jaegertracing/all-in-one:1.49
+    ports:
+      - "16686:16686"
