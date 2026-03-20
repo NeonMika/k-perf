@@ -13,7 +13,17 @@ fun modifyFunction(function: IrFunction) =
     IoaKind.TryFinally -> modifyFunctionTryFinally(function)
     IoaKind.TimeClock -> modifyFunctionTimeClock(function)
     IoaKind.TimeMonotonicFunction -> modifyFunctionTimeMonotonicFunction(function)
+
+    IoaKind.TimeMonotonicFunctionInWholeMilliseconds,
+    IoaKind.TimeMonotonicFunctionInWholeMicroseconds,
+    IoaKind.TimeMonotonicFunctionInWholeNanoseconds -> modifyFunctionTimeMonotonicFunctionInSeconds(function)
+
     IoaKind.TimeMonotonicGlobal -> modifyFunctionTimeMonotonicGlobal(function)
+
+    IoaKind.TimeMonotonicGlobalInWholeMilliseconds,
+    IoaKind.TimeMonotonicGlobalInWholeMicroseconds,
+    IoaKind.TimeMonotonicGlobalInWholeNanoseconds -> modifyFunctionTimeMonotonicGlobalInSeconds(function)
+
     IoaKind.IncrementIntCounter -> modifyFunctionIncrementCounter(function)
     IoaKind.IncrementAtomicIntCounter -> modifyFunctionIncrementAtomicCounter(function)
     IoaKind.RandomValue -> modifyFunctionRandomValue(function)
@@ -63,7 +73,7 @@ fun modifyFunctionTimeClock(function: IrFunction) {
 fun modifyFunctionTimeMonotonicFunction(function: IrFunction) {
   var now: IrVariable? = null
   modifyFunctionAtBeginning(function) {
-     now = irTemporary(irCall(IoaContext.timeSourceMonotonicMarkNowFunction).apply {
+    now = irTemporary(irCall(IoaContext.timeSourceMonotonicMarkNowFunction).apply {
       dispatchReceiver = irGetObject(IoaContext.timeSourceMonotonicClass)
     })
   }
@@ -75,21 +85,72 @@ fun modifyFunctionTimeMonotonicFunction(function: IrFunction) {
   }
 }
 
+fun modifyFunctionTimeMonotonicFunctionInSeconds(function: IrFunction) {
+  var now: IrVariable? = null
+  modifyFunctionAtBeginning(function) {
+    now = irTemporary(irCall(IoaContext.timeSourceMonotonicMarkNowFunction).apply {
+      dispatchReceiver = irGetObject(IoaContext.timeSourceMonotonicClass)
+    })
+  }
+
+  modifyFunctionBeforeEachReturnOrAtEnd(function) {
+    IoaContext.sutFields[0] = irCall(
+      when (IoaContext.instrumentationKind) {
+        IoaKind.TimeMonotonicFunctionInWholeMilliseconds -> IoaContext.durationInWholeMillisecondsPropertyGetter
+        IoaKind.TimeMonotonicFunctionInWholeMicroseconds -> IoaContext.durationInWholeMicrosecondsPropertyGetter
+        IoaKind.TimeMonotonicFunctionInWholeNanoseconds -> IoaContext.durationInWholeNanosecondsPropertyGetter
+        else -> throw IllegalStateException("Kind ${IoaContext.instrumentationKind} should not reach this.")
+      }
+    ).apply {
+      dispatchReceiver = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+        dispatchReceiver = irGet(now!!)
+      }
+    }
+  }
+}
+
 fun modifyFunctionTimeMonotonicGlobal(function: IrFunction) {
   var elapseStart: IrVariable? = null
   modifyFunctionAtBeginning(function) {
-     elapseStart = irTemporary(irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+    elapseStart = irTemporary(irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
       dispatchReceiver = IoaContext.sutFields[0]
     })
   }
 
   modifyFunctionBeforeEachReturnOrAtEnd(function) {
-      IoaContext.sutFields[1] = irCall(IoaContext.durationMinusFunction).apply {
+    IoaContext.sutFields[1] = irCall(IoaContext.durationMinusFunction).apply {
+      dispatchReceiver = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+        dispatchReceiver = IoaContext.sutFields[0]
+      }
+      arguments[1] = irGet(elapseStart!!)
+    }
+  }
+}
+
+fun modifyFunctionTimeMonotonicGlobalInSeconds(function: IrFunction) {
+  var elapseStart: IrVariable? = null
+  modifyFunctionAtBeginning(function) {
+    elapseStart = irTemporary(irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+      dispatchReceiver = IoaContext.sutFields[0]
+    })
+  }
+
+  modifyFunctionBeforeEachReturnOrAtEnd(function) {
+    IoaContext.sutFields[1] = irCall(
+      when (IoaContext.instrumentationKind) {
+        IoaKind.TimeMonotonicGlobalInWholeMilliseconds -> IoaContext.durationInWholeMillisecondsPropertyGetter
+        IoaKind.TimeMonotonicGlobalInWholeMicroseconds -> IoaContext.durationInWholeMicrosecondsPropertyGetter
+        IoaKind.TimeMonotonicGlobalInWholeNanoseconds -> IoaContext.durationInWholeNanosecondsPropertyGetter
+        else -> throw IllegalStateException("Kind ${IoaContext.instrumentationKind} should not reach this.")
+      }
+    ).apply {
+      dispatchReceiver = irCall(IoaContext.durationMinusFunction).apply {
         dispatchReceiver = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
           dispatchReceiver = IoaContext.sutFields[0]
         }
         arguments[1] = irGet(elapseStart!!)
       }
+    }
   }
 }
 

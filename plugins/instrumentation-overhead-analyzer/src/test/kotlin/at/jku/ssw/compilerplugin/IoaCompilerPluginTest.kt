@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class IoaCompilerPluginTest {
@@ -76,13 +75,17 @@ class IoaCompilerPluginTest {
   }
 
   @Test
-  @Disabled
   fun `generate simple ir`() {
     val result = compile(SourceFile.kotlin("main.kt", $$"""
       package test
+    
+      import kotlin.time.TimeSource
 
       fun main() {
-          println("Hello, World!")
+        val timesource = TimeSource.Monotonic.markNow()
+        val now = timesource.elapsedNow()
+      
+        val duration = now.inWholeSeconds
       }
     """.trimIndent()))
 
@@ -103,7 +106,25 @@ class IoaCompilerPluginTest {
   fun `test time monotonic function kind`() = testKind(IoaKind.TimeMonotonicFunction)
 
   @Test
+  fun `test time monotonic function in whole milliseconds kind`() = testKind(IoaKind.TimeMonotonicFunctionInWholeMilliseconds)
+
+  @Test
+  fun `test time monotonic function in whole microseconds kind`() = testKind(IoaKind.TimeMonotonicFunctionInWholeMicroseconds)
+
+  @Test
+  fun `test time monotonic function in whole nanoseconds kind`() = testKind(IoaKind.TimeMonotonicFunctionInWholeNanoseconds)
+
+  @Test
   fun `test time monotonic global kind`() = testKind(IoaKind.TimeMonotonicGlobal)
+
+  @Test
+  fun `test time monotonic global in whole milliseconds kind`() = testKind(IoaKind.TimeMonotonicGlobalInWholeMilliseconds)
+
+  @Test
+  fun `test time monotonic global in whole microseconds kind`() = testKind(IoaKind.TimeMonotonicGlobalInWholeMicroseconds)
+
+  @Test
+  fun `test time monotonic global in whole nanoseconds kind`() = testKind(IoaKind.TimeMonotonicGlobalInWholeNanoseconds)
 
   @Test
   fun `test increment int counter kind`() = testKind(IoaKind.IncrementIntCounter)

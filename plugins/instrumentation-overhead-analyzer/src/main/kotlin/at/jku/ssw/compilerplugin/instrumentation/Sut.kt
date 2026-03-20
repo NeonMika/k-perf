@@ -13,7 +13,6 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
-import org.jetbrains.kotlin.ir.util.irCall
 import org.jetbrains.kotlin.name.Name
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -22,6 +21,10 @@ fun createSuts(): SutFields = SutFields(with(IoaContext.pluginContext) {
     IoaKind.TryFinally, IoaKind.IncrementIntCounter, IoaKind.RandomValue -> listOf(createPropertyOfType(irBuiltIns.intType))
 
     IoaKind.TimeClock, IoaKind.TimeMonotonicFunction -> listOf(createPropertyOfType(IoaContext.durationClass.defaultType))
+
+    IoaKind.TimeMonotonicFunctionInWholeMilliseconds, IoaKind.TimeMonotonicFunctionInWholeMicroseconds,
+    IoaKind.TimeMonotonicFunctionInWholeNanoseconds -> listOf(createPropertyOfType(irBuiltIns.longType))
+
     IoaKind.TimeMonotonicGlobal -> listOf(
       createPropertyOfType(IoaContext.valueTimeMarkerClass.defaultType) {
         irCall(IoaContext.timeSourceMonotonicMarkNowFunction).apply {
@@ -29,6 +32,16 @@ fun createSuts(): SutFields = SutFields(with(IoaContext.pluginContext) {
         }
       },
       createPropertyOfType(IoaContext.durationClass.defaultType, suffix = "1")
+    )
+
+    IoaKind.TimeMonotonicGlobalInWholeMilliseconds, IoaKind.TimeMonotonicGlobalInWholeMicroseconds,
+    IoaKind.TimeMonotonicGlobalInWholeNanoseconds -> listOf(
+      createPropertyOfType(IoaContext.valueTimeMarkerClass.defaultType) {
+        irCall(IoaContext.timeSourceMonotonicMarkNowFunction).apply {
+          dispatchReceiver = irGetObject(IoaContext.timeSourceMonotonicClass)
+        }
+      },
+      createPropertyOfType(irBuiltIns.longType, suffix = "1")
     )
 
     IoaKind.IncrementAtomicIntCounter -> listOf(createPropertyOfType(IoaContext.atomicIntClass.defaultType) {

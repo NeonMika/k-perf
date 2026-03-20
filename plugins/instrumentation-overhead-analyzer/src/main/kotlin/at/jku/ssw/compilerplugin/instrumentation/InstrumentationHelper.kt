@@ -36,7 +36,7 @@ fun modifyFunctionBeforeEachReturnOrAtEnd(function: IrFunction, block: IrStateme
   val transformer = BeforeEachReturnTransformer(function, block)
   function.body = function.body!!.transform(transformer, null)
 
-  if (!transformer.hasReturn) {
+  if (function.returnType == IoaContext.pluginContext.irBuiltIns.unitType) {
     setFunctionBody(function) {
       addAllStatements(function)
       block()

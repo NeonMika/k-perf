@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.functions
 import org.jetbrains.kotlin.ir.util.hasShape
+import org.jetbrains.kotlin.ir.util.properties
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -64,6 +65,27 @@ object IoaContext {
           && it.owner.name.asString() == "minus"
           && it.owner.parameters[1].type == durationClass.defaultType
     }
+  }
+
+  val durationInWholeMillisecondsPropertyGetter by lazy {
+    durationClass.owner.properties.single {
+      it.name.asString() == "inWholeMilliseconds" &&
+          it.getter?.hasShape(dispatchReceiver = true, regularParameters = 0) == true
+    }.getter!!.symbol
+  }
+
+  val durationInWholeMicrosecondsPropertyGetter by lazy {
+    durationClass.owner.properties.single {
+      it.name.asString() == "inWholeMicroseconds" &&
+          it.getter?.hasShape(dispatchReceiver = true, regularParameters = 0) == true
+    }.getter!!.symbol
+  }
+
+  val durationInWholeNanosecondsPropertyGetter by lazy {
+    durationClass.owner.properties.single {
+      it.name.asString() == "inWholeNanoseconds" &&
+          it.getter?.hasShape(dispatchReceiver = true, regularParameters = 0) == true
+    }.getter!!.symbol
   }
 
   val timeSourceMonotonicClass by lazy {

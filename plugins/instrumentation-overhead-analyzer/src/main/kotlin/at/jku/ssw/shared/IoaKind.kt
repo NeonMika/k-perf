@@ -7,7 +7,13 @@ enum class IoaKind {
 
   TimeClock,
   TimeMonotonicFunction,
+  TimeMonotonicFunctionInWholeMilliseconds,
+  TimeMonotonicFunctionInWholeMicroseconds,
+  TimeMonotonicFunctionInWholeNanoseconds,
   TimeMonotonicGlobal,
+  TimeMonotonicGlobalInWholeMilliseconds,
+  TimeMonotonicGlobalInWholeMicroseconds,
+  TimeMonotonicGlobalInWholeNanoseconds,
 
   IncrementIntCounter,
   IncrementAtomicIntCounter,
