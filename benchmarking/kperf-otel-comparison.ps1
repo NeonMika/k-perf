@@ -13,27 +13,7 @@ if ([string]::IsNullOrWhiteSpace($ScriptRoot)) { $ScriptRoot = '.' }
 
 Push-Location "$ScriptRoot\.."
 
-Write-Host "=========================================="
-Write-Host "Verifying OpenTelemetry Collector (Docker)"
-Write-Host "=========================================="
-try {
-  $dockerPs = docker ps --format '{{.Names}}' 2>&1
-  if ($LASTEXITCODE -ne 0) {
-    Write-Host "WARNING: Docker is not running or not found. OTel exports will fail when running the trace exporter!" -ForegroundColor Yellow
-  }
-  else {
-    if ($dockerPs -match "jaeger") {
-      Write-Host "Jaeger is already running."
-    }
-    else {
-      Write-Host "Jaeger not found. Starting jaeger container..."
-      docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 -p 4318:4318 jaegertracing/all-in-one:latest | Out-Null
-    }
-  }
-}
-catch {
-  Write-Host "WARNING: Unable to check Docker status." -ForegroundColor Yellow
-}
+
 
 function Invoke-GradleBuild {
   param(
@@ -113,6 +93,27 @@ $allResults = @()
 
 foreach ($exe in $executables) {
   Write-Host ""
+  
+  # up Docker resources directly when OTel trace collection tests.
+  if ($exe.Name -match "otel") {
+    Write-Host "--- Booting Jaeger Collector via Docker ---"
+    try {
+      docker start jaeger 2>&1 | Out-Null
+      if ($LASTEXITCODE -ne 0) {
+        docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 -p 4318:4318 jaegertracing/all-in-one:latest 2>&1 | Out-Null
+      }
+    }
+    catch {}
+    Start-Sleep -Seconds 2
+  }
+  else {
+    Write-Host "--- Stopping active Jaeger containers to prevent caching/CPU interference for baseline metrics ---"
+    try {
+      docker stop jaeger 2>&1 | Out-Null
+    }
+    catch {}
+  }
+
   Write-Host "--- Benchmarking: $($exe.Name) ---"
   
   # Warmup
@@ -125,8 +126,13 @@ foreach ($exe in $executables) {
     Get-ChildItem -Path "." -Filter "symbol*.txt" -ErrorAction SilentlyContinue | Remove-Item -Force
 
     $outputStr = $output -join "`n"
+    $flushTime = [regex]::Match($outputStr, "Flush finished - (\d+) ms elapsed")
     $execTime = [regex]::Match($outputStr, "Execution finished - (\d+) ms elapsed")
-    if ($execTime.Success) {
+    
+    if ($flushTime.Success) {
+      Write-Host "  Warmup $($i+1): $($flushTime.Groups[1].Value) ms (Included async flush)"
+    }
+    elseif ($execTime.Success) {
       Write-Host "  Warmup $($i+1): $($execTime.Groups[1].Value) ms"
     }
     else {
@@ -145,13 +151,15 @@ foreach ($exe in $executables) {
     Get-ChildItem -Path "." -Filter "symbol*.txt" -ErrorAction SilentlyContinue | Remove-Item -Force
 
     $outputStr = $output -join "`n"
+    $flushTime = [regex]::Match($outputStr, "Flush finished - (\d+) ms elapsed")
     $execTime = [regex]::Match($outputStr, "Execution finished - (\d+) ms elapsed")
-    if ($execTime.Success) {
-      $ms = [int]$execTime.Groups[1].Value
-      Write-Host "  Run $($i+1): $ms ms" -ForegroundColor Green
+    
+    if ($flushTime.Success) {
+      $ms = [int]$flushTime.Groups[1].Value
+      Write-Host "  Run $($i+1): $ms ms (Included async flush)" -ForegroundColor Green
       $runtimes += $ms
     }
-    else {
+    elseif ($execTime.Success) {
       Write-Host "  Run $($i+1): Failed to parse time" -ForegroundColor Red
     }
   }
