@@ -86,3 +86,7 @@ trace_*
 /.idea/vcs.xml
 *.hprof
 **/bin
+
+# Dynamically generated benchmarks & JS dependencies
+measurements/
+kotlin-js-store/
