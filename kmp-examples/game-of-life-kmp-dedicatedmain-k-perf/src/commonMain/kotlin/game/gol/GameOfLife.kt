@@ -108,7 +108,12 @@ fun play(steps: Int = 500) {
   println("Initial state:")
   game.print()
 
-  repeat(steps) { game.step() }
+
+  repeat(steps) {
+    val stepStart = start.elapsedNow()
+    game.step()
+    println("!!! Elapsed time $it: ${(start.elapsedNow() - stepStart).inWholeMicroseconds}")
+  }
 
   println("State after $steps steps:")
   game.print()

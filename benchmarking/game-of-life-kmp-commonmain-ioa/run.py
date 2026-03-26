@@ -335,21 +335,32 @@ def _run_executable(exe: Executable, step_count: int) -> Tuple[bool, str]:
     return result.returncode == 0, output
 
 
-def _extract_elapsed(output: str) -> Optional[float]:
+def _extract_elapsed(output: str) -> tuple[Optional[float], list[float]]:
+    time = None
+    step_times: list[float] = []
+
     for line in output.splitlines():
         if line.startswith("### Elapsed time:"):
             value = line.split(":", 1)[1].strip()
             try:
-                return float(value)
+                time = float(value)
             except ValueError:
-                return None
-    return None
+                continue
+        elif line.startswith("!!! Elapsed time"):
+            value = line.split(":", 1)[1].strip()
+            try:
+                step_times.append(float(value))
+            except ValueError:
+                continue
+
+    return time, step_times
 
 
 def _write_results(
     measurement_dir: Path,
     exe: Executable,
     elapsed_times: List[float],
+    elapsed_step_times: List[List[float]],
     stats: Dict[str, object],
     build_times: Dict[str, float],
     args: Args,
@@ -373,6 +384,7 @@ def _write_results(
         "executable": exe.name,
         "repetitions": args.repetition_count,
         "times": elapsed_times,
+        "stepTimes": elapsed_step_times,
         "statistics": stats,
     }
     output_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -460,6 +472,7 @@ def main():
         print("-" * 56)
 
         elapsed_times: List[float] = []
+        elapsed_step_times: List[List[float]] = []
 
         for i in range(1, args.repetition_count + 1):
             print("")
@@ -469,10 +482,11 @@ def main():
                 print(f"ERROR: Execution failed for iteration {i}")
                 continue
 
-            elapsed = _extract_elapsed(output)
+            (elapsed, elapsed_steps) = _extract_elapsed(output)
             if elapsed is not None:
                 print(f"- Ran {elapsed / 1000:.3f} ms")
                 elapsed_times.append(elapsed)
+                elapsed_step_times.append(elapsed_steps)
             else:
                 print(f"- Elapsed time not found in iteration {i}")
 
@@ -481,6 +495,7 @@ def main():
             measurement_dir,
             exe,
             elapsed_times,
+            elapsed_step_times,
             stats,
             build_times,
             args,
