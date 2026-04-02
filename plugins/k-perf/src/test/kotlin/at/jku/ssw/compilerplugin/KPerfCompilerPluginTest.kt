@@ -214,6 +214,7 @@ class KPerfCompilerPluginTest {
     result.main("test")
     val instrumented = registrar.extension.instrumentedFunctions
     assertTrue(instrumented.any { it.startsWith("test.") }, "Expected test.* functions to be instrumented, got: $instrumented")
+    assertEquals(2, instrumented.size) { "Expected two instrumented functions: test.main and test.MyClass.doWork" }
     assertTrue(instrumented.none { it.startsWith("otherPackage.") }, "Expected otherPackage.* functions to NOT be instrumented, got: $instrumented")
   }
 
