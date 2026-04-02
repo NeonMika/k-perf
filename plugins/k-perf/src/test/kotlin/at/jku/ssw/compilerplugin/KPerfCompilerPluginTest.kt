@@ -11,9 +11,9 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCompilerApi::class)
 class KPerfCompilerPluginTest {
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `SSP (Symposium for Software Performance) simple example`() {
     val result = compile(
@@ -37,7 +37,6 @@ class KPerfCompilerPluginTest {
     result.main()
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `Are getters functions_yes they are`() {
     val result = compile(
@@ -60,7 +59,6 @@ class KPerfCompilerPluginTest {
     result.main()
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `Big example`() {
     val result = compile(
@@ -121,7 +119,6 @@ class KPerfCompilerPluginTest {
     result.main()
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `Complex class example`() {
     val result = compile(
@@ -175,10 +172,9 @@ class KPerfCompilerPluginTest {
     result.main("test")
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
-  fun `methods filter - only instrumented functions matching regex are compiled successfully`() {
-    // Only instrument functions whose FQN starts with "test." — top-level functions in MainKt are excluded
+  fun `methods filter - only functions matching regex are instrumented`() {
+    // Only instrument functions in package "test"; top-level MainKt functions are excluded
     val result = compile(
       SourceFile.kotlin(
         "main.kt",
@@ -195,13 +191,12 @@ class KPerfCompilerPluginTest {
                     }
                     """
       ),
-      methods = "test\\..*"
+      compilerPluginRegistrar = KPerfComponentRegistrarWithMethods("test\\..*")
     )
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
     result.main("test")
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `methods filter - empty match instruments nothing and program still runs`() {
     // No functions match the regex; plugin instruments nothing but compilation must still succeed
@@ -214,38 +209,22 @@ class KPerfCompilerPluginTest {
                     }
                     """
       ),
-      methods = "nonexistent\\..*"
+      compilerPluginRegistrar = KPerfComponentRegistrarWithMethods("nonexistent\\..*")
     )
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
     result.main()
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   fun compile(
-    sourceFiles: List<SourceFile>,
+    vararg sourceFiles: SourceFile,
     compilerPluginRegistrar: CompilerPluginRegistrar = KPerfComponentRegistrar(),
   ): JvmCompilationResult {
     return KotlinCompilation().apply {
-      // To have access to kotlinx.io
       inheritClassPath = true
-      sources = sourceFiles
+      sources = sourceFiles.toList()
       compilerPluginRegistrars = listOf(compilerPluginRegistrar)
-      // commandLineProcessors = ...
-      // inheritClassPath = true
     }.compile()
   }
-
-  @OptIn(ExperimentalCompilerApi::class)
-  fun compile(
-    sourceFile: SourceFile,
-    compilerPluginRegistrar: CompilerPluginRegistrar = KPerfComponentRegistrar(),
-  ) = compile(listOf(sourceFile), compilerPluginRegistrar)
-
-  @OptIn(ExperimentalCompilerApi::class)
-  fun compile(
-    sourceFile: SourceFile,
-    methods: String,
-  ) = compile(listOf(sourceFile), KPerfComponentRegistrarWithMethods(methods))
 }
 
 @OptIn(ExperimentalCompilerApi::class)
