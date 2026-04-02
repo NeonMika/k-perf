@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.messageCollector
 
 /*
 Registrar to register all registrars.
@@ -16,11 +17,13 @@ that reads at.jku.ssw.compilerplugin.PerfMeasureComponentRegistrar
  */
 @OptIn(ExperimentalCompilerApi::class)
 class InstrumentationOverheadAnalyzerComponentRegistrar : CompilerPluginRegistrar() {
+  override val pluginId: String = "instrumentation-overhead-analyzer-plugin"
+
   override val supportsK2: Boolean = true
 
   override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
     // org.jetbrains.kotlin.cli.common.CLIConfigurationKeys contains default configuration keys
-    val messageCollector = configuration.get(CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY)!!
+    val messageCollector = configuration.get(CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY) ?: configuration.messageCollector
 
     val enabled = configuration[InstrumentationOverheadAnalyzerConfigurationKeys.ENABLED] ?: true
     val kind = configuration[InstrumentationOverheadAnalyzerConfigurationKeys.KIND]

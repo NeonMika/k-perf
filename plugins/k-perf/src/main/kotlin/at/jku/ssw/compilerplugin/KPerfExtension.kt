@@ -5,6 +5,8 @@ import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+import org.jetbrains.kotlin.descriptors.DescriptorVisibility
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
@@ -31,8 +33,13 @@ import kotlin.time.ExperimentalTime
 class KPerfExtension(
   private val messageCollector: MessageCollector,
   private val flushEarly: Boolean,
-  private val instrumentPropertyAccessors: Boolean
+  private val instrumentPropertyAccessors: Boolean,
+  methods: String = ".*"
 ) : IrGenerationExtension {
+
+  private val methodRegexes: List<Regex> = methods.split(",").map { Regex(it.trim()) }
+
+  val instrumentedFunctions: MutableList<String> = mutableListOf()
 
   val STRINGBUILDER_MODE = false
 
@@ -59,17 +66,32 @@ class KPerfExtension(
 
 
     val stringBuilderConstructor =
-      stringBuilderClass.constructors.single { it.owner.valueParameters.isEmpty() }
+      stringBuilderClass.constructors.single { it.owner.hasShape(regularParameters = 0) }
     val stringBuilderAppendIntFunc =
-      stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.intType }
+      stringBuilderClass.functions.single {
+        it.owner.name.asString() == "append" && it.owner.hasShape(
+          true,
+          regularParameters = 1
+        ) && it.owner.parameters[1].type == pluginContext.irBuiltIns.intType
+      }
     val stringBuilderAppendLongFunc =
-      stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.longType }
+      stringBuilderClass.functions.single {
+        it.owner.name.asString() == "append" && it.owner.hasShape(
+          true,
+          regularParameters = 1
+        ) && it.owner.parameters[1].type == pluginContext.irBuiltIns.longType
+      }
     val stringBuilderAppendStringFunc =
-      stringBuilderClass.functions.single { it.owner.name.asString() == "append" && it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType.makeNullable() }
+      stringBuilderClass.functions.single {
+        it.owner.name.asString() == "append" && it.owner.hasShape(
+          true,
+          regularParameters = 1
+        ) && it.owner.parameters[1].type == pluginContext.irBuiltIns.stringType.makeNullable()
+      }
 
     val printlnFunc =
       pluginContext.referenceFunctions(CallableId(FqName("kotlin.io"), Name.identifier("println"))).single {
-        it.owner.valueParameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
+        it.owner.parameters.run { size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType }
       }
 
     val rawSinkClass =
@@ -81,7 +103,7 @@ class KPerfExtension(
         FqName("kotlinx.io.files"),
         Name.identifier("Path")
       )
-    ).single { it.owner.valueParameters.size == 1 }
+    ).single { it.owner.parameters.size == 1 }
 
     val systemFileSystem = pluginContext.referenceProperties(
       CallableId(
@@ -96,7 +118,7 @@ class KPerfExtension(
         FqName("kotlinx.io"),
         Name.identifier("buffered")
       )
-    ).single { it.owner.extensionReceiverParameter!!.type == sinkFunc.owner.returnType }
+    ).single { it.owner.parameters[0].type == sinkFunc.owner.returnType }
     appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
     appendToDebugFile(
       pluginContext.referenceFunctions(
@@ -105,7 +127,7 @@ class KPerfExtension(
           Name.identifier("writeString")
         )
       ).joinToString("\n") { func ->
-        "kotlinx.io.writeString(${func.owner.valueParameters.joinToString(",") { param -> param.type.classFqName.toString() }})"
+        "kotlinx.io.writeString(${func.owner.parameters.joinToString(",") { param -> param.type.classFqName.toString() }})"
       }
     )
     val writeStringFunc = pluginContext.referenceFunctions(
@@ -114,10 +136,10 @@ class KPerfExtension(
         Name.identifier("writeString")
       )
     ).single {
-      it.owner.valueParameters.size == 3 &&
-              it.owner.valueParameters[0].type == pluginContext.irBuiltIns.stringType &&
-              it.owner.valueParameters[1].type == pluginContext.irBuiltIns.intType &&
-              it.owner.valueParameters[2].type == pluginContext.irBuiltIns.intType
+      it.owner.hasShape(extensionReceiver = true, regularParameters = 3) &&
+              it.owner.parameters[1].type == pluginContext.irBuiltIns.stringType &&
+              it.owner.parameters[2].type == pluginContext.irBuiltIns.intType &&
+              it.owner.parameters[3].type == pluginContext.irBuiltIns.intType
     }
     val flushFunc = pluginContext.referenceFunctions(
       CallableId(
@@ -142,6 +164,7 @@ class KPerfExtension(
       type = stringBuilderClass.defaultType
       isFinal = false
       isStatic = true
+      visibility = DescriptorVisibilities.PRIVATE
     }.apply {
       this.initializer =
         DeclarationIrBuilder(pluginContext, firstFile.symbol).irExprBody(
@@ -163,7 +186,7 @@ class KPerfExtension(
         Name.identifier("nextInt")
       )
     ).single {
-      it.owner.valueParameters.isEmpty()
+      it.owner.hasShape(true, regularParameters = 0)
     }
 
     val randomNumber = pluginContext.irFactory.buildField {
@@ -171,6 +194,7 @@ class KPerfExtension(
       type = pluginContext.irBuiltIns.intType
       isFinal = false
       isStatic = true
+      visibility = DescriptorVisibilities.PRIVATE
     }.apply {
       initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
         irExprBody(irCall(nextIntFunc).apply {
@@ -186,6 +210,7 @@ class KPerfExtension(
       type = pluginContext.irBuiltIns.stringType
       isFinal = false
       isStatic = true
+      visibility = DescriptorVisibilities.PRIVATE
     }.apply {
       initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
         irExprBody(
@@ -205,16 +230,15 @@ class KPerfExtension(
       type = rawSinkClass.defaultType
       isFinal = false
       isStatic = true
+      visibility = DescriptorVisibilities.PRIVATE
     }.apply {
       initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
         irExprBody(irCall(bufferedFunc).apply {
-          extensionReceiver = irCall(sinkFunc).apply {
-            dispatchReceiver = irCall(systemFileSystem.owner.getter!!)
-            putValueArgument(
-              0,
-              irCall(pathConstructionFunc).apply {
-                putValueArgument(0, irGetField(null, bufferedTraceFileName))
-              })
+          arguments[0] = irCall(sinkFunc).apply {
+            arguments[0] = irCall(systemFileSystem.owner.getter!!)
+            arguments[1] = irCall(pathConstructionFunc).apply {
+              arguments[0] = irGetField(null, bufferedTraceFileName)
+            }
           }
         })
       }
@@ -233,6 +257,7 @@ class KPerfExtension(
       type = pluginContext.irBuiltIns.stringType
       isFinal = false
       isStatic = true
+      visibility = DescriptorVisibilities.PRIVATE
     }.apply {
       initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
         irExprBody(
@@ -253,16 +278,15 @@ class KPerfExtension(
       type = rawSinkClass.defaultType
       isFinal = false
       isStatic = true
+      visibility = DescriptorVisibilities.PRIVATE
     }.apply {
       this.initializer = DeclarationIrBuilder(pluginContext, firstFile.symbol).run {
         irExprBody(irCall(bufferedFunc).apply {
-          extensionReceiver = irCall(sinkFunc).apply {
-            dispatchReceiver = irCall(systemFileSystem.owner.getter!!)
-            putValueArgument(
-              0,
-              irCall(pathConstructionFunc).apply {
-                putValueArgument(0, irGetField(null, bufferedSymbolsFileName))
-              })
+          arguments[0] = irCall(sinkFunc).apply {
+            arguments[0] = irCall(systemFileSystem.owner.getter!!)
+            arguments[1] = irCall(pathConstructionFunc).apply {
+              arguments[0] = irGetField(null, bufferedSymbolsFileName)
+            }
           }
         })
       }
@@ -324,25 +348,25 @@ class KPerfExtension(
         ).irBlockBody {
           if (STRINGBUILDER_MODE) {
             +irCall(stringBuilderAppendStringFunc).apply {
-              dispatchReceiver = irGetField(null, stringBuilder)
-              putValueArgument(0, irString(">;"))
+              arguments[0] = irGetField(null, stringBuilder)
+              arguments[1] = irString(">;")
             }
             +irCall(stringBuilderAppendIntFunc).apply {
-              dispatchReceiver = irGetField(null, stringBuilder)
-              putValueArgument(0, irGet(valueParameters[0]))
+              arguments[0] = irGetField(null, stringBuilder)
+              arguments[1] = irGet(parameters[0])
             }
             +irCall(stringBuilderAppendStringFunc).apply {
-              dispatchReceiver = irGetField(null, stringBuilder)
-              putValueArgument(0, irString("\n"))
+              arguments[0] = irGetField(null, stringBuilder)
+              arguments[1] = irString("\n")
             }
           } else {
             +irCall(writeStringFunc).apply {
-              extensionReceiver = irGetField(null, bufferedTraceFileSink)
-              putValueArgument(0, irConcat().apply {
+              arguments[0] = irGetField(null, bufferedTraceFileSink)
+              arguments[1] = irConcat().apply {
                 addArgument(irString(">;"))
-                addArgument(irGet(valueParameters[0]))
+                addArgument(irGet(parameters[0]))
                 addArgument(irString("\n"))
-              })
+              }
             }
             if (flushEarly) {
               flushTraceFile()
@@ -374,13 +398,6 @@ class KPerfExtension(
         returnType = pluginContext.irBuiltIns.unitType
       }.apply {
         addValueParameter {
-          /*
-          name = Name.identifier("method")
-          type = pluginContext.irBuiltIns.stringType */
-          name = Name.identifier("methodId")
-          type = pluginContext.irBuiltIns.intType
-        }
-        addValueParameter {
           name = Name.identifier("startTime")
           type = timeMarkClass.defaultType
         } /*
@@ -392,46 +409,36 @@ class KPerfExtension(
         body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
           // Duration
           val elapsedDuration = irTemporary(irCall(funElapsedNow).apply {
-            dispatchReceiver = irGet(valueParameters[1])
+            arguments[0] = irGet(parameters[0])
           })
           val elapsedMicrosProp: IrProperty =
             elapsedDuration.type.getClass()!!.properties.single { it.name.asString() == "inWholeMicroseconds" }
 
           val elapsedMicros = irTemporary(irCall(elapsedMicrosProp.getter!!).apply {
-            dispatchReceiver = irGet(elapsedDuration)
+            arguments[0] = irGet(elapsedDuration)
           })
 
           if (STRINGBUILDER_MODE) {
             +irCall(stringBuilderAppendStringFunc).apply {
-              dispatchReceiver = irGetField(null, stringBuilder)
-              putValueArgument(0, irString("<;"))
-            }
-            +irCall(stringBuilderAppendIntFunc).apply {
-              dispatchReceiver = irGetField(null, stringBuilder)
-              putValueArgument(0, irGet(valueParameters[0]))
-            }
-            +irCall(stringBuilderAppendStringFunc).apply {
-              dispatchReceiver = irGetField(null, stringBuilder)
-              putValueArgument(0, irString(";"))
+              arguments[0] = irGetField(null, stringBuilder)
+              arguments[1]= irString("<;")
             }
             +irCall(stringBuilderAppendLongFunc).apply {
-              dispatchReceiver = irGetField(null, stringBuilder)
-              putValueArgument(0, irGet(elapsedMicros))
+              arguments[0] = irGetField(null, stringBuilder)
+              arguments[1] =  irGet(elapsedMicros)
             }
             +irCall(stringBuilderAppendStringFunc).apply {
-              dispatchReceiver = irGetField(null, stringBuilder)
-              putValueArgument(0, irString("\n"))
+              arguments[0] = irGetField(null, stringBuilder)
+              arguments[1] =  irString("\n")
             }
           } else {
             +irCall(writeStringFunc).apply {
-              extensionReceiver = irGetField(null, bufferedTraceFileSink)
-              putValueArgument(0, irConcat().apply {
+              arguments[0] = irGetField(null, bufferedTraceFileSink)
+              arguments[1] =  irConcat().apply {
                 addArgument(irString("<;"))
-                addArgument(irGet(valueParameters[0]))
-                addArgument(irString(";"))
                 addArgument(irGet(elapsedMicros))
                 addArgument(irString("\n"))
-              })
+              }
             }
           }
         }
@@ -445,10 +452,10 @@ class KPerfExtension(
     fun buildMainExitFunction(): IrSimpleFunction {
       fun IrBlockBodyBuilder.writeAndFlushSymbolsFile() {
         +irCall(writeStringFunc).apply {
-          extensionReceiver = irGetField(null, bufferedSymbolsFileSink)
-          putValueArgument(0, irString("{ " + methodIdMap.map { (name, id) -> id to name }
+          arguments[0] = irGetField(null, bufferedSymbolsFileSink)
+          arguments[1] = irString("{ " + methodIdMap.map { (name, id) -> id to name }
             .sortedBy { (id, _) -> id }
-            .joinToString(",\n") { (id, name) -> "\"$id\": \"$name\"" } + " }"))
+            .joinToString(",\n") { (id, name) -> "\"$id\": \"$name\"" } + " }")
         }
         +irCall(flushFunc).apply {
           dispatchReceiver = irGetField(null, bufferedSymbolsFileSink)
@@ -457,12 +464,10 @@ class KPerfExtension(
 
       fun IrBlockBodyBuilder.printFileNamesToStdout() {
         +irCall(printlnFunc).apply {
-          putValueArgument(0, irGetField(null, bufferedTraceFileName))
+          arguments[0] = irGetField(null, bufferedTraceFileName)
         }
         +irCall(printlnFunc).apply {
-          putValueArgument(
-            0, irGetField(null, bufferedSymbolsFileName)
-          )
+          arguments[0] = irGetField(null, bufferedSymbolsFileName)
         }
       }
 
@@ -483,23 +488,15 @@ class KPerfExtension(
           flushTraceFile()
 
           +irCall(exitFunc).apply {
-            val mainName = methodMap.keys.single {
-              it == "main" || it.endsWith(".main") // also consider main methods in packages
-            }
-
-            putValueArgument(
-              0,
-              methodIdMap[mainName]!!.toIrConst(pluginContext.irBuiltIns.intType)
-            )
-            putValueArgument(1, irGet(valueParameters[0]))
+            arguments[0] = irGet(parameters[0])
           }
 
           if (STRINGBUILDER_MODE) {
             +irCall(writeStringFunc).apply {
-              extensionReceiver = irGetField(null, bufferedTraceFileSink)
-              putValueArgument(0, irCall(toStringFunc).apply {
-                extensionReceiver = irGetField(null, stringBuilder)
-              })
+              arguments[0] = irGetField(null, bufferedTraceFileSink)
+              arguments[1] = irCall(toStringFunc).apply {
+                arguments[0] = irGetField(null, stringBuilder)
+              }
             }
           }
 
@@ -520,10 +517,7 @@ class KPerfExtension(
       return DeclarationIrBuilder(pluginContext, func.symbol).irBlockBody {
         // no +needed on irTemporary as it is automatically added to the builder
         val startTime = irTemporary(irCall(enterFunc).apply {
-          putValueArgument(
-            0,
-            methodIdMap[func.kotlinFqName.asString()]!!.toIrConst(pluginContext.irBuiltIns.intType)
-          )
+          arguments[0] = methodIdMap[func.kotlinFqName.asString()]!!.toIrConst(pluginContext.irBuiltIns.intType)
         })
 
         val tryBlock: IrExpression = irBlock(resultType = func.returnType) {
@@ -535,13 +529,9 @@ class KPerfExtension(
           tryBlock,
           listOf(),
           if (func.name.asString() == "main") irCall(exitMainFunc).apply {
-            putValueArgument(0, irGet(startTime))
+            arguments[0] = irGet(startTime)
           } else irCall(exitFunc).apply {
-            putValueArgument(
-              0,
-              methodIdMap[func.kotlinFqName.asString()]!!.toIrConst(pluginContext.irBuiltIns.intType)
-            )
-            putValueArgument(1, irGet(startTime))
+            arguments[0] = irGet(startTime)
           }
         )
       }
@@ -562,13 +552,15 @@ class KPerfExtension(
             declaration.origin == ADAPTER_FOR_CALLABLE_REFERENCE ||
             (!instrumentPropertyAccessors && declaration.origin == DEFAULT_PROPERTY_ACCESSOR) ||
             declaration.fqNameWhenAvailable?.asString()?.contains("<init>") != false ||
-            declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false
+            declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false ||
+            (declaration.fqNameWhenAvailable?.asString()?.let { fqn -> methodRegexes.none { it.matches(fqn) } } == true)
           ) {
             // do not further transform this method, e.g., its statements are not transformed
             println("# Do not wrap body of ${declaration.name} (${declaration.fqNameWhenAvailable?.asString()}):\n${declaration.dump()}")
             return declaration
           }
           println("# Wrap body of ${declaration.name} (${declaration.fqNameWhenAvailable?.asString()}, origin: ${declaration.origin})):\n${declaration.dump()}")
+          declaration.fqNameWhenAvailable?.asString()?.let { instrumentedFunctions.add(it) }
           declaration.body = buildBodyWithMeasureCode(declaration)
 
           return super.visitFunctionNew(declaration)

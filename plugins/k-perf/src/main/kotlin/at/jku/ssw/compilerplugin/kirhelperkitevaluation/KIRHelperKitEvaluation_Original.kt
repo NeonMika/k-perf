@@ -1,4 +1,21 @@
+// =============================================================================
+// !! DO NOT MODIFY THIS FILE !!
+//
+// This file is a DOCUMENTATION ARTIFACT created for the evaluation of
+// Lorenz Bader's Bachelor's Thesis "KIRHelperKit: A Utility Toolkit for
+// Simplified Kotlin IR Generation".
+//
+// It contains a frozen snapshot of the k-perf extension as of late 2025,
+// implemented WITHOUT KIRHelperKit, preserved to demonstrate the baseline
+// line-of-code count before the toolkit was introduced.
+//
+// Any bug fixes or feature changes to k-perf must be made in KPerfExtension.kt.
+// Changes here would corrupt the evaluation results.
+// =============================================================================
+
+/*
 package at.jku.ssw.compilerplugin
+
 import at.jku.ssw.compilerplugin.ExampleConfigurationKeysOriginal.KEY_ENABLED
 import at.jku.ssw.compilerplugin.ExampleConfigurationKeysOriginal.LOG_ANNOTATION_KEY
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
@@ -526,3 +543,4 @@ class KPerfExtensionOriginal(
         }
     }
 }
+*/

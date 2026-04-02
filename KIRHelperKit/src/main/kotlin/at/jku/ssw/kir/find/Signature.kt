@@ -4,6 +4,7 @@ import at.jku.ssw.kir.find.irplugincontext.getIrType
 import at.jku.ssw.kir.find.irtype.equalsIgnorePlatform
 import at.jku.ssw.kir.find.irtype.isGenericType
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
@@ -299,7 +300,8 @@ fun checkMethodSignature(
   paramKinds: List<SignatureType>,
   ignoreNullability: Boolean = false
 ): Boolean {
-  val parameters = func.owner.valueParameters
+  val parameters =
+    func.owner.parameters.filter { it.kind != IrParameterKind.DispatchReceiver && it.kind != IrParameterKind.ExtensionReceiver }
 
   return if (paramKinds.contains(SignatureType.Star)) {
     // Check if the given parameters match the first few

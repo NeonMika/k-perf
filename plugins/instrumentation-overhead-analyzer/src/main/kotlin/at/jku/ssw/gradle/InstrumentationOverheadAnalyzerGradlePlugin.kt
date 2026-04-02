@@ -2,23 +2,24 @@ package at.jku.ssw.gradle
 
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
+import kotlin.reflect.KClass
 
 
 // KotlinCompilerPluginSupportPlugin inherits from Plugin<Project>, which is the base class for Gradle Plugins
 class InstrumentationOverheadAnalyzerGradlePlugin : KotlinCompilerPluginSupportPlugin {
+  lateinit var target : Project
+  
   override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean = true
 
   override fun apply(target: Project) {
+    this.target = target
     target.plugins.withId("org.jetbrains.kotlin.multiplatform") {
-      target.extensions
-        .getByType<KotlinMultiplatformExtension>()
-        .addDependencies()
+      target.extensions.getByType(KotlinMultiplatformExtension::class.java).addDependencies()
     }
     target.extensions.add("instrumentationOverheadAnalyzer", InstrumentationOverheadAnalyzerGradleExtension())
     super.apply(target)
@@ -44,7 +45,8 @@ class InstrumentationOverheadAnalyzerGradlePlugin : KotlinCompilerPluginSupportP
       //   enabled = true
       //   ...
       // }
-      val extension = project.extensions.findByName("instrumentationOverheadAnalyzer") as? InstrumentationOverheadAnalyzerGradleExtension
+      val extension =
+        project.extensions.findByName("instrumentationOverheadAnalyzer") as? InstrumentationOverheadAnalyzerGradleExtension
       if (extension == null) {
         error("instrumentationOverheadAnalyzer gradle extension not found!")
       }
@@ -64,6 +66,10 @@ class InstrumentationOverheadAnalyzerGradlePlugin : KotlinCompilerPluginSupportP
   }
 
   override fun getPluginArtifact(): SubpluginArtifact {
-    return SubpluginArtifact(groupId = "at.jku.ssw", artifactId = "instrumentation-overhead-analyzer", version = "0.0.1")
+    return SubpluginArtifact(
+      groupId = "at.jku.ssw",
+      artifactId = "instrumentation-overhead-analyzer",
+      version = target.project.version.toString()
+    )
   }
 }

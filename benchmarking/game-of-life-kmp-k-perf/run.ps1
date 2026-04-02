@@ -11,7 +11,8 @@ param(
   [bool]$Native = $true,
   [bool[]]$FlushEarly = @($false),
   [bool[]]$InstrumentPropertyAccessors = @($false),
-  [bool[]]$TestKIR = @($false)
+  [bool[]]$TestKIR = @($false),
+  [string[]]$Methods = @(".*")
 )
 
 # Import common utility functions
@@ -58,16 +59,24 @@ if ($TestKIR.Count -eq 0) {
   exit 1
 }
 
+if ($Methods.Count -eq 0) {
+  Write-Host "ERROR: -Methods must contain at least one regex string value."
+  exit 1
+}
+
 # Generate Cartesian product of k-perf combinations
 $kPerfCombinations = @()
 foreach ($flushEarlyValue in $FlushEarly) {
   foreach ($propAccessorsValue in $InstrumentPropertyAccessors) {
     foreach ($testKIRValue in $TestKIR) {
-      $kPerfCombinations += [KPerfConfig]::new(
-        [bool]$flushEarlyValue,
-        [bool]$propAccessorsValue,
-        [bool]$testKIRValue
-      )
+      foreach ($methodsValue in $Methods) {
+        $kPerfCombinations += [KPerfConfig]::new(
+          [bool]$flushEarlyValue,
+          [bool]$propAccessorsValue,
+          [bool]$testKIRValue,
+          [string]$methodsValue
+        )
+      }
     }
   }
 }
@@ -78,7 +87,7 @@ Write-Host "# K-perf Configurations to Build"
 Write-Host "=========================================="
 foreach ($config in $kPerfCombinations) {
   $suffix = Get-KPerfSuffix -Config $config
-  Write-Host "  - $suffix"
+  Write-Host "- $suffix"
 }
 
 # Clean phase
@@ -477,86 +486,36 @@ foreach ($executable in $executables) {
 
   Write-Host "All elapsed times for this run have been collected and saved to $outputFilePath"
 
-  # Collect statistics for CSV
-  $csvRecord = [ordered]@{
-    mean                              = $stats.mean
-    median                            = $stats.median
-    stddev                            = $stats.stddev
-    min                               = $stats.min
-    max                               = $stats.max
-    ci95_lower                        = $stats.ci95.lower
-    ci95_upper                        = $stats.ci95.upper
-    executable                        = $executable.Name
-    buildTimeMs                       = $relevantBuildTime
-    RepetitionCount                   = $RepetitionCount
-    CleanBuild                        = $CleanBuild
-    StepCount                         = $StepCount
-    Reference                         = $Reference
-    Common                            = $Common
-    Dedicated                         = $Dedicated
-    JVM                               = $JVM
-    JS                                = $JS
-    Native                            = $Native
-    FlushEarly                        = $FlushEarly
-    InstrumentPropertyAccessors       = $InstrumentPropertyAccessors
-    TestKIR                           = $TestKIR
-    CollectionTimestamp               = $machineInfo.CollectionTimestamp
-    GitCommitHash                     = $machineInfo.GitCommitHash
-    GitBranch                         = $machineInfo.GitBranch
-    DeviceManufacturer                = $machineInfo.DeviceManufacturer
-    DeviceModel                       = $machineInfo.DeviceModel
-    IsVirtualMachine                  = $machineInfo.IsVirtualMachine
-    OS                                = $machineInfo.OS
-    OSArchitecture                    = $machineInfo.OSArchitecture
-    WindowsBuildNumber                = $machineInfo.WindowsBuildNumber
-    TimeZone                          = $machineInfo.TimeZone
-    Username                          = $machineInfo.Username
-    BIOSVersion                       = $machineInfo.BIOSVersion
-    BIOSManufacturer                  = $machineInfo.BIOSManufacturer
-    SecureBootEnabled                 = $machineInfo.SecureBootEnabled
-    HyperVEnabled                     = $machineInfo.HyperVEnabled
-    CPU                               = $machineInfo.CPU
-    CPUCores                          = $machineInfo.CPUCores
-    CPULogicalProcessors              = $machineInfo.CPULogicalProcessors
-    CPUMaxClockSpeedMHz               = $machineInfo.CPUMaxClockSpeedMHz
-    TotalRAMGB                        = $machineInfo.TotalRAMGB
-    AvailableRAMGB                    = $machineInfo.AvailableRAMGB
-    RAMModuleCount                    = $machineInfo.RAMModuleCount
-    RAMSpeedMHz                       = $machineInfo.RAMSpeedMHz
-    RAMManufacturer                   = $machineInfo.RAMManufacturer
-    RAMPartNumber                     = $machineInfo.RAMPartNumber
-    RAMModuleCapacitiesGB             = $machineInfo.RAMModuleCapacitiesGB
-    DiskModel                         = $machineInfo.DiskModel
-    DiskSizeGB                        = $machineInfo.DiskSizeGB
-    DiskMediaType                     = $machineInfo.DiskMediaType
-    DiskInterfaceType                 = $machineInfo.DiskInterfaceType
-    SystemDriveFreeSpaceGB            = $machineInfo.SystemDriveFreeSpaceGB
-    PowerPlan                         = $machineInfo.PowerPlan
-    SystemUptimeHours                 = $machineInfo.SystemUptimeHours
-    RunningProcessCount               = $machineInfo.RunningProcessCount
-    WindowsDefenderEnabled            = $machineInfo.WindowsDefenderEnabled
-    WindowsDefenderRealTimeProtection = $machineInfo.WindowsDefenderRealTimeProtection
-    PowerShellVersion                 = $machineInfo.PowerShellVersion
-    JavaVersion                       = $machineInfo.JavaVersion
-    JavaDistribution                  = $machineInfo.JavaDistribution
-    NodeVersion                       = $machineInfo.NodeVersion
-    PythonVersion                     = $machineInfo.PythonVersion
-    GradleVersion                     = $machineInfo.GradleVersion
-    KotlinVersion                     = $machineInfo.KotlinVersion
-  }
+  # Build CSV record using utility function
+  $csvRecord = Build-BenchmarkCSVRecord `
+    -ExecutableName $executable.Name `
+    -Statistics $stats `
+    -MachineInfo $machineInfo `
+    -RepetitionCount $RepetitionCount `
+    -CleanBuild $CleanBuild `
+    -StepCount $StepCount `
+    -BuildTime $relevantBuildTime `
+    -AdditionalParameters @{
+      Reference                       = $Reference
+      Common                          = $Common
+      Dedicated                       = $Dedicated
+      JVM                             = $JVM
+      JS                              = $JS
+      Native                          = $Native
+      FlushEarly                      = $FlushEarly
+      InstrumentPropertyAccessors     = $InstrumentPropertyAccessors
+      TestKIR                         = $TestKIR
+    }
   $csvRecords += $csvRecord
 
 } # End of executables loop
 
 # Write results files with underscore prefix to sort first alphabetically
 $csvFilePath = Join-Path $measurementDir "_results.csv"
-
-# Convert OrderedDictionaries to PSCustomObjects for proper CSV output
-$csvObjects = $csvRecords | ForEach-Object { New-Object PSObject -Property $_ }
-$csvObjects | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $csvFilePath -Encoding utf8
-
 $jsonFilePath = Join-Path $measurementDir "_results.json"
-$csvRecords | ConvertTo-Json | Out-File -FilePath $jsonFilePath -Encoding utf8
+
+Export-BenchmarkResultsToCSV -Results $csvRecords -OutputPath $csvFilePath
+Export-BenchmarkResultsToJSON -Results $csvRecords -OutputPath $jsonFilePath
 
 Write-Host "Summary results saved to $csvFilePath and $jsonFilePath"
 Write-Host "All benchmarks are complete."
