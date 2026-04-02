@@ -174,7 +174,7 @@ class KPerfCompilerPluginTest {
 
   @Test
   fun `methods filter - only functions matching regex are instrumented`() {
-    // Only instrument functions in package "test"; top-level MainKt functions are excluded
+    // Instrument only functions in package "test"; functions in "otherPackage" must be left untouched
     val result = compile(
       SourceFile.kotlin(
         "main.kt",
@@ -187,6 +187,21 @@ class KPerfCompilerPluginTest {
 
                     fun main() {
                         val result = MyClass().doWork()
+                        println(result)
+                    }
+                    """
+      ),
+      SourceFile.kotlin(
+        "other.kt",
+        """
+                    package otherPackage
+
+                    class MyClassNotInstrumented {
+                        fun doWorkNotInstrumented(): String = "done"
+                    }
+
+                    fun fooNotInstrumented() {
+                        val result = MyClassNotInstrumented().doWorkNotInstrumented()
                         println(result)
                     }
                     """
