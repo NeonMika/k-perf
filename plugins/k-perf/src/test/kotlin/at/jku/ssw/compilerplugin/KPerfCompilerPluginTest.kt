@@ -1,9 +1,13 @@
 import at.jku.ssw.compilerplugin.KPerfComponentRegistrar
+import at.jku.ssw.compilerplugin.KPerfExtension
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
+import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -172,6 +176,51 @@ class KPerfCompilerPluginTest {
   }
 
   @OptIn(ExperimentalCompilerApi::class)
+  @Test
+  fun `methods filter - only instrumented functions matching regex are compiled successfully`() {
+    // Only instrument functions whose FQN starts with "test." — top-level functions in MainKt are excluded
+    val result = compile(
+      SourceFile.kotlin(
+        "main.kt",
+        """
+                    package test
+
+                    class MyClass {
+                        fun doWork(): String = "done"
+                    }
+
+                    fun main() {
+                        val result = MyClass().doWork()
+                        println(result)
+                    }
+                    """
+      ),
+      methods = "test\\..*"
+    )
+    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+    result.main("test")
+  }
+
+  @OptIn(ExperimentalCompilerApi::class)
+  @Test
+  fun `methods filter - empty match instruments nothing and program still runs`() {
+    // No functions match the regex; plugin instruments nothing but compilation must still succeed
+    val result = compile(
+      SourceFile.kotlin(
+        "main.kt",
+        """
+                    fun main() {
+                        println("no instrumentation")
+                    }
+                    """
+      ),
+      methods = "nonexistent\\..*"
+    )
+    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+    result.main()
+  }
+
+  @OptIn(ExperimentalCompilerApi::class)
   fun compile(
     sourceFiles: List<SourceFile>,
     compilerPluginRegistrar: CompilerPluginRegistrar = KPerfComponentRegistrar(),
@@ -191,6 +240,12 @@ class KPerfCompilerPluginTest {
     sourceFile: SourceFile,
     compilerPluginRegistrar: CompilerPluginRegistrar = KPerfComponentRegistrar(),
   ) = compile(listOf(sourceFile), compilerPluginRegistrar)
+
+  @OptIn(ExperimentalCompilerApi::class)
+  fun compile(
+    sourceFile: SourceFile,
+    methods: String,
+  ) = compile(listOf(sourceFile), KPerfComponentRegistrarWithMethods(methods))
 }
 
 @OptIn(ExperimentalCompilerApi::class)
@@ -199,4 +254,13 @@ private fun JvmCompilationResult.main(packageName: String = "") {
   val kClazz = classLoader.loadClass(className)
   val main = kClazz.declaredMethods.single { it.name.endsWith("main") && it.parameterCount == 0 }
   main.invoke(null)
+}
+
+@OptIn(ExperimentalCompilerApi::class)
+private class KPerfComponentRegistrarWithMethods(private val methods: String) : CompilerPluginRegistrar() {
+  override val pluginId: String = "k-perf-compiler-plugin"
+  override val supportsK2: Boolean = true
+  override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
+    IrGenerationExtension.registerExtension(KPerfExtension(MessageCollector.NONE, false, false, methods))
+  }
 }

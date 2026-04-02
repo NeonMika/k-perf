@@ -293,6 +293,7 @@ python analyzers/call_graph_visualizer/graph-visualizer.py trace_JVM_12345.txt \
 - Origin is `ADAPTER_FOR_CALLABLE_REFERENCE`
 - FQ name contains `<init>` or `<anonymous>`
 - Origin is `DEFAULT_PROPERTY_ACCESSOR` (unless `instrumentPropertyAccessors = true`)
+- FQ name is non-null and does not match any of the `methods` regexes (full-string `Regex.matches`)
 
 Follow the same exclusion logic when adding new instrumentation in either plugin.
 
@@ -306,8 +307,9 @@ Configured via the `kperf { }` block in the consumer's `build.gradle.kts`, backe
 | `flushEarly` | `false` | Flush trace sink after every write (safe but slower) |
 | `instrumentPropertyAccessors` | `false` | Also instrument property getters/setters |
 | `testKIR` | `false` | Enable `KIRHelperKitTestingExtension` for IR debugging |
+| `methods` | `".*"` | Comma-separated regexes matched against a function's FQN; only matching functions are instrumented (e.g., `"a\.b\..*;c\.d\.MyClass\.fun123"`) |
 
-Gradle properties (`-PkperfFlushEarly=true`) override defaults in the KMP example projects.
+Gradle properties (`-PkperfFlushEarly=true`, `-PkperfMethods=a\.b\..*`) override defaults in the KMP example projects. `enabled` is also configurable via `-PkperfEnabled=false`.
 
 ### Group, version, and artifact coordinates
 

@@ -33,8 +33,11 @@ import kotlin.time.ExperimentalTime
 class KPerfExtension(
   private val messageCollector: MessageCollector,
   private val flushEarly: Boolean,
-  private val instrumentPropertyAccessors: Boolean
+  private val instrumentPropertyAccessors: Boolean,
+  methods: String = ".*"
 ) : IrGenerationExtension {
+
+  private val methodRegexes: List<Regex> = methods.split(",").map { Regex(it.trim()) }
 
   val STRINGBUILDER_MODE = false
 
@@ -547,7 +550,8 @@ class KPerfExtension(
             declaration.origin == ADAPTER_FOR_CALLABLE_REFERENCE ||
             (!instrumentPropertyAccessors && declaration.origin == DEFAULT_PROPERTY_ACCESSOR) ||
             declaration.fqNameWhenAvailable?.asString()?.contains("<init>") != false ||
-            declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false
+            declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false ||
+            (declaration.fqNameWhenAvailable?.asString()?.let { fqn -> methodRegexes.none { it.matches(fqn) } } == true)
           ) {
             // do not further transform this method, e.g., its statements are not transformed
             println("# Do not wrap body of ${declaration.name} (${declaration.fqNameWhenAvailable?.asString()}):\n${declaration.dump()}")

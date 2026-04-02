@@ -11,7 +11,8 @@ param(
   [bool]$Native = $true,
   [bool[]]$FlushEarly = @($false),
   [bool[]]$InstrumentPropertyAccessors = @($false),
-  [bool[]]$TestKIR = @($false)
+  [bool[]]$TestKIR = @($false),
+  [string[]]$Methods = @(".*")
 )
 
 # Import common utility functions
@@ -58,16 +59,24 @@ if ($TestKIR.Count -eq 0) {
   exit 1
 }
 
+if ($Methods.Count -eq 0) {
+  Write-Host "ERROR: -Methods must contain at least one regex string value."
+  exit 1
+}
+
 # Generate Cartesian product of k-perf combinations
 $kPerfCombinations = @()
 foreach ($flushEarlyValue in $FlushEarly) {
   foreach ($propAccessorsValue in $InstrumentPropertyAccessors) {
     foreach ($testKIRValue in $TestKIR) {
-      $kPerfCombinations += [KPerfConfig]::new(
-        [bool]$flushEarlyValue,
-        [bool]$propAccessorsValue,
-        [bool]$testKIRValue
-      )
+      foreach ($methodsValue in $Methods) {
+        $kPerfCombinations += [KPerfConfig]::new(
+          [bool]$flushEarlyValue,
+          [bool]$propAccessorsValue,
+          [bool]$testKIRValue,
+          [string]$methodsValue
+        )
+      }
     }
   }
 }
