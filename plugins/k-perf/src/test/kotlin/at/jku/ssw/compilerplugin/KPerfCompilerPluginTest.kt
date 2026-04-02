@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCompilerApi::class)
@@ -175,6 +176,7 @@ class KPerfCompilerPluginTest {
   @Test
   fun `methods filter - only functions matching regex are instrumented`() {
     // Instrument only functions in package "test"; functions in "otherPackage" must be left untouched
+    val registrar = KPerfComponentRegistrarWithMethods("test\\..*")
     val result = compile(
       SourceFile.kotlin(
         "main.kt",
@@ -206,15 +208,19 @@ class KPerfCompilerPluginTest {
                     }
                     """
       ),
-      compilerPluginRegistrar = KPerfComponentRegistrarWithMethods("test\\..*")
+      compilerPluginRegistrar = registrar
     )
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
     result.main("test")
+    val instrumented = registrar.extension.instrumentedFunctions
+    assertTrue(instrumented.any { it.startsWith("test.") }, "Expected test.* functions to be instrumented, got: $instrumented")
+    assertTrue(instrumented.none { it.startsWith("otherPackage.") }, "Expected otherPackage.* functions to NOT be instrumented, got: $instrumented")
   }
 
   @Test
   fun `methods filter - empty match instruments nothing and program still runs`() {
     // No functions match the regex; plugin instruments nothing but compilation must still succeed
+    val registrar = KPerfComponentRegistrarWithMethods("nonexistent\\..*")
     val result = compile(
       SourceFile.kotlin(
         "main.kt",
@@ -224,10 +230,11 @@ class KPerfCompilerPluginTest {
                     }
                     """
       ),
-      compilerPluginRegistrar = KPerfComponentRegistrarWithMethods("nonexistent\\..*")
+      compilerPluginRegistrar = registrar
     )
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
     result.main()
+    assertTrue(registrar.extension.instrumentedFunctions.isEmpty(), "Expected no functions to be instrumented")
   }
 
   fun compile(
@@ -254,7 +261,9 @@ private fun JvmCompilationResult.main(packageName: String = "") {
 private class KPerfComponentRegistrarWithMethods(private val methods: String) : CompilerPluginRegistrar() {
   override val pluginId: String = "k-perf-compiler-plugin"
   override val supportsK2: Boolean = true
+  lateinit var extension: KPerfExtension
   override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
-    IrGenerationExtension.registerExtension(KPerfExtension(MessageCollector.NONE, false, false, methods))
+    extension = KPerfExtension(MessageCollector.NONE, false, false, methods)
+    IrGenerationExtension.registerExtension(extension)
   }
 }

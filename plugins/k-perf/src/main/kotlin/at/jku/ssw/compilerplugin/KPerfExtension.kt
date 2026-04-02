@@ -39,6 +39,8 @@ class KPerfExtension(
 
   private val methodRegexes: List<Regex> = methods.split(",").map { Regex(it.trim()) }
 
+  val instrumentedFunctions: MutableList<String> = mutableListOf()
+
   val STRINGBUILDER_MODE = false
 
   val debugFile = File("./DEBUG.txt")
@@ -558,6 +560,7 @@ class KPerfExtension(
             return declaration
           }
           println("# Wrap body of ${declaration.name} (${declaration.fqNameWhenAvailable?.asString()}, origin: ${declaration.origin})):\n${declaration.dump()}")
+          declaration.fqNameWhenAvailable?.asString()?.let { instrumentedFunctions.add(it) }
           declaration.body = buildBodyWithMeasureCode(declaration)
 
           return super.visitFunctionNew(declaration)
