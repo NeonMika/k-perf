@@ -266,82 +266,32 @@ foreach ($executable in $executables) {
 
   Write-Host "All elapsed times for this run have been collected and saved to $outputFilePath"
 
-  # Collect statistics for CSV
-  $csvRecord = [ordered]@{
-    executable                        = $executable.Name
-    buildTimeMs                       = $relevantBuildTime
-    RepetitionCount                   = $RepetitionCount
-    CleanBuild                        = $CleanBuild
-    StepCount                         = $StepCount
-    Reference                         = $Reference
-    IOA                               = $IOA
-    JVM                               = $JVM
-    JS                                = $JS
-    Native                            = $Native
-    CollectionTimestamp               = $machineInfo.CollectionTimestamp
-    GitCommitHash                     = $machineInfo.GitCommitHash
-    GitBranch                         = $machineInfo.GitBranch
-    DeviceManufacturer                = $machineInfo.DeviceManufacturer
-    DeviceModel                       = $machineInfo.DeviceModel
-    IsVirtualMachine                  = $machineInfo.IsVirtualMachine
-    OS                                = $machineInfo.OS
-    OSArchitecture                    = $machineInfo.OSArchitecture
-    WindowsBuildNumber                = $machineInfo.WindowsBuildNumber
-    TimeZone                          = $machineInfo.TimeZone
-    Username                          = $machineInfo.Username
-    BIOSVersion                       = $machineInfo.BIOSVersion
-    BIOSManufacturer                  = $machineInfo.BIOSManufacturer
-    SecureBootEnabled                 = $machineInfo.SecureBootEnabled
-    HyperVEnabled                     = $machineInfo.HyperVEnabled
-    CPU                               = $machineInfo.CPU
-    CPUCores                          = $machineInfo.CPUCores
-    CPULogicalProcessors              = $machineInfo.CPULogicalProcessors
-    CPUMaxClockSpeedMHz               = $machineInfo.CPUMaxClockSpeedMHz
-    TotalRAMGB                        = $machineInfo.TotalRAMGB
-    AvailableRAMGB                    = $machineInfo.AvailableRAMGB
-    RAMModuleCount                    = $machineInfo.RAMModuleCount
-    RAMSpeedMHz                       = $machineInfo.RAMSpeedMHz
-    RAMManufacturer                   = $machineInfo.RAMManufacturer
-    RAMPartNumber                     = $machineInfo.RAMPartNumber
-    RAMModuleCapacitiesGB             = $machineInfo.RAMModuleCapacitiesGB
-    DiskModel                         = $machineInfo.DiskModel
-    DiskSizeGB                        = $machineInfo.DiskSizeGB
-    DiskMediaType                     = $machineInfo.DiskMediaType
-    DiskInterfaceType                 = $machineInfo.DiskInterfaceType
-    SystemDriveFreeSpaceGB            = $machineInfo.SystemDriveFreeSpaceGB
-    PowerPlan                         = $machineInfo.PowerPlan
-    SystemUptimeHours                 = $machineInfo.SystemUptimeHours
-    RunningProcessCount               = $machineInfo.RunningProcessCount
-    WindowsDefenderEnabled            = $machineInfo.WindowsDefenderEnabled
-    WindowsDefenderRealTimeProtection = $machineInfo.WindowsDefenderRealTimeProtection
-    PowerShellVersion                 = $machineInfo.PowerShellVersion
-    JavaVersion                       = $machineInfo.JavaVersion
-    JavaDistribution                  = $machineInfo.JavaDistribution
-    NodeVersion                       = $machineInfo.NodeVersion
-    PythonVersion                     = $machineInfo.PythonVersion
-    GradleVersion                     = $machineInfo.GradleVersion
-    KotlinVersion                     = $machineInfo.KotlinVersion
-    mean                              = $stats.mean
-    median                            = $stats.median
-    stddev                            = $stats.stddev
-    min                               = $stats.min
-    max                               = $stats.max
-    ci95_lower                        = $stats.ci95.lower
-    ci95_upper                        = $stats.ci95.upper
-  }
+  # Build CSV record using utility function
+  $csvRecord = Build-BenchmarkCSVRecord `
+    -ExecutableName $executable.Name `
+    -Statistics $stats `
+    -MachineInfo $machineInfo `
+    -RepetitionCount $RepetitionCount `
+    -CleanBuild $CleanBuild `
+    -StepCount $StepCount `
+    -BuildTime $relevantBuildTime `
+    -AdditionalParameters @{
+      Reference = $Reference
+      IOA       = $IOA
+      JVM       = $JVM
+      JS        = $JS
+      Native    = $Native
+    }
   $csvRecords += $csvRecord
 
 } # End of executables loop
 
 # Write results files with underscore prefix to sort first alphabetically
 $csvFilePath = Join-Path $measurementDir "_results.csv"
-
-# Convert OrderedDictionaries to PSCustomObjects for proper CSV output
-$csvObjects = $csvRecords | ForEach-Object { New-Object PSObject -Property $_ }
-$csvObjects | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $csvFilePath -Encoding utf8
-
 $jsonFilePath = Join-Path $measurementDir "_results.json"
-$csvRecords | ConvertTo-Json | Out-File -FilePath $jsonFilePath -Encoding utf8
+
+Export-BenchmarkResultsToCSV -Results $csvRecords -OutputPath $csvFilePath
+Export-BenchmarkResultsToJSON -Results $csvRecords -OutputPath $jsonFilePath
 
 Write-Host "Summary results saved to $csvFilePath and $jsonFilePath"
 Write-Host "All benchmarks are complete."

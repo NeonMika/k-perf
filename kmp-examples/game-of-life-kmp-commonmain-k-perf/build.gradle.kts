@@ -13,6 +13,10 @@ repositories {
   mavenLocal() // Add this line to include mavenLocal()
 }
 
+val kperfEnabled = providers.gradleProperty("kperfEnabled")
+  .map { it.toBoolean() }
+  .getOrElse(true)
+
 val kperfFlushEarly = providers.gradleProperty("kperfFlushEarly")
   .map { it.toBoolean() }
   .getOrElse(false)
@@ -25,11 +29,15 @@ val kperfTestKIR = providers.gradleProperty("kperfTestKIR")
   .map { it.toBoolean() }
   .getOrElse(false)
 
+val kperfMethods = providers.gradleProperty("kperfMethods")
+  .getOrElse(".*")
+
 kperf {
-  enabled = true
+  enabled = kperfEnabled
   flushEarly = kperfFlushEarly
   instrumentPropertyAccessors = kperfInstrumentPropertyAccessors
   testKIR = kperfTestKIR
+  methods = kperfMethods
 }
 
 val flushEarlyTag = if (kperfFlushEarly) "true" else "false"

@@ -20,6 +20,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+          cache: gradle
 
       - name: Make all files executable
         run: chmod +x -R ./

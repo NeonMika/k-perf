@@ -1,15 +1,20 @@
 import at.jku.ssw.compilerplugin.KPerfComponentRegistrar
+import at.jku.ssw.compilerplugin.KPerfExtension
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
+import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
+import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCompilerApi::class)
 class KPerfCompilerPluginTest {
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `SSP (Symposium for Software Performance) simple example`() {
     val result = compile(
@@ -33,7 +38,6 @@ class KPerfCompilerPluginTest {
     result.main()
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `Are getters functions_yes they are`() {
     val result = compile(
@@ -56,7 +60,6 @@ class KPerfCompilerPluginTest {
     result.main()
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `Big example`() {
     val result = compile(
@@ -117,7 +120,6 @@ class KPerfCompilerPluginTest {
     result.main()
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
   @Test
   fun `Complex class example`() {
     val result = compile(
@@ -171,26 +173,81 @@ class KPerfCompilerPluginTest {
     result.main("test")
   }
 
-  @OptIn(ExperimentalCompilerApi::class)
+  @Test
+  fun `methods filter - only functions matching regex are instrumented`() {
+    // Instrument only functions in package "test"; functions in "otherPackage" must be left untouched
+    val registrar = KPerfComponentRegistrarWithMethods("test\\..*")
+    val result = compile(
+      SourceFile.kotlin(
+        "main.kt",
+        """
+                    package test
+
+                    class MyClass {
+                        fun doWork(): String = "done"
+                    }
+
+                    fun main() {
+                        val result = MyClass().doWork()
+                        println(result)
+                    }
+                    """
+      ),
+      SourceFile.kotlin(
+        "other.kt",
+        """
+                    package otherPackage
+
+                    class MyClassNotInstrumented {
+                        fun doWorkNotInstrumented(): String = "done"
+                    }
+
+                    fun fooNotInstrumented() {
+                        val result = MyClassNotInstrumented().doWorkNotInstrumented()
+                        println(result)
+                    }
+                    """
+      ),
+      compilerPluginRegistrar = registrar
+    )
+    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+    result.main("test")
+    val instrumented = registrar.extension.instrumentedFunctions
+    assertTrue(instrumented.any { it.startsWith("test.") }, "Expected test.* functions to be instrumented, got: $instrumented")
+    assertEquals(2, instrumented.size) { "Expected two instrumented functions: test.main and test.MyClass.doWork" }
+    assertTrue(instrumented.none { it.startsWith("otherPackage.") }, "Expected otherPackage.* functions to NOT be instrumented, got: $instrumented")
+  }
+
+  @Test
+  fun `methods filter - empty match instruments nothing and program still runs`() {
+    // No functions match the regex; plugin instruments nothing but compilation must still succeed
+    val registrar = KPerfComponentRegistrarWithMethods("nonexistent\\..*")
+    val result = compile(
+      SourceFile.kotlin(
+        "main.kt",
+        """
+                    fun main() {
+                        println("no instrumentation")
+                    }
+                    """
+      ),
+      compilerPluginRegistrar = registrar
+    )
+    assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+    result.main()
+    assertTrue(registrar.extension.instrumentedFunctions.isEmpty(), "Expected no functions to be instrumented")
+  }
+
   fun compile(
-    sourceFiles: List<SourceFile>,
+    vararg sourceFiles: SourceFile,
     compilerPluginRegistrar: CompilerPluginRegistrar = KPerfComponentRegistrar(),
   ): JvmCompilationResult {
     return KotlinCompilation().apply {
-      // To have access to kotlinx.io
       inheritClassPath = true
-      sources = sourceFiles
+      sources = sourceFiles.toList()
       compilerPluginRegistrars = listOf(compilerPluginRegistrar)
-      // commandLineProcessors = ...
-      // inheritClassPath = true
     }.compile()
   }
-
-  @OptIn(ExperimentalCompilerApi::class)
-  fun compile(
-    sourceFile: SourceFile,
-    compilerPluginRegistrar: CompilerPluginRegistrar = KPerfComponentRegistrar(),
-  ) = compile(listOf(sourceFile), compilerPluginRegistrar)
 }
 
 @OptIn(ExperimentalCompilerApi::class)
@@ -199,4 +256,15 @@ private fun JvmCompilationResult.main(packageName: String = "") {
   val kClazz = classLoader.loadClass(className)
   val main = kClazz.declaredMethods.single { it.name.endsWith("main") && it.parameterCount == 0 }
   main.invoke(null)
+}
+
+@OptIn(ExperimentalCompilerApi::class)
+private class KPerfComponentRegistrarWithMethods(private val methods: String) : CompilerPluginRegistrar() {
+  override val pluginId: String = "k-perf-compiler-plugin"
+  override val supportsK2: Boolean = true
+  lateinit var extension: KPerfExtension
+  override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
+    extension = KPerfExtension(MessageCollector.NONE, false, false, methods)
+    IrGenerationExtension.registerExtension(extension)
+  }
 }

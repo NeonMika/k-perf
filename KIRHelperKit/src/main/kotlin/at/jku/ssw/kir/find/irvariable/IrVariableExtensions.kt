@@ -47,7 +47,7 @@ fun IrVariable.findProperty(name: String): IrPropertySymbol = this.findPropertyO
  * @param extensionReceiverType The type of the extension receiver, if the function is an extension function.
  * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
  * @return The found function symbol or null if it was not found.
- * @throws IllegalStateException If multiple matching functions are found.
+ * @throws IllegalArgumentException If multiple matching functions are found (ambiguous signature).
  */
 fun IrVariable.findFunctionOrNull(
   pluginContext: IrPluginContext,
@@ -85,7 +85,7 @@ fun IrVariable.findFunction(
  *                  "G" can be used as a placeholder for generic parameters.
  * @param ignoreNullability Whether to ignore nullability when comparing the parameters.
  * @return The found constructor symbol or null if it was not found.
- * @throws IllegalStateException If multiple matching constructors are found.
+ * @throws IllegalArgumentException If multiple matching constructors are found (ambiguous signature).
  */
 fun IrVariable.findConstructorOrNull(
   pluginContext: IrPluginContext, signature: String = "()", ignoreNullability: Boolean = false

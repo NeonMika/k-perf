@@ -14,6 +14,7 @@ class KPerfGradleExtension() {
   var flushEarly: Boolean = false
   var instrumentPropertyAccessors: Boolean = false
   var testKIR: Boolean = false
+  var methods: String = ".*"
 }
 
 // KotlinCompilerPluginSupportPlugin inherits from Plugin<Project>, which is the base class for Gradle Plugins
@@ -60,6 +61,7 @@ class KPerfGradlePlugin : KotlinCompilerPluginSupportPlugin {
         SubpluginOption("flushEarly", extension.flushEarly.toString()),
         SubpluginOption("instrumentPropertyAccessors", extension.instrumentPropertyAccessors.toString()),
         SubpluginOption("testKIR", extension.testKIR.toString()),
+        SubpluginOption("methods", extension.methods),
       )
     }
   }

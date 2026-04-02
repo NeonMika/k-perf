@@ -23,11 +23,13 @@ class KPerfConfig {
   [bool]$FlushEarly
   [bool]$InstrumentPropertyAccessors
   [bool]$TestKIR
+  [string]$Methods
 
-  KPerfConfig([bool]$FlushEarly, [bool]$InstrumentPropertyAccessors, [bool]$TestKIR) {
+  KPerfConfig([bool]$FlushEarly, [bool]$InstrumentPropertyAccessors, [bool]$TestKIR, [string]$Methods) {
     $this.FlushEarly = $FlushEarly
     $this.InstrumentPropertyAccessors = $InstrumentPropertyAccessors
     $this.TestKIR = $TestKIR
+    $this.Methods = $Methods
   }
 }
 
@@ -398,6 +400,7 @@ function Build-GameOfLifeKPerfVariant {
     "-PkperfFlushEarly=$($Config.FlushEarly)"
     "-PkperfInstrumentPropertyAccessors=$($Config.InstrumentPropertyAccessors)"
     "-PkperfTestKIR=$($Config.TestKIR)"
+    "-PkperfMethods=$($Config.Methods)"
   )
   
   Write-Host ""

@@ -448,3 +448,84 @@ function Get-MachineInfo {
 
   return $machineInfo
 }
+
+function Export-BenchmarkResultsToCSV {
+  param(
+    [array]$Results,
+    [string]$OutputPath
+  )
+
+  # Convert OrderedDictionaries to PSCustomObjects for proper CSV output
+  $csvObjects = $Results | ForEach-Object { New-Object PSObject -Property $_ }
+  $csvObjects | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $OutputPath -Encoding utf8
+  
+  Write-Host "CSV results exported to: $OutputPath"
+}
+
+function Export-BenchmarkResultsToJSON {
+  param(
+    [array]$Results,
+    [string]$OutputPath
+  )
+
+  # Export array of results as JSON with proper formatting
+  $Results | ConvertTo-Json -Depth 6 | Out-File -FilePath $OutputPath -Encoding utf8
+  
+  Write-Host "JSON results exported to: $OutputPath"
+}
+
+function Build-BenchmarkCSVRecord {
+  param(
+    [string]$ExecutableName,
+    [object]$Statistics,
+    [object]$MachineInfo,
+    [int]$RepetitionCount,
+    [bool]$CleanBuild,
+    [int]$StepCount,
+    $BuildTime,
+    [hashtable]$AdditionalParameters
+  )
+
+  $record = [ordered]@{
+    mean            = $Statistics.mean
+    median          = $Statistics.median
+    stddev          = $Statistics.stddev
+    min             = $Statistics.min
+    max             = $Statistics.max
+    ci95_lower      = $Statistics.ci95.lower
+    ci95_upper      = $Statistics.ci95.upper
+    executable      = $ExecutableName
+    buildTimeMs     = $BuildTime
+    RepetitionCount = $RepetitionCount
+    CleanBuild      = $CleanBuild
+    StepCount       = $StepCount
+  }
+
+  # Add additional test parameters
+  foreach ($key in $AdditionalParameters.Keys) {
+    $record[$key] = $AdditionalParameters[$key]
+  }
+
+  # Add machine information fields
+  $machineInfoOrder = @(
+    'CollectionTimestamp', 'GitCommitHash', 'GitBranch',
+    'DeviceManufacturer', 'DeviceModel', 'IsVirtualMachine',
+    'OS', 'OSArchitecture', 'WindowsBuildNumber', 'TimeZone', 'Username',
+    'BIOSVersion', 'BIOSManufacturer',
+    'SecureBootEnabled', 'HyperVEnabled',
+    'CPU', 'CPUCores', 'CPULogicalProcessors', 'CPUMaxClockSpeedMHz',
+    'TotalRAMGB', 'AvailableRAMGB', 'RAMModuleCount', 'RAMSpeedMHz', 'RAMManufacturer', 'RAMPartNumber', 'RAMModuleCapacitiesGB',
+    'DiskModel', 'DiskSizeGB', 'DiskMediaType', 'DiskInterfaceType', 'SystemDriveFreeSpaceGB',
+    'PowerPlan', 'SystemUptimeHours', 'RunningProcessCount',
+    'WindowsDefenderEnabled', 'WindowsDefenderRealTimeProtection',
+    'PowerShellVersion', 'JavaVersion', 'JavaDistribution', 'NodeVersion', 'PythonVersion', 'GradleVersion', 'KotlinVersion'
+  )
+
+  foreach ($key in $machineInfoOrder) {
+    if ($MachineInfo.Contains($key)) {
+      $record[$key] = $MachineInfo[$key]
+    }
+  }
+
+  return $record
+}
