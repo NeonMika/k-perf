@@ -145,7 +145,7 @@ KIRHelperKit  (at.jku.ssw:KIRHelperKit:0.1.0)
 `KPerfExtension : IrGenerationExtension` walks every `IrFunction` in the module using `IrElementTransformerVoidWithContext`. For each eligible function it wraps the body in a try/finally, injecting:
 
 - **On entry:** calls `_enter_method(methodId: Int): TimeMark` — writes `>;{id}\n` to the trace sink and returns `TimeSource.Monotonic.markNow()`
-- **On exit:** calls `_exit_method(methodId: Int, startTime: TimeMark)` — calls `startTime.elapsedNow().inWholeMicroseconds`, writes `<;{id};{micros}\n`
+- **On exit:** calls `_exit_method(startTime: TimeMark)` — calls `startTime.elapsedNow().inWholeMicroseconds`, writes `<;{micros}\n`
 - **On main exit only:** calls `_exit_main(startTime: TimeMark)` — flushes both files, writes the symbols file, prints filenames to stdout
 
 These three synthetic functions (`_enter_method`, `_exit_method`, `_exit_main`) are added as top-level declarations to the **first file** of the module. The static fields (`_stringBuilder`, `_bufferedTraceFileSink`, `_bufferedSymbolsFileSink`, etc.) are also injected into the first file.
@@ -158,8 +158,8 @@ File I/O uses **`kotlinx-io`** for cross-platform compatibility (same API on JVM
 ```
 >;0          # enter method id=0
 >;1          # enter method id=1
-<;1;42       # exit method id=1, elapsed=42µs
-<;0;105      # exit method id=0, elapsed=105µs
+<;42         # exit method id=1, elapsed=42µs  (id implicit: stack-based)
+<;105        # exit method id=0, elapsed=105µs
 ```
 
 **Symbols file** (`./symbols_<platform>_<random>.txt`) — JSON object:

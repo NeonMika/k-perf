@@ -393,13 +393,6 @@ class KPerfExtension(
         returnType = pluginContext.irBuiltIns.unitType
       }.apply {
         addValueParameter {
-          /*
-          name = Name.identifier("method")
-          type = pluginContext.irBuiltIns.stringType */
-          name = Name.identifier("methodId")
-          type = pluginContext.irBuiltIns.intType
-        }
-        addValueParameter {
           name = Name.identifier("startTime")
           type = timeMarkClass.defaultType
         } /*
@@ -411,7 +404,7 @@ class KPerfExtension(
         body = DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset).irBlockBody {
           // Duration
           val elapsedDuration = irTemporary(irCall(funElapsedNow).apply {
-            arguments[0] = irGet(parameters[1])
+            arguments[0] = irGet(parameters[0])
           })
           val elapsedMicrosProp: IrProperty =
             elapsedDuration.type.getClass()!!.properties.single { it.name.asString() == "inWholeMicroseconds" }
@@ -424,14 +417,6 @@ class KPerfExtension(
             +irCall(stringBuilderAppendStringFunc).apply {
               arguments[0] = irGetField(null, stringBuilder)
               arguments[1]= irString("<;")
-            }
-            +irCall(stringBuilderAppendIntFunc).apply {
-              arguments[0] = irGetField(null, stringBuilder)
-              arguments[1] =  irGet(parameters[0])
-            }
-            +irCall(stringBuilderAppendStringFunc).apply {
-              arguments[0] = irGetField(null, stringBuilder)
-              arguments[1] =  irString(";")
             }
             +irCall(stringBuilderAppendLongFunc).apply {
               arguments[0] = irGetField(null, stringBuilder)
@@ -446,8 +431,6 @@ class KPerfExtension(
               arguments[0] = irGetField(null, bufferedTraceFileSink)
               arguments[1] =  irConcat().apply {
                 addArgument(irString("<;"))
-                addArgument(irGet(parameters[0]))
-                addArgument(irString(";"))
                 addArgument(irGet(elapsedMicros))
                 addArgument(irString("\n"))
               }
@@ -500,12 +483,7 @@ class KPerfExtension(
           flushTraceFile()
 
           +irCall(exitFunc).apply {
-            val mainName = methodMap.keys.single {
-              it == "main" || it.endsWith(".main") // also consider main methods in packages
-            }
-
-            arguments[0] = methodIdMap[mainName]!!.toIrConst(pluginContext.irBuiltIns.intType)
-            arguments[1] = irGet(parameters[0])
+            arguments[0] = irGet(parameters[0])
           }
 
           if (STRINGBUILDER_MODE) {
@@ -548,8 +526,7 @@ class KPerfExtension(
           if (func.name.asString() == "main") irCall(exitMainFunc).apply {
             arguments[0] = irGet(startTime)
           } else irCall(exitFunc).apply {
-            arguments[0] = methodIdMap[func.kotlinFqName.asString()]!!.toIrConst(pluginContext.irBuiltIns.intType)
-            arguments[1] = irGet(startTime)
+            arguments[0] = irGet(startTime)
           }
         )
       }
