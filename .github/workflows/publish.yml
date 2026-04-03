@@ -36,8 +36,16 @@ jobs:
       - name: Setup signing keyring and Gradle properties
         run: |
           echo "${{ secrets.GPG_KEY_CONTENTS }}" > /tmp/signing-key.asc
+
+          echo "=== Key before dearmor ==="
+          cat /tmp/signing-key.asc
+
           gpg --batch --dearmor /tmp/signing-key.asc > /tmp/secring.gpg
+
+          echo "=== Key after dearmor (hex, first 4 lines) ==="
+          xxd /tmp/secring.gpg | head -4
           echo "Keyring size: $(wc -c < /tmp/secring.gpg) bytes"
+
           echo "Key ID: ${{ secrets.SIGNING_KEY_ID }}"
           echo "Maven Central user: ${{ secrets.MAVEN_CENTRAL_USERNAME }}"
           mkdir -p ~/.gradle
