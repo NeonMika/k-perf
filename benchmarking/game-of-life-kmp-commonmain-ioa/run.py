@@ -72,7 +72,7 @@ def _parse_args() -> Args:
     parser = argparse.ArgumentParser(description="Python equivalent of run.ps1 for IOA Game of Life benchmarks")
     parser.add_argument("--repetition-count", type=int, default=50)
     parser.add_argument("--clean-build", action="store_true", default=False)
-    parser.add_argument("--step-count", type=int, default=10)
+    parser.add_argument("--step-count", type=int, default=500)
     parser.add_argument("--reference", action="store_true", default=True)
     parser.add_argument("--no-reference", dest="reference", action="store_false")
     parser.add_argument("--ioa", action="store_true", default=True)

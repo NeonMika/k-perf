@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.defaultType
+import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.name.Name
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -64,25 +65,25 @@ fun createSuts(): SutFields = SutFields(with(IoaContext.pluginContext) {
       }
     })
 
-    IoaKind.AddToList -> listOf(createPropertyOfType(IoaContext.mutableListClass.defaultType) {
+    IoaKind.AddToList -> listOf(createPropertyOfType(IoaContext.mutableListClass.typeWith(irBuiltIns.intType)) {
       irCall(IoaContext.mutableListOfFunction).apply {
         typeArguments[0] = irBuiltIns.intType
       }
     })
 
-    IoaKind.AddDuplicatesToSet -> listOf(createPropertyOfType(IoaContext.mutableSetClass.defaultType) {
+    IoaKind.AddDuplicatesToSet -> listOf(createPropertyOfType(IoaContext.mutableSetClass.typeWith(irBuiltIns.intType)) {
       irCall(IoaContext.mutableSetOfFunction).apply {
         typeArguments[0] = irBuiltIns.intType
       }
     })
 
     IoaKind.AddUniqueToSet -> listOf(
-      createPropertyOfType(IoaContext.mutableSetClass.defaultType) {
+      createPropertyOfType(IoaContext.mutableSetClass.typeWith(irBuiltIns.intType)) {
         irCall(IoaContext.mutableSetOfFunction).apply {
           typeArguments[0] = irBuiltIns.intType
         }
       },
-      createPropertyOfType(irBuiltIns.intType),
+      createPropertyOfType(irBuiltIns.intType, suffix = "1"),
     )
 
     else -> emptyList()
