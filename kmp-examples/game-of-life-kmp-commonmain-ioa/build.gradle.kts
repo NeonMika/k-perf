@@ -2,7 +2,7 @@
 
 plugins {
   kotlin("multiplatform") version "2.3.0"
-  id("at.jku.ssw.instrumentation-overhead-analyzer") version "0.2.0" // dependency on the instrumentation-overhead-analyzer plugin
+  id("io.github.neonmika.instrumentation-overhead-analyzer") version "0.2.0" // dependency on the instrumentation-overhead-analyzer plugin
 }
 
 group = "io.github.neonmika"

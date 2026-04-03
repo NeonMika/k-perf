@@ -134,8 +134,8 @@ The `measurements/2024_11_SSP/` folder contains the older format from the SSP pa
 ### Three-layer dependency chain
 
 ```
-KIRHelperKit  (at.jku.ssw:KIRHelperKit:0.2.0)
-    └── consumed by ──▶  plugins/k-perf  (at.jku.ssw.k-perf-plugin)
+KIRHelperKit  (io.github.neonmika:KIRHelperKit:0.2.0)
+    └── consumed by ──▶  plugins/k-perf  (io.github.neonmika.k-perf-plugin)
                          plugins/instrumentation-overhead-analyzer
                               └── applied to ──▶  kmp-examples/*
 ```
@@ -178,10 +178,10 @@ Five Kotlin Multiplatform projects under `kmp-examples/`, all targeting JVM + JS
 | Project | Plugin | Architecture |
 |---|---|---|
 | `game-of-life-kmp-commonmain` | none | CommonMain |
-| `game-of-life-kmp-commonmain-k-perf` | `at.jku.ssw.k-perf-plugin` | CommonMain |
-| `game-of-life-kmp-commonmain-ioa` | `at.jku.ssw.instrumentation-overhead-analyzer` | CommonMain |
+| `game-of-life-kmp-commonmain-k-perf` | `io.github.neonmika.k-perf-plugin` | CommonMain |
+| `game-of-life-kmp-commonmain-ioa` | `io.github.neonmika.instrumentation-overhead-analyzer` | CommonMain |
 | `game-of-life-kmp-dedicatedmain` | none | DedicatedMain |
-| `game-of-life-kmp-dedicatedmain-k-perf` | `at.jku.ssw.k-perf-plugin` | DedicatedMain |
+| `game-of-life-kmp-dedicatedmain-k-perf` | `io.github.neonmika.k-perf-plugin` | DedicatedMain |
 
 ### CommonMain vs DedicatedMain
 
@@ -314,7 +314,7 @@ Gradle properties (`-PkperfFlushEarly=true`, `-PkperfMethods=a\.b\..*`) override
 ### Group, version, and artifact coordinates
 
 All subprojects use:
-- `group = "at.jku.ssw"`
+- `group = "io.github.neonmika"`
 - `version = "0.2.0"`
 - `mavenLocal()` must appear in both `pluginManagement.repositories` and `dependencyResolutionManagement.repositories` in consumers' `settings.gradle.kts`
 

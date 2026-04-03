@@ -2,7 +2,7 @@
 
 plugins {
   kotlin("multiplatform") version "2.3.0"
-  id("at.jku.ssw.k-perf-plugin") version "0.2.0" // dependency on the k-perf-plugin plugin
+  id("io.github.neonmika.k-perf-plugin") version "0.2.0" // dependency on the k-perf-plugin plugin
 }
 
 group = "io.github.neonmika"

@@ -54,7 +54,7 @@ project.extra.properties.forEach { (key, value) -> println("- $key: $value")  }
 gradlePlugin {
   plugins {
     create("KPerf") { // this name defines how the Gradle publish commands are named (in this case publishKPerfPluginMarkerMavenPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
-      id = "at.jku.ssw.k-perf-plugin" // to use this plugin later in other projects we will use plugins { id("at.jku.ssw.k-perf-plugin") }
+      id = "io.github.neonmika.k-perf-plugin" // to use this plugin later in other projects we will use plugins { id("io.github.neonmika.k-perf-plugin") }
       implementationClass = "at.jku.ssw.gradle.KPerfGradlePlugin"
     }
   }

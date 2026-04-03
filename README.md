@@ -4,11 +4,6 @@
 
 k-perf is a **Kotlin backend compiler plugin** that instruments your functions at the IR (Intermediate Representation) level to generate detailed execution traces. It works transparently across **JVM, JavaScript, and Native** targets without any changes to your source code.
 
-[![Build on Windows](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows.yml)
-[![Build on Ubuntu](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu.yml)
-[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
-[![Maven Central](https://img.shields.io/maven-central/v/at.jku.ssw/k-perf)](https://central.sonatype.com/artifact/at.jku.ssw/k-perf)
-
 This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), originating from the **SSP 2024** (Symposium on Software Performance) paper.
 
 ---
@@ -34,6 +29,7 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 k-perf hooks into the Kotlin compiler's IR backend. At compile time, it wraps every eligible function body in a `try/finally` block and injects timing calls — no runtime agent, no bytecode manipulation after the fact.
 
 **At runtime**, each instrumented function:
+
 1. 🟢 **On entry** — records the current time and writes `>;{methodId}` to the trace file
 2. 🔴 **On exit** — measures elapsed microseconds and writes `<;{elapsedµs}` to the trace file
 3. 🏁 **On `main` exit** — flushes both output files and prints their paths to stdout
@@ -141,7 +137,7 @@ Tests use **[kctfork](https://github.com/ZacSweers/kotlin-compile-testing)** —
 
 ### k-perf Plugin
 
-**Plugin ID:** `at.jku.ssw.k-perf-plugin` | **Artifact:** `at.jku.ssw:k-perf:0.2.0`
+**Plugin ID:** `io.github.neonmika.k-perf-plugin` | **Artifact:** `io.github.neonmika:k-perf:0.2.0`
 
 #### Applying the Plugin
 
@@ -160,7 +156,7 @@ pluginManagement {
 // build.gradle.kts
 plugins {
   kotlin("multiplatform") version "2.3.0"
-  id("at.jku.ssw.k-perf-plugin") version "0.2.0"
+  id("io.github.neonmika.k-perf-plugin") version "0.2.0"
 }
 
 kperf {
@@ -186,6 +182,7 @@ kperf {
 #### Functions NOT Instrumented
 
 k-perf automatically skips:
+
 - The synthetic helpers it injects (`_enter_method`, `_exit_method`, `_exit_main`)
 - Functions with no body
 - Lambda adapters and anonymous functions
@@ -197,14 +194,14 @@ k-perf automatically skips:
 
 ### Instrumentation Overhead Analyzer Plugin
 
-**Plugin ID:** `at.jku.ssw.instrumentation-overhead-analyzer` | **Artifact:** `at.jku.ssw:instrumentation-overhead-analyzer:0.2.0`
+**Plugin ID:** `io.github.neonmika.instrumentation-overhead-analyzer` | **Artifact:** `io.github.neonmika:instrumentation-overhead-analyzer:0.2.0`
 
 This plugin complements k-perf by injecting **controlled, synthetic overhead** into functions at compile time. The goal is to precisely measure how much overhead different instrumentation strategies add — giving you a quantified cost baseline to compare against.
 
 ```kotlin
 // build.gradle.kts
 plugins {
-  id("at.jku.ssw.instrumentation-overhead-analyzer") version "0.2.0"
+  id("io.github.neonmika.instrumentation-overhead-analyzer") version "0.2.0"
 }
 
 instrumentationOverheadAnalyzer {
@@ -218,7 +215,7 @@ instrumentationOverheadAnalyzer {
 
 ## 🧰 KIRHelperKit
 
-**Artifact:** `at.jku.ssw:KIRHelperKit:0.2.0`
+**Artifact:** `io.github.neonmika:KIRHelperKit:0.2.0`
 
 KIRHelperKit is a standalone utility library that makes **Kotlin IR compiler plugin development** significantly easier. It abstracts the boilerplate of navigating and constructing IR elements.
 
@@ -238,7 +235,7 @@ KIRHelperKit is a standalone utility library that makes **Kotlin IR compiler plu
 ```kotlin
 // build.gradle.kts of your compiler plugin project
 dependencies {
-  implementation("at.jku.ssw:KIRHelperKit:0.2.0")
+  implementation("io.github.neonmika:KIRHelperKit:0.2.0")
 }
 ```
 
