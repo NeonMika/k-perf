@@ -5,7 +5,7 @@ plugins {
   id("at.jku.ssw.instrumentation-overhead-analyzer") version "0.2.0" // dependency on the instrumentation-overhead-analyzer plugin
 }
 
-group = "at.jku.ssw"
+group = "io.github.neonmika"
 version = "0.2.0"
 
 repositories {

@@ -5,7 +5,7 @@ plugins {
   id("at.jku.ssw.k-perf-plugin") version "0.2.0" // dependency on the k-perf-plugin plugin
 }
 
-group = "at.jku.ssw"
+group = "io.github.neonmika"
 version = "0.2.0"
 
 repositories {

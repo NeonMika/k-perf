@@ -8,7 +8,7 @@ plugins {
   id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
-group = "at.jku.ssw"
+group = "io.github.neonmika"
 version = "0.2.0"
 
 dependencies {

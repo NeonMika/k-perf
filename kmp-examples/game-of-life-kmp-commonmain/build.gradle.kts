@@ -4,7 +4,7 @@ plugins {
   kotlin("multiplatform") version "2.3.0"
 }
 
-group = "at.jku.ssw"
+group = "io.github.neonmika"
 version = "0.2.0"
 
 repositories {
