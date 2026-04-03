@@ -82,7 +82,7 @@ plugins {
 }
 
 dependencies {
-    implementation("at.jku.ssw:KIRHelperKit:0.1.0") // <---
+    implementation("at.jku.ssw:KIRHelperKit:0.2.0") // <---
     // ... other dependencies ...
 }
 ```

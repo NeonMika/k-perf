@@ -134,7 +134,7 @@ The `measurements/2024_11_SSP/` folder contains the older format from the SSP pa
 ### Three-layer dependency chain
 
 ```
-KIRHelperKit  (at.jku.ssw:KIRHelperKit:0.1.0)
+KIRHelperKit  (at.jku.ssw:KIRHelperKit:0.2.0)
     └── consumed by ──▶  plugins/k-perf  (at.jku.ssw.k-perf-plugin)
                          plugins/instrumentation-overhead-analyzer
                               └── applied to ──▶  kmp-examples/*
@@ -315,7 +315,7 @@ Gradle properties (`-PkperfFlushEarly=true`, `-PkperfMethods=a\.b\..*`) override
 
 All subprojects use:
 - `group = "at.jku.ssw"`
-- `version = "0.1.0"`
+- `version = "0.2.0"`
 - `mavenLocal()` must appear in both `pluginManagement.repositories` and `dependencyResolutionManagement.repositories` in consumers' `settings.gradle.kts`
 
 ### `STRINGBUILDER_MODE` flag

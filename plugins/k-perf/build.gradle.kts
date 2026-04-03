@@ -9,10 +9,10 @@ plugins {
 }
 
 group = "at.jku.ssw"
-version = "0.1.0"
+version = "0.2.0"
 
 dependencies {
-  implementation("at.jku.ssw:KIRHelperKit:0.1.0")
+  implementation("at.jku.ssw:KIRHelperKit:0.2.0")
   compileOnly(kotlin("stdlib"))
 
   // This must be implementation and not compileOnly to have working tests
