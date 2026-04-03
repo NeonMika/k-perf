@@ -6,7 +6,8 @@
 #   MAVEN_CENTRAL_PASSWORD      - User token password from central.sonatype.com
 #   SIGNING_KEY_ID              - Last 8 characters of the GPG key ID
 #   SIGNING_PASSWORD            - Passphrase for the GPG private key
-#   GPG_KEY_CONTENTS            - ASCII-armored GPG private key (gpg --export-secret-keys --armor <id>)
+#   GPG_KEY_CONTENTS            - Base64-encoded ASCII-armored GPG private key:
+#                                 gpg --export-secret-keys --armor <id> | base64 -w 0
 
 name: Publish to Maven Central
 
@@ -26,6 +27,12 @@ jobs:
       - name: Make all files executable
         run: chmod +x -R ./
 
+      - name: Decode GPG key
+        run: |
+          echo "SIGNING_KEY<<EOF" >> $GITHUB_ENV
+          echo "${{ secrets.GPG_KEY_CONTENTS }}" | base64 -d >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -41,7 +48,7 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY }}
 
       - name: Publish k-perf plugin
         run: ./gradlew publishToMavenCentral --no-configuration-cache
@@ -51,7 +58,7 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY }}
 
       - name: Publish instrumentation-overhead-analyzer plugin
         run: ./gradlew publishToMavenCentral --no-configuration-cache
@@ -61,4 +68,4 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY }}
