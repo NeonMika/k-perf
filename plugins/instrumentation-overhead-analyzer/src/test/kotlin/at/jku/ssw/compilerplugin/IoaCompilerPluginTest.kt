@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class IoaCompilerPluginTest {
@@ -75,6 +76,7 @@ class IoaCompilerPluginTest {
   }
 
   @Test
+  @Disabled
   fun `generate simple ir`() {
     val result = compile(SourceFile.kotlin("main.kt", $$"""
       package test

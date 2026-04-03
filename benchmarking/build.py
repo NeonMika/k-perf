@@ -138,19 +138,21 @@ def _invoke_kmp_build_with_timings(
     if js_duration is not None:
         timings["js"] = js_duration
 
-    windows_duration = _invoke_gradle_task_if_present_timed(
-        windows_task, f"{title} - Windows build", path, gradle_args
-    )
-    if windows_duration is not None:
-        timings["windows"] = windows_duration
+    system = platform.system().lower()
+    if system == "windows":
+        windows_duration = _invoke_gradle_task_if_present_timed(windows_task, f"{title} - Windows build", path, gradle_args)
+        if windows_duration is not None:
+            timings["native"] = windows_duration
 
-    linux_duration = _invoke_gradle_task_if_present_timed(linux_task, f"{title} - Linux build", path, gradle_args)
-    if linux_duration is not None:
-        timings["linux"] = linux_duration
+    if system == "linux":
+        linux_duration = _invoke_gradle_task_if_present_timed(linux_task, f"{title} - Linux build", path, gradle_args)
+        if linux_duration is not None:
+            timings["native"] = linux_duration
 
-    mac_duration = _invoke_gradle_task_if_present_timed(mac_task, f"{title} - Mac build", path, gradle_args)
-    if mac_duration is not None:
-        timings["mac"] = mac_duration
+    if system == "darwin":
+        mac_duration = _invoke_gradle_task_if_present_timed(mac_task, f"{title} - Mac build", path, gradle_args)
+        if mac_duration is not None:
+            timings["native"] = mac_duration
 
     print(f"{title} completed successfully.")
     return timings
@@ -265,9 +267,9 @@ def build_game_of_life_commonmain_reference() -> Dict[str, float]:
     if "js" in timings:
         build_times["commonmain-plain-node"] = timings["js"]
         build_times["commonmain_plain_node"] = timings["js"]
-    if "windows" in timings:
-        build_times["commonmain-plain-exe"] = timings["windows"]
-        build_times["commonmain_plain_exe"] = timings["windows"]
+    if "native" in timings:
+        build_times["commonmain-plain-native"] = timings["native"]
+        build_times["commonmain_plain_native"] = timings["native"]
     print("game-of-life-kmp-commonmain reference application build completed successfully.")
     return build_times
 
@@ -282,8 +284,8 @@ def build_game_of_life_dedicatedmain_reference() -> Dict[str, float]:
         build_times["dedicatedmain-plain-jar"] = timings["jvm"]
     if "js" in timings:
         build_times["dedicatedmain-plain-node"] = timings["js"]
-    if "windows" in timings:
-        build_times["dedicatedmain-plain-exe"] = timings["windows"]
+    if "native" in timings:
+        build_times["dedicatedmain-plain-native"] = timings["native"]
     print("game-of-life-kmp-dedicatedmain reference application build completed successfully.")
     return build_times
 
@@ -298,8 +300,8 @@ def build_game_of_life_commonmain_ioa() -> Dict[str, float]:
         build_times["commonmain_ioa_jar"] = timings["jvm"]
     if "js" in timings:
         build_times["commonmain_ioa_node"] = timings["js"]
-    if "windows" in timings:
-        build_times["commonmain_ioa_exe"] = timings["windows"]
+    if "native" in timings:
+        build_times["commonmain_ioa_native"] = timings["native"]
     print("game-of-life-kmp-commonmain-ioa build completed successfully.")
     return build_times
 
@@ -321,8 +323,8 @@ def build_game_of_life_commonmain_ioa_variant(config: IoaConfig) -> Dict[str, fl
         build_times[f"commonmain_ioa_{suffix}-jar"] = timings["jvm"]
     if "js" in timings:
         build_times[f"commonmain_ioa_{suffix}-node"] = timings["js"]
-    if "windows" in timings:
-        build_times[f"commonmain_ioa_{suffix}-exe"] = timings["windows"]
+    if "native" in timings:
+        build_times[f"commonmain_ioa_{suffix}-native"] = timings["native"]
     print(f"{project_name} build with {suffix} completed successfully.")
     return build_times
 
@@ -351,8 +353,8 @@ def build_game_of_life_kperf_variant(game_type: str, config: KPerfConfig) -> Dic
         build_times[f"{game_type_string}-k-perf-{suffix}-jar"] = timings["jvm"]
     if "js" in timings:
         build_times[f"{game_type_string}-k-perf-{suffix}-node"] = timings["js"]
-    if "windows" in timings:
-        build_times[f"{game_type_string}-k-perf-{suffix}-exe"] = timings["windows"]
+    if "native" in timings:
+        build_times[f"{game_type_string}-k-perf-{suffix}-native"] = timings["native"]
 
     print(f"{project_name} build with {suffix} completed successfully.")
     return build_times

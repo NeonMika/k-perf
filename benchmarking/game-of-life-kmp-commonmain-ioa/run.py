@@ -33,19 +33,19 @@ from utils import get_benchmark_statistics
 PROJECT_VERSION = "0.1.0"
 
 # All available IoaKind values
-IOA_KINDS = [
-    "None",
-    "TryFinally",
-    "TimeClock",
-    "TimeMonotonicFunction",
-    "TimeMonotonicGlobal",
-    "IncrementIntCounter",
-    "IncrementAtomicIntCounter",
-    "RandomValue",
-    "StandardOut",
-    "AppendToStringBuilder",
-]
-
+with open(ROOT_DIR / "plugins" / "instrumentation-overhead-analyzer" / "src" / "main" / "kotlin" / "at" / "jku" / "ssw" / "shared" / "IoaKind.kt", encoding="utf-8") as f:
+    content = f.read()
+    start_marker = "enum class IoaKind {"
+    end_marker = "}"
+    start_index = content.find(start_marker)
+    if start_index == -1:
+        raise ValueError("Start marker not found in IoaKinds.kt")
+    start_index += len(start_marker)
+    end_index = content.find(end_marker, start_index)
+    if end_index == -1:
+        raise ValueError("End marker not found in IoaKinds.kt")
+    enum_body = content[start_index:end_index].strip()
+    IOA_KINDS = [line.strip().rstrip(",") for line in enum_body.splitlines() if line.strip() and not line.strip().startswith("//")]
 
 @dataclass(frozen=True)
 class Executable:
