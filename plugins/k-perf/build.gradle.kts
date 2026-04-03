@@ -5,7 +5,7 @@ plugins {
 
   `java-gradle-plugin` // In this project, we generate a Gradle plugin (which is configured in the gradlePlugin section)
 
-  `maven-publish` // the generated plugin will be published to mavenLocal
+  id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
 group = "at.jku.ssw"
@@ -56,6 +56,41 @@ gradlePlugin {
     create("KPerf") { // this name defines how the Gradle publish commands are named (in this case publishKPerfPluginMarkerMavenPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
       id = "at.jku.ssw.k-perf-plugin" // to use this plugin later in other projects we will use plugins { id("at.jku.ssw.k-perf-plugin") }
       implementationClass = "at.jku.ssw.gradle.KPerfGradlePlugin"
+    }
+  }
+}
+
+mavenPublishing {
+  publishToMavenCentral()
+  if (providers.gradleProperty("signingInMemoryKey").isPresent) {
+    signAllPublications()
+  }
+
+  coordinates(group.toString(), "k-perf", version.toString())
+
+  pom {
+    name = "k-perf"
+    description = "A Kotlin backend compiler plugin that auto-instruments functions at the IR level to generate execution traces for performance analysis on JVM, JS, and Native targets."
+    inceptionYear = "2024"
+    url = "https://github.com/NeonMika/k-perf/"
+    licenses {
+      license {
+        name = "GNU Lesser General Public License v3.0"
+        url = "https://www.gnu.org/licenses/lgpl-3.0.html"
+        distribution = "repo"
+      }
+    }
+    developers {
+      developer {
+        id = "NeonMika"
+        name = "Markus Weninger"
+        url = "https://github.com/NeonMika/"
+      }
+    }
+    scm {
+      url = "https://github.com/NeonMika/k-perf/"
+      connection = "scm:git:git://github.com/NeonMika/k-perf.git"
+      developerConnection = "scm:git:ssh://git@github.com/NeonMika/k-perf.git"
     }
   }
 }

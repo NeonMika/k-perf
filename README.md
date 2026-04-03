@@ -33,4 +33,6 @@ If you want to use this version, you first have to publish the compiler plugin t
 
 ## License
 
-The projects in this repository are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+The projects in this repository are licensed under the [GNU Lesser General Public License v3.0 (LGPL-3.0)](https://www.gnu.org/licenses/lgpl-3.0.html).
+
+You are free to use k-perf in your own projects (open-source or proprietary) without any licensing requirements on your code. However, any modifications to k-perf itself must be released under the same LGPL-3.0 license.
