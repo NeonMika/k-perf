@@ -15,6 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Make all files executable
+        run: chmod +x -R ./
+
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
