@@ -22,8 +22,5 @@ jobs:
           java-version: "21"
           cache: gradle
 
-      - name: Make all files executable
-        run: chmod +x -R ./
-
       - name: Run buildAll.sh
         run: ./buildAll.sh
