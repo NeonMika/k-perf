@@ -6,8 +6,7 @@
 #   MAVEN_CENTRAL_PASSWORD      - User token password from central.sonatype.com
 #   SIGNING_KEY_ID              - Last 8 characters of the GPG key ID
 #   SIGNING_PASSWORD            - Passphrase for the GPG private key
-#   GPG_KEY_CONTENTS            - Base64-encoded ASCII-armored GPG private key:
-#                                 gpg --export-secret-keys --armor <id> | base64 -w 0
+#   GPG_KEY_CONTENTS            - ASCII-armored GPG private key (raw export from Kleopatra)
 
 name: Publish to Maven Central
 
@@ -27,21 +26,6 @@ jobs:
       - name: Make all files executable
         run: chmod +x -R ./
 
-      - name: Decode GPG key
-        run: |
-          echo "SIGNING_KEY<<EOF" >> $GITHUB_ENV
-          echo "${{ secrets.GPG_KEY_CONTENTS }}" | base64 -d | tr -d '\r' >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Verify signing configuration
-        run: |
-          echo "Signing key ID: ${{ secrets.SIGNING_KEY_ID }}"
-          echo "Signing key length: ${#SIGNING_KEY}"
-          echo "Signing key first line: $(echo "$SIGNING_KEY" | head -1)"
-          echo "Maven Central username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}"
-        env:
-          SIGNING_KEY: ${{ env.SIGNING_KEY }}
-
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -49,32 +33,30 @@ jobs:
           java-version: "21"
           cache: gradle
 
+      - name: Setup signing keyring and Gradle properties
+        run: |
+          echo "${{ secrets.GPG_KEY_CONTENTS }}" > /tmp/signing-key.asc
+          gpg --batch --dearmor /tmp/signing-key.asc > /tmp/secring.gpg
+          echo "Keyring size: $(wc -c < /tmp/secring.gpg) bytes"
+          echo "Key ID: ${{ secrets.SIGNING_KEY_ID }}"
+          echo "Maven Central user: ${{ secrets.MAVEN_CENTRAL_USERNAME }}"
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties << EOF
+          signing.keyId=${{ secrets.SIGNING_KEY_ID }}
+          signing.password=${{ secrets.SIGNING_PASSWORD }}
+          signing.secretKeyRingFile=/tmp/secring.gpg
+          mavenCentralUsername=${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          mavenCentralPassword=${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          EOF
+
       - name: Publish KIRHelperKit
         run: ./gradlew publishToMavenCentral --no-configuration-cache
         working-directory: KIRHelperKit
-        env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY }}
 
       - name: Publish k-perf plugin
         run: ./gradlew publishToMavenCentral --no-configuration-cache
         working-directory: plugins/k-perf
-        env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY }}
 
       - name: Publish instrumentation-overhead-analyzer plugin
         run: ./gradlew publishToMavenCentral --no-configuration-cache
         working-directory: plugins/instrumentation-overhead-analyzer
-        env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY }}

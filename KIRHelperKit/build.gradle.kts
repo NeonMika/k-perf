@@ -28,7 +28,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile> {
 
 mavenPublishing {
   publishToMavenCentral()
-  if (providers.gradleProperty("signingInMemoryKey").isPresent) {
+  if (providers.gradleProperty("signingInMemoryKey").isPresent ||
+      providers.gradleProperty("signing.secretKeyRingFile").isPresent) {
     signAllPublications()
   }
 
