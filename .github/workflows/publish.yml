@@ -30,8 +30,17 @@ jobs:
       - name: Decode GPG key
         run: |
           echo "SIGNING_KEY<<EOF" >> $GITHUB_ENV
-          echo "${{ secrets.GPG_KEY_CONTENTS }}" | base64 -d >> $GITHUB_ENV
+          echo "${{ secrets.GPG_KEY_CONTENTS }}" | base64 -d | tr -d '\r' >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+
+      - name: Verify signing configuration
+        run: |
+          echo "Signing key ID: ${{ secrets.SIGNING_KEY_ID }}"
+          echo "Signing key length: ${#SIGNING_KEY}"
+          echo "Signing key first line: $(echo "$SIGNING_KEY" | head -1)"
+          echo "Maven Central username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}"
+        env:
+          SIGNING_KEY: ${{ env.SIGNING_KEY }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
