@@ -53,8 +53,7 @@ project.extra.properties.forEach { (key, value) -> println("- $key: $value")  }
 gradlePlugin {
   plugins {
     create("InstrumentationOverheadAnalyzer") { // this name defines how the Gradle publish commands are named (in this case publishInstrumentationOverheadAnalyzerPluginMarkerMavenPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
-      id =
-        "at.jku.ssw.instrumentation-overhead-analyzer" // to use this plugin later in other projects we will use plugins { id("at.jku.ssw.instrumentation-overhead-analyzer") }
+      id = "io.github.neonmika.instrumentation-overhead-analyzer" // to use this plugin later in other projects we will use plugins { id("io.github.neonmika.instrumentation-overhead-analyzer") }
       implementationClass = "at.jku.ssw.gradle.InstrumentationOverheadAnalyzerGradlePlugin"
     }
   }
