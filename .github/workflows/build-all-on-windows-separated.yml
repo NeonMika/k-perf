@@ -1,8 +1,10 @@
 name: Build all on Windows (separated)
 
 # Each project is built as a discrete step for fine-grained failure visibility.
-# ⚠️ Build order and project list mirror buildAll.ps1 and build-kmp-example.sh in .github/scripts/.
-#    Keep all three in sync when adding/removing projects or changing the build order.
+# ⚠️ Build order and project list mirror buildAll.ps1 and .github/scripts/Build-KmpExample.ps1.
+#    The highly-separated variant (build-all-on-windows-highly-separated.yml) hardcodes task names
+#    based on this script's discovery priority lists.
+#    Keep all four in sync when adding/removing projects or changing the build order.
 
 on:
   push:

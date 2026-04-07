@@ -1,8 +1,10 @@
 name: Build all on Ubuntu (separated)
 
 # Each project is built as a discrete step for fine-grained failure visibility.
-# ⚠️ Build order and project list mirror buildAll.sh and Build-KmpExample.ps1 in .github/scripts/.
-#    Keep all three in sync when adding/removing projects or changing the build order.
+# ⚠️ Build order and project list mirror buildAll.sh and .github/scripts/build-kmp-example.sh.
+#    The highly-separated variant (build-all-on-ubuntu-highly-separated.yml) hardcodes task names
+#    based on this script's discovery priority lists.
+#    Keep all four in sync when adding/removing projects or changing the build order.
 
 on:
   push:
