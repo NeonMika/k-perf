@@ -21,7 +21,7 @@ param(
 
 # Platform-specific native executable target and extension
 $nativeTarget = if ($IsWindows) { "mingwX64" } elseif ($IsMacOS) { "macosX64" } else { "linuxX64" }
-$nativeExt    = if ($IsWindows) { ".exe" }     else                { "" }
+$nativeExt    = if ($IsWindows) { ".exe" }     else                { ".kexe" }
 
 # Collect machine and environment information for reproducibility
 Write-Host "=========================================="

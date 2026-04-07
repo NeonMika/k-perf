@@ -59,6 +59,7 @@ kotlin {
     }
     compilations.all {
       tasks.withType<Jar> {
+        archiveClassifier.set(outputSuffix)
         doFirst {
           manifest {
             attributes(
@@ -79,6 +80,7 @@ kotlin {
   
   @OptIn(org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalMainFunctionArgumentsDsl::class)
   js(IR) {
+    outputModuleName.set("${project.name}-$outputSuffix")
     nodejs {
       passProcessArgvToMainFunction()
     }
@@ -106,6 +108,7 @@ kotlin {
     target.binaries {
       executable {
         entryPoint = "main"
+        baseName = "$baseName-$outputSuffix"
       }
     }
   }
