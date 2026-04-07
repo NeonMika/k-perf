@@ -23,6 +23,15 @@ jobs:
           java-version: "21"
           cache: gradle
 
+      # Locally-published plugins (io.github.neonmika group) are published to mavenLocal
+      # within the same build. The cached Gradle module metadata can contain stale
+      # resolutions from a previous run (e.g. after a coordinate change). Deleting the
+      # cached metadata for this group forces Gradle to re-resolve from the freshly
+      # published mavenLocal artifacts.
+      - name: Clear stale Gradle module cache for locally-published artifacts
+        shell: pwsh
+        run: Get-ChildItem "$env:USERPROFILE\.gradle\caches" -Recurse -Directory -Filter "io.github.neonmika*" -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Run buildAll.ps1
         shell: pwsh
         run: .\buildAll.ps1
