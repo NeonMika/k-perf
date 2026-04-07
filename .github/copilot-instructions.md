@@ -99,6 +99,45 @@ flushEarly-<true|false>-propAccessors-<true|false>-testKIR-<true|false>
 
 For example, a JAR built with `kperfFlushEarly=true` is named `game-of-life-kmp-commonmain-k-perf-flushEarly-true-propAccessors-false-testKIR-false.jar`. The JS module name uses the same suffix via `outputModuleName`. Built JARs and their runtime dependencies are copied to `build/lib/` by the Gradle build.
 
+### Running a KMP example
+
+**Option A — Gradle run tasks** (Gradle overhead, but always rebuilds):
+
+| Task | Platform |
+|---|---|
+| `jvmRun` | JVM (uses `mainRun { mainClass.set(...) }` in build.gradle.kts) |
+| `jsNodeProductionRun` | JS (Node.js) |
+| `runReleaseExecutableMingwX64` | Native (Windows) |
+
+```powershell
+cd kmp-examples\game-of-life-kmp-commonmain-k-perf
+.\gradlew jvmRun --info --stacktrace -PkperfEnabled=true -PkperfFlushEarly=false -PkperfMethods=.*
+```
+
+**Option B — Direct invocation** (no Gradle overhead; requires prior build):
+
+```powershell
+# JVM — <steps> is positional arg (default: 500)
+java -jar build\lib\<project>-jvm-<version>.jar <steps>
+# e.g.:
+java -jar build\lib\game-of-life-kmp-commonmain-jvm-0.2.1.jar 500
+java -jar build\lib\game-of-life-kmp-commonmain-k-perf-jvm-0.2.1-flushEarly-false-propAccessors-false-testKIR-false.jar 500
+
+# JS (Node.js)
+node build\js\packages\<project>\kotlin\<project>.js <steps>
+# k-perf variant uses suffix in package and module name:
+node build\js\packages\<project>-<suffix>\kotlin\<project>-<suffix>.js <steps>
+
+# Native (Windows)
+build\bin\mingwX64\releaseExecutable\<project>.exe <steps>
+# k-perf variant:
+build\bin\mingwX64\releaseExecutable\<project>-<suffix>.exe <steps>
+```
+
+**Option C — IDE run configurations**: Each KMP example has `.run/` directory with pre-configured IntelliJ/Android Studio run configs for all three platforms. k-perf examples include the full `-Pkperf*` parameter set with defaults suitable for development (`-PkperfTestKIR=true`).
+
+> **JVM `mainClass`**: CommonMain projects use `CommonGameOfLifeApplicationKt`; DedicatedMain projects use `JVMGameOfLifeApplicationKt`.
+
 ## KIRHelperKit
 
 Utility library for writing Kotlin IR compiler plugins. Key packages:
@@ -135,6 +174,11 @@ Configured via the `kperf { }` block in the consumer's `build.gradle.kts`, backe
 | `methods` | `".*"` | Comma-separated regexes matched against a function's FQN; only matching functions are instrumented (e.g., `"a\.b\..*;c\.d\.MyClass\.fun123"`) |
 
 Gradle properties (`-PkperfFlushEarly=true`, `-PkperfMethods=a\.b\..*`) override defaults in the KMP example projects. `enabled` is also configurable via `-PkperfEnabled=false`.
+
+> ⚠️ **Defaults are defined in three separate places.** When changing a default value, update all three:
+> 1. `plugins/k-perf/src/main/kotlin/at/jku/ssw/gradle/KPerfGradlePlugin.kt` — extension class property defaults (`var flushEarly: Boolean = false`, etc.)
+> 2. `plugins/k-perf/src/main/kotlin/at/jku/ssw/compilerplugin/KPerfComponentRegistrar.kt` — compiler-side fallbacks (`configuration[KEY] ?: false`, etc.)
+> 3. `kmp-examples/game-of-life-kmp-*-k-perf/build.gradle.kts` — Gradle property fallbacks (`.getOrElse(false)`, etc.)
 
 ### Group, version, and artifact coordinates
 
