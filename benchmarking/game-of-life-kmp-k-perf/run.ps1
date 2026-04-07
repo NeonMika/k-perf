@@ -332,10 +332,8 @@ $csvRecords = @()
 # Loop through each executable defined above
 foreach ($executable in $executables) {
   $filePath = $executable.Path
+  if (-not $IsWindows) { $filePath = $filePath -replace '\\', '/' }
   $fileType = $executable.Type
-
-  Write-Host "--------------------------------------------------------"
-  Write-Host "Starting benchmark for: $($executable.Name) ($filePath)"
   Write-Host "--------------------------------------------------------"
 
   # Initialize an array to hold the elapsed times for the current file
