@@ -199,6 +199,17 @@ When updating versions, always update all versions in all subprojects to keep th
 Thus, make sure to update all version defintions, as well as all plugin declarations as well as dependency declarations in all build scripts.
 Also make sure to update the version in the README.md.
 
+When changing the Maven **group** of a compiler plugin, there are **four places** that must all be updated together — missing any one of them causes the kmp-example build to fail with "Could not find":
+
+| Location | What to update |
+|---|---|
+| `plugins/<name>/build.gradle.kts` | `group = "..."` |
+| `plugins/<name>/build.gradle.kts` | `coordinates(group, artifactId, version)` in `mavenPublishing {}` |
+| `plugins/<name>/src/main/kotlin/.../gradle/<Name>GradlePlugin.kt` | `groupId` in `getPluginArtifact()` |
+| `kmp-examples/<example>/build.gradle.kts` | `id("...") version "..."` in `plugins {}` |
+
+> ⚠️ `getPluginArtifact()` is what the Kotlin Gradle plugin uses to add the compiler plugin JAR to the `:kotlinCompilerPluginClasspathXxx` configuration at build time. A stale `groupId` there makes Gradle look for the artifact under the wrong Maven coordinates — regardless of what is published to mavenLocal.
+
 ### Static fields are injected into `moduleFragment.files[0]`
 
 All synthetic IR fields and functions added by the plugin are attached to the **first file** in the module. This is by convention in both plugins. When adding new static state to a plugin, follow this pattern.
