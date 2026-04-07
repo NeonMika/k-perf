@@ -2,11 +2,11 @@
 
 plugins {
   kotlin("multiplatform") version "2.3.0"
-  id("io.github.neonmika.instrumentation-overhead-analyzer") version "0.2.0" // dependency on the instrumentation-overhead-analyzer plugin
+  id("io.github.neonmika.instrumentation-overhead-analyzer") version "0.2.1" // dependency on the instrumentation-overhead-analyzer plugin
 }
 
 group = "io.github.neonmika"
-version = "0.2.0"
+version = "0.2.1"
 
 repositories {
   mavenCentral()

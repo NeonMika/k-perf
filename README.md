@@ -137,7 +137,7 @@ Tests use **[kctfork](https://github.com/ZacSweers/kotlin-compile-testing)** —
 
 ### k-perf Plugin
 
-**Plugin ID:** `io.github.neonmika.k-perf-plugin` | **Artifact:** `io.github.neonmika:k-perf:0.2.0`
+**Plugin ID:** `io.github.neonmika.k-perf-plugin` | **Artifact:** `io.github.neonmika:k-perf:0.2.1`
 
 #### Applying the Plugin
 
@@ -156,7 +156,7 @@ pluginManagement {
 // build.gradle.kts
 plugins {
   kotlin("multiplatform") version "2.3.0"
-  id("io.github.neonmika.k-perf-plugin") version "0.2.0"
+  id("io.github.neonmika.k-perf-plugin") version "0.2.1"
 }
 
 kperf {
@@ -194,14 +194,14 @@ k-perf automatically skips:
 
 ### Instrumentation Overhead Analyzer Plugin
 
-**Plugin ID:** `io.github.neonmika.instrumentation-overhead-analyzer` | **Artifact:** `io.github.neonmika:instrumentation-overhead-analyzer:0.2.0`
+**Plugin ID:** `io.github.neonmika.instrumentation-overhead-analyzer` | **Artifact:** `io.github.neonmika:instrumentation-overhead-analyzer:0.2.1`
 
 This plugin complements k-perf by injecting **controlled, synthetic overhead** into functions at compile time. The goal is to precisely measure how much overhead different instrumentation strategies add — giving you a quantified cost baseline to compare against.
 
 ```kotlin
 // build.gradle.kts
 plugins {
-  id("io.github.neonmika.instrumentation-overhead-analyzer") version "0.2.0"
+  id("io.github.neonmika.instrumentation-overhead-analyzer") version "0.2.1"
 }
 
 instrumentationOverheadAnalyzer {
@@ -215,7 +215,7 @@ instrumentationOverheadAnalyzer {
 
 ## 🧰 KIRHelperKit
 
-**Artifact:** `io.github.neonmika:KIRHelperKit:0.2.0`
+**Artifact:** `io.github.neonmika:KIRHelperKit:0.2.1`
 
 KIRHelperKit is a standalone utility library that makes **Kotlin IR compiler plugin development** significantly easier. It abstracts the boilerplate of navigating and constructing IR elements.
 
@@ -235,7 +235,7 @@ KIRHelperKit is a standalone utility library that makes **Kotlin IR compiler plu
 ```kotlin
 // build.gradle.kts of your compiler plugin project
 dependencies {
-  implementation("io.github.neonmika:KIRHelperKit:0.2.0")
+  implementation("io.github.neonmika:KIRHelperKit:0.2.1")
 }
 ```
 

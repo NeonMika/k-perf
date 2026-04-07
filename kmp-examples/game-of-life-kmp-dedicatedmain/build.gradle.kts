@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.neonmika"
-version = "0.2.0"
+version = "0.2.1"
 
 repositories {
   mavenCentral()
@@ -17,14 +17,14 @@ kotlin {
     compilations.all { }
 
     mainRun {
-      mainClass.set("CommonGameOfLifeApplicationKt")
+      mainClass.set("JVMGameOfLifeApplicationKt")
     }
     compilations.all {
       tasks.withType<Jar> {
         doFirst {
           manifest {
             attributes(
-              "Main-Class" to "CommonGameOfLifeApplicationKt",
+              "Main-Class" to "JVMGameOfLifeApplicationKt",
               "Class-Path" to runtimeDependencyFiles.files.joinToString(" ") { it.name })
           }
         }

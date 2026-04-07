@@ -2,11 +2,11 @@
 
 plugins {
   kotlin("multiplatform") version "2.3.0"
-  id("io.github.neonmika.k-perf-plugin") version "0.2.0" // dependency on the k-perf-plugin plugin
+  id("io.github.neonmika.k-perf-plugin") version "0.2.1" // dependency on the k-perf-plugin plugin
 }
 
 group = "io.github.neonmika"
-version = "0.2.0"
+version = "0.2.1"
 
 repositories {
   mavenCentral()
@@ -15,21 +15,26 @@ repositories {
 
 val kperfEnabled = providers.gradleProperty("kperfEnabled")
   .map { it.toBoolean() }
+  .also { if(it.isPresent) println("kperfEnabled specified, set to ${it.get()}") else println("kperfEnabled not specified, set to default true") }
   .getOrElse(true)
 
 val kperfFlushEarly = providers.gradleProperty("kperfFlushEarly")
   .map { it.toBoolean() }
+  .also { if(it.isPresent) println("kperfFlushEarly specified, set to ${it.get()}") else println("kperfFlushEarly not specified, set to default false") }
   .getOrElse(false)
 
 val kperfInstrumentPropertyAccessors = providers.gradleProperty("kperfInstrumentPropertyAccessors")
   .map { it.toBoolean() }
+  .also { if(it.isPresent) println("kperfInstrumentPropertyAccessors specified, set to ${it.get()}") else println("kperfInstrumentPropertyAccessors not specified, set to default false") }
   .getOrElse(false)
 
 val kperfTestKIR = providers.gradleProperty("kperfTestKIR")
   .map { it.toBoolean() }
+  .also { if(it.isPresent) println("kperfTestKIR specified, set to ${it.get()}") else println("kperfTestKIR not specified, set to default false") }
   .getOrElse(false)
 
 val kperfMethods = providers.gradleProperty("kperfMethods")
+  .also { if(it.isPresent) println("kperfMethods specified, set to ${it.get()}") else println("kperfMethods not specified, set to default .*") }
   .getOrElse(".*")
 
 kperf {

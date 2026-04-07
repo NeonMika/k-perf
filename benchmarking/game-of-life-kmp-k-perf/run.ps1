@@ -158,7 +158,7 @@ function Get-Executables {
   if ($Reference -and $JVM) {
     $executables += @{
       Name   = "$GameType-plain-jar"
-      Path   = "$plainBuildRoot\lib\$projectName-jvm-0.1.0.jar"
+      Path   = "$plainBuildRoot\lib\$projectName-jvm-0.2.1.jar"
       Type   = "jar"
       Config = $null
     }
@@ -189,7 +189,7 @@ function Get-Executables {
       
       $executables += @{
         Name   = "$GameType-k-perf-$suffix-jar"
-        Path   = "$buildRoot\lib\$kPerfProjectName-jvm-0.1.0-$suffix.jar"
+        Path   = "$buildRoot\lib\$kPerfProjectName-jvm-0.2.1-$suffix.jar"
         Type   = "jar"
         Config = $config
       }

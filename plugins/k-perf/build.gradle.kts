@@ -9,10 +9,10 @@ plugins {
 }
 
 group = "io.github.neonmika"
-version = "0.2.0"
+version = "0.2.1"
 
 dependencies {
-  implementation("io.github.neonmika:KIRHelperKit:0.2.0")
+  implementation("io.github.neonmika:KIRHelperKit:0.2.1")
   compileOnly(kotlin("stdlib"))
 
   // This must be implementation and not compileOnly to have working tests
@@ -45,10 +45,10 @@ tasks.test {
 }
 
 /*
-println("rootProject extras:")
-rootProject.extra.properties.forEach { (key, value) -> println("-: $key: $value")  }
-println("project extras:")
-project.extra.properties.forEach { (key, value) -> println("- $key: $value")  }
+println("[kperf build] rootProject extras:")
+rootProject.extra.properties.forEach { (key, value) -> println("[kperf build] -: $key: $value")  }
+println("[kperf build] project extras:")
+project.extra.properties.forEach { (key, value) -> println("[kperf build] - $key: $value")  }
 */
 
 gradlePlugin {
@@ -56,6 +56,8 @@ gradlePlugin {
     create("KPerf") { // this name defines how the Gradle publish commands are named (in this case publishKPerfPluginMarkerMavenPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
       id = "io.github.neonmika.k-perf-plugin" // to use this plugin later in other projects we will use plugins { id("io.github.neonmika.k-perf-plugin") }
       implementationClass = "at.jku.ssw.gradle.KPerfGradlePlugin"
+      displayName = "k-perf -- Kotlin Performance Measurement"
+      description = "k-perf Gradle Plugin: A Kotlin backend compiler plugin that auto-instruments functions at the IR level to generate execution traces for performance analysis on JVM, JS, and Native targets."
     }
   }
 }
