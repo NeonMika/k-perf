@@ -1,0 +1,63 @@
+name: Benchmark (Windows, Small)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run k-perf benchmark
+        shell: pwsh
+        run: |
+          Set-Location benchmarking/game-of-life-kmp-k-perf
+          ./run.ps1 -CleanBuild $true -RepetitionCount 3 -StepCount 20
+
+      - name: Run IOA benchmark
+        shell: pwsh
+        run: |
+          Set-Location benchmarking/game-of-life-kmp-commonmain-ioa
+          ./run.ps1 -CleanBuild $false -RepetitionCount 3 -StepCount 5
+
+      - name: Commit and push benchmark results
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add measurements/
+          $changes = git status --porcelain
+          if ($changes) {
+            git commit -m "Add benchmark results [windows-small] [skip ci]"
+            $branch = $env:GITHUB_REF_NAME
+            for ($attempt = 1; $attempt -le 3; $attempt++) {
+              git pull --rebase origin $branch
+              git push origin HEAD:refs/heads/$branch
+              if ($LASTEXITCODE -eq 0) { break }
+              Write-Host "Push attempt $attempt failed, retrying in $($attempt * 5)s..."
+              Start-Sleep -Seconds ($attempt * 5)
+            }
+          } else {
+            Write-Host "No benchmark results to commit."
+          }

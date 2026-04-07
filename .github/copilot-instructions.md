@@ -39,6 +39,13 @@ Tests live only in the plugin projects (JUnit 5); there are no tests in `KIRHelp
 
 See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation on the two benchmark suites, parameters, and output format.
 
+> ⚠️ **Keep benchmarking scripts in sync**: Any change to kperf plugin settings (names/defaults), KMP example project structure, or project version **must** be reflected in:
+> - `benchmarking/build.ps1` (build-time key names, gradle args passed to KPerfConfig)
+> - `benchmarking/game-of-life-kmp-k-perf/run.ps1` (JAR version strings, suffix logic)
+> - `benchmarking/game-of-life-kmp-commonmain-ioa/run.ps1` (JAR version strings)
+>
+> GitHub Actions benchmark workflows (all `workflow_dispatch`-only) are in `.github/workflows/benchmark-*.yml`. They run both suites and commit results to `measurements/` with a `[skip ci]` message to avoid triggering build workflows.
+
 ---
 
 ## Architecture

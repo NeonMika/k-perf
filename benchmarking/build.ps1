@@ -2,6 +2,9 @@
 
 . "$PSScriptRoot\utils.ps1"
 
+# Use the correct gradlew wrapper for the current platform
+$gradlewCmd = if ($IsWindows) { ".\gradlew" } else { "./gradlew" }
+
 # Define GameType enum
 enum GameType {
   CommonMain
@@ -46,7 +49,7 @@ function Clean-KirHelperKit {
   Write-Host "=========================================="
   Push-Location "..\..\KIRHelperKit"
   try {
-    & .\gradlew clean | Out-Host
+    & $gradlewCmd clean | Out-Host
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: KIRHelperKit clean failed!"
       exit 1
@@ -64,7 +67,7 @@ function Clean-KPerfPlugin {
   Write-Host "=========================================="
   Push-Location "..\..\plugins\k-perf"
   try {
-    & .\gradlew clean | Out-Host
+    & $gradlewCmd clean | Out-Host
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: k-perf clean failed!"
       exit 1
@@ -82,7 +85,7 @@ function Clean-InstrumentationOverheadAnalyzerPlugin {
   Write-Host "=========================================="
   Push-Location "..\..\plugins\instrumentation-overhead-analyzer"
   try {
-    & .\gradlew clean | Out-Host
+    & $gradlewCmd clean | Out-Host
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: instrumentation-overhead-analyzer clean failed!"
       exit 1
@@ -100,7 +103,7 @@ function Clean-GameOfLifeCommonMainReference {
   Write-Host "=========================================="
   Push-Location "..\..\kmp-examples\game-of-life-kmp-commonmain"
   try {
-    & .\gradlew clean | Out-Host
+    & $gradlewCmd clean | Out-Host
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: game-of-life-kmp-commonmain clean failed!"
       exit 1
@@ -118,7 +121,7 @@ function Clean-GameOfLifeCommonMainIoa {
   Write-Host "=========================================="
   Push-Location "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa"
   try {
-    & .\gradlew clean | Out-Host
+    & $gradlewCmd clean | Out-Host
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: game-of-life-kmp-commonmain-ioa clean failed!"
       exit 1
@@ -136,7 +139,7 @@ function Clean-GameOfLifeDedicatedMainReference {
   Write-Host "=========================================="
   Push-Location "..\..\kmp-examples\game-of-life-kmp-dedicatedmain"
   try {
-    & .\gradlew clean | Out-Host
+    & $gradlewCmd clean | Out-Host
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: game-of-life-kmp-dedicatedmain clean failed!"
       exit 1
@@ -154,7 +157,7 @@ function Clean-GameOfLifeCommonKPerfVariant {
   Write-Host "=========================================="
   Push-Location "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf"
   try {
-    & .\gradlew clean | Out-Host
+    & $gradlewCmd clean | Out-Host
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: game-of-life-kmp-commonmain-k-perf clean failed!"
       exit 1
@@ -172,7 +175,7 @@ function Clean-GameOfLifeDedicatedKPerfVariant {
   Write-Host "=========================================="
   Push-Location "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf"
   try {
-    & .\gradlew clean | Out-Host
+    & $gradlewCmd clean | Out-Host
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: game-of-life-kmp-dedicatedmain-k-perf clean failed!"
       exit 1
@@ -191,7 +194,7 @@ function Build-KirHelperKit {
   Push-Location "..\..\KIRHelperKit"
   try {
     $buildStartTime = Get-Date
-    & .\gradlew build publishToMavenLocal | Out-Host
+    & $gradlewCmd build publishToMavenLocal | Out-Host
     $buildEndTime = Get-Date
     
     if ($LASTEXITCODE -ne 0) {
@@ -215,7 +218,7 @@ function Build-KPerfPlugin {
   Push-Location "..\..\plugins\k-perf"
   try {
     $buildStartTime = Get-Date
-    & .\gradlew build publishToMavenLocal | Out-Host
+    & $gradlewCmd build publishToMavenLocal | Out-Host
     $buildEndTime = Get-Date
     
     if ($LASTEXITCODE -ne 0) {
@@ -239,7 +242,7 @@ function Build-InstrumentationOverheadAnalyzerPlugin {
   Push-Location "..\..\plugins\instrumentation-overhead-analyzer"
   try {
     $buildStartTime = Get-Date
-    & .\gradlew build publishToMavenLocal | Out-Host
+    & $gradlewCmd build publishToMavenLocal | Out-Host
     $buildEndTime = Get-Date
     
     if ($LASTEXITCODE -ne 0) {
@@ -274,6 +277,14 @@ function Build-GameOfLifeCommonMainReference {
     $buildTimes['commonmain-plain-exe'] = $timings.windows
     $buildTimes['commonmain_plain_exe'] = $timings.windows
   }
+  if ($timings.Contains('linux')) {
+    $buildTimes['commonmain-plain-exe'] = $timings.linux
+    $buildTimes['commonmain_plain_exe'] = $timings.linux
+  }
+  if ($timings.Contains('mac')) {
+    $buildTimes['commonmain-plain-exe'] = $timings.mac
+    $buildTimes['commonmain_plain_exe'] = $timings.mac
+  }
   Write-Host "game-of-life-kmp-commonmain reference application build completed successfully."
   return $buildTimes
 }
@@ -288,6 +299,8 @@ function Build-GameOfLifeDedicatedMainReference {
   if ($timings.Contains('jvm')) { $buildTimes['dedicatedmain-plain-jar'] = $timings.jvm }
   if ($timings.Contains('js')) { $buildTimes['dedicatedmain-plain-node'] = $timings.js }
   if ($timings.Contains('windows')) { $buildTimes['dedicatedmain-plain-exe'] = $timings.windows }
+  if ($timings.Contains('linux')) { $buildTimes['dedicatedmain-plain-exe'] = $timings.linux }
+  if ($timings.Contains('mac')) { $buildTimes['dedicatedmain-plain-exe'] = $timings.mac }
   Write-Host "game-of-life-kmp-dedicatedmain reference application build completed successfully."
   return $buildTimes
 }
@@ -302,6 +315,8 @@ function Build-GameOfLifeCommonMainIoa {
   if ($timings.Contains('jvm')) { $buildTimes['commonmain_ioa_jar'] = $timings.jvm }
   if ($timings.Contains('js')) { $buildTimes['commonmain_ioa_node'] = $timings.js }
   if ($timings.Contains('windows')) { $buildTimes['commonmain_ioa_exe'] = $timings.windows }
+  if ($timings.Contains('linux')) { $buildTimes['commonmain_ioa_exe'] = $timings.linux }
+  if ($timings.Contains('mac')) { $buildTimes['commonmain_ioa_exe'] = $timings.mac }
   Write-Host "game-of-life-kmp-commonmain-ioa build completed successfully."
   return $buildTimes
 }
@@ -325,7 +340,7 @@ function Invoke-GradleTaskIfPresentTimed {
   Write-Host "=========================================="
 
   $taskStart = Get-Date
-  & .\gradlew @GradleArgs $TaskName | Out-Host
+  & $gradlewCmd @GradleArgs $TaskName | Out-Host
   $taskEndTime = Get-Date
   if ($LASTEXITCODE -ne 0) {
     throw "$Title failed with exit code $LASTEXITCODE"
@@ -353,7 +368,7 @@ function Invoke-KmpBuildWithTimings {
 
   Push-Location $Path
   try {
-    $taskList = & .\gradlew -q tasks --all | Out-String
+    $taskList = & $gradlewCmd -q tasks --all | Out-String
     if ($LASTEXITCODE -ne 0) {
       throw "$Title task discovery failed with exit code $LASTEXITCODE"
     }
@@ -419,6 +434,12 @@ function Build-GameOfLifeKPerfVariant {
   }
   if ($timings.Contains('windows')) { 
     $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.windows 
+  }
+  if ($timings.Contains('linux')) { 
+    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.linux 
+  }
+  if ($timings.Contains('mac')) { 
+    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.mac 
   }
   
   Write-Host "$projectName build with $suffix completed successfully."

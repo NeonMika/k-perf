@@ -14,6 +14,10 @@ param(
 . "$PSScriptRoot\..\utils.ps1"
 . "$PSScriptRoot\..\build.ps1"
 
+# Platform-specific native executable target and extension
+$nativeTarget = if ($IsWindows) { "mingwX64" } elseif ($IsMacOS) { "macosX64" } else { "linuxX64" }
+$nativeExt    = if ($IsWindows) { ".exe" }     else                { "" }
+
 # Collect machine and environment information for reproducibility
 Write-Host "=========================================="
 Write-Host "# Collecting System Information..."
@@ -87,10 +91,10 @@ if ($IOA -and $JVM) {
   $executables += @{ Name = "commonmain_ioa_jar"; Path = "$commonMainIoaBuildRoot\lib\game-of-life-kmp-commonmain-ioa-jvm-0.2.1.jar"; Type = "jar" }
 }
 if ($Reference -and $Native) {
-  $executables += @{ Name = "commonmain_plain_exe"; Path = "$commonMainBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain.exe"; Type = "exe" }
+  $executables += @{ Name = "commonmain_plain_exe"; Path = "$commonMainBuildRoot\bin\$nativeTarget\releaseExecutable\game-of-life-kmp-commonmain$nativeExt"; Type = "exe" }
 }
 if ($IOA -and $Native) {
-  $executables += @{ Name = "commonmain_ioa_exe"; Path = "$commonMainIoaBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain-ioa.exe"; Type = "exe" }
+  $executables += @{ Name = "commonmain_ioa_exe"; Path = "$commonMainIoaBuildRoot\bin\$nativeTarget\releaseExecutable\game-of-life-kmp-commonmain-ioa$nativeExt"; Type = "exe" }
 }
 if ($Reference -and $JS) {
   $executables += @{ Name = "commonmain_plain_node"; Path = "$commonMainBuildRoot\js\packages\game-of-life-kmp-commonmain\kotlin\game-of-life-kmp-commonmain.js"; Type = "node" }

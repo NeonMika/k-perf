@@ -19,6 +19,10 @@ param(
 . "$PSScriptRoot\..\utils.ps1"
 . "$PSScriptRoot\..\build.ps1"
 
+# Platform-specific native executable target and extension
+$nativeTarget = if ($IsWindows) { "mingwX64" } elseif ($IsMacOS) { "macosX64" } else { "linuxX64" }
+$nativeExt    = if ($IsWindows) { ".exe" }     else                { "" }
+
 # Collect machine and environment information for reproducibility
 Write-Host "=========================================="
 Write-Host "# Collecting System Information..."
@@ -176,7 +180,7 @@ function Get-Executables {
   if ($Reference -and $Native) {
     $executables += @{
       Name   = "$GameType-plain-exe"
-      Path   = "$plainBuildRoot\bin\mingwX64\releaseExecutable\$projectName.exe"
+      Path   = "$plainBuildRoot\bin\$nativeTarget\releaseExecutable\$projectName$nativeExt"
       Type   = "exe"
       Config = $null
     }
@@ -215,7 +219,7 @@ function Get-Executables {
       
       $executables += @{
         Name   = "$GameType-k-perf-$suffix-exe"
-        Path   = "$buildRoot\bin\mingwX64\releaseExecutable\$kPerfProjectName-$suffix.exe"
+        Path   = "$buildRoot\bin\$nativeTarget\releaseExecutable\$kPerfProjectName-$suffix$nativeExt"
         Type   = "exe"
         Config = $config
       }
@@ -400,34 +404,38 @@ foreach ($executable in $executables) {
     foreach ($traceFile in $traceFiles) {
       Write-Host "- Processing trace file: $($traceFile.Name)"
 
-      # Call the graph visualizer script
-      
-      $graphVisualizerPath = "..\..\analyzers\call_graph_visualizer\graph-visualizer.py"
-      python $graphVisualizerPath $traceFile.FullName *>&1 | Out-Null
+      # Call the graph visualizer script (silently skip if Python/matplotlib unavailable)
+      try {
+        $graphVisualizerPath = "..\..\analyzers\call_graph_visualizer\graph-visualizer.py"
+        python $graphVisualizerPath $traceFile.FullName *>&1 | Out-Null
 
-      if ($LASTEXITCODE -eq 0) {
-        # Find the generated PNG (most recently created)
-        $pngFiles = Get-ChildItem -Path "." -Filter "*.png" -ErrorAction SilentlyContinue | Sort-Object -Property CreationTime -Descending | Select-Object -First 1
+        if ($LASTEXITCODE -eq 0) {
+          # Find the generated PNG (most recently created)
+          $pngFiles = Get-ChildItem -Path "." -Filter "*.png" -ErrorAction SilentlyContinue | Sort-Object -Property CreationTime -Descending | Select-Object -First 1
 
-        if ($pngFiles) {  
-          Write-Host "-- Generated call graph PNG"
-        
-          $pngFile = $pngFiles
-          # Rename it based on executable name and iteration number
-          $newPngName = "$($executable.Name)_$i.png"
-          $newPngPath = Join-Path "." $newPngName
-          Rename-Item -Path $pngFile.FullName -NewName $newPngName -Force
+          if ($pngFiles) {  
+            Write-Host "-- Generated call graph PNG"
+          
+            $pngFile = $pngFiles
+            # Rename it based on executable name and iteration number
+            $newPngName = "$($executable.Name)_$i.png"
+            $newPngPath = Join-Path "." $newPngName
+            Rename-Item -Path $pngFile.FullName -NewName $newPngName -Force
 
-          # Copy to measurements folder
-          Copy-Item -Path $newPngPath -Destination $measurementDir -Force
-          Write-Host "-- Copied $newPngName to measurements folder"
+            # Copy to measurements folder
+            Copy-Item -Path $newPngPath -Destination $measurementDir -Force
+            Write-Host "-- Copied $newPngName to measurements folder"
 
-          # Delete the PNG from current directory
-          Remove-Item -Path $newPngPath -Force
+            # Delete the PNG from current directory
+            Remove-Item -Path $newPngPath -Force
+          }
+        }
+        else {
+          Write-Host "-- Skipped call graph PNG (graph-visualizer.py returned non-zero)"
         }
       }
-      else {
-        Write-Host "-- ERROR: graph-visualizer.py failed for $($traceFile.Name)"
+      catch {
+        Write-Host "-- Skipped call graph PNG (python not available or error: $_)"
       }
 
       # Delete the trace file

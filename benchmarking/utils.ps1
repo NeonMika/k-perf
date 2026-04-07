@@ -198,174 +198,254 @@ function Get-MachineInfo {
 
   $machineInfo = [ordered]@{}
 
-  # Computer/Device Information
-  $computerSystem = Get-CimInstance Win32_ComputerSystem
-  $machineInfo.DeviceManufacturer = $computerSystem.Manufacturer
-  $machineInfo.DeviceModel = $computerSystem.Model
+  # --- OS-specific hardware and system information ---
 
-  # Operating System
-  $os = Get-CimInstance Win32_OperatingSystem
-  $machineInfo.OS = "$($os.Caption) $($os.Version)"
-  $machineInfo.OSArchitecture = $os.OSArchitecture
+  if ($IsWindows) {
+    # Computer/Device Information
+    $computerSystem = Get-CimInstance Win32_ComputerSystem
+    $machineInfo.DeviceManufacturer = $computerSystem.Manufacturer
+    $machineInfo.DeviceModel = $computerSystem.Model
 
-  # CPU
-  $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
-  $machineInfo.CPU = $cpu.Name.Trim()
-  $machineInfo.CPUCores = $cpu.NumberOfCores
-  $machineInfo.CPULogicalProcessors = $cpu.NumberOfLogicalProcessors
-  $machineInfo.CPUMaxClockSpeedMHz = $cpu.MaxClockSpeed
+    # Operating System
+    $os = Get-CimInstance Win32_OperatingSystem
+    $machineInfo.OS = "$($os.Caption) $($os.Version)"
+    $machineInfo.OSArchitecture = $os.OSArchitecture
 
-  # RAM
-  $totalRAMGB = [math]::Round($computerSystem.TotalPhysicalMemory / 1GB, 2)
-  $machineInfo.TotalRAMGB = $totalRAMGB
+    # CPU
+    $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+    $machineInfo.CPU = $cpu.Name.Trim()
+    $machineInfo.CPUCores = $cpu.NumberOfCores
+    $machineInfo.CPULogicalProcessors = $cpu.NumberOfLogicalProcessors
+    $machineInfo.CPUMaxClockSpeedMHz = $cpu.MaxClockSpeed
 
-  # Detailed RAM information
-  $ramModules = Get-CimInstance Win32_PhysicalMemory
-  if ($ramModules) {
-    $machineInfo.RAMModuleCount = $ramModules.Count
-    $firstModule = $ramModules | Select-Object -First 1
-    if ($firstModule.Speed) {
-      $machineInfo.RAMSpeedMHz = $firstModule.Speed
+    # RAM
+    $totalRAMGB = [math]::Round($computerSystem.TotalPhysicalMemory / 1GB, 2)
+    $machineInfo.TotalRAMGB = $totalRAMGB
+
+    # Detailed RAM information
+    $ramModules = Get-CimInstance Win32_PhysicalMemory
+    if ($ramModules) {
+      $machineInfo.RAMModuleCount = $ramModules.Count
+      $firstModule = $ramModules | Select-Object -First 1
+      if ($firstModule.Speed) { $machineInfo.RAMSpeedMHz = $firstModule.Speed }
+      if ($firstModule.Manufacturer) { $machineInfo.RAMManufacturer = $firstModule.Manufacturer.Trim() }
+      if ($firstModule.PartNumber) { $machineInfo.RAMPartNumber = $firstModule.PartNumber.Trim() }
+      $moduleCapacities = $ramModules | ForEach-Object { [math]::Round($_.Capacity / 1GB, 2) }
+      $machineInfo.RAMModuleCapacitiesGB = ($moduleCapacities -join ' + ')
     }
-    if ($firstModule.Manufacturer) {
-      $machineInfo.RAMManufacturer = $firstModule.Manufacturer.Trim()
+
+    # Disk
+    $disk = Get-CimInstance Win32_DiskDrive | Where-Object { $_.DeviceID -eq "\\.\PHYSICALDRIVE0" } | Select-Object -First 1
+    if ($disk) {
+      $machineInfo.DiskModel = $disk.Model.Trim()
+      $machineInfo.DiskSizeGB = [math]::Round($disk.Size / 1GB, 2)
+      $machineInfo.DiskMediaType = $disk.MediaType
+      if ($disk.InterfaceType) { $machineInfo.DiskInterfaceType = $disk.InterfaceType }
     }
-    if ($firstModule.PartNumber) {
-      $machineInfo.RAMPartNumber = $firstModule.PartNumber.Trim()
+
+    # Available Disk Space
+    try {
+      $systemDrive = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DeviceID -eq "C:" }
+      if ($systemDrive) { $machineInfo.SystemDriveFreeSpaceGB = [math]::Round($systemDrive.FreeSpace / 1GB, 2) }
     }
-    # Get capacity of each module
-    $moduleCapacities = $ramModules | ForEach-Object { [math]::Round($_.Capacity / 1GB, 2) }
-    $machineInfo.RAMModuleCapacitiesGB = ($moduleCapacities -join ' + ')
-  }
+    catch { $machineInfo.SystemDriveFreeSpaceGB = "Not available" }
 
-  # Disk
-  $disk = Get-CimInstance Win32_DiskDrive | Where-Object { $_.DeviceID -eq "\\.\PHYSICALDRIVE0" } | Select-Object -First 1
-  if ($disk) {
-    $machineInfo.DiskModel = $disk.Model.Trim()
-    $machineInfo.DiskSizeGB = [math]::Round($disk.Size / 1GB, 2)
-    $machineInfo.DiskMediaType = $disk.MediaType
-    if ($disk.InterfaceType) {
-      $machineInfo.DiskInterfaceType = $disk.InterfaceType
+    # Available Free RAM
+    try { $machineInfo.AvailableRAMGB = [math]::Round($os.FreePhysicalMemory / 1MB, 2) }
+    catch { $machineInfo.AvailableRAMGB = "Not available" }
+
+    # Power Plan
+    try {
+      $activePowerPlan = Get-CimInstance -Namespace root\cimv2\power -ClassName Win32_PowerPlan -ErrorAction SilentlyContinue | Where-Object { $_.IsActive -eq $true }
+      $machineInfo.PowerPlan = if ($activePowerPlan) { $activePowerPlan.ElementName } else { "Not available" }
     }
-  }
+    catch { $machineInfo.PowerPlan = "Not available" }
 
-  # Available Disk Space
-  try {
-    $systemDrive = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DeviceID -eq "C:" }
-    if ($systemDrive) {
-      $machineInfo.SystemDriveFreeSpaceGB = [math]::Round($systemDrive.FreeSpace / 1GB, 2)
+    # System Uptime
+    try { $machineInfo.SystemUptimeHours = [math]::Round(((Get-Date) - $os.LastBootUpTime).TotalHours, 2) }
+    catch { $machineInfo.SystemUptimeHours = "Not available" }
+
+    # Windows Build Number
+    $machineInfo.WindowsBuildNumber = $os.BuildNumber
+
+    # Time Zone / User
+    $machineInfo.TimeZone = (Get-TimeZone).Id
+    $machineInfo.Username = $env:USERNAME
+
+    # BIOS/UEFI
+    try {
+      $bios = Get-CimInstance Win32_BIOS
+      if ($bios) {
+        $machineInfo.BIOSVersion = $bios.SMBIOSBIOSVersion
+        $machineInfo.BIOSManufacturer = $bios.Manufacturer
+      }
     }
-  }
-  catch {
-    $machineInfo.SystemDriveFreeSpaceGB = "Not available"
-  }
+    catch { $machineInfo.BIOSVersion = "Not available" }
 
-  # Available Free RAM
-  try {
-    $availableRAMGB = [math]::Round($os.FreePhysicalMemory / 1MB, 2)
-    $machineInfo.AvailableRAMGB = $availableRAMGB
-  }
-  catch {
-    $machineInfo.AvailableRAMGB = "Not available"
-  }
-
-  # Power Plan
-  try {
-    $activePowerPlan = Get-CimInstance -Namespace root\cimv2\power -ClassName Win32_PowerPlan -ErrorAction SilentlyContinue | Where-Object { $_.IsActive -eq $true }
-    if ($activePowerPlan) {
-      $machineInfo.PowerPlan = $activePowerPlan.ElementName
+    # Virtualization
+    try {
+      $machineInfo.IsVirtualMachine = $computerSystem.Model -match "Virtual|VMware|VirtualBox|Hyper-V|KVM|QEMU"
     }
-    else {
-      $machineInfo.PowerPlan = "Not available"
+    catch { $machineInfo.IsVirtualMachine = "Unknown" }
+
+    # Hyper-V
+    try {
+      $hyperV = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -ErrorAction SilentlyContinue
+      if ($hyperV) { $machineInfo.HyperVEnabled = ($hyperV.State -eq "Enabled") }
     }
-  }
-  catch {
-    $machineInfo.PowerPlan = "Not available"
-  }
+    catch { $machineInfo.HyperVEnabled = "Unknown" }
 
-  # System Uptime
-  try {
-    $uptime = (Get-Date) - $os.LastBootUpTime
-    $machineInfo.SystemUptimeHours = [math]::Round($uptime.TotalHours, 2)
-  }
-  catch {
-    $machineInfo.SystemUptimeHours = "Not available"
-  }
+    # Secure Boot
+    try { $machineInfo.SecureBootEnabled = Confirm-SecureBootUEFI -ErrorAction SilentlyContinue }
+    catch { $machineInfo.SecureBootEnabled = "Unknown" }
 
-  # Windows Build Number
-  $machineInfo.WindowsBuildNumber = $os.BuildNumber
+    # Running Process Count
+    try { $machineInfo.RunningProcessCount = (Get-Process).Count }
+    catch { $machineInfo.RunningProcessCount = "Not available" }
 
-  # Time Zone
-  $machineInfo.TimeZone = (Get-TimeZone).Id
-
-  # Current User
-  $machineInfo.Username = $env:USERNAME
-
-  # BIOS/UEFI Information
-  try {
-    $bios = Get-CimInstance Win32_BIOS
-    if ($bios) {
-      $machineInfo.BIOSVersion = $bios.SMBIOSBIOSVersion
-      $machineInfo.BIOSManufacturer = $bios.Manufacturer
+    # Windows Defender
+    try {
+      $defender = Get-MpComputerStatus -ErrorAction SilentlyContinue
+      if ($defender) {
+        $machineInfo.WindowsDefenderEnabled = $defender.AntivirusEnabled
+        $machineInfo.WindowsDefenderRealTimeProtection = $defender.RealTimeProtectionEnabled
+      }
     }
-  }
-  catch {
-    $machineInfo.BIOSVersion = "Not available"
-  }
+    catch { $machineInfo.WindowsDefenderEnabled = "Unknown" }
 
-  # Virtualization Status
-  try {
-    $isVM = $false
-    $computerModel = $computerSystem.Model
-    if ($computerModel -match "Virtual|VMware|VirtualBox|Hyper-V|KVM|QEMU") {
-      $isVM = $true
+  } elseif ($IsLinux) {
+    # Device info (from DMI when accessible — requires root on some systems)
+    try {
+      if (Test-Path "/sys/class/dmi/id/sys_vendor") {
+        $machineInfo.DeviceManufacturer = (Get-Content "/sys/class/dmi/id/sys_vendor" -Raw).Trim()
+      }
+      if (Test-Path "/sys/class/dmi/id/product_name") {
+        $machineInfo.DeviceModel = (Get-Content "/sys/class/dmi/id/product_name" -Raw).Trim()
+      }
     }
-    $machineInfo.IsVirtualMachine = $isVM
-  }
-  catch {
-    $machineInfo.IsVirtualMachine = "Unknown"
-  }
+    catch { }
 
-  # Hyper-V Status
-  try {
-    $hyperV = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -ErrorAction SilentlyContinue
-    if ($hyperV) {
-      $machineInfo.HyperVEnabled = ($hyperV.State -eq "Enabled")
+    # Operating System
+    try {
+      $osInfo = @{}
+      if (Test-Path "/etc/os-release") {
+        Get-Content "/etc/os-release" | Where-Object { $_ -match '=' } | ForEach-Object {
+          $parts = $_ -split '=', 2
+          $osInfo[$parts[0].Trim()] = $parts[1].Trim().Trim('"')
+        }
+      }
+      $machineInfo.OS = if ($osInfo['PRETTY_NAME']) { $osInfo['PRETTY_NAME'] } else { (uname -a 2>&1).ToString().Trim() }
     }
-  }
-  catch {
-    $machineInfo.HyperVEnabled = "Unknown"
-  }
+    catch { $machineInfo.OS = (uname -a 2>&1).ToString().Trim() }
+    $machineInfo.OSArchitecture = (uname -m 2>&1).ToString().Trim()
 
-  # Secure Boot Status
-  try {
-    $secureBoot = Confirm-SecureBootUEFI -ErrorAction SilentlyContinue
-    $machineInfo.SecureBootEnabled = $secureBoot
-  }
-  catch {
-    $machineInfo.SecureBootEnabled = "Unknown"
-  }
-
-  # Running Process Count
-  try {
-    $processCount = (Get-Process).Count
-    $machineInfo.RunningProcessCount = $processCount
-  }
-  catch {
-    $machineInfo.RunningProcessCount = "Not available"
-  }
-
-  # Windows Defender Status
-  try {
-    $defender = Get-MpComputerStatus -ErrorAction SilentlyContinue
-    if ($defender) {
-      $machineInfo.WindowsDefenderEnabled = $defender.AntivirusEnabled
-      $machineInfo.WindowsDefenderRealTimeProtection = $defender.RealTimeProtectionEnabled
+    # CPU
+    try {
+      if (Test-Path "/proc/cpuinfo") {
+        $cpuInfo = Get-Content "/proc/cpuinfo"
+        $cpuModelLine = $cpuInfo | Where-Object { $_ -match '^model name' } | Select-Object -First 1
+        if ($cpuModelLine -match ':\s*(.+)$') { $machineInfo.CPU = $Matches[1].Trim() }
+        $cpuCoresLine = $cpuInfo | Where-Object { $_ -match '^cpu cores' } | Select-Object -First 1
+        if ($cpuCoresLine -match ':\s*(\d+)') { $machineInfo.CPUCores = [int]$Matches[1] }
+      }
+      $logicalProcs = (nproc 2>&1).ToString().Trim()
+      if ($logicalProcs -match '^\d+$') { $machineInfo.CPULogicalProcessors = [int]$logicalProcs }
     }
+    catch { }
+
+    # RAM
+    try {
+      if (Test-Path "/proc/meminfo") {
+        $memInfo = Get-Content "/proc/meminfo"
+        $memTotalLine = $memInfo | Where-Object { $_ -match '^MemTotal:' } | Select-Object -First 1
+        if ($memTotalLine -match ':\s*(\d+)\s*kB') {
+          $machineInfo.TotalRAMGB = [math]::Round([long]$Matches[1] * 1KB / 1GB, 2)
+        }
+        $memAvailLine = $memInfo | Where-Object { $_ -match '^MemAvailable:' } | Select-Object -First 1
+        if ($memAvailLine -match ':\s*(\d+)\s*kB') {
+          $machineInfo.AvailableRAMGB = [math]::Round([long]$Matches[1] * 1KB / 1GB, 2)
+        }
+      }
+    }
+    catch { }
+
+    # Disk
+    try {
+      $dfLine = (df -BG / 2>&1 | Select-Object -Skip 1 | Select-Object -First 1).ToString()
+      if ($dfLine -match '\s+(\d+)G\s+\d+G\s+(\d+)G') {
+        $machineInfo.DiskSizeGB = [int]$Matches[1]
+        $machineInfo.SystemDriveFreeSpaceGB = [int]$Matches[2]
+      }
+    }
+    catch { }
+
+    # System Uptime
+    try {
+      $uptimeRaw = (Get-Content "/proc/uptime" -Raw).Trim().Split(' ')[0]
+      $machineInfo.SystemUptimeHours = [math]::Round([double]$uptimeRaw / 3600.0, 2)
+    }
+    catch { $machineInfo.SystemUptimeHours = "Not available" }
+
+    # Time Zone / User
+    $machineInfo.TimeZone = try { (Get-TimeZone).Id } catch { "Not available" }
+    $machineInfo.Username = if ($env:USER) { $env:USER } else { try { (whoami 2>&1).ToString().Trim() } catch { "Not available" } }
+
+    # Running Process Count
+    try { $machineInfo.RunningProcessCount = (Get-Process).Count }
+    catch { $machineInfo.RunningProcessCount = "Not available" }
+
+    # Virtualization
+    try {
+      $productName = if (Test-Path "/sys/class/dmi/id/product_name") {
+        (Get-Content "/sys/class/dmi/id/product_name" -Raw).Trim()
+      } else { "" }
+      $machineInfo.IsVirtualMachine = [bool]($productName -match "Virtual|VMware|VirtualBox|KVM|QEMU|HVM")
+    }
+    catch { $machineInfo.IsVirtualMachine = "Unknown" }
+
+  } elseif ($IsMacOS) {
+    # Operating System
+    try { $machineInfo.OS = "$(sw_vers -productName 2>&1) $(sw_vers -productVersion 2>&1)".Trim() }
+    catch { $machineInfo.OS = (uname -a 2>&1).ToString().Trim() }
+    $machineInfo.OSArchitecture = (uname -m 2>&1).ToString().Trim()
+
+    # CPU
+    try {
+      $machineInfo.CPU = (sysctl -n machdep.cpu.brand_string 2>&1).ToString().Trim()
+      $machineInfo.CPUCores = [int](sysctl -n hw.physicalcpu 2>&1).ToString().Trim()
+      $machineInfo.CPULogicalProcessors = [int](sysctl -n hw.logicalcpu 2>&1).ToString().Trim()
+    }
+    catch { }
+
+    # RAM
+    try {
+      $memBytes = [long](sysctl -n hw.memsize 2>&1).ToString().Trim()
+      $machineInfo.TotalRAMGB = [math]::Round($memBytes / 1GB, 2)
+    }
+    catch { }
+
+    # Disk
+    try {
+      $dfLine = (df -g / 2>&1 | Select-Object -Skip 1 | Select-Object -First 1).ToString()
+      if ($dfLine -match '\s+(\d+)\s+\d+\s+(\d+)') {
+        $machineInfo.DiskSizeGB = [int]$Matches[1]
+        $machineInfo.SystemDriveFreeSpaceGB = [int]$Matches[2]
+      }
+    }
+    catch { }
+
+    # Time Zone / User
+    $machineInfo.TimeZone = try { (Get-TimeZone).Id } catch { "Not available" }
+    $machineInfo.Username = if ($env:USER) { $env:USER } else { try { (whoami 2>&1).ToString().Trim() } catch { "Not available" } }
+
+    # Running Process Count
+    try { $machineInfo.RunningProcessCount = (Get-Process).Count }
+    catch { $machineInfo.RunningProcessCount = "Not available" }
+
+    $machineInfo.IsVirtualMachine = $false
   }
-  catch {
-    $machineInfo.WindowsDefenderEnabled = "Unknown"
-  }
+
+  # --- Cross-platform runtime information ---
 
   # PowerShell Version
   $machineInfo.PowerShellVersion = "$($PSVersionTable.PSVersion.Major).$($PSVersionTable.PSVersion.Minor).$($PSVersionTable.PSVersion.Patch)"
@@ -374,10 +454,7 @@ function Get-MachineInfo {
   try {
     $javaVersionOutput = java -version 2>&1
     $javaVersionLine = $javaVersionOutput | Select-Object -First 1
-    if ($javaVersionLine -match '"(.+?)"') {
-      $machineInfo.JavaVersion = $Matches[1]
-    }
-    # Try to detect JDK distribution
+    if ($javaVersionLine -match '"(.+?)"') { $machineInfo.JavaVersion = $Matches[1] }
     $javaDistLine = $javaVersionOutput | Select-Object -Skip 1 -First 2
     if ($javaDistLine -match "OpenJDK|Oracle|Adoptium|Temurin|Azul|Amazon|GraalVM") {
       $machineInfo.JavaDistribution = $Matches[0]
@@ -389,42 +466,27 @@ function Get-MachineInfo {
   }
 
   # Node.js Version
-  try {
-    $nodeVersion = node --version 2>&1
-    $machineInfo.NodeVersion = $nodeVersion.ToString().Trim()
-  }
-  catch {
-    $machineInfo.NodeVersion = "Not available"
-  }
+  try { $machineInfo.NodeVersion = (node --version 2>&1).ToString().Trim() }
+  catch { $machineInfo.NodeVersion = "Not available" }
 
   # Python Version
   try {
-    $pythonVersionOutput = python --version 2>&1
-    $machineInfo.PythonVersion = $pythonVersionOutput.ToString().Trim()
+    $pythonCmd = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
+    $machineInfo.PythonVersion = (& $pythonCmd --version 2>&1).ToString().Trim()
   }
-  catch {
-    $machineInfo.PythonVersion = "Not available"
-  }
+  catch { $machineInfo.PythonVersion = "Not available" }
 
-  # Gradle Version (from one of the projects)
+  # Gradle + Kotlin Version (via the project's gradlew wrapper)
+  $gradleWrapper = Join-Path $GradleProjectPath (if ($IsWindows) { "gradlew.bat" } else { "gradlew" })
   try {
-    $gradleVersionOutput = & "$GradleProjectPath\gradlew.bat" --version 2>&1 | Select-String "Gradle "
-    if ($gradleVersionOutput) {
-      $machineInfo.GradleVersion = $gradleVersionOutput.ToString().Trim()
-    }
+    $gradleOut = & $gradleWrapper --version 2>&1
+    $gradleVersionLine = $gradleOut | Select-String "Gradle "
+    if ($gradleVersionLine) { $machineInfo.GradleVersion = $gradleVersionLine.ToString().Trim() }
+    $kotlinVersionLine = $gradleOut | Select-String "Kotlin:"
+    if ($kotlinVersionLine) { $machineInfo.KotlinVersion = $kotlinVersionLine.ToString().Trim() }
   }
   catch {
     $machineInfo.GradleVersion = "Not available"
-  }
-
-  # Kotlin Version
-  try {
-    $kotlinVersionOutput = & "$GradleProjectPath\gradlew.bat" --version 2>&1 | Select-String "Kotlin:"
-    if ($kotlinVersionOutput) {
-      $machineInfo.KotlinVersion = $kotlinVersionOutput.ToString().Trim()
-    }
-  }
-  catch {
     $machineInfo.KotlinVersion = "Not available"
   }
 
@@ -434,14 +496,10 @@ function Get-MachineInfo {
     if ($LASTEXITCODE -eq 0) {
       $machineInfo.GitCommitHash = $gitCommit.ToString().Trim()
       $gitBranch = git rev-parse --abbrev-ref HEAD 2>&1
-      if ($LASTEXITCODE -eq 0) {
-        $machineInfo.GitBranch = $gitBranch.ToString().Trim()
-      }
+      if ($LASTEXITCODE -eq 0) { $machineInfo.GitBranch = $gitBranch.ToString().Trim() }
     }
   }
-  catch {
-    $machineInfo.GitCommitHash = "Not available"
-  }
+  catch { $machineInfo.GitCommitHash = "Not available" }
 
   # Timestamp
   $machineInfo.CollectionTimestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
