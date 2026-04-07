@@ -46,36 +46,41 @@ jobs:
         run: .\gradlew clean build publishToMavenLocal
 
       - name: Build instrumentation-overhead-analyzer plugin
-        working-directory: plugins\instrumentation-overhead-analyzer
+        working-directory: plugins/instrumentation-overhead-analyzer
         shell: pwsh
         run: .\gradlew clean build publishToMavenLocal
 
       - name: Build k-perf plugin
-        working-directory: plugins\k-perf
+        working-directory: plugins/k-perf
         shell: pwsh
         run: .\gradlew clean build publishToMavenLocal
 
       - name: Build game-of-life-kmp-commonmain
-        working-directory: kmp-examples\game-of-life-kmp-commonmain
+        working-directory: kmp-examples/game-of-life-kmp-commonmain
         shell: pwsh
-        run: & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
+        run: |
+          & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
 
       - name: Build game-of-life-kmp-commonmain-ioa
-        working-directory: kmp-examples\game-of-life-kmp-commonmain-ioa
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
         shell: pwsh
-        run: & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
+        run: |
+          & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
 
       - name: Build game-of-life-kmp-commonmain-k-perf
-        working-directory: kmp-examples\game-of-life-kmp-commonmain-k-perf
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
         shell: pwsh
-        run: & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
+        run: |
+          & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
 
       - name: Build game-of-life-kmp-dedicatedmain
-        working-directory: kmp-examples\game-of-life-kmp-dedicatedmain
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
         shell: pwsh
-        run: & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
+        run: |
+          & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
 
       - name: Build game-of-life-kmp-dedicatedmain-k-perf
-        working-directory: kmp-examples\game-of-life-kmp-dedicatedmain-k-perf
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
         shell: pwsh
-        run: & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
+        run: |
+          & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
