@@ -33,7 +33,7 @@ jobs:
         shell: pwsh
         run: |
           Set-Location benchmarking/game-of-life-kmp-k-perf
-          ./run.ps1 -CleanBuild $true -RepetitionCount 50 -StepCount 500
+          ./run.ps1 -CleanBuild $false -RepetitionCount 50 -StepCount 500
 
       - name: Run IOA benchmark
         shell: pwsh
