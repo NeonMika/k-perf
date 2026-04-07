@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# ⚠️ Duplication notice: The build order and project list here are mirrored in
+# .github/workflows/build-all-on-ubuntu-separated.yml (which builds each project as a
+# discrete CI step) and .github/scripts/build-kmp-example.sh (the KMP target discovery
+# helper). Keep all three in sync when adding/removing projects or changing the build order.
 set -euo pipefail
 
 CLEAN_BUILD=true

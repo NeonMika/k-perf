@@ -1,3 +1,7 @@
+# ⚠️ Duplication notice: The build order and project list here are mirrored in
+# .github/workflows/build-all-on-windows-separated.yml (which builds each project as a
+# discrete CI step) and .github/scripts/Build-KmpExample.ps1 (the KMP target discovery
+# helper). Keep all three in sync when adding/removing projects or changing the build order.
 param(
   [bool]$CleanBuild = $true
 )

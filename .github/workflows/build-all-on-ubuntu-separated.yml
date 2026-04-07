@@ -1,0 +1,74 @@
+name: Build all on Ubuntu (separated)
+
+# Each project is built as a discrete step for fine-grained failure visibility.
+# ⚠️ Build order and project list mirror buildAll.sh and Build-KmpExample.ps1 in .github/scripts/.
+#    Keep all three in sync when adding/removing projects or changing the build order.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Make all files executable
+        run: chmod +x -R ./
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      # Locally-published plugins (io.github.neonmika group) are published to mavenLocal
+      # within the same build. The cached Gradle module metadata can contain stale
+      # resolutions from a previous run (e.g. after a coordinate change). Deleting the
+      # cached metadata for this group forces Gradle to re-resolve from the freshly
+      # published mavenLocal artifacts.
+      - name: Clear stale Gradle module cache for locally-published artifacts
+        run: find ~/.gradle/caches -type d -name "io.github.neonmika*" -exec rm -rf {} + 2>/dev/null || true
+
+      - name: Build KIRHelperKit
+        working-directory: KIRHelperKit
+        run: ./gradlew clean build publishToMavenLocal
+
+      - name: Build instrumentation-overhead-analyzer plugin
+        working-directory: plugins/instrumentation-overhead-analyzer
+        run: ./gradlew clean build publishToMavenLocal
+
+      - name: Build k-perf plugin
+        working-directory: plugins/k-perf
+        run: ./gradlew clean build publishToMavenLocal
+
+      - name: Build game-of-life-kmp-commonmain
+        working-directory: kmp-examples/game-of-life-kmp-commonmain
+        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
+
+      - name: Build game-of-life-kmp-commonmain-ioa
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
+        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
+
+      - name: Build game-of-life-kmp-commonmain-k-perf
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
+        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
+
+      - name: Build game-of-life-kmp-dedicatedmain
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
+        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
+
+      - name: Build game-of-life-kmp-dedicatedmain-k-perf
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
+        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
