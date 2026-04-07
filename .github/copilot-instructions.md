@@ -42,7 +42,7 @@ See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation
 > ⚠️ **Keep benchmarking scripts in sync**: Any change to kperf plugin settings (names/defaults), KMP example project structure, or project version **must** be reflected in:
 > - `benchmarking/build.ps1` (build-time key names, gradle args passed to KPerfConfig)
 > - `benchmarking/game-of-life-kmp-k-perf/run.ps1` (JAR version strings, suffix logic)
-> - `benchmarking/game-of-life-kmp-commonmain-ioa/run.ps1` (JAR version strings)
+> - `benchmarking/game-of-life-kmp-commonmain-ioa/run.ps1` (JAR version strings) — note: the IOA plugin itself is **work in progress**; this benchmark measures a mostly no-op plugin for now
 >
 > GitHub Actions benchmark workflows (all `workflow_dispatch`-only) are in `.github/workflows/benchmark-*.yml`. They run both suites and commit results to `measurements/` with a `[skip ci]` message to avoid triggering build workflows.
 
@@ -58,6 +58,8 @@ KIRHelperKit  (io.github.neonmika:KIRHelperKit:0.2.1)
                          plugins/instrumentation-overhead-analyzer
                               └── applied to ──▶  kmp-examples/*
 ```
+
+> ⚠️ **`plugins/instrumentation-overhead-analyzer` is currently work in progress.** The plugin builds, is applied to `game-of-life-kmp-commonmain-ioa`, and walks IR functions — but the synthetic overhead injection is **not yet implemented**. Treat it as a stub/prototype.
 
 See [`README.md`](../README.md) for a full overview of the repository structure.
 

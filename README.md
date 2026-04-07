@@ -209,6 +209,8 @@ instrumentationOverheadAnalyzer {
 }
 ```
 
+> ⚠️ **Work in progress:** The IOA plugin is currently a **stub**. It walks IR functions and identifies instrumentation candidates, but the synthetic overhead injection is **not yet implemented**. The plugin compiles and can be applied, but it does not modify the program under analysis.
+
 > 🔬 This plugin is currently in **prototype/research phase** — it identifies instrumentation candidates but the synthetic overhead injection is still being developed.
 
 ---
@@ -260,7 +262,7 @@ Five Kotlin Multiplatform projects demonstrate k-perf in action using **Conway's
 |---|---|---|
 | `game-of-life-kmp-commonmain` | ❌ none | Single shared `main()` |
 | `game-of-life-kmp-commonmain-k-perf` | ✅ k-perf | Single shared `main()` |
-| `game-of-life-kmp-commonmain-ioa` | ✅ IOA | Single shared `main()` |
+| `game-of-life-kmp-commonmain-ioa` | 🚧 IOA *(work in progress)* | Single shared `main()` |
 | `game-of-life-kmp-dedicatedmain` | ❌ none | Per-platform `main()` |
 | `game-of-life-kmp-dedicatedmain-k-perf` | ✅ k-perf | Per-platform `main()` |
 
@@ -335,6 +337,8 @@ cd benchmarking\game-of-life-kmp-k-perf
 | Platform | `jar` (JVM), `js` (Node.js), `native` (Windows .exe) |
 
 ### Suite 2 — Instrumentation Overhead Analyzer
+
+> ⚠️ **Work in progress:** The IOA plugin is currently a stub — it does not yet inject synthetic overhead. This suite benchmarks the plugin's compile-time and runtime cost as a baseline, but results do not yet reflect real instrumentation overhead.
 
 Measures the raw overhead introduced by the IOA plugin.
 
