@@ -477,7 +477,8 @@ function Get-MachineInfo {
   catch { $machineInfo.PythonVersion = "Not available" }
 
   # Gradle + Kotlin Version (via the project's gradlew wrapper)
-  $gradleWrapper = Join-Path $GradleProjectPath (if ($IsWindows) { "gradlew.bat" } else { "gradlew" })
+  $gradlewName   = if ($IsWindows) { "gradlew.bat" } else { "gradlew" }
+  $gradleWrapper = Join-Path $GradleProjectPath $gradlewName
   try {
     $gradleOut = & $gradleWrapper --version 2>&1
     $gradleVersionLine = $gradleOut | Select-String "Gradle "
