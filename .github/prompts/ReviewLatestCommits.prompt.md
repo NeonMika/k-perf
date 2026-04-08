@@ -15,7 +15,7 @@ Inputs (from prompt arguments, when provided):
 - Focus area (example: `performance`, `security`, `tests`)
 
 If no arguments are provided:
-- Review the latest 5 commits on the current branch and include unstaged/staged local changes if present.
+- Review at least the latest 5 commits on the current branch (look at more if deemed necessary) and include unstaged/staged local changes if present.
 
 Review process:
 1. Gather context from git history and diffs (messages, changed files, patch content).
