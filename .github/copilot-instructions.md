@@ -1,5 +1,10 @@
 # Copilot Instructions for k-perf
 
+> ⚠️ **MANDATORY FIRST STEP — NO EXCEPTIONS, NO MATTER HOW SMALL THE TASK:**
+> Before touching any file, create `plans/<task-name>/01-plan.md` and show it to the user.
+> Never implement anything if this file does not exist yet.
+> The only exception is when the user explicitly says to skip the plan.
+
 ## Build System & Commands
 
 All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). There is no root-level Gradle project — each subproject has its own `gradlew`.
@@ -234,18 +239,17 @@ Both plugins write a `./DEBUG.txt` file **at compile time** (not runtime) using 
 
 ## Agentic Behavior
 
-This behavior MUST be followed for all interactions.
-You should always start your work with a plan, see the following section for details.
+**This section is mandatory for every interaction, no exceptions.**
+Never write code, edit configs, or modify any file before `plans/<task>/01-plan.md` exists.
+If you catch yourself about to change a file without a plan document, stop and create the plan first.
 
 ### Repository planning workflow
 
-Use a repository-local planning workflow for substantial work. Store planning artifacts under `plans/<task>/` and follow this sequence:
-1. Create a clear plan file.
-2. Create architecture and implementation notes.
-3. Create a test plan.
-4. Implement the change.
-5. Test the change.
-6. Commit the finished work.
+Use a repository-local planning workflow for **every** task, including small ones. Store planning artifacts under `plans/<task>/` and follow this sequence:
+1. **Create** `plans/<task>/01-plan.md` and show the path to the user.
+2. Implement the change.
+3. Set plan status to `done` in the plan file before committing.
+4. Commit the finished work (including the plan file).
 
 The default task layout is a task-specific subfolder with numbered files such as `01-plan.md`, `02-architecture.md`, `03-test-plan.md`, and `04-commit-message.md`.
 
