@@ -234,6 +234,9 @@ Both plugins write a `./DEBUG.txt` file **at compile time** (not runtime) using 
 
 ## Agentic Behavior
 
+This behavior MUST be followed for all interactions.
+You should always start your work with a plan, see the following section for details.
+
 ### Repository planning workflow
 
 Use a repository-local planning workflow for substantial work. Store planning artifacts under `plans/<task>/` and follow this sequence:
@@ -248,7 +251,8 @@ The default task layout is a task-specific subfolder with numbered files such as
 
 If new requirements, constraints, or design changes are discovered while working, create additional files such as `01-a-plan-XYZ.md` or `01-b-plan-ABC.md` instead of overwriting history. Keep older files as historical context.
 
-Every planning file must declare a status such as `active`, `superseded`, or `done`. If one file supersedes another, it must reference the older file, explain what changed, and state why the earlier direction was overruled.
+Every planning file must declare a status such as `active`, `superseded`, or `done` -- update these regularly, the latest possible situation to set it to `done` is before committing.
+If one file supersedes another, it must reference the older file, explain what changed, and state why the earlier direction was overruled.
 
 Whenever a new planning file is created, show the file path to the user and ask for confirmation or requested changes. The planning artifacts should also contain the final commit message for the finished work item.
 
