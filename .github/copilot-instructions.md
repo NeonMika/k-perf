@@ -264,7 +264,7 @@ Whenever an encapsulated part of work has been completed (e.g., updating a set o
 Co-authored-by: Copilot <MAIL>
 ```
 
-Each commit must contain one logical unit of work only. Never blindly stage all files. For every commit, decide file by file whether each changed file belongs in the commit, then inspect both `git status` and the staged diff before creating the commit.
+Each commit must contain one logical unit of work only. Never blindly stage all files. For every commit, decide file by file whether each changed file belongs in the commit, inspect both `git status` and the staged diff, then perform one last final correctness check before creating the commit.
 
 If a file contains both task-related and unrelated edits, do not guess at a risky partial staging split. Ask the user how to proceed.
 
