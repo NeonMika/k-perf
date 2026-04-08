@@ -234,7 +234,25 @@ Both plugins write a `./DEBUG.txt` file **at compile time** (not runtime) using 
 
 ## Agentic Behavior
 
-### Git commits and pushes
+### Repository planning workflow
+
+Use a repository-local planning workflow for substantial work. Store planning artifacts under `plans/<task>/` and follow this sequence:
+1. Create a clear plan file.
+2. Create architecture and implementation notes.
+3. Create a test plan.
+4. Implement the change.
+5. Test the change.
+6. Commit the finished work.
+
+The default task layout is a task-specific subfolder with numbered files such as `01-plan.md`, `02-architecture.md`, `03-test-plan.md`, and `04-commit-message.md`.
+
+If new requirements, constraints, or design changes are discovered while working, create additional files such as `01-a-plan-XYZ.md` or `01-b-plan-ABC.md` instead of overwriting history. Keep older files as historical context.
+
+Every planning file must declare a status such as `active`, `superseded`, or `done`. If one file supersedes another, it must reference the older file, explain what changed, and state why the earlier direction was overruled.
+
+Whenever a new planning file is created, show the file path to the user and ask for confirmation or requested changes. The planning artifacts should also contain the final commit message for the finished work item.
+
+### Git workflow
 
 Whenever an encapsulated part of work has been completed (e.g., updating a set of related files, fixing a bug, implementing a feature), **always create a git commit** with a clear, descriptive message following the pattern:
 
@@ -243,13 +261,15 @@ Whenever an encapsulated part of work has been completed (e.g., updating a set o
 
 <optional detailed explanation>
 
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+Co-authored-by: Copilot <MAIL>
 ```
 
-After creating a commit, **always ask the user** whether they want to push the changes to the remote repository. This gives them the opportunity to review the commit locally, amend it if needed, or defer the push. Example:
+Each commit must contain one logical unit of work only. Never blindly stage all files. For every commit, decide file by file whether each changed file belongs in the commit, then inspect both `git status` and the staged diff before creating the commit.
 
-```
-Would you like me to push these changes to the remote? (yes/no)
-```
+If a file contains both task-related and unrelated edits, do not guess at a risky partial staging split. Ask the user how to proceed.
 
-This approach ensures transparency, allows for local iteration, and respects the user's preferences about when changes are shared remotely.
+After creating a commit, list the files included in that commit and **always ask the user** whether they want to push the changes to the remote repository.
+
+Any push must target the current checked-out branch. Never assume the branch is `main`.
+
+History-rewriting operations such as `git commit --amend`, force-push, or cleanup rebases are allowed only when the user clearly requests them.
