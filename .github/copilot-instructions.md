@@ -229,3 +229,27 @@ All synthetic IR fields and functions added by the plugin are attached to the **
 ### Debug output during compilation
 
 Both plugins write a `./DEBUG.txt` file **at compile time** (not runtime) using a custom function `printText(...)`. This file is deleted at the start of each compilation run and written to the working directory where `gradlew` runs. It is in `.gitignore`.
+
+---
+
+## Agentic Behavior
+
+### Git commits and pushes
+
+Whenever an encapsulated part of work has been completed (e.g., updating a set of related files, fixing a bug, implementing a feature), **always create a git commit** with a clear, descriptive message following the pattern:
+
+```
+<type>: <short description>
+
+<optional detailed explanation>
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+```
+
+After creating a commit, **always ask the user** whether they want to push the changes to the remote repository. This gives them the opportunity to review the commit locally, amend it if needed, or defer the push. Example:
+
+```
+Would you like me to push these changes to the remote? (yes/no)
+```
+
+This approach ensures transparency, allows for local iteration, and respects the user's preferences about when changes are shared remotely.
