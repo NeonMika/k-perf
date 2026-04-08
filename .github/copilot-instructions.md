@@ -268,7 +268,7 @@ Each commit must contain one logical unit of work only. Never blindly stage all 
 
 If a file contains both task-related and unrelated edits, do not guess at a risky partial staging split. Ask the user how to proceed.
 
-After creating a commit, list the files included in that commit and **always ask the user** whether they want to push the changes to the remote repository.
+After creating the relevant local commit or commits for the finished unit of work, list the files included in those commits and **always ask the user** whether they want to push the changes to the remote repository.
 
 Any push must target the current checked-out branch. Never assume the branch is `main`.
 
