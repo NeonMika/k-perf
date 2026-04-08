@@ -35,6 +35,10 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 
 ### Publish
 
+[![Maven Central k-perf](https://img.shields.io/maven-central/v/io.github.neonmika/k-perf.svg?label=k-perf)](https://central.sonatype.com/artifact/io.github.neonmika/k-perf)
+[![Maven Central KIRHelperKit](https://img.shields.io/maven-central/v/io.github.neonmika/KIRHelperKit.svg?label=KIRHelperKit)](https://central.sonatype.com/artifact/io.github.neonmika/KIRHelperKit)
+[![Maven Central instrumentation-overhead-analyzer](https://img.shields.io/maven-central/v/io.github.neonmika/instrumentation-overhead-analyzer.svg?label=instrumentation-overhead-analyzer)](https://central.sonatype.com/artifact/io.github.neonmika/instrumentation-overhead-analyzer)
+
 [![Publish to Maven Central](https://github.com/NeonMika/k-perf/actions/workflows/publish.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/publish.yml)
 
 ---
@@ -42,6 +46,7 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 ## 📋 Table of Contents
 
 - [CI Status](#-ci-status)
+- [Add k-perf to Your Project](#-add-k-perf-to-your-project)
 - [How It Works](#-how-it-works)
 - [Repository Structure](#-repository-structure)
 - [Quick Start](#-quick-start)
@@ -53,6 +58,42 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 - [Analyzers](#-analyzers)
 - [Benchmarking](#-benchmarking)
 - [License](#-license)
+
+---
+
+## 🔌 Add k-perf to Your Project
+
+> Available on [Maven Central](https://central.sonatype.com/artifact/io.github.neonmika/k-perf) — no local build needed.
+
+**1. Configure your plugin repositories** (`settings.gradle.kts`):
+
+```kotlin
+pluginManagement {
+  repositories {
+    gradlePluginPortal()
+    mavenCentral()
+  }
+}
+```
+
+**2. Apply the plugin and configure it** (`build.gradle.kts`):
+
+```kotlin
+plugins {
+  kotlin("multiplatform") version "2.3.0"
+  id("io.github.neonmika.k-perf-plugin") version "0.2.1"
+}
+
+kperf {
+  enabled = true      // toggle instrumentation on/off
+  flushEarly = false  // buffer until exit (faster) or flush on every write (safer)
+  methods = ".*"      // regex filter on fully-qualified function names
+}
+```
+
+That's all — rebuild your project and k-perf will instrument every function matching the `methods` filter. Trace and symbols files are written to the working directory on exit.
+
+> 💡 See the full [configuration reference](#configuration-options) and [output file formats](#-how-it-works) below.
 
 ---
 
