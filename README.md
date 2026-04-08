@@ -8,8 +8,40 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 
 ---
 
+## 🚦 CI Status
+
+### Build & Tests
+
+> Tests (JUnit 5 via kctfork) run inside the build workflows — there is no separate test workflow.
+
+[![Build all on Windows](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows.yml)
+[![Build all on Ubuntu](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu.yml)
+
+[![Build all on Windows (separated)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows-separated.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows-separated.yml)
+[![Build all on Ubuntu (separated)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu-separated.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu-separated.yml)
+
+[![Build all on Windows (highly separated)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows-highly-separated.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows-highly-separated.yml)
+[![Build all on Ubuntu (highly separated)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu-highly-separated.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu-highly-separated.yml)
+
+### Benchmarks
+
+> Benchmark workflows are triggered manually (`workflow_dispatch`) — badges show "no status" until a run is triggered.
+
+[![Benchmark (Windows, Large)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-large.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-large.yml)
+[![Benchmark (Windows, Small)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-small.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-small.yml)
+
+[![Benchmark (Linux, Large)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-linux-large.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-linux-large.yml)
+[![Benchmark (Linux, Small)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-linux-small.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-linux-small.yml)
+
+### Publish
+
+[![Publish to Maven Central](https://github.com/NeonMika/k-perf/actions/workflows/publish.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/publish.yml)
+
+---
+
 ## 📋 Table of Contents
 
+- [CI Status](#-ci-status)
 - [How It Works](#-how-it-works)
 - [Repository Structure](#-repository-structure)
 - [Quick Start](#-quick-start)
