@@ -245,20 +245,34 @@ If you catch yourself about to change a file without a plan document, stop and c
 
 ### Repository planning workflow
 
-Use a repository-local planning workflow for **every** task, including small ones. Store planning artifacts under `plans/<task>/` and follow this sequence:
-1. **Create** `plans/<task>/01-plan.md` and show the path to the user.
-2. Implement the change.
-3. Set plan status to `done` in the plan file before committing.
-4. Commit the finished work (including the plan file).
+Use a repository-local planning workflow for **every** task, including small ones. Store planning artifacts under `plans/<task>/` and follow this **mandatory 6-step sequence**:
 
-The default task layout is a task-specific subfolder with numbered files such as `01-plan.md`, `02-architecture.md`, `03-test-plan.md`, and `04-commit-message.md`.
+**Step 1 — Plan** → `plans/<task>/01-plan.md`
+Write a clear problem statement, proposed approach, and list of files to change. Show the file path to the user and wait for confirmation or requested changes before proceeding.
+
+**Step 2 — Architecture & Implementation** → `plans/<task>/02-architecture.md`
+Analyze the requirements in detail. Lay out the architecture, data flow, key decisions, and implementation strategy. Show to the user before proceeding.
+
+**Step 3 — Test Plan** → `plans/<task>/03-test-plan.md`
+Describe how the changes will be verified: which existing tests cover them, what new tests are needed, and what manual checks are required. Show to the user before proceeding.
+
+**Step 4 — Implement**
+Make the code/config changes as planned. Do not skip ahead from planning without completing steps 1–3.
+
+**Step 5 — Test**
+Run the tests and verifications defined in step 3. Document results.
+
+**Step 6 — Commit** → include `plans/<task>/04-commit-message.md` in the commit
+Set all plan file statuses to `done`. Commit the finished work including all plan artifacts.
+
+The file naming convention uses numbered prefixes: `01-plan.md`, `02-architecture.md`, `03-test-plan.md`, `04-commit-message.md`. Additional files are numbered accordingly (e.g. `05-results.md`).
 
 If new requirements, constraints, or design changes are discovered while working, create additional files such as `01-a-plan-XYZ.md` or `01-b-plan-ABC.md` instead of overwriting history. Keep older files as historical context.
 
-Every planning file must declare a status such as `active`, `superseded`, or `done` -- update these regularly, the latest possible situation to set it to `done` is before committing.
+Every planning file must declare a status such as `active`, `superseded`, or `done` — update these regularly; the latest it can be set to `done` is immediately before committing.
 If one file supersedes another, it must reference the older file, explain what changed, and state why the earlier direction was overruled.
 
-Whenever a new planning file is created, show the file path to the user and ask for confirmation or requested changes. The planning artifacts should also contain the final commit message for the finished work item.
+The planning artifacts must also contain the final commit message for the finished work item (in `04-commit-message.md` or inline in `01-plan.md` for simple tasks).
 
 ### Git workflow
 
