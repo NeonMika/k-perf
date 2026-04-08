@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  benchmark:
+  benchmark-linux-large:
     runs-on: ubuntu-latest
 
     permissions:

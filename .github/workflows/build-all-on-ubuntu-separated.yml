@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-all-separated-ubuntu:
     runs-on: ubuntu-latest
 
     permissions:

@@ -15,7 +15,7 @@ on:
     types: [released, prereleased]
 
 jobs:
-  publish:
+  publish-to-maven-central:
     name: Publish to Maven Central
     runs-on: ubuntu-latest
 

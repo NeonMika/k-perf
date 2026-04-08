@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_all_on_ubuntu:
+  build-all-ubuntu:
     runs-on: ubuntu-latest
 
     permissions:

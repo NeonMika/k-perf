@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-all-separated-windows:
     runs-on: windows-latest
 
     permissions:

@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_all_on_windows:
+  build-all-windows:
     runs-on: windows-latest
 
     permissions:
