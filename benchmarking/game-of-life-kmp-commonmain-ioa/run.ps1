@@ -297,3 +297,4 @@ Export-BenchmarkResultsToJSON -Results $csvRecords -OutputPath $jsonFilePath
 
 Write-Host "Summary results saved to $csvFilePath and $jsonFilePath"
 Write-Host "All benchmarks are complete."
+exit 0
