@@ -35,9 +35,9 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 
 ### Publish
 
-[![Maven Central k-perf](https://img.shields.io/maven-central/v/io.github.neonmika/k-perf.svg?label=k-perf)](https://central.sonatype.com/artifact/io.github.neonmika/k-perf)
-[![Maven Central k-perf-plugin](https://img.shields.io/maven-central/v/io.github.neonmika.k-perf-plugin/io.github.neonmika.k-perf-plugin.gradle.plugin.svg?label=k-perf-plugin)](https://central.sonatype.com/namespace/io.github.neonmika.k-perf-plugin)
-[![Maven Central KIRHelperKit](https://img.shields.io/maven-central/v/io.github.neonmika/KIRHelperKit.svg?label=KIRHelperKit)](https://central.sonatype.com/artifact/io.github.neonmika/KIRHelperKit)
+[![Maven Central k-perf](https://img.shields.io/maven-central/v/io.github.neonmika/k-perf.svg?label=k-perf)](https://central.sonatype.com/artifact/io.github.neonmika/k-perf) `io.github.neonmika:k-perf` — The compiler plugin JAR consumed by the Kotlin build system at compile time.
+[![Maven Central k-perf-plugin](https://img.shields.io/maven-central/v/io.github.neonmika.k-perf-plugin/io.github.neonmika.k-perf-plugin.gradle.plugin.svg?label=k-perf-plugin)](https://central.sonatype.com/namespace/io.github.neonmika.k-perf-plugin) `io.github.neonmika.k-perf-plugin` — Gradle plugin marker; apply this ID in your `plugins {}` block.
+[![Maven Central KIRHelperKit](https://img.shields.io/maven-central/v/io.github.neonmika/KIRHelperKit.svg?label=KIRHelperKit)](https://central.sonatype.com/artifact/io.github.neonmika/KIRHelperKit) `io.github.neonmika:KIRHelperKit` — Utility library for writing Kotlin IR compiler plugins.
 
 ---
 
