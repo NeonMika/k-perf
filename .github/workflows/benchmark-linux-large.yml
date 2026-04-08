@@ -1,6 +1,8 @@
 name: Benchmark (Linux, Large)
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
