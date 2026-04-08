@@ -36,10 +36,8 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 ### Publish
 
 [![Maven Central k-perf](https://img.shields.io/maven-central/v/io.github.neonmika/k-perf.svg?label=k-perf)](https://central.sonatype.com/artifact/io.github.neonmika/k-perf)
+[![Maven Central k-perf-plugin](https://img.shields.io/maven-central/v/io.github.neonmika.k-perf-plugin/io.github.neonmika.k-perf-plugin.gradle.plugin.svg?label=k-perf-plugin)](https://central.sonatype.com/namespace/io.github.neonmika.k-perf-plugin)
 [![Maven Central KIRHelperKit](https://img.shields.io/maven-central/v/io.github.neonmika/KIRHelperKit.svg?label=KIRHelperKit)](https://central.sonatype.com/artifact/io.github.neonmika/KIRHelperKit)
-[![Maven Central instrumentation-overhead-analyzer](https://img.shields.io/maven-central/v/io.github.neonmika/instrumentation-overhead-analyzer.svg?label=instrumentation-overhead-analyzer)](https://central.sonatype.com/artifact/io.github.neonmika/instrumentation-overhead-analyzer)
-
-[![Publish to Maven Central](https://github.com/NeonMika/k-perf/actions/workflows/publish.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/publish.yml)
 
 ---
 
