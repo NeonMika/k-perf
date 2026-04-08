@@ -273,3 +273,7 @@ After creating the relevant local commit or commits for the finished unit of wor
 Any push must target the current checked-out branch. Never assume the branch is `main`.
 
 History-rewriting operations such as `git commit --amend`, force-push, or cleanup rebases are allowed only when the user clearly requests them.
+
+### README badges
+
+The `README.md` contains a `## 🚦 CI Status` section with GitHub Actions status badges. Whenever a GitHub Actions workflow is **added**, **renamed**, or **removed**, the corresponding badge in `README.md` must be **added**, **updated**, or **removed** in the same commit as the workflow change.
