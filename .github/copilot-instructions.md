@@ -239,40 +239,21 @@ Both plugins write a `./DEBUG.txt` file **at compile time** (not runtime) using 
 
 ## Agentic Behavior
 
-**This section is mandatory for every interaction, no exceptions.**
-Never write code, edit configs, or modify any file before `plans/<task>/01-plan.md` exists.
-If you catch yourself about to change a file without a plan document, stop and create the plan first.
-
 ### Repository planning workflow
 
-Use a repository-local planning workflow for **every** task, including small ones. Store planning artifacts under `plans/<task>/` and follow this **mandatory 6-step sequence**:
+For all substantial tasks:
 
-**Step 1 — Plan** → `plans/<task>/01-plan.md`
-Write a clear problem statement, proposed approach, and list of files to change. Show the file path to the user and wait for confirmation or requested changes before proceeding.
+1. **Use sequential thinking** — ALWAYS invoke the `sequential-thinking` tool to explore the problem space with strong branching and alternative analysis. Cover as many aspects, edge cases, and approaches as possible before committing to an implementation strategy. Use branching to explore competing solutions.
 
-**Step 2 — Architecture & Implementation** → `plans/<task>/02-architecture.md`
-Analyze the requirements in detail. Lay out the architecture, data flow, key decisions, and implementation strategy. Show to the user before proceeding.
+2. **Use Serena for code analysis** — When refactoring, analyzing, or making changes to the codebase, intensively use the Serena tooling (`get_symbols_overview`, `find_symbol`, `search_for_pattern`, etc.) to understand code structure, find all usages, and perform safe refactorings. Serena analysis prevents missed dependencies and inconsistencies.
 
-**Step 3 — Test Plan** → `plans/<task>/03-test-plan.md`
-Describe how the changes will be verified: which existing tests cover them, what new tests are needed, and what manual checks are required. Show to the user before proceeding.
+3. **Document the approach** — Write a clear problem statement, proposed approach, and list of files to change. If using the `[[PLAN]]` mode, save a structured plan to the session workspace.
 
-**Step 4 — Implement**
-Make the code/config changes as planned. Do not skip ahead from planning without completing steps 1–3.
+4. **Implement with confidence** — With sequential thinking and Serena analysis complete, proceed to implementation. Refer back to your analysis while implementing. If you discover new information, update your internal notes and explain the change.
 
-**Step 5 — Test**
-Run the tests and verifications defined in step 3. Document results.
+5. **Test and verify** — Run existing tests or perform manual verification as appropriate for the change type.
 
-**Step 6 — Commit** → include `plans/<task>/04-commit-message.md` in the commit
-Set all plan file statuses to `done`. Commit the finished work including all plan artifacts.
-
-The file naming convention uses numbered prefixes: `01-plan.md`, `02-architecture.md`, `03-test-plan.md`, `04-commit-message.md`. Additional files are numbered accordingly (e.g. `05-results.md`).
-
-If new requirements, constraints, or design changes are discovered while working, create additional files such as `01-a-plan-XYZ.md` or `01-b-plan-ABC.md` instead of overwriting history. Keep older files as historical context.
-
-Every planning file must declare a status such as `active`, `superseded`, or `done` — update these regularly; the latest it can be set to `done` is immediately before committing.
-If one file supersedes another, it must reference the older file, explain what changed, and state why the earlier direction was overruled.
-
-The planning artifacts must also contain the final commit message for the finished work item (in `04-commit-message.md` or inline in `01-plan.md` for simple tasks).
+6. **Commit** — Create a clear, descriptive git commit when work is complete.
 
 ### Git workflow
 
@@ -290,12 +271,22 @@ Each commit must contain one logical unit of work only. Never blindly stage all 
 
 If a file contains both task-related and unrelated edits, do not guess at a risky partial staging split. Ask the user how to proceed.
 
-After creating the relevant local commit or commits for the finished unit of work, list the files included in those commits and **always ask the user** whether they want to push the changes to the remote repository.
-
 Any push must target the current checked-out branch. Never assume the branch is `main`.
 
-History-rewriting operations such as `git commit --amend`, force-push, or cleanup rebases are allowed only when the user clearly requests them.
+History-rewriting operations such as `git commit --amend`, force-push, or cleanup rebases are allowed when the user clearly requests them.
 
 ### README badges
 
 The `README.md` contains a `## 🚦 CI Status` section with GitHub Actions status badges. Whenever a GitHub Actions workflow is **added**, **renamed**, or **removed**, the corresponding badge in `README.md` must be **added**, **updated**, or **removed** in the same commit as the workflow change.
+
+### MCP Server Usage
+
+Use sequential-thinking MCP for all planning, design, and analysis tasks to explore multiple approaches, edge cases, or solution strategies. This includes architectural decisions, refactoring strategies, handling of complex logic, and any situation where multiple alternatives exist. Sequential thinking ensures a thorough exploration of the problem space before committing to an implementation path.
+
+Use Serena MCP for all code analysis tasks (finding symbols, usages, references, etc.) instead of manual code reading or guesswork. This ensures accuracy and prevents missed dependencies or edge cases.
+
+Use Context7 MCP or ref-context to fetch current documentation whenever the user asks about a library, framework, SDK, API, CLI tool, or cloud service -- even well-known ones like React, Next.js, Prisma, Express, Tailwind, Django, or Spring Boot. This includes API syntax, configuration, version migration, library-specific debugging, setup instructions, and CLI tool usage. Use even when you think you know the answer -- your training data may not reflect recent changes. Prefer this over web search for library docs.
+
+Use markitdown MCP for generating markdown content from existing non-markdown resources.
+
+You can access Github using the github MCP tool, Youtrack using the youtrack MCP tool, and you have access to the Chrome DevTools MCP tool.
