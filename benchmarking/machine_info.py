@@ -197,7 +197,7 @@ def get_machine_info(gradle_project_path: str) -> Dict[str, any]:
     }
 
     # Disk
-    main_disk = [disk for disk in psutil.disk_partitions() if disk.mountpoint == '/' or disk.mountpoint == r'C:\\'][0]
+    main_disk = [disk for disk in psutil.disk_partitions() if disk.mountpoint == '/' or disk.mountpoint == 'C:\\'][0]
     main_disk_usage = psutil.disk_usage(main_disk.mountpoint)
     total_space = main_disk_usage.total // 1_000_000
     free_space = main_disk_usage.free // 1_000_000

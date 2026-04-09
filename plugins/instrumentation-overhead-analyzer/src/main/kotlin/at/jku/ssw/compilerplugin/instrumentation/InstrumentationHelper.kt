@@ -56,7 +56,7 @@ class BeforeEachReturnTransformer(val function: IrFunction, val modify: IrStatem
     return with(DeclarationIrBuilder(IoaContext.pluginContext, function.symbol)) {
       irBlock {
         modify()
-        +expression
+        +super.visitReturn(expression)
       }
     }
   }
