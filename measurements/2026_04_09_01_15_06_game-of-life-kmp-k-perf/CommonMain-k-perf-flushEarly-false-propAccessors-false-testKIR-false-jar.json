@@ -28,13 +28,13 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 13.84,
+    "AvailableRAMGB": 13.64,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 86,
-    "SystemUptimeHours": 0.02,
+    "SystemUptimeHours": 0.05,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 162,
+    "RunningProcessCount": 159,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.4.14",
     "JavaVersion": "21.0.10",
@@ -43,28 +43,28 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "5209b7150aad067df99ecb0c795d6e4ca83aeaf8",
+    "GitCommitHash": "13aa2557a67f8621d0381b187f3917bd2f874964",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-08 14:53:09"
+    "CollectionTimestamp": "2026-04-09 01:10:32"
   },
-  "buildTimeMs": 4410.2816,
-  "executable": "CommonMain-k-perf-flushEarly-false-propAccessors-false-testKIR-false-node",
+  "buildTimeMs": 2132.7133,
+  "executable": "CommonMain-k-perf-flushEarly-false-propAccessors-false-testKIR-false-jar",
   "repetitions": 3,
   "times": [
-    3691308.0,
-    3725142.0,
-    3747656.0
+    100857.0,
+    87361.0,
+    93531.0
   ],
   "statistics": {
     "count": 3,
-    "mean": 3721368.6666666665,
-    "median": 3747656.0,
-    "stddev": 28362.877310550375,
-    "min": 3691308.0,
-    "max": 3747656.0,
+    "mean": 93916.33333333333,
+    "median": 100857.0,
+    "stddev": 6756.246393770237,
+    "min": 87361.0,
+    "max": 100857.0,
     "ci95": {
-      "lower": 3650954.812810641,
-      "upper": 3791782.5205226922
+      "lower": 77143.23443446818,
+      "upper": 110689.43223219848
     }
   }
 }
