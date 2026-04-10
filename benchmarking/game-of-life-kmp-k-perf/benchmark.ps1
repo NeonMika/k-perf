@@ -8,9 +8,6 @@ param(
   [ValidateRange(1, [int]::MaxValue)]
   [int]$StepCount = 500,
 
-  [ValidateRange(0, [int]::MaxValue)]
-  [int]$WarmupCount = 0,
-
   [bool]$Reference = $true,
   [bool]$Common = $true,
   [bool]$Dedicated = $false,
@@ -144,9 +141,9 @@ Write-Host "# Build phase completed successfully!"
 Write-Host "=========================================="
 
 # Locate project roots for artifact lookup
-$commonMainProjectRoot         = "..\..\kmp-examples\game-of-life-kmp-commonmain"
-$commonMainKPerfProjectRoot    = "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf"
-$dedicatedMainProjectRoot      = "..\..\kmp-examples\game-of-life-kmp-dedicatedmain"
+$commonMainProjectRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain"
+$commonMainKPerfProjectRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf"
+$dedicatedMainProjectRoot = "..\..\kmp-examples\game-of-life-kmp-dedicatedmain"
 $dedicatedMainKPerfProjectRoot = "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf"
 
 # Collect executables for the requested game types
@@ -192,11 +189,11 @@ Write-Host ""
 
 # Clean up any leftover trace and symbol files from previous runs
 Write-Host "Cleaning up existing trace and symbol files..."
-$existingTraceFiles  = Get-ChildItem -Path "." -Filter "trace*.txt"  -ErrorAction SilentlyContinue
+$existingTraceFiles = Get-ChildItem -Path "." -Filter "trace*.txt"  -ErrorAction SilentlyContinue
 $existingSymbolFiles = Get-ChildItem -Path "." -Filter "symbol*.txt" -ErrorAction SilentlyContinue
 $cleanedFiles = @()
 
-foreach ($file in $existingTraceFiles)  { Remove-Item -Path $file.FullName -Force; $cleanedFiles += $file.Name }
+foreach ($file in $existingTraceFiles) { Remove-Item -Path $file.FullName -Force; $cleanedFiles += $file.Name }
 foreach ($file in $existingSymbolFiles) { Remove-Item -Path $file.FullName -Force; $cleanedFiles += $file.Name }
 
 if ($cleanedFiles.Count -gt 0) {
@@ -224,7 +221,7 @@ New-Item -ItemType Directory -Path $measurementDir -Force | Out-Null
 $postIterationAction = {
   param($exec, $iteration, $dir)
 
-  $traceFiles  = Get-ChildItem -Path "." -Filter "trace*.txt"  -ErrorAction SilentlyContinue
+  $traceFiles = Get-ChildItem -Path "." -Filter "trace*.txt"  -ErrorAction SilentlyContinue
   $symbolFiles = Get-ChildItem -Path "." -Filter "symbol*.txt" -ErrorAction SilentlyContinue
   $deletedFiles = @()
 
@@ -237,8 +234,8 @@ $postIterationAction = {
 
       if ($LASTEXITCODE -eq 0) {
         $pngFile = Get-ChildItem -Path "." -Filter "*.png" -ErrorAction SilentlyContinue |
-                   Sort-Object -Property CreationTime -Descending |
-                   Select-Object -First 1
+        Sort-Object -Property CreationTime -Descending |
+        Select-Object -First 1
 
         if ($pngFile) {
           $newPngName = "$($exec.Name)_$iteration.png"
@@ -275,7 +272,6 @@ $postIterationAction = {
 $suiteParameters = [ordered]@{
   CILabel                     = $CILabel
   RepetitionCount             = $RepetitionCount
-  WarmupCount                 = $WarmupCount
   CleanBuild                  = $CleanBuild
   StepCount                   = $StepCount
   Reference                   = $Reference
@@ -293,7 +289,6 @@ $suiteParameters = [ordered]@{
 Invoke-BenchmarkSuite `
   -Executables         $executables `
   -RepetitionCount     $RepetitionCount `
-  -WarmupCount         $WarmupCount `
   -StepCount           $StepCount `
   -MeasurementDir      $measurementDir `
   -MachineInfo         $machineInfo `

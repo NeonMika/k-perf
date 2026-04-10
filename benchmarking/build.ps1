@@ -1,47 +1,10 @@
 # Build functions for benchmarking applications
 
 . "$PSScriptRoot\gradle_utils.ps1"
+. "$PSScriptRoot\types.ps1"
 
 # Artifact version used in all built JAR/binary names
 $artifactVersion = "0.2.1"
-
-# Define GameType enum
-enum GameType {
-  CommonMain
-  DedicatedMain
-}
-
-# Map GameType enum values to their string representations and tags
-$gameTypeTagMap = @{
-  [GameType]::CommonMain    = "common"
-  [GameType]::DedicatedMain = "dedicated"
-}
-
-# Map GameType enum values to their string representations
-$gameTypeStringMap = @{
-  [GameType]::CommonMain    = "commonmain"
-  [GameType]::DedicatedMain = "dedicatedmain"
-}
-
-class KPerfConfig {
-  [bool]$FlushEarly
-  [bool]$InstrumentPropertyAccessors
-  [bool]$TestKIR
-  [string]$Methods
-
-  KPerfConfig([bool]$FlushEarly, [bool]$InstrumentPropertyAccessors, [bool]$TestKIR, [string]$Methods) {
-    $this.FlushEarly = $FlushEarly
-    $this.InstrumentPropertyAccessors = $InstrumentPropertyAccessors
-    $this.TestKIR = $TestKIR
-    $this.Methods = $Methods
-  }
-}
-
-function Get-KPerfSuffix {
-  param([KPerfConfig]$Config)
-
-  return "flushEarly-$(if ($Config.FlushEarly) { 'true' } else { 'false' })-propAccessors-$(if ($Config.InstrumentPropertyAccessors) { 'true' } else { 'false' })-testKIR-$(if ($Config.TestKIR) { 'true' } else { 'false' })"
-}
 
 function Build-KirHelperKit {
   Write-Host ""
@@ -208,7 +171,7 @@ function Build-GameOfLifeKPerfVariant {
   }
 
   $buildTimes = [ordered]@{}
-  $gameTypeString = $gameTypeStringMap[$GameType]
+  $gameTypeString = Get-GameTypeString -GameType $GameType
 
   if ($timings.Contains('jvm')) {
     $buildTimes["$gameTypeString-k-perf-$suffix-jar"] = $timings.jvm
@@ -230,10 +193,16 @@ function Build-GameOfLifeKPerfVariant {
   return $buildTimes
 }
 
+function Get-KPerfSuffix {
+  param([KPerfConfig]$Config)
+
+  return "flushEarly-$(if ($Config.FlushEarly) { 'true' } else { 'false' })-propAccessors-$(if ($Config.InstrumentPropertyAccessors) { 'true' } else { 'false' })-testKIR-$(if ($Config.TestKIR) { 'true' } else { 'false' })"
+}
+
 function Invoke-GetExecutables {
   param(
     [GameType]$GameType,
-    [array]$KPerfCombinations,
+    [KPerfConfig[]]$KPerfCombinations,
     [bool]$Reference,
     [bool]$JVM,
     [bool]$JS,
@@ -244,66 +213,66 @@ function Invoke-GetExecutables {
     [string]$ArtifactVersion
   )
 
-  $executables = @()
-  $gameTypeString = $gameTypeStringMap[$GameType]
+  [BenchmarkExecutable[]]$executables = @()
+  $gameTypeString = Get-GameTypeString -GameType $GameType
   $projectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain" } else { "game-of-life-kmp-dedicatedmain" }
   $kPerfProjectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-k-perf" } else { "game-of-life-kmp-dedicatedmain-k-perf" }
 
   if ($Reference -and $JVM) {
-    $executables += @{
-      Name   = "$gameTypeString-plain-jar"
-      Path   = "$PlainProjectRoot\dist\$projectName-jvm-$ArtifactVersion.jar"
-      Type   = [ExecutableType]::Jar
-      Config = $null
-    }
+    $executables += [BenchmarkExecutable]::new(
+      "$gameTypeString-plain-jar",
+      "$PlainProjectRoot\dist\$projectName-jvm-$ArtifactVersion.jar",
+      [ExecutableType]::Jar,
+      $null
+    )
   }
 
   if ($Reference -and $JS) {
-    $executables += @{
-      Name   = "$gameTypeString-plain-node"
-      Path   = "$PlainProjectRoot\dist\$projectName.js"
-      Type   = [ExecutableType]::Node
-      Config = $null
-    }
+    $executables += [BenchmarkExecutable]::new(
+      "$gameTypeString-plain-node",
+      "$PlainProjectRoot\dist\$projectName.js",
+      [ExecutableType]::Node,
+      $null
+    )
   }
 
   if ($Reference -and $Native) {
-    $executables += @{
-      Name   = "$gameTypeString-plain-exe"
-      Path   = "$PlainProjectRoot\dist\$projectName$NativeExt"
-      Type   = [ExecutableType]::Exe
-      Config = $null
-    }
+    $executables += [BenchmarkExecutable]::new(
+      "$gameTypeString-plain-exe",
+      "$PlainProjectRoot\dist\$projectName$NativeExt",
+      [ExecutableType]::Exe,
+      $null
+    )
   }
 
   foreach ($config in $KPerfCombinations) {
     $suffix = Get-KPerfSuffix -Config $config
 
     if ($JVM) {
-      $executables += @{
-        Name   = "$gameTypeString-k-perf-$suffix-jar"
-        Path   = "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName-jvm-$ArtifactVersion.jar"
-        Type   = [ExecutableType]::Jar
-        Config = $config
-      }
+      $executables += [BenchmarkExecutable]::new(
+        "$gameTypeString-k-perf-$suffix-jar",
+        "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName-jvm-$ArtifactVersion.jar",
+        [ExecutableType]::Jar,
+        $config
+      )
     }
 
     if ($JS) {
-      $executables += @{
-        Name   = "$gameTypeString-k-perf-$suffix-node"
-        Path   = "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName.js"
-        Type   = [ExecutableType]::Node
-        Config = $config
-      }
+      $executables += [BenchmarkExecutable]::new(
+        "$gameTypeString-k-perf-$suffix-node",
+        "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName.js",
+        [ExecutableType]::Node,
+        $config
+      )
     }
 
     if ($Native) {
-      $executables += @{
-        Name   = "$gameTypeString-k-perf-$suffix-exe"
-        Path   = "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName$NativeExt"
-        Type   = [ExecutableType]::Exe
-        Config = $config
-      }
+      $executables += [BenchmarkExecutable]::new(
+        "$gameTypeString-k-perf-$suffix-exe",
+        "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName$NativeExt",
+        [ExecutableType]::Exe,
+        $config
+      )
     }
   }
 

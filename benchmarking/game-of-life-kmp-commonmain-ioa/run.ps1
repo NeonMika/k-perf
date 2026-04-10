@@ -12,6 +12,7 @@ param(
 )
 
 # Import common utility functions
+. "$PSScriptRoot\..\types.ps1"
 . "$PSScriptRoot\..\statistics_utils.ps1"
 . "$PSScriptRoot\..\build.ps1"
 
@@ -83,25 +84,25 @@ if (-not ($JVM -or $JS -or $Native)) {
 }
 
 # Define a list of all executables to be benchmarked.
-$executables = @()
+[BenchmarkExecutable[]]$executables = @()
 
 if ($Reference -and $JVM) {
-  $executables += @{ Name = "commonmain_plain_jar"; Path = "$commonMainDistRoot\game-of-life-kmp-commonmain-jvm-0.2.1.jar"; Type = "jar" }
+  $executables += [BenchmarkExecutable]::new("commonmain_plain_jar", "$commonMainDistRoot\game-of-life-kmp-commonmain-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
 }
 if ($IOA -and $JVM) {
-  $executables += @{ Name = "commonmain_ioa_jar"; Path = "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa-jvm-0.2.1.jar"; Type = "jar" }
+  $executables += [BenchmarkExecutable]::new("commonmain_ioa_jar", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
 }
 if ($Reference -and $Native) {
-  $executables += @{ Name = "commonmain_plain_exe"; Path = "$commonMainDistRoot\game-of-life-kmp-commonmain$nativeExt"; Type = "exe" }
+  $executables += [BenchmarkExecutable]::new("commonmain_plain_exe", "$commonMainDistRoot\game-of-life-kmp-commonmain$nativeExt", [ExecutableType]::Exe, $null)
 }
 if ($IOA -and $Native) {
-  $executables += @{ Name = "commonmain_ioa_exe"; Path = "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa$nativeExt"; Type = "exe" }
+  $executables += [BenchmarkExecutable]::new("commonmain_ioa_exe", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa$nativeExt", [ExecutableType]::Exe, $null)
 }
 if ($Reference -and $JS) {
-  $executables += @{ Name = "commonmain_plain_node"; Path = "$commonMainDistRoot\game-of-life-kmp-commonmain.js"; Type = "node" }
+  $executables += [BenchmarkExecutable]::new("commonmain_plain_node", "$commonMainDistRoot\game-of-life-kmp-commonmain.js", [ExecutableType]::Node, $null)
 }
 if ($IOA -and $JS) {
-  $executables += @{ Name = "commonmain_ioa_node"; Path = "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa.js"; Type = "node" }
+  $executables += [BenchmarkExecutable]::new("commonmain_ioa_node", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa.js", [ExecutableType]::Node, $null)
 }
 
 # Create a test suite name from the executable names
@@ -121,7 +122,7 @@ Write-Host "=========================================="
 Write-Host "Validating executables..."
 Write-Host "=========================================="
 
-$missingExecutables = @()
+[BenchmarkExecutable[]]$missingExecutables = @()
 
 foreach ($executable in $executables) {
   $filePath = $executable.Path
@@ -130,7 +131,7 @@ foreach ($executable in $executables) {
   }
   else {
     Write-Host "ERROR: NOT FOUND: $($executable.Name) at $filePath"
-    $missingExecutables += [ordered]@{ Name = $executable.Name; Path = $filePath }
+    $missingExecutables += $executable
   }
 }
 
@@ -189,15 +190,15 @@ foreach ($executable in $executables) {
     
     try {
       switch ($fileType) {
-        "jar" { 
+        ([ExecutableType]::Jar) { 
           $output = java -jar $filePath $StepCount 2>&1
           $executionSuccess = $LASTEXITCODE -eq 0 
         }
-        "exe" { 
+        ([ExecutableType]::Exe) { 
           $output = & $filePath $StepCount 2>&1
           $executionSuccess = $LASTEXITCODE -eq 0 
         }
-        "node" { 
+        ([ExecutableType]::Node) { 
           $output = node $filePath $StepCount 2>&1
           $executionSuccess = $LASTEXITCODE -eq 0 
         }

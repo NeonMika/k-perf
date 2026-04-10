@@ -1,13 +1,7 @@
 # Runtime execution and benchmark suite orchestration
 
+. "$PSScriptRoot\types.ps1"
 . "$PSScriptRoot\statistics_utils.ps1"
-
-# Define ExecutableType enum
-enum ExecutableType {
-  Jar
-  Node
-  Exe
-}
 
 <#
 .SYNOPSIS
@@ -16,14 +10,13 @@ enum ExecutableType {
 
 .DESCRIPTION
   For each executable:
-    1. Optionally runs $WarmupCount warm-up iterations (discarded).
-    2. Runs $RepetitionCount timed iterations, parsing "### Elapsed time: <µs>" from stdout
+    1. Runs $RepetitionCount timed iterations, parsing "### Elapsed time: <µs>" from stdout
        for the total time and "!!! Elapsed time <n>: <µs>" for per-step times.
-    3. Calls $PostIterationAction (if provided) after each timed iteration, passing
+    2. Calls $PostIterationAction (if provided) after each timed iteration, passing
        ($executable, $iterationNumber, $MeasurementDir) as positional arguments.
-    4. Computes statistics (mean, median, stddev, CI95) over collected total times.
-    5. Writes a per-executable JSON file to $MeasurementDir/<name>.json.
-    6. Accumulates a CSV record for the summary files.
+    3. Computes statistics (mean, median, stddev, CI95) over collected total times.
+    4. Writes a per-executable JSON file to $MeasurementDir/<name>.json.
+    5. Accumulates a CSV record for the summary files.
   After all executables: writes _results.csv and _results.json to $MeasurementDir.
   Prints [X/N] progress with an ETA estimate after each executable completes.
 
@@ -42,7 +35,7 @@ enum ExecutableType {
   }
 
 .PARAMETER Executables
-  Array of hashtables with keys: Name (string), Path (string), Type ([ExecutableType]), Config (any).
+  Array of [BenchmarkExecutable] objects describing each executable to benchmark.
 
 .PARAMETER RepetitionCount
   Number of timed iterations per executable.
@@ -74,13 +67,13 @@ enum ExecutableType {
 #>
 function Invoke-BenchmarkSuite {
   param(
-    [array]$Executables,
+    [BenchmarkExecutable[]]$Executables,
     [int]$RepetitionCount,
     [int]$WarmupCount = 0,
     [int]$StepCount,
     [string]$MeasurementDir,
     [object]$MachineInfo,
-    [hashtable]$BuildTimes = @{},
+    [System.Collections.IDictionary]$BuildTimes = @{},
     [object]$Parameters,
     [bool]$CleanBuild = $false,
     [scriptblock]$PostIterationAction = $null
@@ -92,7 +85,7 @@ function Invoke-BenchmarkSuite {
   Write-Host "## Validating Executables..."
   Write-Host "=========================================="
 
-  $missingExecutables = @()
+  [BenchmarkExecutable[]]$missingExecutables = @()
   foreach ($executable in $Executables) {
     $filePath = $executable.Path
     if (Test-Path $filePath) {
@@ -100,7 +93,7 @@ function Invoke-BenchmarkSuite {
     }
     else {
       Write-Host "ERROR: NOT FOUND: $($executable.Name) at $filePath"
-      $missingExecutables += [ordered]@{ Name = $executable.Name; Path = $filePath }
+      $missingExecutables += $executable
     }
   }
 
@@ -139,8 +132,8 @@ function Invoke-BenchmarkSuite {
       for ($w = 1; $w -le $WarmupCount; $w++) {
         try {
           switch ($fileType) {
-            ([ExecutableType]::Jar)  { java -jar $filePath $StepCount 2>&1 | Out-Null }
-            ([ExecutableType]::Exe)  { & $filePath $StepCount 2>&1 | Out-Null }
+            ([ExecutableType]::Jar) { java -jar $filePath $StepCount 2>&1 | Out-Null }
+            ([ExecutableType]::Exe) { & $filePath $StepCount 2>&1 | Out-Null }
             ([ExecutableType]::Node) { node $filePath $StepCount 2>&1 | Out-Null }
           }
         }
@@ -162,11 +155,11 @@ function Invoke-BenchmarkSuite {
 
       try {
         switch ($fileType) {
-          ([ExecutableType]::Jar)  {
+          ([ExecutableType]::Jar) {
             $output = java -jar $filePath $StepCount
             $executionSuccess = $LASTEXITCODE -eq 0
           }
-          ([ExecutableType]::Exe)  {
+          ([ExecutableType]::Exe) {
             $output = & $filePath $StepCount 2>&1
             $executionSuccess = $LASTEXITCODE -eq 0
           }
@@ -263,7 +256,7 @@ function Invoke-BenchmarkSuite {
   } # End of executables loop
 
   # Write summary files
-  $csvFilePath  = Join-Path $MeasurementDir "_results.csv"
+  $csvFilePath = Join-Path $MeasurementDir "_results.csv"
   $jsonFilePath = Join-Path $MeasurementDir "_results.json"
 
   Export-BenchmarkResultsToCSV  -Results $csvRecords -OutputPath $csvFilePath

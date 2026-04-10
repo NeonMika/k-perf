@@ -7,7 +7,7 @@ function Get-BenchmarkStatistics {
 
   $count = $Values.Count
   if ($count -eq 0) {
-    return [ordered]@{ count = 0; mean = $null; median = $null; stddev = $null; min = $null; max = $null; ci95 = $null }
+    return [BenchmarkStatistics]::new(0)
   }
 
   $sorted = $Values | Sort-Object
@@ -56,35 +56,20 @@ function Get-BenchmarkStatistics {
     }
 
     $ciHalfWidth = $tScore * $stderr
-
-    $ci95 = [ordered]@{
-      lower = $mean - $ciHalfWidth
-      upper = $mean + $ciHalfWidth
-    }
+    $ci95 = [ConfidenceInterval95]::new($mean - $ciHalfWidth, $mean + $ciHalfWidth)
   }
   else {
     $stddev = 0.0
-    $ci95 = [ordered]@{
-      lower = $mean
-      upper = $mean
-    }
+    $ci95 = [ConfidenceInterval95]::new($mean, $mean)
   }
 
-  return [ordered]@{
-    count  = $count
-    mean   = $mean
-    median = $median
-    stddev = $stddev
-    min    = $min
-    max    = $max
-    ci95   = $ci95
-  }
+  return [BenchmarkStatistics]::new($count, $mean, $median, $stddev, $min, $max, $ci95)
 }
 
 function Merge-Hashtable {
   param(
-    [hashtable]$Target,
-    [hashtable]$Source
+    [System.Collections.IDictionary]$Target,
+    [System.Collections.IDictionary]$Source
   )
 
   if ($null -eq $Target) {
@@ -446,7 +431,7 @@ function Export-BenchmarkResultsToJSON {
 function Build-BenchmarkCSVRecord {
   param(
     [string]$ExecutableName,
-    [object]$Statistics,
+    [BenchmarkStatistics]$Statistics,
     [object]$MachineInfo,
     [int]$RepetitionCount,
     [bool]$CleanBuild,
