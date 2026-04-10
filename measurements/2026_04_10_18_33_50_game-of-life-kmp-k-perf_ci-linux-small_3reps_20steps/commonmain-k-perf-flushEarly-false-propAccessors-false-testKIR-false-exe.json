@@ -2,6 +2,7 @@
   "parameters": {
     "CILabel": "ci-linux-small",
     "RepetitionCount": 3,
+    "WarmupCount": 0,
     "CleanBuild": false,
     "StepCount": 20,
     "Reference": true,
@@ -25,14 +26,14 @@
     "DeviceModel": "Virtual Machine",
     "OS": "Ubuntu 24.04.4 LTS",
     "OSArchitecture": "x86_64",
-    "CPU": "AMD EPYC 7763 64-Core Processor",
+    "CPU": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 13.59,
+    "AvailableRAMGB": 14.07,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 86,
-    "SystemUptimeHours": 0.04,
+    "SystemUptimeHours": 0.03,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
     "RunningProcessCount": 159,
@@ -44,28 +45,30 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "671d776654cf849fa9a2a3a698dd1d27f2e4650d",
+    "GitCommitHash": "0e0832f2a103336c0c07c94b8c73cfe372d6c388",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-10 17:31:33"
+    "CollectionTimestamp": "2026-04-10 18:29:13"
   },
-  "buildTimeMs": 15160.8612,
-  "executable": "CommonMain-k-perf-flushEarly-false-propAccessors-false-testKIR-false-exe",
+  "buildTimeMs": 14642.9824,
+  "executable": "commonmain-k-perf-flushEarly-false-propAccessors-false-testKIR-false-exe",
   "repetitions": 3,
+  "timeUnit": "microseconds",
   "times": [
-    46932.0,
-    55002.0,
-    48614.0
+    43118.0,
+    42138.0,
+    42349.0
   ],
   "statistics": {
     "count": 3,
-    "mean": 50182.666666666664,
-    "median": 55002.0,
-    "stddev": 4257.5534445657095,
-    "min": 46932.0,
-    "max": 55002.0,
+    "mean": 42535.0,
+    "median": 43118.0,
+    "stddev": 515.7974408622051,
+    "min": 42138.0,
+    "max": 43118.0,
     "ci95": {
-      "lower": 39612.83826923697,
-      "upper": 60752.49506409636
+      "lower": 41254.47809728481,
+      "upper": 43815.52190271519
     }
-  }
+  },
+  "status": "ok"
 }
