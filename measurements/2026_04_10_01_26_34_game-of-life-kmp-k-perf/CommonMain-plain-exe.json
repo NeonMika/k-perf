@@ -2,12 +2,22 @@
   "parameters": {
     "RepetitionCount": 3,
     "CleanBuild": false,
-    "StepCount": 5,
+    "StepCount": 20,
     "Reference": true,
-    "IOA": true,
+    "Common": true,
+    "Dedicated": false,
     "JVM": true,
     "JS": true,
-    "Native": true
+    "Native": true,
+    "FlushEarly": [
+      false
+    ],
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ]
   },
   "machineInfo": {
     "DeviceManufacturer": "Microsoft Corporation",
@@ -17,44 +27,44 @@
     "CPU": "AMD EPYC 7763 64-Core Processor",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
-    "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 12.63,
+    "TotalRAMGB": 15.62,
+    "AvailableRAMGB": 13.83,
     "DiskSizeGB": 145,
-    "SystemDriveFreeSpaceGB": 84,
-    "SystemUptimeHours": 0.1,
+    "SystemDriveFreeSpaceGB": 86,
+    "SystemUptimeHours": 0.02,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 154,
+    "RunningProcessCount": 160,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.4.14",
     "JavaVersion": "21.0.10",
     "JavaDistribution": "\"21.0.10\"",
     "NodeVersion": "v22.22.2",
     "PythonVersion": "Python 3.12.3",
-    "GradleVersion": "Gradle 9.0.0",
+    "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "8bb68dcdb683cd7a536e9829af575f3fe487c249",
+    "GitCommitHash": "fd68fe09827eb93330145ef77bbecebfaa712059",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-09 12:40:36"
+    "CollectionTimestamp": "2026-04-10 01:21:36"
   },
-  "buildTimeMs": 1849.1495,
-  "executable": "commonmain_ioa_jar",
+  "buildTimeMs": 2096.256,
+  "executable": "CommonMain-plain-exe",
   "repetitions": 3,
   "times": [
-    39467.0,
-    76053.0,
-    50465.0
+    7030.0,
+    7093.0,
+    7209.0
   ],
   "statistics": {
     "count": 3,
-    "mean": 55328.333333333336,
-    "median": 76053.0,
-    "stddev": 18771.597090640247,
-    "min": 39467.0,
-    "max": 76053.0,
+    "mean": 7110.666666666667,
+    "median": 7209.0,
+    "stddev": 90.79831129119822,
+    "min": 7030.0,
+    "max": 7209.0,
     "ci95": {
-      "lower": 8725.850809711861,
-      "upper": 101930.81585695481
+      "lower": 6885.250219963139,
+      "upper": 7336.083113370195
     }
   }
 }

@@ -27,8 +27,8 @@
     "CPU": "AMD EPYC 7763 64-Core Processor",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
-    "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.01,
+    "TotalRAMGB": 15.62,
+    "AvailableRAMGB": 13.83,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 86,
     "SystemUptimeHours": 0.02,
@@ -43,28 +43,28 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "8bb68dcdb683cd7a536e9829af575f3fe487c249",
+    "GitCommitHash": "fd68fe09827eb93330145ef77bbecebfaa712059",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-09 12:35:32"
+    "CollectionTimestamp": "2026-04-10 01:21:36"
   },
-  "buildTimeMs": 1912.3019,
-  "executable": "CommonMain-plain-jar",
+  "buildTimeMs": 4294.065,
+  "executable": "CommonMain-k-perf-flushEarly-false-propAccessors-false-testKIR-false-node",
   "repetitions": 3,
   "times": [
-    54419.0,
-    67011.0,
-    88375.0
+    3709341.0,
+    3613907.0,
+    3850494.0
   ],
   "statistics": {
     "count": 3,
-    "mean": 69935.0,
-    "median": 88375.0,
-    "stddev": 17165.803680573772,
-    "min": 54419.0,
-    "max": 88375.0,
+    "mean": 3724580.6666666665,
+    "median": 3850494.0,
+    "stddev": 119027.46625184178,
+    "min": 3613907.0,
+    "max": 3850494.0,
     "ci95": {
-      "lower": 27319.070083907194,
-      "upper": 112550.9299160928
+      "lower": 3429082.3460363885,
+      "upper": 4020078.9872969445
     }
   }
 }
