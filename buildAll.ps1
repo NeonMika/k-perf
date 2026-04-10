@@ -11,10 +11,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Platform-specific native target and binary extension
-$nativeTarget = if ($IsWindows) { "mingwX64" } elseif ($IsMacOS) { "macosX64" } else { "linuxX64" }
-$nativeExt    = if ($IsWindows) { ".exe" }     else               { ".kexe" }
-
 function Invoke-GradleBuild {
   param(
     [string]$Title,
@@ -128,26 +124,6 @@ function Invoke-KmpBuild {
     Invoke-GradleTaskIfPresent -TaskName $windowsTask -Title "$Title - Windows build"
     Invoke-GradleTaskIfPresent -TaskName $linuxTask -Title "$Title - Linux build"
     Invoke-GradleTaskIfPresent -TaskName $macTask -Title "$Title - Mac build"
-
-    # Copy artifacts to dist/
-    $projectName = Split-Path -Leaf $Path
-    $distDir = "dist"
-    New-Item -ItemType Directory -Path $distDir -Force | Out-Null
-
-    # JVM: copy JAR + runtime deps from build/lib/
-    if (Test-Path "build\lib") {
-      Copy-Item -Path "build\lib\*" -Destination $distDir -Force
-    }
-    # JS: copy bundled .js file
-    $jsFile = Get-ChildItem -Path "build\js\packages\$projectName\kotlin\$projectName.js" -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($null -ne $jsFile) {
-      Copy-Item -Path $jsFile.FullName -Destination $distDir -Force
-    }
-    # Native: copy binary for current platform
-    $nativeBinary = "build\bin\$nativeTarget\releaseExecutable\$projectName$nativeExt"
-    if (Test-Path $nativeBinary) {
-      Copy-Item -Path $nativeBinary -Destination $distDir -Force
-    }
   }
   finally {
     Pop-Location

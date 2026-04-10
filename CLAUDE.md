@@ -1,10 +1,5 @@
 # Copilot Instructions for k-perf
 
-> ⚠️ **MANDATORY FIRST STEP — NO EXCEPTIONS, NO MATTER HOW SMALL THE TASK:**
-> Before touching any file, create `plans/<task-name>/01-plan.md` and show it to the user.
-> Never implement anything if this file does not exist yet.
-> The only exception is when the user explicitly says to skip the plan.
-
 ## Build System & Commands
 
 All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). There is no root-level Gradle project — each subproject has its own `gradlew`.
@@ -16,6 +11,7 @@ KIRHelperKit → plugins/instrumentation-overhead-analyzer → plugins/k-perf �
 ```
 
 **Full build (all platforms):**
+
 ```powershell
 # Windows
 .\buildAll.ps1
@@ -28,6 +24,7 @@ KIRHelperKit → plugins/instrumentation-overhead-analyzer → plugins/k-perf �
 ```
 
 **Per-subproject build + publish:**
+
 ```powershell
 cd KIRHelperKit
 .\gradlew build publishToMavenLocal
@@ -45,6 +42,7 @@ Tests live only in the plugin projects (JUnit 5); there are no tests in `KIRHelp
 See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation on the two benchmark suites, parameters, and output format.
 
 > ⚠️ **Keep benchmarking scripts in sync**: Any change to kperf plugin settings (names/defaults), KMP example project structure, or project version **must** be reflected in:
+>
 > - `benchmarking/build.ps1` (build-time key names, gradle args passed to KPerfConfig)
 > - `benchmarking/game-of-life-kmp-k-perf/run.ps1` (JAR version strings, suffix logic)
 > - `benchmarking/game-of-life-kmp-commonmain-ioa/run.ps1` (JAR version strings) — note: the IOA plugin itself is **work in progress**; this benchmark measures a mostly no-op plugin for now
@@ -83,6 +81,7 @@ File I/O uses **`kotlinx-io`** for cross-platform compatibility (same API on JVM
 ### Output file formats
 
 **Trace file** (`./trace_<platform>_<random>.txt`):
+
 ```
 >;0          # enter method id=0
 >;1          # enter method id=1
@@ -91,6 +90,7 @@ File I/O uses **`kotlinx-io`** for cross-platform compatibility (same API on JVM
 ```
 
 **Symbols file** (`./symbols_<platform>_<random>.txt`) — JSON object:
+
 ```json
 { "0": "main", "1": "game.gol.GameOfLife.step", ... }
 ```
@@ -155,6 +155,7 @@ build\bin\mingwX64\releaseExecutable\<project>-<suffix>.exe <steps>
 ## KIRHelperKit
 
 Utility library for writing Kotlin IR compiler plugins. Key packages:
+
 - `at.jku.ssw.kir.find` — locate symbols: `findClass`, `findFunction`, `findProperty`, extension methods on `IrPluginContext`, `IrClassSymbol`, `IrPropertySymbol`
 - `at.jku.ssw.kir.call` — DSL for building IR function call expressions
 - `at.jku.ssw.kir.general` — `IrStringBuilder`, `IrFileIOHandler` helpers
@@ -166,6 +167,7 @@ Utility library for writing Kotlin IR compiler plugins. Key packages:
 ### Functions excluded from instrumentation
 
 `KPerfExtension` skips a function if any of these are true:
+
 - Name is `_enter_method`, `_exit_method`, or `_exit_main` (the injected helpers themselves)
 - Body is null
 - Origin is `ADAPTER_FOR_CALLABLE_REFERENCE`
@@ -190,6 +192,7 @@ Configured via the `kperf { }` block in the consumer's `build.gradle.kts`, backe
 Gradle properties (`-PkperfFlushEarly=true`, `-PkperfMethods=a\.b\..*`) override defaults in the KMP example projects. `enabled` is also configurable via `-PkperfEnabled=false`.
 
 > ⚠️ **Defaults are defined in three separate places.** When changing a default value, update all three:
+>
 > 1. `plugins/k-perf/src/main/kotlin/at/jku/ssw/gradle/KPerfGradlePlugin.kt` — extension class property defaults (`var flushEarly: Boolean = false`, etc.)
 > 2. `plugins/k-perf/src/main/kotlin/at/jku/ssw/compilerplugin/KPerfComponentRegistrar.kt` — compiler-side fallbacks (`configuration[KEY] ?: false`, etc.)
 > 3. `kmp-examples/game-of-life-kmp-*-k-perf/build.gradle.kts` — Gradle property fallbacks (`.getOrElse(false)`, etc.)
@@ -197,6 +200,7 @@ Gradle properties (`-PkperfFlushEarly=true`, `-PkperfMethods=a\.b\..*`) override
 ### Group, version, and artifact coordinates
 
 All subprojects use:
+
 - `group = "io.github.neonmika"`
 - `version = "<current major version>.<current minor version>.<current patch version>"` (e.g., `0.2.1`)
 

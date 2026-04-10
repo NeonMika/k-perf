@@ -1,10 +1,5 @@
 # Copilot Instructions for k-perf
 
-> ⚠️ **MANDATORY FIRST STEP — NO EXCEPTIONS, NO MATTER HOW SMALL THE TASK:**
-> Before touching any file, create `plans/<task-name>/01-plan.md` and show it to the user.
-> Never implement anything if this file does not exist yet.
-> The only exception is when the user explicitly says to skip the plan.
-
 ## Build System & Commands
 
 All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). There is no root-level Gradle project — each subproject has its own `gradlew`.

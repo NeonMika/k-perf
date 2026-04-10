@@ -10,18 +10,6 @@ set -euo pipefail
 
 CLEAN_BUILD=true
 
-# Platform-specific native target and binary extension
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  native_target="macosX64"
-  native_ext=".kexe"
-elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
-  native_target="mingwX64"
-  native_ext=".exe"
-else
-  native_target="linuxX64"
-  native_ext=".kexe"
-fi
-
 for arg in "$@"; do
   case "$arg" in
     --no-clean)
@@ -86,28 +74,6 @@ run_gradle_task_if_present() {
   echo "$title completed successfully."
 }
 
-copy_kmp_artifacts_to_dist() {
-  # Must be called from within the project directory (pushd already done)
-  local project_name
-  project_name="$(basename "$PWD")"
-  mkdir -p dist
-
-  # JVM: copy JAR + runtime deps from build/lib/
-  if [ -d "build/lib" ]; then
-    cp -f build/lib/* dist/ 2>/dev/null || true
-  fi
-  # JS: copy bundled .js file
-  local js_file="build/js/packages/${project_name}/kotlin/${project_name}.js"
-  if [ -f "$js_file" ]; then
-    cp -f "$js_file" dist/
-  fi
-  # Native: copy binary for current platform
-  local native_binary="build/bin/${native_target}/releaseExecutable/${project_name}${native_ext}"
-  if [ -f "$native_binary" ]; then
-    cp -f "$native_binary" dist/
-  fi
-}
-
 run_kmp_build() {
   local title="$1"
   local path="$2"
@@ -142,8 +108,6 @@ run_kmp_build() {
   run_gradle_task_if_present "$title - Windows build" "$windows_task"
   run_gradle_task_if_present "$title - Linux build" "$linux_task"
   run_gradle_task_if_present "$title - Mac build" "$mac_task"
-
-  copy_kmp_artifacts_to_dist
 
   popd > /dev/null
 

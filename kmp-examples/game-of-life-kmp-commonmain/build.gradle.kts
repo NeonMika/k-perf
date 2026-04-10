@@ -35,6 +35,12 @@ kotlin {
             into("build/lib")
           }
         }
+        doLast {
+          copy {
+            from("build/lib")
+            into(layout.projectDirectory.dir("dist"))
+          }
+        }
       }
     }
   }
@@ -109,5 +115,30 @@ kotlin {
       }
     }
     val mingwX64Test by getting
+  }
+}
+
+// Copy JS bundle to dist/ after production compile
+tasks.whenTaskAdded {
+  if (name == "jsNodeProductionExecutableCompileSync" || name == "jsProductionExecutableCompileSync") {
+    doLast {
+      copy {
+        from("build/js/packages/${project.name}/kotlin/${project.name}.js")
+        into(layout.projectDirectory.dir("dist"))
+      }
+    }
+  }
+}
+
+// Copy native release binary to dist/ after linking
+tasks.whenTaskAdded {
+  if (name.startsWith("linkReleaseExecutable")) {
+    doLast {
+      val targetDir = name.removePrefix("linkReleaseExecutable").replaceFirstChar { it.lowercaseChar() }
+      copy {
+        from("build/bin/$targetDir/releaseExecutable")
+        into(layout.projectDirectory.dir("dist"))
+      }
+    }
   }
 }
