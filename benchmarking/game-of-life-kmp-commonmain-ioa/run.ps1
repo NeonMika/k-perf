@@ -281,7 +281,7 @@ foreach ($executable in $executables) {
     -BuildTime $relevantBuildTime `
     -AdditionalParameters @{
       CILabel    = $CILabel
-       Reference = $Reference
+      Reference = $Reference
       IOA       = $IOA
       JVM       = $JVM
       JS        = $JS

@@ -5,11 +5,22 @@
 # Use the correct gradlew wrapper for the current platform
 $gradlewCmd = if ($IsWindows) { ".\gradlew" } else { "./gradlew" }
 
+# Artifact version used in all built JAR/binary names
+$artifactVersion = "0.2.1"
+
 # Define GameType enum
 enum GameType {
   CommonMain
   DedicatedMain
 }
+
+# Define ExecutableType enum
+enum ExecutableType {
+  Jar
+  Node
+  Exe
+}
+
 # Map GameType enum values to their string representations and tags
 $gameTypeTagMap = @{
   [GameType]::CommonMain    = "common"
@@ -42,142 +53,21 @@ function Get-KPerfSuffix {
   return "flushEarly-$(if ($Config.FlushEarly) { 'true' } else { 'false' })-propAccessors-$(if ($Config.InstrumentPropertyAccessors) { 'true' } else { 'false' })-testKIR-$(if ($Config.TestKIR) { 'true' } else { 'false' })"
 }
 
-function Clean-KirHelperKit {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "## Cleaning KIRHelperKit"
-  Write-Host "=========================================="
-  Push-Location "..\..\KIRHelperKit"
-  try {
-    & $gradlewCmd clean | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host "ERROR: KIRHelperKit clean failed!"
-      exit 1
-    }
-  }
-  finally {
-    Pop-Location
-  }
-}
+function Invoke-GradleClean {
+  param(
+    [string]$Path,
+    [string]$Name
+  )
 
-function Clean-KPerfPlugin {
   Write-Host ""
   Write-Host "=========================================="
-  Write-Host "## Cleaning k-perf (Kotlin compiler plugin)"
+  Write-Host "## Cleaning $Name"
   Write-Host "=========================================="
-  Push-Location "..\..\plugins\k-perf"
+  Push-Location $Path
   try {
     & $gradlewCmd clean | Out-Host
     if ($LASTEXITCODE -ne 0) {
-      Write-Host "ERROR: k-perf clean failed!"
-      exit 1
-    }
-  }
-  finally {
-    Pop-Location
-  }
-}
-
-function Clean-InstrumentationOverheadAnalyzerPlugin {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "## Cleaning instrumentation-overhead-analyzer (Kotlin compiler plugin)"
-  Write-Host "=========================================="
-  Push-Location "..\..\plugins\instrumentation-overhead-analyzer"
-  try {
-    & $gradlewCmd clean | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host "ERROR: instrumentation-overhead-analyzer clean failed!"
-      exit 1
-    }
-  }
-  finally {
-    Pop-Location
-  }
-}
-
-function Clean-GameOfLifeCommonMainReference {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "## Cleaning game-of-life-kmp-commonmain reference application"
-  Write-Host "=========================================="
-  Push-Location "..\..\kmp-examples\game-of-life-kmp-commonmain"
-  try {
-    & $gradlewCmd clean | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host "ERROR: game-of-life-kmp-commonmain clean failed!"
-      exit 1
-    }
-  }
-  finally {
-    Pop-Location
-  }
-}
-
-function Clean-GameOfLifeCommonMainIoa {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "## Cleaning game-of-life-kmp-commonmain-ioa application"
-  Write-Host "=========================================="
-  Push-Location "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa"
-  try {
-    & $gradlewCmd clean | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host "ERROR: game-of-life-kmp-commonmain-ioa clean failed!"
-      exit 1
-    }
-  }
-  finally {
-    Pop-Location
-  }
-}
-
-function Clean-GameOfLifeDedicatedMainReference {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "## Cleaning game-of-life-kmp-dedicatedmain reference application"
-  Write-Host "=========================================="
-  Push-Location "..\..\kmp-examples\game-of-life-kmp-dedicatedmain"
-  try {
-    & $gradlewCmd clean | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host "ERROR: game-of-life-kmp-dedicatedmain clean failed!"
-      exit 1
-    }
-  }
-  finally {
-    Pop-Location
-  }
-}
-
-function Clean-GameOfLifeCommonKPerfVariant {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "## Cleaning game-of-life-kmp-commonmain-k-perf"
-  Write-Host "=========================================="
-  Push-Location "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf"
-  try {
-    & $gradlewCmd clean | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host "ERROR: game-of-life-kmp-commonmain-k-perf clean failed!"
-      exit 1
-    }
-  }
-  finally {
-    Pop-Location
-  }
-}
-
-function Clean-GameOfLifeDedicatedKPerfVariant {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "## Cleaning game-of-life-kmp-dedicatedmain-k-perf"
-  Write-Host "=========================================="
-  Push-Location "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf"
-  try {
-    & $gradlewCmd clean | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host "ERROR: game-of-life-kmp-dedicatedmain-k-perf clean failed!"
+      Write-Host "ERROR: $Name clean failed!"
       exit 1
     }
   }
@@ -196,7 +86,7 @@ function Build-KirHelperKit {
     $buildStartTime = Get-Date
     & $gradlewCmd build publishToMavenLocal | Out-Host
     $buildEndTime = Get-Date
-    
+
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: KIRHelperKit build failed!"
       exit 1
@@ -220,7 +110,7 @@ function Build-KPerfPlugin {
     $buildStartTime = Get-Date
     & $gradlewCmd build publishToMavenLocal | Out-Host
     $buildEndTime = Get-Date
-    
+
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: k-perf build failed!"
       exit 1
@@ -244,7 +134,7 @@ function Build-InstrumentationOverheadAnalyzerPlugin {
     $buildStartTime = Get-Date
     & $gradlewCmd build publishToMavenLocal | Out-Host
     $buildEndTime = Get-Date
-    
+
     if ($LASTEXITCODE -ne 0) {
       Write-Host "ERROR: instrumentation-overhead-analyzer build failed!"
       exit 1
@@ -267,23 +157,23 @@ function Build-GameOfLifeCommonMainReference {
   $buildTimes = [ordered]@{}
   if ($timings.Contains('jvm')) {
     $buildTimes['commonmain-plain-jar'] = $timings.jvm
-    $buildTimes['commonmain_plain_jar'] = $timings.jvm
+    $buildTimes['commonmain_plain_jar'] = $timings.jvm  # underscore variant for ioa/run.ps1 compatibility
   }
   if ($timings.Contains('js')) {
     $buildTimes['commonmain-plain-node'] = $timings.js
-    $buildTimes['commonmain_plain_node'] = $timings.js
+    $buildTimes['commonmain_plain_node'] = $timings.js  # underscore variant for ioa/run.ps1 compatibility
   }
   if ($timings.Contains('windows')) {
     $buildTimes['commonmain-plain-exe'] = $timings.windows
-    $buildTimes['commonmain_plain_exe'] = $timings.windows
+    $buildTimes['commonmain_plain_exe'] = $timings.windows  # underscore variant for ioa/run.ps1 compatibility
   }
   if ($timings.Contains('linux')) {
     $buildTimes['commonmain-plain-exe'] = $timings.linux
-    $buildTimes['commonmain_plain_exe'] = $timings.linux
+    $buildTimes['commonmain_plain_exe'] = $timings.linux  # underscore variant for ioa/run.ps1 compatibility
   }
   if ($timings.Contains('mac')) {
     $buildTimes['commonmain-plain-exe'] = $timings.mac
-    $buildTimes['commonmain_plain_exe'] = $timings.mac
+    $buildTimes['commonmain_plain_exe'] = $timings.mac  # underscore variant for ioa/run.ps1 compatibility
   }
   Write-Host "game-of-life-kmp-commonmain reference application build completed successfully."
   return $buildTimes
@@ -378,7 +268,7 @@ function Invoke-KmpBuildWithTimings {
     $windowsTask = Find-FirstGradleTask -TaskList $taskList -Candidates @("linkReleaseExecutableMingwX64", "linkDebugExecutableMingwX64")
     $linuxTask = Find-FirstGradleTask -TaskList $taskList -Candidates @("linkReleaseExecutableLinuxX64", "linkDebugExecutableLinuxX64")
     $macTask = Find-FirstGradleTask -TaskList $taskList -Candidates @("linkReleaseExecutableMacosX64", "linkDebugExecutableMacosX64", "linkReleaseExecutableMacosArm64", "linkDebugExecutableMacosArm64")
-  
+
     $jvmDuration = Invoke-GradleTaskIfPresentTimed -TaskName $jvmTask -Title "$Title - JVM build" -GradleArgs $GradleArgs
     if ($null -ne $jvmDuration) { $timings.jvm = $jvmDuration }
 
@@ -408,7 +298,7 @@ function Build-GameOfLifeKPerfVariant {
     [GameType]$GameType,
     [KPerfConfig]$Config
   )
-  
+
   $projectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-k-perf" } else { "game-of-life-kmp-dedicatedmain-k-perf" }
   $projectPath = if ($GameType -eq [GameType]::CommonMain) { "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf" } else { "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf" }
   $suffix = Get-KPerfSuffix -Config $Config
@@ -418,7 +308,7 @@ function Build-GameOfLifeKPerfVariant {
     "-PkperfTestKIR=$($Config.TestKIR)"
     "-PkperfMethods=$($Config.Methods)"
   )
-  
+
   Write-Host ""
   Write-Host "## Building $projectName with suffix: $suffix..."
   $title = "$projectName ($suffix)"
@@ -434,23 +324,103 @@ function Build-GameOfLifeKPerfVariant {
 
   $buildTimes = [ordered]@{}
   $gameTypeString = $gameTypeStringMap[$GameType]
-  
-  if ($timings.Contains('jvm')) { 
-    $buildTimes["$gameTypeString-k-perf-$suffix-jar"] = $timings.jvm 
+
+  if ($timings.Contains('jvm')) {
+    $buildTimes["$gameTypeString-k-perf-$suffix-jar"] = $timings.jvm
   }
-  if ($timings.Contains('js')) { 
-    $buildTimes["$gameTypeString-k-perf-$suffix-node"] = $timings.js 
+  if ($timings.Contains('js')) {
+    $buildTimes["$gameTypeString-k-perf-$suffix-node"] = $timings.js
   }
-  if ($timings.Contains('windows')) { 
-    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.windows 
+  if ($timings.Contains('windows')) {
+    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.windows
   }
-  if ($timings.Contains('linux')) { 
-    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.linux 
+  if ($timings.Contains('linux')) {
+    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.linux
   }
-  if ($timings.Contains('mac')) { 
-    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.mac 
+  if ($timings.Contains('mac')) {
+    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.mac
   }
-  
+
   Write-Host "$projectName build with $suffix completed successfully."
   return $buildTimes
+}
+
+function Invoke-GetExecutables {
+  param(
+    [GameType]$GameType,
+    [array]$KPerfCombinations,
+    [bool]$Reference,
+    [bool]$JVM,
+    [bool]$JS,
+    [bool]$Native,
+    [string]$NativeExt,
+    [string]$PlainProjectRoot,
+    [string]$KPerfProjectRoot,
+    [string]$ArtifactVersion
+  )
+
+  $executables = @()
+  $gameTypeString = $gameTypeStringMap[$GameType]
+  $projectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain" } else { "game-of-life-kmp-dedicatedmain" }
+  $kPerfProjectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-k-perf" } else { "game-of-life-kmp-dedicatedmain-k-perf" }
+
+  if ($Reference -and $JVM) {
+    $executables += @{
+      Name   = "$gameTypeString-plain-jar"
+      Path   = "$PlainProjectRoot\dist\$projectName-jvm-$ArtifactVersion.jar"
+      Type   = [ExecutableType]::Jar
+      Config = $null
+    }
+  }
+
+  if ($Reference -and $JS) {
+    $executables += @{
+      Name   = "$gameTypeString-plain-node"
+      Path   = "$PlainProjectRoot\dist\$projectName.js"
+      Type   = [ExecutableType]::Node
+      Config = $null
+    }
+  }
+
+  if ($Reference -and $Native) {
+    $executables += @{
+      Name   = "$gameTypeString-plain-exe"
+      Path   = "$PlainProjectRoot\dist\$projectName$NativeExt"
+      Type   = [ExecutableType]::Exe
+      Config = $null
+    }
+  }
+
+  foreach ($config in $KPerfCombinations) {
+    $suffix = Get-KPerfSuffix -Config $config
+
+    if ($JVM) {
+      $executables += @{
+        Name   = "$gameTypeString-k-perf-$suffix-jar"
+        Path   = "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName-jvm-$ArtifactVersion.jar"
+        Type   = [ExecutableType]::Jar
+        Config = $config
+      }
+    }
+
+    if ($JS) {
+      $executables += @{
+        Name   = "$gameTypeString-k-perf-$suffix-node"
+        Path   = "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName.js"
+        Type   = [ExecutableType]::Node
+        Config = $config
+      }
+    }
+
+    if ($Native) {
+      $executables += @{
+        Name   = "$gameTypeString-k-perf-$suffix-exe"
+        Path   = "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName$NativeExt"
+        Type   = [ExecutableType]::Exe
+        Config = $config
+      }
+    }
+  }
+
+  return $executables
 }
