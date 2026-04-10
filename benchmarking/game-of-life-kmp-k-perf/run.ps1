@@ -12,7 +12,8 @@ param(
   [bool[]]$FlushEarly = @($false),
   [bool[]]$InstrumentPropertyAccessors = @($false),
   [bool[]]$TestKIR = @($false),
-  [string[]]$Methods = @(".*")
+  [string[]]$Methods = @(".*"),
+  [string]$CILabel = "local"
 )
 
 # Import common utility functions
@@ -287,7 +288,7 @@ Write-Host "=========================================="
 
 # Create measurement directory with timestamp and test suite name
 $measurementTimestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
-$measurementDirName = "{0}_game-of-life-kmp-k-perf" -f $measurementTimestamp
+$measurementDirName = "{0}_game-of-life-kmp-k-perf_{1}_{2}reps_{3}steps" -f $measurementTimestamp, $CILabel, $RepetitionCount, $StepCount
 $measurementDir = Join-Path "..\..\measurements" $measurementDirName
 
 # Check if measurement directory already exists
@@ -466,6 +467,7 @@ foreach ($executable in $executables) {
   
   $payload = [ordered]@{
     parameters  = [ordered]@{
+      CILabel                     = $CILabel
       RepetitionCount             = $RepetitionCount
       CleanBuild                  = $CleanBuild
       StepCount                   = $StepCount
@@ -502,7 +504,8 @@ foreach ($executable in $executables) {
     -StepCount $StepCount `
     -BuildTime $relevantBuildTime `
     -AdditionalParameters @{
-      Reference                       = $Reference
+      CILabel                         = $CILabel
+       Reference                       = $Reference
       Common                          = $Common
       Dedicated                       = $Dedicated
       JVM                             = $JVM

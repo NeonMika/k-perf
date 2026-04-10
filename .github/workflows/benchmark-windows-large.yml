@@ -35,13 +35,13 @@ jobs:
         shell: pwsh
         run: |
           Set-Location benchmarking/game-of-life-kmp-k-perf
-          ./run.ps1 -CleanBuild $false -RepetitionCount 50 -StepCount 500
+          ./run.ps1 -CleanBuild $false -RepetitionCount 50 -StepCount 500 -CILabel "windows-large"
 
       - name: Run IOA benchmark
         shell: pwsh
         run: |
           Set-Location benchmarking/game-of-life-kmp-commonmain-ioa
-          ./run.ps1 -CleanBuild $false -RepetitionCount 50 -StepCount 10
+          ./run.ps1 -CleanBuild $false -RepetitionCount 50 -StepCount 10 -CILabel "windows-large"
 
       - name: Commit and push benchmark results
         shell: pwsh

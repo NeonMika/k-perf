@@ -7,7 +7,8 @@ param(
   [bool]$IOA = $true,
   [bool]$JVM = $true,
   [bool]$JS = $true,
-  [bool]$Native = $true
+  [bool]$Native = $true,
+  [string]$CILabel = "local"
 )
 
 # Import common utility functions
@@ -151,7 +152,7 @@ Write-Host "=========================================="
 
 # Create measurement directory with timestamp and test suite name
 $measurementTimestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
-$measurementDirName = "{0}_{1}" -f $measurementTimestamp, $testSuiteName
+$measurementDirName = "{0}_{1}_{2}_{3}reps_{4}steps" -f $measurementTimestamp, $testSuiteName, $CILabel, $RepetitionCount, $StepCount
 $measurementDir = Join-Path "..\..\measurements" $measurementDirName
 
 # Check if measurement directory already exists
@@ -246,6 +247,7 @@ foreach ($executable in $executables) {
   
   $payload = [ordered]@{
     parameters  = [ordered]@{
+      CILabel         = $CILabel
       RepetitionCount = $RepetitionCount
       CleanBuild      = $CleanBuild
       StepCount       = $StepCount
@@ -278,7 +280,8 @@ foreach ($executable in $executables) {
     -StepCount $StepCount `
     -BuildTime $relevantBuildTime `
     -AdditionalParameters @{
-      Reference = $Reference
+      CILabel    = $CILabel
+       Reference = $Reference
       IOA       = $IOA
       JVM       = $JVM
       JS        = $JS
