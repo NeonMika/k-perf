@@ -140,11 +140,11 @@ Write-Host "=========================================="
 Write-Host "# Build phase completed successfully!"
 Write-Host "=========================================="
 
-# Define build output roots to shorten executable paths
-$commonMainBuildRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain\build"
-$commonMainKPerfBuildRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf\build"
-$dedicatedMainBuildRoot = "..\..\kmp-examples\game-of-life-kmp-dedicatedmain\build"
-$dedicatedMainKPerfBuildRoot = "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf\build"
+# Define project roots to locate artifacts in dist/ and bin/<suffix>/
+$commonMainProjectRoot      = "..\..\kmp-examples\game-of-life-kmp-commonmain"
+$commonMainKPerfProjectRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf"
+$dedicatedMainProjectRoot      = "..\..\kmp-examples\game-of-life-kmp-dedicatedmain"
+$dedicatedMainKPerfProjectRoot = "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf"
 
 # Function to get executables
 function Get-Executables {
@@ -153,16 +153,16 @@ function Get-Executables {
   )
   
   $executables = @()
-  $buildRoot = if ($GameType -eq [GameType]::CommonMain) { $commonMainKPerfBuildRoot } else { $dedicatedMainKPerfBuildRoot }
-  $plainBuildRoot = if ($GameType -eq [GameType]::CommonMain) { $commonMainBuildRoot } else { $dedicatedMainBuildRoot }
+  $plainProjectRoot = if ($GameType -eq [GameType]::CommonMain) { $commonMainProjectRoot } else { $dedicatedMainProjectRoot }
+  $kPerfProjectRoot = if ($GameType -eq [GameType]::CommonMain) { $commonMainKPerfProjectRoot } else { $dedicatedMainKPerfProjectRoot }
   $projectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain" } else { "game-of-life-kmp-dedicatedmain" }
   $kPerfProjectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-k-perf" } else { "game-of-life-kmp-dedicatedmain-k-perf" }
   
-  # Add reference (plain) versions if requested
+  # Add reference (plain) versions if requested — artifacts are in dist/
   if ($Reference -and $JVM) {
     $executables += @{
       Name   = "$GameType-plain-jar"
-      Path   = "$plainBuildRoot\lib\$projectName-jvm-0.2.1.jar"
+      Path   = "$plainProjectRoot\dist\$projectName-jvm-0.2.1.jar"
       Type   = "jar"
       Config = $null
     }
@@ -171,7 +171,7 @@ function Get-Executables {
   if ($Reference -and $JS) {
     $executables += @{
       Name   = "$GameType-plain-node"
-      Path   = "$plainBuildRoot\js\packages\$projectName\kotlin\$projectName.js"
+      Path   = "$plainProjectRoot\dist\$projectName.js"
       Type   = "node"
       Config = $null
     }
@@ -180,20 +180,20 @@ function Get-Executables {
   if ($Reference -and $Native) {
     $executables += @{
       Name   = "$GameType-plain-exe"
-      Path   = "$plainBuildRoot\bin\$nativeTarget\releaseExecutable\$projectName$nativeExt"
+      Path   = "$plainProjectRoot\dist\$projectName$nativeExt"
       Type   = "exe"
       Config = $null
     }
   }
   
-  # Add k-perf variants
+  # Add k-perf variants — artifacts are in bin/<suffix>/
   if ($JVM) {
     foreach ($config in $kPerfCombinations) {
       $suffix = Get-KPerfSuffix -Config $config
       
       $executables += @{
         Name   = "$GameType-k-perf-$suffix-jar"
-        Path   = "$buildRoot\lib\$kPerfProjectName-jvm-0.2.1-$suffix.jar"
+        Path   = "$kPerfProjectRoot\bin\$suffix\$kPerfProjectName-jvm-0.2.1.jar"
         Type   = "jar"
         Config = $config
       }
@@ -206,7 +206,7 @@ function Get-Executables {
       
       $executables += @{
         Name   = "$GameType-k-perf-$suffix-node"
-        Path   = "$buildRoot\js\packages\$kPerfProjectName-$suffix\kotlin\$kPerfProjectName-$suffix.js"
+        Path   = "$kPerfProjectRoot\bin\$suffix\$kPerfProjectName.js"
         Type   = "node"
         Config = $config
       }
@@ -219,7 +219,7 @@ function Get-Executables {
       
       $executables += @{
         Name   = "$GameType-k-perf-$suffix-exe"
-        Path   = "$buildRoot\bin\$nativeTarget\releaseExecutable\$kPerfProjectName-$suffix$nativeExt"
+        Path   = "$kPerfProjectRoot\bin\$suffix\$kPerfProjectName$nativeExt"
         Type   = "exe"
         Config = $config
       }

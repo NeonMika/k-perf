@@ -66,9 +66,9 @@ Write-Host "=========================================="
 Write-Host "# Build phase completed successfully!"
 Write-Host "=========================================="
 
-# Define build output roots to shorten executable paths
-$commonMainBuildRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain\build"
-$commonMainIoaBuildRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa\build"
+# Define project dist directories for artifacts
+$commonMainDistRoot    = "..\..\kmp-examples\game-of-life-kmp-commonmain\dist"
+$commonMainIoaDistRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa\dist"
 
 # Validate selection parameters
 if (-not ($Reference -or $IOA)) {
@@ -85,22 +85,22 @@ if (-not ($JVM -or $JS -or $Native)) {
 $executables = @()
 
 if ($Reference -and $JVM) {
-  $executables += @{ Name = "commonmain_plain_jar"; Path = "$commonMainBuildRoot\lib\game-of-life-kmp-commonmain-jvm-0.2.1.jar"; Type = "jar" }
+  $executables += @{ Name = "commonmain_plain_jar"; Path = "$commonMainDistRoot\game-of-life-kmp-commonmain-jvm-0.2.1.jar"; Type = "jar" }
 }
 if ($IOA -and $JVM) {
-  $executables += @{ Name = "commonmain_ioa_jar"; Path = "$commonMainIoaBuildRoot\lib\game-of-life-kmp-commonmain-ioa-jvm-0.2.1.jar"; Type = "jar" }
+  $executables += @{ Name = "commonmain_ioa_jar"; Path = "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa-jvm-0.2.1.jar"; Type = "jar" }
 }
 if ($Reference -and $Native) {
-  $executables += @{ Name = "commonmain_plain_exe"; Path = "$commonMainBuildRoot\bin\$nativeTarget\releaseExecutable\game-of-life-kmp-commonmain$nativeExt"; Type = "exe" }
+  $executables += @{ Name = "commonmain_plain_exe"; Path = "$commonMainDistRoot\game-of-life-kmp-commonmain$nativeExt"; Type = "exe" }
 }
 if ($IOA -and $Native) {
-  $executables += @{ Name = "commonmain_ioa_exe"; Path = "$commonMainIoaBuildRoot\bin\$nativeTarget\releaseExecutable\game-of-life-kmp-commonmain-ioa$nativeExt"; Type = "exe" }
+  $executables += @{ Name = "commonmain_ioa_exe"; Path = "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa$nativeExt"; Type = "exe" }
 }
 if ($Reference -and $JS) {
-  $executables += @{ Name = "commonmain_plain_node"; Path = "$commonMainBuildRoot\js\packages\game-of-life-kmp-commonmain\kotlin\game-of-life-kmp-commonmain.js"; Type = "node" }
+  $executables += @{ Name = "commonmain_plain_node"; Path = "$commonMainDistRoot\game-of-life-kmp-commonmain.js"; Type = "node" }
 }
 if ($IOA -and $JS) {
-  $executables += @{ Name = "commonmain_ioa_node"; Path = "$commonMainIoaBuildRoot\js\packages\game-of-life-kmp-commonmain-ioa\kotlin\game-of-life-kmp-commonmain-ioa.js"; Type = "node" }
+  $executables += @{ Name = "commonmain_ioa_node"; Path = "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa.js"; Type = "node" }
 }
 
 # Create a test suite name from the executable names

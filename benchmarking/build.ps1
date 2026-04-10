@@ -5,6 +5,10 @@
 # Use the correct gradlew wrapper for the current platform
 $gradlewCmd = if ($IsWindows) { ".\gradlew" } else { "./gradlew" }
 
+# Platform-specific native target and binary extension
+$nativeTarget = if ($IsWindows) { "mingwX64" } elseif ($IsMacOS) { "macosX64" } else { "linuxX64" }
+$nativeExt    = if ($IsWindows) { ".exe" }     else               { ".kexe" }
+
 # Define GameType enum
 enum GameType {
   CommonMain
@@ -393,6 +397,26 @@ function Invoke-KmpBuildWithTimings {
 
     $macDuration = Invoke-GradleTaskIfPresentTimed -TaskName $macTask -Title "$Title - Mac build" -GradleArgs $GradleArgs
     if ($null -ne $macDuration) { $timings.mac = $macDuration }
+
+    # Copy artifacts to dist/
+    $projectName = Split-Path -Leaf (Get-Location)
+    $distDir = "dist"
+    New-Item -ItemType Directory -Path $distDir -Force | Out-Null
+
+    # JVM: copy JAR + runtime deps from build/lib/
+    if (Test-Path "build\lib") {
+      Copy-Item -Path "build\lib\*" -Destination $distDir -Force
+    }
+    # JS: copy bundled .js file
+    $jsFile = Get-ChildItem -Path "build\js\packages\$projectName\kotlin\$projectName.js" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -ne $jsFile) {
+      Copy-Item -Path $jsFile.FullName -Destination $distDir -Force
+    }
+    # Native: copy binary for current platform
+    $nativeBinary = "build\bin\$nativeTarget\releaseExecutable\$projectName$nativeExt"
+    if (Test-Path $nativeBinary) {
+      Copy-Item -Path $nativeBinary -Destination $distDir -Force
+    }
   }
   finally {
     Pop-Location
@@ -422,7 +446,15 @@ function Build-GameOfLifeKPerfVariant {
   Write-Host "## Building $projectName with suffix: $suffix..."
   $title = "$projectName ($suffix)"
   $timings = Invoke-KmpBuildWithTimings -Title $title -Path $projectPath -GradleArgs $gradleArgs
-  
+
+  # Copy artifacts from dist/ into bin/<suffix>/ so multiple configs can coexist
+  $binDir = Join-Path $projectPath "bin\$suffix"
+  New-Item -ItemType Directory -Path $binDir -Force | Out-Null
+  $distDir = Join-Path $projectPath "dist"
+  if (Test-Path $distDir) {
+    Copy-Item -Path "$distDir\*" -Destination $binDir -Force
+  }
+
   $buildTimes = [ordered]@{}
   $gameTypeString = $gameTypeStringMap[$GameType]
   

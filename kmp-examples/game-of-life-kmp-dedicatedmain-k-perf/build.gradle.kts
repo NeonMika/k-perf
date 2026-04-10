@@ -45,11 +45,6 @@ kperf {
   methods = kperfMethods
 }
 
-val flushEarlyTag = if (kperfFlushEarly) "true" else "false"
-val instrumentPropertyAccessorsTag = if (kperfInstrumentPropertyAccessors) "true" else "false"
-val testKIRTag = if (kperfTestKIR) "true" else "false"
-val outputSuffix = "flushEarly-$flushEarlyTag-propAccessors-$instrumentPropertyAccessorsTag-testKIR-$testKIRTag"
-
 kotlin {
   jvm {
     compilations.all { }
@@ -59,7 +54,6 @@ kotlin {
     }
     compilations.all {
       tasks.withType<Jar> {
-        archiveClassifier.set(outputSuffix)
         doFirst {
           manifest {
             attributes(
@@ -80,7 +74,6 @@ kotlin {
   
   @OptIn(org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalMainFunctionArgumentsDsl::class)
   js(IR) {
-    outputModuleName.set("${project.name}-$outputSuffix")
     nodejs {
       passProcessArgvToMainFunction()
     }
@@ -108,7 +101,6 @@ kotlin {
     target.binaries {
       executable {
         entryPoint = "main"
-        baseName = "$baseName-$outputSuffix"
       }
     }
   }
