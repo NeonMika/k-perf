@@ -595,10 +595,11 @@ function Build-BenchmarkCSVRecord {
 .DESCRIPTION
   For each executable:
     1. Optionally runs $WarmupCount warm-up iterations (discarded).
-    2. Runs $RepetitionCount timed iterations, parsing "### Elapsed time: <µs>" from stdout.
+    2. Runs $RepetitionCount timed iterations, parsing "### Elapsed time: <µs>" from stdout
+       for the total time and "!!! Elapsed time <n>: <µs>" for per-step times.
     3. Calls $PostIterationAction (if provided) after each timed iteration, passing
        ($executable, $iterationNumber, $MeasurementDir) as positional arguments.
-    4. Computes statistics (mean, median, stddev, CI95) over collected times.
+    4. Computes statistics (mean, median, stddev, CI95) over collected total times.
     5. Writes a per-executable JSON file to $MeasurementDir/<name>.json.
     6. Accumulates a CSV record for the summary files.
   After all executables: writes _results.csv and _results.json to $MeasurementDir.
@@ -606,15 +607,16 @@ function Build-BenchmarkCSVRecord {
 
 ## Output Format (per-executable JSON)
   {
-    "parameters":  { ... }  // caller-supplied Parameters hashtable
-    "machineInfo": { ... }  // Get-MachineInfo result
+    "parameters":  { ... }              // caller-supplied Parameters hashtable
+    "machineInfo": { ... }              // Get-MachineInfo result
     "buildTimeMs": <ms>|null
     "executable":  "<name>"
     "repetitions": <N>
     "timeUnit":    "microseconds"
-    "times":       [<µs>, ...]
+    "times":       [<µs>, ...]          // total elapsed time per repetition
+    "stepTimes":   [[<µs>, ...], ...]   // per-step times; outer=repetitions, inner=steps
     "statistics":  { count, mean, median, stddev, min, max, ci95 }
-    "status":      "ok" | "failed"  // "failed" when no successful measurements
+    "status":      "ok" | "failed"      // "failed" when no successful measurements
   }
 
 .PARAMETER Executables
@@ -727,6 +729,7 @@ function Invoke-BenchmarkSuite {
 
     # Timed iterations (elapsed times in microseconds)
     $elapsedTimes = @()
+    $stepTimesAllReps = @()
 
     for ($i = 1; $i -le $RepetitionCount; $i++) {
       Write-Host ""
@@ -766,6 +769,15 @@ function Invoke-BenchmarkSuite {
         $elapsedTime = ($elapsedLine -replace "### Elapsed time:\s*", "").Trim()
         Write-Host ("- Ran {0:N3} ms" -f ([long]$elapsedTime / 1000))
         $elapsedTimes += $elapsedTime
+
+        # Collect per-step times for this repetition
+        $stepTimesThisRep = @()
+        $stepLines = $output | Select-String "^!!! Elapsed time \d+: "
+        foreach ($stepLine in $stepLines) {
+          $stepMicros = ($stepLine -replace "^!!! Elapsed time \d+:\s*", "").Trim()
+          $stepTimesThisRep += [double]$stepMicros
+        }
+        $stepTimesAllReps += , $stepTimesThisRep
       }
       else {
         Write-Host "- Elapsed time not found in iteration $i"
@@ -799,6 +811,7 @@ function Invoke-BenchmarkSuite {
       repetitions = $RepetitionCount
       timeUnit    = "microseconds"
       times       = $numericTimes
+      stepTimes   = $stepTimesAllReps
       statistics  = $stats
       status      = $status
     }
