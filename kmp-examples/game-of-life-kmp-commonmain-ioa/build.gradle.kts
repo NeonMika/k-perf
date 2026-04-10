@@ -126,7 +126,7 @@ kotlin {
 }
 
 // Copy JS bundle to dist/ after production compile
-tasks.whenTaskAdded {
+tasks.configureEach {
   if (name == "jsNodeProductionExecutableCompileSync" || name == "jsProductionExecutableCompileSync") {
     doLast {
       copy {
@@ -138,7 +138,7 @@ tasks.whenTaskAdded {
 }
 
 // Copy native release binary to dist/ after linking
-tasks.whenTaskAdded {
+tasks.configureEach {
   if (name.startsWith("linkReleaseExecutable")) {
     doLast {
       val targetDir = name.removePrefix("linkReleaseExecutable").replaceFirstChar { it.lowercaseChar() }
