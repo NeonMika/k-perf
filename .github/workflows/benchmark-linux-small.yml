@@ -57,6 +57,7 @@ jobs:
           if ($changes) {
             git commit -m "Add benchmark results [linux-small] [skip ci]"
             $branch = $env:GITHUB_REF_NAME
+            git checkout -- .
             for ($attempt = 1; $attempt -le 3; $attempt++) {
               git pull --rebase origin $branch
               git push origin HEAD:refs/heads/$branch
