@@ -18,14 +18,14 @@
     "CPU": "AMD EPYC 7763 64-Core Processor",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
-    "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.25,
+    "TotalRAMGB": 15.61,
+    "AvailableRAMGB": 13.28,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 84,
-    "SystemUptimeHours": 0.09,
+    "SystemUptimeHours": 0.1,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 154,
+    "RunningProcessCount": 151,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.4.14",
     "JavaVersion": "21.0.10",
@@ -34,21 +34,28 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "Gradle 9.0.0",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "ef0733869127e2d0f101f439d285364ac76ff0d8",
+    "GitCommitHash": "94c7346734715bfb0d3416cc02568743a7897fbc",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-10 19:15:54"
+    "CollectionTimestamp": "2026-04-10 20:18:44"
   },
-  "buildTimeMs": 937.2173,
-  "executable": "commonmain_plain_node",
+  "buildTimeMs": 1075.2971,
+  "executable": "commonmain_plain_jar",
   "repetitions": 3,
-  "times": null,
+  "times": [
+    52213.0,
+    55632.0,
+    101901.0
+  ],
   "statistics": {
-    "count": 0,
-    "mean": null,
-    "median": null,
-    "stddev": null,
-    "min": null,
-    "max": null,
-    "ci95": null
+    "count": 3,
+    "mean": 69915.33333333333,
+    "median": 101901.0,
+    "stddev": 27753.09972477549,
+    "min": 52213.0,
+    "max": 101901.0,
+    "ci95": {
+      "lower": 1015.3170664670033,
+      "upper": 138815.34960019967
+    }
   }
 }
