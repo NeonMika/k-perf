@@ -1,9 +1,6 @@
 # Build functions for benchmarking applications
 
-. "$PSScriptRoot\utils.ps1"
-
-# Use the correct gradlew wrapper for the current platform
-$gradlewCmd = if ($IsWindows) { ".\gradlew" } else { "./gradlew" }
+. "$PSScriptRoot\gradle_utils.ps1"
 
 # Artifact version used in all built JAR/binary names
 $artifactVersion = "0.2.1"
@@ -12,13 +9,6 @@ $artifactVersion = "0.2.1"
 enum GameType {
   CommonMain
   DedicatedMain
-}
-
-# Define ExecutableType enum
-enum ExecutableType {
-  Jar
-  Node
-  Exe
 }
 
 # Map GameType enum values to their string representations and tags
@@ -51,29 +41,6 @@ function Get-KPerfSuffix {
   param([KPerfConfig]$Config)
 
   return "flushEarly-$(if ($Config.FlushEarly) { 'true' } else { 'false' })-propAccessors-$(if ($Config.InstrumentPropertyAccessors) { 'true' } else { 'false' })-testKIR-$(if ($Config.TestKIR) { 'true' } else { 'false' })"
-}
-
-function Invoke-GradleClean {
-  param(
-    [string]$Path,
-    [string]$Name
-  )
-
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "## Cleaning $Name"
-  Write-Host "=========================================="
-  Push-Location $Path
-  try {
-    & $gradlewCmd clean | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-      Write-Host "ERROR: $Name clean failed!"
-      exit 1
-    }
-  }
-  finally {
-    Pop-Location
-  }
 }
 
 function Build-KirHelperKit {
@@ -209,88 +176,6 @@ function Build-GameOfLifeCommonMainIoa {
   if ($timings.Contains('mac')) { $buildTimes['commonmain_ioa_exe'] = $timings.mac }
   Write-Host "game-of-life-kmp-commonmain-ioa build completed successfully."
   return $buildTimes
-}
-
-function Invoke-GradleTaskIfPresentTimed {
-  param(
-    [string]$TaskName,
-    [string]$Title,
-    [string[]]$GradleArgs = @()
-  )
-
-  if ([string]::IsNullOrWhiteSpace($TaskName)) {
-    Write-Host "Skipping $Title (task not found)"
-    return $null
-  }
-
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "### $Title"
-  Write-Host "Task: $TaskName"
-  Write-Host "=========================================="
-
-  $taskStart = Get-Date
-  & $gradlewCmd @GradleArgs $TaskName | Out-Host
-  $taskEndTime = Get-Date
-  if ($LASTEXITCODE -ne 0) {
-    throw "$Title failed with exit code $LASTEXITCODE"
-  }
-  $taskDuration = ($taskEndTime - $taskStart).TotalMilliseconds
-
-  Write-Host "$Title completed successfully in $([math]::Round($taskDuration, 2)) ms."
-  return $taskDuration
-}
-
-function Invoke-KmpBuildWithTimings {
-  param(
-    [string]$Title,
-    [string]$Path,
-    [string[]]$GradleArgs = @()
-  )
-
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "## $Title (Kotlin Multiplatform)"
-  Write-Host "Path: $Path"
-  Write-Host "=========================================="
-
-  $timings = [ordered]@{}
-
-  Push-Location $Path
-  try {
-    $taskList = & $gradlewCmd -q tasks --all | Out-String
-    if ($LASTEXITCODE -ne 0) {
-      throw "$Title task discovery failed with exit code $LASTEXITCODE"
-    }
-
-    $jvmTask = Find-FirstGradleTask -TaskList $taskList -Candidates @("jvmJar", "compileKotlinJvm")
-    $jsTask = Find-FirstGradleTask -TaskList $taskList -Candidates @("jsProductionExecutableCompileSync", "jsProductionExecutableCompile", "jsNodeProductionExecutableCompileSync", "jsNodeProductionExecutableCompile", "jsBrowserProductionWebpack", "compileKotlinJs")
-    $windowsTask = Find-FirstGradleTask -TaskList $taskList -Candidates @("linkReleaseExecutableMingwX64", "linkDebugExecutableMingwX64")
-    $linuxTask = Find-FirstGradleTask -TaskList $taskList -Candidates @("linkReleaseExecutableLinuxX64", "linkDebugExecutableLinuxX64")
-    $macTask = Find-FirstGradleTask -TaskList $taskList -Candidates @("linkReleaseExecutableMacosX64", "linkDebugExecutableMacosX64", "linkReleaseExecutableMacosArm64", "linkDebugExecutableMacosArm64")
-
-    $jvmDuration = Invoke-GradleTaskIfPresentTimed -TaskName $jvmTask -Title "$Title - JVM build" -GradleArgs $GradleArgs
-    if ($null -ne $jvmDuration) { $timings.jvm = $jvmDuration }
-
-    $jsDuration = Invoke-GradleTaskIfPresentTimed -TaskName $jsTask -Title "$Title - JS build" -GradleArgs $GradleArgs
-    if ($null -ne $jsDuration) { $timings.js = $jsDuration }
-
-    $windowsDuration = Invoke-GradleTaskIfPresentTimed -TaskName $windowsTask -Title "$Title - Windows build" -GradleArgs $GradleArgs
-    if ($null -ne $windowsDuration) { $timings.windows = $windowsDuration }
-
-    $linuxDuration = Invoke-GradleTaskIfPresentTimed -TaskName $linuxTask -Title "$Title - Linux build" -GradleArgs $GradleArgs
-    if ($null -ne $linuxDuration) { $timings.linux = $linuxDuration }
-
-    $macDuration = Invoke-GradleTaskIfPresentTimed -TaskName $macTask -Title "$Title - Mac build" -GradleArgs $GradleArgs
-    if ($null -ne $macDuration) { $timings.mac = $macDuration }
-
-  }
-  finally {
-    Pop-Location
-  }
-
-  Write-Host "$Title completed successfully."
-  return $timings
 }
 
 function Build-GameOfLifeKPerfVariant {

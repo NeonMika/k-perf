@@ -12,7 +12,7 @@ param(
 )
 
 # Import common utility functions
-. "$PSScriptRoot\..\utils.ps1"
+. "$PSScriptRoot\..\statistics_utils.ps1"
 . "$PSScriptRoot\..\build.ps1"
 
 # Platform-specific native executable target and extension
@@ -39,10 +39,10 @@ if ($CleanBuild) {
   Write-Host "# Cleaning IOA benchmark dependencies..."
   Write-Host "=========================================="
 
-  Clean-KirHelperKit
-  Clean-InstrumentationOverheadAnalyzerPlugin
-  Clean-GameOfLifeCommonMainReference
-  Clean-GameOfLifeCommonMainIoa
+  Invoke-GradleClean -Path "..\..\KIRHelperKit"                                        -Name "KIRHelperKit"
+  Invoke-GradleClean -Path "..\..\plugins\instrumentation-overhead-analyzer"           -Name "instrumentation-overhead-analyzer plugin"
+  Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-commonmain"            -Name "game-of-life-kmp-commonmain"
+  Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa"        -Name "game-of-life-kmp-commonmain-ioa"
   Write-Host ""
 }
 else {
