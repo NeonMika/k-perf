@@ -1,24 +1,14 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 20,
+    "StepCount": 10,
     "Reference": true,
-    "Common": true,
-    "Dedicated": false,
+    "IOA": true,
     "JVM": true,
     "JS": true,
-    "Native": true,
-    "FlushEarly": [
-      false
-    ],
-    "InstrumentPropertyAccessors": [
-      false
-    ],
-    "TestKIR": [
-      false
-    ]
+    "Native": true
   },
   "machineInfo": {
     "DeviceManufacturer": "Microsoft Corporation",
@@ -29,31 +19,29 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.73,
+    "AvailableRAMGB": 11.47,
     "DiskSizeGB": 145,
-    "SystemDriveFreeSpaceGB": 86,
-    "SystemUptimeHours": 0.05,
+    "SystemDriveFreeSpaceGB": 84,
+    "SystemUptimeHours": 0.13,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 160,
+    "RunningProcessCount": 156,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.4.14",
     "JavaVersion": "21.0.10",
     "JavaDistribution": "\"21.0.10\"",
     "NodeVersion": "v22.22.2",
     "PythonVersion": "Python 3.12.3",
-    "GradleVersion": "System.Object[]",
+    "GradleVersion": "Gradle 9.0.0",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "2d5a58e489cf861d7bc9822e0e27eef575a85820",
+    "GitCommitHash": "f7e427277bcfcdf347378afe2bb8c9b306489f55",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-11 01:15:53"
+    "CollectionTimestamp": "2026-04-11 02:39:02"
   },
-  "buildTimeMs": 3746.2309,
-  "executable": "commonmain-k-perf-flushEarly-false-propAccessors-false-testKIR-false-node",
-  "repetitions": 3,
-  "timeUnit": "microseconds",
+  "buildTimeMs": 935.0489,
+  "executable": "commonmain_plain_node",
+  "repetitions": 50,
   "times": null,
-  "stepTimes": [],
   "statistics": {
     "count": 0,
     "mean": null,
@@ -62,6 +50,5 @@
     "min": null,
     "max": null,
     "ci95": null
-  },
-  "status": "failed"
+  }
 }
