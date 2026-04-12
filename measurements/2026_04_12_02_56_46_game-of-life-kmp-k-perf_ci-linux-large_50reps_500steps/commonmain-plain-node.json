@@ -1,47 +1,59 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 5,
+    "StepCount": 500,
     "Reference": true,
-    "IOA": true,
+    "Common": true,
+    "Dedicated": false,
     "JVM": true,
     "JS": true,
-    "Native": true
+    "Native": true,
+    "FlushEarly": [
+      false
+    ],
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ]
   },
   "machineInfo": {
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
     "OS": "Ubuntu 24.04.4 LTS",
     "OSArchitecture": "x86_64",
-    "CPU": "AMD EPYC 7763 64-Core Processor",
+    "CPU": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 12.56,
+    "AvailableRAMGB": 13.76,
     "DiskSizeGB": 145,
-    "SystemDriveFreeSpaceGB": 84,
-    "SystemUptimeHours": 0.1,
+    "SystemDriveFreeSpaceGB": 86,
+    "SystemUptimeHours": 0.02,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 152,
+    "RunningProcessCount": 162,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.4.14",
     "JavaVersion": "21.0.10",
     "JavaDistribution": "\"21.0.10\"",
     "NodeVersion": "v22.22.2",
     "PythonVersion": "Python 3.12.3",
-    "GradleVersion": "Gradle 9.0.0",
+    "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "ab291a6ccbb26181c39d83e1dba397e9b639c009",
+    "GitCommitHash": "fcf15b0153725a8451dc19792b651238e787af4d",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-12 01:30:25"
+    "CollectionTimestamp": "2026-04-12 02:52:12"
   },
-  "buildTimeMs": 884.9946,
-  "executable": "commonmain_plain_node",
-  "repetitions": 3,
+  "buildTimeMs": 5666.4601,
+  "executable": "commonmain-plain-node",
+  "repetitions": 50,
+  "timeUnit": "microseconds",
   "times": null,
+  "stepTimes": [],
   "statistics": {
     "count": 0,
     "mean": null,
@@ -50,5 +62,6 @@
     "min": null,
     "max": null,
     "ci95": null
-  }
+  },
+  "status": "failed"
 }
