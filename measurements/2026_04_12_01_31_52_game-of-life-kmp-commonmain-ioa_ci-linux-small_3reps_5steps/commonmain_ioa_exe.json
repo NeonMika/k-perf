@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-large",
-    "RepetitionCount": 50,
+    "CILabel": "ci-linux-small",
+    "RepetitionCount": 3,
     "CleanBuild": false,
-    "StepCount": 10,
+    "StepCount": 5,
     "Reference": true,
     "IOA": true,
     "JVM": true,
@@ -18,14 +18,14 @@
     "CPU": "AMD EPYC 7763 64-Core Processor",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
-    "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 11.47,
+    "TotalRAMGB": 15.61,
+    "AvailableRAMGB": 12.56,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 84,
-    "SystemUptimeHours": 0.13,
+    "SystemUptimeHours": 0.1,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 156,
+    "RunningProcessCount": 152,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.4.14",
     "JavaVersion": "21.0.10",
@@ -34,21 +34,28 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "Gradle 9.0.0",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "f7e427277bcfcdf347378afe2bb8c9b306489f55",
+    "GitCommitHash": "ab291a6ccbb26181c39d83e1dba397e9b639c009",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-11 02:39:02"
+    "CollectionTimestamp": "2026-04-12 01:30:25"
   },
-  "buildTimeMs": 935.0489,
-  "executable": "commonmain_plain_node",
-  "repetitions": 50,
-  "times": null,
+  "buildTimeMs": 2484.7185,
+  "executable": "commonmain_ioa_exe",
+  "repetitions": 3,
+  "times": [
+    4108.0,
+    3684.0,
+    3615.0
+  ],
   "statistics": {
-    "count": 0,
-    "mean": null,
-    "median": null,
-    "stddev": null,
-    "min": null,
-    "max": null,
-    "ci95": null
+    "count": 3,
+    "mean": 3802.3333333333335,
+    "median": 4108.0,
+    "stddev": 266.95380374389373,
+    "min": 3615.0,
+    "max": 4108.0,
+    "ci95": {
+      "lower": 3139.5921763865877,
+      "upper": 4465.07449028008
+    }
   }
 }
