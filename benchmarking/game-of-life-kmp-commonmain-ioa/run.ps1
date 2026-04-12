@@ -17,8 +17,9 @@ param(
 . "$PSScriptRoot\..\build.ps1"
 
 # Platform-specific native executable target and extension
-$nativeTarget = if ($IsWindows) { "mingwX64" } elseif ($IsMacOS) { "macosX64" } else { "linuxX64" }
-$nativeExt    = if ($IsWindows) { ".exe" }     else                { ".kexe" }
+$nativeTarget        = if ($IsWindows) { "mingwX64" } elseif ($IsMacOS) { "macosX64" } else { "linuxX64" }
+$nativeExt           = if ($IsWindows) { ".exe" }     else               { ".kexe" }
+$nativePlatformLabel = if ($IsWindows) { "win" }      elseif ($IsMacOS)  { "mac" } else { "linux" }
 
 # Collect machine and environment information for reproducibility
 Write-Host "=========================================="
@@ -87,22 +88,22 @@ if (-not ($JVM -or $JS -or $Native)) {
 [BenchmarkExecutable[]]$executables = @()
 
 if ($Reference -and $JVM) {
-  $executables += [BenchmarkExecutable]::new("commonmain_plain_jar", "$commonMainDistRoot\game-of-life-kmp-commonmain-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
+  $executables += [BenchmarkExecutable]::new("commonmain-plain-jar", "$commonMainDistRoot\game-of-life-kmp-commonmain-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
 }
 if ($IOA -and $JVM) {
-  $executables += [BenchmarkExecutable]::new("commonmain_ioa_jar", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
+  $executables += [BenchmarkExecutable]::new("commonmain-ioa-jar", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
 }
 if ($Reference -and $Native) {
-  $executables += [BenchmarkExecutable]::new("commonmain_plain_exe", "$commonMainDistRoot\game-of-life-kmp-commonmain$nativeExt", [ExecutableType]::Exe, $null)
+  $executables += [BenchmarkExecutable]::new("commonmain-plain-$nativePlatformLabel-exe", "$commonMainDistRoot\game-of-life-kmp-commonmain$nativeExt", [ExecutableType]::Exe, $null)
 }
 if ($IOA -and $Native) {
-  $executables += [BenchmarkExecutable]::new("commonmain_ioa_exe", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa$nativeExt", [ExecutableType]::Exe, $null)
+  $executables += [BenchmarkExecutable]::new("commonmain-ioa-$nativePlatformLabel-exe", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa$nativeExt", [ExecutableType]::Exe, $null)
 }
 if ($Reference -and $JS) {
-  $executables += [BenchmarkExecutable]::new("commonmain_plain_node", "$commonMainDistRoot\game-of-life-kmp-commonmain.js", [ExecutableType]::Node, $null)
+  $executables += [BenchmarkExecutable]::new("commonmain-plain-node", "$commonMainDistRoot\game-of-life-kmp-commonmain.js", [ExecutableType]::Node, $null)
 }
 if ($IOA -and $JS) {
-  $executables += [BenchmarkExecutable]::new("commonmain_ioa_node", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa.js", [ExecutableType]::Node, $null)
+  $executables += [BenchmarkExecutable]::new("commonmain-ioa-node", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa.js", [ExecutableType]::Node, $null)
 }
 
 # Create a test suite name from the executable names

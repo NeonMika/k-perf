@@ -23,12 +23,14 @@ enum GameType {
 # ---------------------------------------------------------------------------
 
 class KPerfConfig {
+  [bool]$Enabled                      # When false the plugin is applied but does not instrument
   [bool]$FlushEarly
   [bool]$InstrumentPropertyAccessors
   [bool]$TestKIR
   [string]$Methods
 
-  KPerfConfig([bool]$FlushEarly, [bool]$InstrumentPropertyAccessors, [bool]$TestKIR, [string]$Methods) {
+  KPerfConfig([bool]$Enabled, [bool]$FlushEarly, [bool]$InstrumentPropertyAccessors, [bool]$TestKIR, [string]$Methods) {
+    $this.Enabled                     = $Enabled
     $this.FlushEarly                  = $FlushEarly
     $this.InstrumentPropertyAccessors = $InstrumentPropertyAccessors
     $this.TestKIR                     = $TestKIR

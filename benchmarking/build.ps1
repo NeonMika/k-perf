@@ -85,26 +85,11 @@ function Build-GameOfLifeCommonMainReference {
   Write-Host "=========================================="
   $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-commonmain reference application" -Path "..\..\kmp-examples\game-of-life-kmp-commonmain"
   $buildTimes = [ordered]@{}
-  if ($timings.Contains('jvm')) {
-    $buildTimes['commonmain-plain-jar'] = $timings.jvm
-    $buildTimes['commonmain_plain_jar'] = $timings.jvm  # underscore variant for ioa/run.ps1 compatibility
-  }
-  if ($timings.Contains('js')) {
-    $buildTimes['commonmain-plain-node'] = $timings.js
-    $buildTimes['commonmain_plain_node'] = $timings.js  # underscore variant for ioa/run.ps1 compatibility
-  }
-  if ($timings.Contains('windows')) {
-    $buildTimes['commonmain-plain-exe'] = $timings.windows
-    $buildTimes['commonmain_plain_exe'] = $timings.windows  # underscore variant for ioa/run.ps1 compatibility
-  }
-  if ($timings.Contains('linux')) {
-    $buildTimes['commonmain-plain-exe'] = $timings.linux
-    $buildTimes['commonmain_plain_exe'] = $timings.linux  # underscore variant for ioa/run.ps1 compatibility
-  }
-  if ($timings.Contains('mac')) {
-    $buildTimes['commonmain-plain-exe'] = $timings.mac
-    $buildTimes['commonmain_plain_exe'] = $timings.mac  # underscore variant for ioa/run.ps1 compatibility
-  }
+  if ($timings.Contains('jvm'))     { $buildTimes['commonmain-plain-jar']        = $timings.jvm }
+  if ($timings.Contains('js'))      { $buildTimes['commonmain-plain-node']       = $timings.js }
+  if ($timings.Contains('windows')) { $buildTimes['commonmain-plain-win-exe']    = $timings.windows }
+  if ($timings.Contains('linux'))   { $buildTimes['commonmain-plain-linux-exe']  = $timings.linux }
+  if ($timings.Contains('mac'))     { $buildTimes['commonmain-plain-mac-exe']    = $timings.mac }
   Write-Host "game-of-life-kmp-commonmain reference application build completed successfully."
   return $buildTimes
 }
@@ -116,11 +101,11 @@ function Build-GameOfLifeDedicatedMainReference {
   Write-Host "=========================================="
   $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-dedicatedmain reference application" -Path "..\..\kmp-examples\game-of-life-kmp-dedicatedmain"
   $buildTimes = [ordered]@{}
-  if ($timings.Contains('jvm')) { $buildTimes['dedicatedmain-plain-jar'] = $timings.jvm }
-  if ($timings.Contains('js')) { $buildTimes['dedicatedmain-plain-node'] = $timings.js }
-  if ($timings.Contains('windows')) { $buildTimes['dedicatedmain-plain-exe'] = $timings.windows }
-  if ($timings.Contains('linux')) { $buildTimes['dedicatedmain-plain-exe'] = $timings.linux }
-  if ($timings.Contains('mac')) { $buildTimes['dedicatedmain-plain-exe'] = $timings.mac }
+  if ($timings.Contains('jvm'))     { $buildTimes['dedicatedmain-plain-jar']       = $timings.jvm }
+  if ($timings.Contains('js'))      { $buildTimes['dedicatedmain-plain-node']      = $timings.js }
+  if ($timings.Contains('windows')) { $buildTimes['dedicatedmain-plain-win-exe']   = $timings.windows }
+  if ($timings.Contains('linux'))   { $buildTimes['dedicatedmain-plain-linux-exe'] = $timings.linux }
+  if ($timings.Contains('mac'))     { $buildTimes['dedicatedmain-plain-mac-exe']   = $timings.mac }
   Write-Host "game-of-life-kmp-dedicatedmain reference application build completed successfully."
   return $buildTimes
 }
@@ -132,11 +117,11 @@ function Build-GameOfLifeCommonMainIoa {
   Write-Host "=========================================="
   $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-commonmain-ioa application" -Path "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa"
   $buildTimes = [ordered]@{}
-  if ($timings.Contains('jvm')) { $buildTimes['commonmain_ioa_jar'] = $timings.jvm }
-  if ($timings.Contains('js')) { $buildTimes['commonmain_ioa_node'] = $timings.js }
-  if ($timings.Contains('windows')) { $buildTimes['commonmain_ioa_exe'] = $timings.windows }
-  if ($timings.Contains('linux')) { $buildTimes['commonmain_ioa_exe'] = $timings.linux }
-  if ($timings.Contains('mac')) { $buildTimes['commonmain_ioa_exe'] = $timings.mac }
+  if ($timings.Contains('jvm'))     { $buildTimes['commonmain-ioa-jar']        = $timings.jvm }
+  if ($timings.Contains('js'))      { $buildTimes['commonmain-ioa-node']       = $timings.js }
+  if ($timings.Contains('windows')) { $buildTimes['commonmain-ioa-win-exe']    = $timings.windows }
+  if ($timings.Contains('linux'))   { $buildTimes['commonmain-ioa-linux-exe']  = $timings.linux }
+  if ($timings.Contains('mac'))     { $buildTimes['commonmain-ioa-mac-exe']    = $timings.mac }
   Write-Host "game-of-life-kmp-commonmain-ioa build completed successfully."
   return $buildTimes
 }
@@ -151,6 +136,7 @@ function Build-GameOfLifeKPerfVariant {
   $projectPath = if ($GameType -eq [GameType]::CommonMain) { "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf" } else { "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf" }
   $suffix = Get-KPerfSuffix -Config $Config
   $gradleArgs = @(
+    "-PkperfEnabled=$($Config.Enabled)"
     "-PkperfFlushEarly=$($Config.FlushEarly)"
     "-PkperfInstrumentPropertyAccessors=$($Config.InstrumentPropertyAccessors)"
     "-PkperfTestKIR=$($Config.TestKIR)"
@@ -180,13 +166,13 @@ function Build-GameOfLifeKPerfVariant {
     $buildTimes["$gameTypeString-k-perf-$suffix-node"] = $timings.js
   }
   if ($timings.Contains('windows')) {
-    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.windows
+    $buildTimes["$gameTypeString-k-perf-$suffix-win-exe"] = $timings.windows
   }
   if ($timings.Contains('linux')) {
-    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.linux
+    $buildTimes["$gameTypeString-k-perf-$suffix-linux-exe"] = $timings.linux
   }
   if ($timings.Contains('mac')) {
-    $buildTimes["$gameTypeString-k-perf-$suffix-exe"] = $timings.mac
+    $buildTimes["$gameTypeString-k-perf-$suffix-mac-exe"] = $timings.mac
   }
 
   Write-Host "$projectName build with $suffix completed successfully."
@@ -196,83 +182,90 @@ function Build-GameOfLifeKPerfVariant {
 function Get-KPerfSuffix {
   param([KPerfConfig]$Config)
 
-  return "flushEarly-$(if ($Config.FlushEarly) { 'true' } else { 'false' })-propAccessors-$(if ($Config.InstrumentPropertyAccessors) { 'true' } else { 'false' })-testKIR-$(if ($Config.TestKIR) { 'true' } else { 'false' })"
+  return "enabled-$(if ($Config.Enabled) { 'true' } else { 'false' })-flushEarly-$(if ($Config.FlushEarly) { 'true' } else { 'false' })-propAccessors-$(if ($Config.InstrumentPropertyAccessors) { 'true' } else { 'false' })-testKIR-$(if ($Config.TestKIR) { 'true' } else { 'false' })"
 }
 
 function Invoke-GetExecutables {
   param(
-    [GameType]$GameType,
+    [GameType[]]$GameTypes,
     [KPerfConfig[]]$KPerfCombinations,
     [bool]$Reference,
     [bool]$JVM,
     [bool]$JS,
     [bool]$Native,
     [string]$NativeExt,
-    [string]$PlainProjectRoot,
-    [string]$KPerfProjectRoot,
     [string]$ArtifactVersion
   )
 
+  # Compute a platform label for native executable names so they match the build-time keys
+  # produced by Build-GameOfLife*Reference and Build-GameOfLifeKPerfVariant.
+  $nativePlatformLabel = if ($IsWindows) { "win" } elseif ($IsMacOS) { "mac" } else { "linux" }
+
   [BenchmarkExecutable[]]$executables = @()
-  $gameTypeString = Get-GameTypeString -GameType $GameType
-  $projectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain" } else { "game-of-life-kmp-dedicatedmain" }
-  $kPerfProjectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-k-perf" } else { "game-of-life-kmp-dedicatedmain-k-perf" }
 
-  if ($Reference -and $JVM) {
-    $executables += [BenchmarkExecutable]::new(
-      "$gameTypeString-plain-jar",
-      "$PlainProjectRoot\dist\$projectName-jvm-$ArtifactVersion.jar",
-      [ExecutableType]::Jar,
-      $null
-    )
-  }
+  foreach ($GameType in $GameTypes) {
+    $gameTypeString   = Get-GameTypeString -GameType $GameType
+    $projectName      = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain"        } else { "game-of-life-kmp-dedicatedmain" }
+    $kPerfProjectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-k-perf" } else { "game-of-life-kmp-dedicatedmain-k-perf" }
+    $plainRoot        = "..\..\kmp-examples\$projectName"
+    $kPerfRoot        = "..\..\kmp-examples\$kPerfProjectName"
 
-  if ($Reference -and $JS) {
-    $executables += [BenchmarkExecutable]::new(
-      "$gameTypeString-plain-node",
-      "$PlainProjectRoot\dist\$projectName.js",
-      [ExecutableType]::Node,
-      $null
-    )
-  }
-
-  if ($Reference -and $Native) {
-    $executables += [BenchmarkExecutable]::new(
-      "$gameTypeString-plain-exe",
-      "$PlainProjectRoot\dist\$projectName$NativeExt",
-      [ExecutableType]::Exe,
-      $null
-    )
-  }
-
-  foreach ($config in $KPerfCombinations) {
-    $suffix = Get-KPerfSuffix -Config $config
-
-    if ($JVM) {
+    if ($Reference -and $JVM) {
       $executables += [BenchmarkExecutable]::new(
-        "$gameTypeString-k-perf-$suffix-jar",
-        "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName-jvm-$ArtifactVersion.jar",
+        "$gameTypeString-plain-jar",
+        "$plainRoot\dist\$projectName-jvm-$ArtifactVersion.jar",
         [ExecutableType]::Jar,
-        $config
+        $null
       )
     }
 
-    if ($JS) {
+    if ($Reference -and $JS) {
       $executables += [BenchmarkExecutable]::new(
-        "$gameTypeString-k-perf-$suffix-node",
-        "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName.js",
+        "$gameTypeString-plain-node",
+        "$plainRoot\dist\$projectName.js",
         [ExecutableType]::Node,
-        $config
+        $null
       )
     }
 
-    if ($Native) {
+    if ($Reference -and $Native) {
       $executables += [BenchmarkExecutable]::new(
-        "$gameTypeString-k-perf-$suffix-exe",
-        "$KPerfProjectRoot\bin\$suffix\$kPerfProjectName$NativeExt",
+        "$gameTypeString-plain-$nativePlatformLabel-exe",
+        "$plainRoot\dist\$projectName$NativeExt",
         [ExecutableType]::Exe,
-        $config
+        $null
       )
+    }
+
+    foreach ($config in $KPerfCombinations) {
+      $suffix = Get-KPerfSuffix -Config $config
+
+      if ($JVM) {
+        $executables += [BenchmarkExecutable]::new(
+          "$gameTypeString-k-perf-$suffix-jar",
+          "$kPerfRoot\bin\$suffix\$kPerfProjectName-jvm-$ArtifactVersion.jar",
+          [ExecutableType]::Jar,
+          $config
+        )
+      }
+
+      if ($JS) {
+        $executables += [BenchmarkExecutable]::new(
+          "$gameTypeString-k-perf-$suffix-node",
+          "$kPerfRoot\bin\$suffix\$kPerfProjectName.js",
+          [ExecutableType]::Node,
+          $config
+        )
+      }
+
+      if ($Native) {
+        $executables += [BenchmarkExecutable]::new(
+          "$gameTypeString-k-perf-$suffix-$nativePlatformLabel-exe",
+          "$kPerfRoot\bin\$suffix\$kPerfProjectName$NativeExt",
+          [ExecutableType]::Exe,
+          $config
+        )
+      }
     }
   }
 
