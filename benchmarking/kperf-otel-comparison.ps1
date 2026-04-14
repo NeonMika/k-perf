@@ -100,7 +100,7 @@ foreach ($exe in $executables) {
     try {
       docker start jaeger 2>&1 | Out-Null
       if ($LASTEXITCODE -ne 0) {
-        docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 -p 4318:4318 jaegertracing/all-in-one:latest 2>&1 | Out-Null
+        docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 -p 4318:4318 -e SPAN_STORAGE_TYPE=badger -e BADGER_EPHEMERAL=false -e BADGER_DIRECTORY=/badger -v jaeger-data:/badger jaegertracing/all-in-one:latest 2>&1 | Out-Null
       }
     }
     catch {}
