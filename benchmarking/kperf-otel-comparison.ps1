@@ -9,7 +9,8 @@ $ErrorActionPreference = "Stop"
 $ScriptRoot = $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($ScriptRoot)) { $ScriptRoot = '.' }
 
-. "$ScriptRoot\utils.ps1"
+. "$ScriptRoot\types.ps1"
+. "$ScriptRoot\statistics_utils.ps1"
 
 Push-Location "$ScriptRoot\.."
 
@@ -61,6 +62,10 @@ Invoke-GradleBuild -Title "OTel OTLP Exporter" -Path ".\otlp-exporter" -Tasks @(
 Invoke-GradleBuild -Title "OTel Plugin Util" -Path ".\plugins\otel-plugin\util" -Tasks @("publishToMavenLocal")
 Invoke-GradleBuild -Title "OTel Plugin" -Path ".\plugins\otel-plugin\plugin" -Tasks @("publishToMavenLocal")
 
+Invoke-GradleBuild -Title "OTel OTLP Exporter (proto)" -Path ".\otlp-exporter-proto" -Tasks @("publishToMavenLocal")
+Invoke-GradleBuild -Title "OTel Plugin Util (proto)" -Path ".\plugins\otel-plugin-proto\util" -Tasks @("publishToMavenLocal")
+Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")
+
 Write-Host "=========================================="
 Write-Host "Compiling Comparison Projects"
 Write-Host "=========================================="
@@ -68,6 +73,7 @@ Write-Host "=========================================="
 # Build projects for all targets (excluding native for now)
 Invoke-GradleBuild -Title "Comparison Project (k-perf)" -Path ".\kmp-examples\comparison-k-perf" -Tasks @("jvmJar", "jsProductionExecutableCompileSync") -SkipClean $true
 Invoke-GradleBuild -Title "Comparison Project (otel)" -Path ".\kmp-examples\comparison-otel" -Tasks @("jvmJar", "jsProductionExecutableCompileSync") -SkipClean $true
+Invoke-GradleBuild -Title "Comparison Project (otel-proto)" -Path ".\kmp-examples\comparison-otel-proto" -Tasks @("jvmJar", "jsProductionExecutableCompileSync") -SkipClean $true
 
 
 # Path resolving for execution
@@ -77,11 +83,16 @@ $kperfJs = "node .\kmp-examples\comparison-k-perf\build\js\packages\comparison-k
 $otelJvm = "java -jar .\kmp-examples\comparison-otel\build\lib\comparison-otel-jvm-1.0.0.jar"
 $otelJs = "cd .\kmp-examples\comparison-otel && .\gradlew jsNodeProductionRun -q"
 
+$otelProtoJvm = "java -jar .\kmp-examples\comparison-otel-proto\build\lib\comparison-otel-proto-jvm-1.0.0.jar"
+$otelProtoJs = "cd .\kmp-examples\comparison-otel-proto && .\gradlew jsNodeProductionRun -q"
+
 $executables = @(
   @{ Name = "k-perf JVM"; Command = $kperfJvm },
   @{ Name = "otel JVM"; Command = $otelJvm },
+  @{ Name = "otel-proto JVM"; Command = $otelProtoJvm },
   @{ Name = "k-perf JS (Node)"; Command = $kperfJs },
-  @{ Name = "otel JS (Node)"; Command = $otelJs }
+  @{ Name = "otel JS (Node)"; Command = $otelJs },
+  @{ Name = "otel-proto JS (Node)"; Command = $otelProtoJs }
 )
 
 Write-Host "=========================================="
