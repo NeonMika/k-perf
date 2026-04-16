@@ -1,3 +1,10 @@
+# ⚠️ Duplication notice: The build order, project list, and KMP task priority lists here
+# are mirrored in several places that must be kept in sync:
+#   - .github/workflows/build-all-on-windows-separated.yml   (per-project CI steps)
+#   - .github/workflows/build-all-on-windows-highly-separated.yml  (per-target CI steps, hardcoded tasks)
+#   - .github/scripts/Build-KmpExample.ps1  (KMP target-discovery helper for the above)
+# Keep all four in sync when adding/removing projects, changing the build order, or updating
+# the JS/JVM/native task priority lists.
 param(
   [bool]$CleanBuild = $true
 )

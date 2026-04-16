@@ -5,11 +5,11 @@ plugins {
 
   `java-gradle-plugin` // In this project, we generate a Gradle plugin (which is configured in the gradlePlugin section)
 
-  `maven-publish` // the generated plugin will be published to mavenLocal
+  id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
-group = "at.jku.ssw"
-version = "0.1.0"
+group = "io.github.neonmika"
+version = "0.2.1"
 
 dependencies {
   compileOnly(kotlin("stdlib"))
@@ -61,9 +61,49 @@ project.extra.properties.forEach { (key, value) -> println("- $key: $value")  }
 gradlePlugin {
   plugins {
     create("InstrumentationOverheadAnalyzer") { // this name defines how the Gradle publish commands are named (in this case publishInstrumentationOverheadAnalyzerPluginMarkerMavenPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
-      id =
-        "at.jku.ssw.instrumentation-overhead-analyzer" // to use this plugin later in other projects we will use plugins { id("at.jku.ssw.instrumentation-overhead-analyzer") }
+      id = "io.github.neonmika.instrumentation-overhead-analyzer" // to use this plugin later in other projects we will use plugins { id("io.github.neonmika.instrumentation-overhead-analyzer") }
       implementationClass = "at.jku.ssw.gradle.IoaGradlePlugin"
+    }
+  }
+}
+
+mavenPublishing {
+  publishToMavenCentral()
+  if (providers.gradleProperty("signingInMemoryKey").isPresent ||
+      providers.gradleProperty("signing.secretKeyRingFile").isPresent) {
+    signAllPublications()
+  }
+
+  coordinates(group.toString(), "instrumentation-overhead-analyzer", version.toString())
+
+  pom {
+    name = "instrumentation-overhead-analyzer"
+    description = "A Kotlin backend compiler plugin that introduces controlled instrumentation overhead into functions at the IR level to measure and analyze the cost of various instrumentation strategies."
+    inceptionYear = "2026"
+    url = "https://github.com/NeonMika/k-perf/"
+    licenses {
+      license {
+        name = "GNU Lesser General Public License v3.0"
+        url = "https://www.gnu.org/licenses/lgpl-3.0.html"
+        distribution = "repo"
+      }
+    }
+    developers {
+      developer {
+        id = "NeonMika"
+        name = "Dr. Markus Weninger"
+        url = "https://github.com/NeonMika/"
+      }
+      developer {
+        id = "lian-hsc"
+        name = "Lian Hörschlager"
+        url = "https://github.com/lian-hsc"
+      }
+    }
+    scm {
+      url = "https://github.com/NeonMika/k-perf/"
+      connection = "scm:git:git://github.com/NeonMika/k-perf.git"
+      developerConnection = "scm:git:ssh://git@github.com/NeonMika/k-perf.git"
     }
   }
 }

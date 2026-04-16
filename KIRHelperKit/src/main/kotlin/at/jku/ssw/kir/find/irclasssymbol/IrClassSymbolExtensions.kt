@@ -26,7 +26,7 @@ import org.jetbrains.kotlin.utils.doNothing
  * @param extensionReceiverType The type of the extension receiver, if the function is an extension function.
  * @param ignoreNullability Whether to ignore nullability when comparing parameter types.
  * @return The found function symbol or null if it was not found.
- * @throws IllegalStateException If multiple matching functions are found.
+ * @throws IllegalArgumentException If multiple matching functions are found (ambiguous signature).
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrClassSymbol.findFunctionOrNull(
@@ -46,7 +46,7 @@ fun IrClassSymbol.findFunctionOrNull(
   when (matchingFunctionsInClass.count()) {
     0 -> doNothing()
     1 -> return matchingFunctionsInClass.single()
-    else -> throw IllegalStateException("Multiple matching functions found in class for signature: $signature")
+    else -> throw IllegalArgumentException("Ambiguous signature: Multiple matching functions found in class for signature: $signature")
   }
 
   // search in companion object
@@ -64,7 +64,7 @@ fun IrClassSymbol.findFunctionOrNull(
   return when (matchingFunctionsInCompanion.count()) {
     0 -> null
     1 -> matchingFunctionsInCompanion.single().symbol
-    else -> throw IllegalStateException("Multiple matching functions found in class for signature: $signature")
+    else -> throw IllegalArgumentException("Ambiguous signature: Multiple matching functions found in companion object for signature: $signature")
   }
 }
 
@@ -116,7 +116,7 @@ fun IrClassSymbol.findProperty(signature: String): IrPropertySymbol = this.findP
  *                   "G" can be used as a placeholder for generic parameters.
  * @param ignoreNullability Whether to ignore nullability when comparing parameter types.
  * @return The found constructor symbol or null if it was not found.
- * @throws IllegalStateException If multiple matching constructors are found.
+ * @throws IllegalArgumentException If multiple matching constructors are found (ambiguous signature).
  */
 @OptIn(UnsafeDuringIrConstructionAPI::class)
 fun IrClassSymbol.findConstructorOrNull(
@@ -132,7 +132,7 @@ fun IrClassSymbol.findConstructorOrNull(
   return when (cons.count()) {
     0 -> null
     1 -> cons.single()
-    else -> throw IllegalStateException("Multiple matching constructors found in class for signature: $signature")
+    else -> throw IllegalArgumentException("Ambiguous signature: Multiple matching constructors found in class for signature: $signature")
   }
 }
 

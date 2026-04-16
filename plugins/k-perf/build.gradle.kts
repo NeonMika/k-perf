@@ -5,14 +5,14 @@ plugins {
 
   `java-gradle-plugin` // In this project, we generate a Gradle plugin (which is configured in the gradlePlugin section)
 
-  `maven-publish` // the generated plugin will be published to mavenLocal
+  id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
-group = "at.jku.ssw"
-version = "0.1.0"
+group = "io.github.neonmika"
+version = "0.2.1"
 
 dependencies {
-  implementation("at.jku.ssw:KIRHelperKit:0.1.0")
+  implementation("io.github.neonmika:KIRHelperKit:0.2.1")
   compileOnly(kotlin("stdlib"))
 
   // This must be implementation and not compileOnly to have working tests
@@ -45,17 +45,55 @@ tasks.test {
 }
 
 /*
-println("rootProject extras:")
-rootProject.extra.properties.forEach { (key, value) -> println("-: $key: $value")  }
-println("project extras:")
-project.extra.properties.forEach { (key, value) -> println("- $key: $value")  }
+println("[kperf build] rootProject extras:")
+rootProject.extra.properties.forEach { (key, value) -> println("[kperf build] -: $key: $value")  }
+println("[kperf build] project extras:")
+project.extra.properties.forEach { (key, value) -> println("[kperf build] - $key: $value")  }
 */
 
 gradlePlugin {
   plugins {
     create("KPerf") { // this name defines how the Gradle publish commands are named (in this case publishKPerfPluginMarkerMavenPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
-      id = "at.jku.ssw.k-perf-plugin" // to use this plugin later in other projects we will use plugins { id("at.jku.ssw.k-perf-plugin") }
+      id = "io.github.neonmika.k-perf-plugin" // to use this plugin later in other projects we will use plugins { id("io.github.neonmika.k-perf-plugin") }
       implementationClass = "at.jku.ssw.gradle.KPerfGradlePlugin"
+      displayName = "k-perf -- Kotlin Performance Measurement"
+      description = "k-perf Gradle Plugin: A Kotlin backend compiler plugin that auto-instruments functions at the IR level to generate execution traces for performance analysis on JVM, JS, and Native targets."
+    }
+  }
+}
+
+mavenPublishing {
+  publishToMavenCentral()
+  if (providers.gradleProperty("signingInMemoryKey").isPresent ||
+      providers.gradleProperty("signing.secretKeyRingFile").isPresent) {
+    signAllPublications()
+  }
+
+  coordinates(group.toString(), "k-perf", version.toString())
+
+  pom {
+    name = "k-perf"
+    description = "A Kotlin backend compiler plugin that auto-instruments functions at the IR level to generate execution traces for performance analysis on JVM, JS, and Native targets."
+    inceptionYear = "2024"
+    url = "https://github.com/NeonMika/k-perf/"
+    licenses {
+      license {
+        name = "GNU Lesser General Public License v3.0"
+        url = "https://www.gnu.org/licenses/lgpl-3.0.html"
+        distribution = "repo"
+      }
+    }
+    developers {
+      developer {
+        id = "NeonMika"
+        name = "Markus Weninger"
+        url = "https://github.com/NeonMika/"
+      }
+    }
+    scm {
+      url = "https://github.com/NeonMika/k-perf/"
+      connection = "scm:git:git://github.com/NeonMika/k-perf.git"
+      developerConnection = "scm:git:ssh://git@github.com/NeonMika/k-perf.git"
     }
   }
 }

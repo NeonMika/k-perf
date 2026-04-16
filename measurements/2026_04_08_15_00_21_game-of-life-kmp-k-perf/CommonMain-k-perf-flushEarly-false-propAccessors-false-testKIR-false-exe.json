@@ -1,0 +1,86 @@
+{
+  "parameters": {
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "Reference": true,
+    "Common": true,
+    "Dedicated": false,
+    "JVM": true,
+    "JS": true,
+    "Native": true,
+    "FlushEarly": [
+      false
+    ],
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ]
+  },
+  "machineInfo": {
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "OS": "Microsoft Windows Server 2025 Datacenter 10.0.26100",
+    "OSArchitecture": "64-bit",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "CPUMaxClockSpeedMHz": 2596,
+    "TotalRAMGB": 15.99,
+    "RAMModuleCount": 2,
+    "RAMManufacturer": "Microsoft Corporation",
+    "RAMPartNumber": "None",
+    "RAMModuleCapacitiesGB": "1 + 15",
+    "DiskModel": "Microsoft Virtual Disk",
+    "DiskSizeGB": 150.0,
+    "DiskMediaType": "Fixed hard disk media",
+    "DiskInterfaceType": "SCSI",
+    "SystemDriveFreeSpaceGB": 29.46,
+    "AvailableRAMGB": 12.74,
+    "PowerPlan": "High performance",
+    "SystemUptimeHours": 0.61,
+    "WindowsBuildNumber": "26100",
+    "TimeZone": "UTC",
+    "Username": "runneradmin",
+    "BIOSVersion": "Hyper-V UEFI Release v4.1",
+    "BIOSManufacturer": "Microsoft Corporation",
+    "IsVirtualMachine": true,
+    "HyperVEnabled": true,
+    "SecureBootEnabled": false,
+    "RunningProcessCount": 132,
+    "WindowsDefenderEnabled": true,
+    "WindowsDefenderRealTimeProtection": false,
+    "PowerShellVersion": "7.4.14",
+    "JavaVersion": "21.0.10",
+    "JavaDistribution": "\"21.0.10\"",
+    "NodeVersion": "v22.22.2",
+    "PythonVersion": "Python 3.12.10",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0",
+    "GitCommitHash": "049922334e2e94b7817627fbbe77bd59ed8826da",
+    "GitBranch": "main",
+    "CollectionTimestamp": "2026-04-08 14:51:58"
+  },
+  "buildTimeMs": 26043.3794,
+  "executable": "CommonMain-k-perf-flushEarly-false-propAccessors-false-testKIR-false-exe",
+  "repetitions": 3,
+  "times": [
+    76136.0,
+    77022.0,
+    78390.0
+  ],
+  "statistics": {
+    "count": 3,
+    "mean": 77182.66666666667,
+    "median": 78390.0,
+    "stddev": 1135.5568384424153,
+    "min": 76136.0,
+    "max": 78390.0,
+    "ci95": {
+      "lower": 74363.52626734081,
+      "upper": 80001.80706599253
+    }
+  }
+}

@@ -108,7 +108,6 @@ fun play(steps: Int = 500) {
   println("Initial state:")
   game.print()
 
-
   repeat(steps) {
     val stepStart = start.elapsedNow()
     game.step()

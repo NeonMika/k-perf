@@ -8,12 +8,19 @@ param(
   [bool]$JVM = $true,
   [bool]$JS = $true,
   [bool]$Native = $true,
-  [string[]]$IoaKinds = @("None")
+  [string[]]$IoaKinds = @("None"),
+  [string]$CILabel = "local"
 )
 
 # Import common utility functions
-. "$PSScriptRoot\..\utils.ps1"
+. "$PSScriptRoot\..\types.ps1"
+. "$PSScriptRoot\..\statistics_utils.ps1"
 . "$PSScriptRoot\..\build.ps1"
+
+# Platform-specific native executable target and extension
+$nativeTarget        = if ($IsWindows) { "mingwX64" } elseif ($IsMacOS) { "macosX64" } else { "linuxX64" }
+$nativeExt           = if ($IsWindows) { ".exe" }     else               { ".kexe" }
+$nativePlatformLabel = if ($IsWindows) { "win" }      elseif ($IsMacOS)  { "mac" } else { "linux" }
 
 # Collect machine and environment information for reproducibility
 Write-Host "=========================================="
@@ -56,10 +63,10 @@ if ($CleanBuild) {
   Write-Host "# Cleaning IOA benchmark dependencies..."
   Write-Host "=========================================="
 
-  Clean-KirHelperKit
-  Clean-InstrumentationOverheadAnalyzerPlugin
-  Clean-GameOfLifeCommonMainReference
-  Clean-GameOfLifeCommonMainIoa
+  Invoke-GradleClean -Path "..\..\KIRHelperKit"                                        -Name "KIRHelperKit"
+  Invoke-GradleClean -Path "..\..\plugins\instrumentation-overhead-analyzer"           -Name "instrumentation-overhead-analyzer plugin"
+  Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-commonmain"            -Name "game-of-life-kmp-commonmain"
+  Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa"        -Name "game-of-life-kmp-commonmain-ioa"
   Write-Host ""
 }
 else {
@@ -88,9 +95,9 @@ Write-Host "=========================================="
 Write-Host "# Build phase completed successfully!"
 Write-Host "=========================================="
 
-# Define build output roots to shorten executable paths
-$commonMainBuildRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain\build"
-$commonMainIoaBuildRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa\build"
+# Define project dist directories for artifacts
+$commonMainDistRoot    = "..\..\kmp-examples\game-of-life-kmp-commonmain\dist"
+$commonMainIoaDistRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa\dist"
 
 # Validate selection parameters
 if (-not ($Reference -or $IOA)) {
@@ -103,79 +110,41 @@ if (-not ($JVM -or $JS -or $Native)) {
   exit 1
 }
 
-# Function to get executables
-function Get-Executables {
-  param()
+# Define a list of all executables to be benchmarked.
+[BenchmarkExecutable[]]$executables = @()
 
-  $executables = @()
-
-  # Add reference (plain) versions if requested
-  if ($Reference -and $JVM) {
-    $executables += @{
-      Name   = "commonmain_plain_jar"
-      Path   = "$commonMainBuildRoot\lib\game-of-life-kmp-commonmain-jvm-0.1.0.jar"
-      Type   = "jar"
-      Config = $null
-    }
-  }
-
-  if ($Reference -and $JS) {
-    $executables += @{
-      Name   = "commonmain_plain_node"
-      Path   = "$commonMainBuildRoot\js\packages\game-of-life-kmp-commonmain\kotlin\game-of-life-kmp-commonmain.js"
-      Type   = "node"
-      Config = $null
-    }
-  }
-
-  if ($Reference -and $Native) {
-    $executables += @{
-      Name   = "commonmain_plain_exe"
-      Path   = "$commonMainBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain.exe"
-      Type   = "exe"
-      Config = $null
-    }
-  }
-
-  # Add IOA variants
-  if ($IOA) {
-    foreach ($config in $ioaConfigurations) {
-      $suffix = Get-IoaSuffix -Config $config
-
-      if ($JVM) {
-        $executables += @{
-          Name   = "commonmain_ioa_$suffix-jar"
-          Path   = "$commonMainIoaBuildRoot\lib\game-of-life-kmp-commonmain-ioa-jvm-0.1.0-$suffix.jar"
-          Type   = "jar"
-          Config = $config
-        }
-      }
-
-      if ($JS) {
-        $executables += @{
-          Name   = "commonmain_ioa_$suffix-node"
-          Path   = "$commonMainIoaBuildRoot\js\packages\game-of-life-kmp-commonmain-ioa-$suffix\kotlin\game-of-life-kmp-commonmain-ioa-$suffix.js"
-          Type   = "node"
-          Config = $config
-        }
-      }
-
-      if ($Native) {
-        $executables += @{
-          Name   = "commonmain_ioa_$suffix-exe"
-          Path   = "$commonMainIoaBuildRoot\bin\mingwX64\releaseExecutable\game-of-life-kmp-commonmain-ioa-$suffix.exe"
-          Type   = "exe"
-          Config = $config
-        }
-      }
-    }
-  }
-
-  return $executables
+if ($Reference -and $JVM) {
+  $executables += [BenchmarkExecutable]::new("commonmain-plain-jar", "$commonMainDistRoot\game-of-life-kmp-commonmain-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
 }
-
-# Get executables matching the specified parameters
-$executables = Get-Executables
+if ($IOA -and $JVM) {
+  $executables += [BenchmarkExecutable]::new("commonmain-ioa-jar", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
+}
+if ($Reference -and $Native) {
+  $executables += [BenchmarkExecutable]::new("commonmain-plain-$nativePlatformLabel-exe", "$commonMainDistRoot\game-of-life-kmp-commonmain$nativeExt", [ExecutableType]::Exe, $null)
+}
+if ($IOA -and $Native) {
+  $executables += [BenchmarkExecutable]::new("commonmain-ioa-$nativePlatformLabel-exe", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa$nativeExt", [ExecutableType]::Exe, $null)
+}
+if ($Reference -and $JS) {
+  $executables += [BenchmarkExecutable]::new("commonmain-plain-node", "$commonMainDistRoot\game-of-life-kmp-commonmain.js", [ExecutableType]::Node, $null)
+}
+if ($IOA -and $JS) {
+  $executables += [BenchmarkExecutable]::new("commonmain-ioa-node", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa.js", [ExecutableType]::Node, $null)
+}
+if ($IOA) {
+    foreach ($config in $ioaConfigurations) {
+        $suffix = Get-IoaSuffix -Config $config
+        if ($JVM) {
+            $executables += [BenchmarkExecutable]::new("commonmmain-ioa-$suffix-jar", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa-jvm-0.1.0-$suffix.jar", [ExecutableType]::Jar, $null)
+        }
+        if ($JS) {
+            $executables += [BenchmarkExecutable]::new("commonmmain-ioa-$suffix-node", "$commonMainDistRoot\game-of-life-kmp-commonmain-ioa-$suffix.js", [ExecutableType]::Jar, $null)
+        }
+        if ($JVM) {
+            $executables += [BenchmarkExecutable]::new("commonmmain-ioa-$suffix-exe", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa-$suffix.exe", [ExecutableType]::Exe, $null)
+        }
+    }
+}
 
 # Create a test suite name from the executable names
 $testSuiteName = "game-of-life-kmp-commonmain-ioa"
@@ -194,7 +163,7 @@ Write-Host "=========================================="
 Write-Host "Validating executables..."
 Write-Host "=========================================="
 
-$missingExecutables = @()
+[BenchmarkExecutable[]]$missingExecutables = @()
 
 foreach ($executable in $executables) {
   $filePath = $executable.Path
@@ -203,7 +172,7 @@ foreach ($executable in $executables) {
   }
   else {
     Write-Host "ERROR: NOT FOUND: $($executable.Name) at $filePath"
-    $missingExecutables += [ordered]@{ Name = $executable.Name; Path = $filePath }
+    $missingExecutables += $executable
   }
 }
 
@@ -225,7 +194,7 @@ Write-Host "=========================================="
 
 # Create measurement directory with timestamp and test suite name
 $measurementTimestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
-$measurementDirName = "{0}_{1}" -f $measurementTimestamp, $testSuiteName
+$measurementDirName = "{0}_{1}_{2}_{3}reps_{4}steps" -f $measurementTimestamp, $testSuiteName, $CILabel, $RepetitionCount, $StepCount
 $measurementDir = Join-Path "..\..\measurements" $measurementDirName
 
 # Check if measurement directory already exists
@@ -245,10 +214,8 @@ $csvRecords = @()
 # Loop through each executable defined above
 foreach ($executable in $executables) {
   $filePath = $executable.Path
+  if (-not $IsWindows) { $filePath = $filePath -replace '\\', '/' }
   $fileType = $executable.Type
-
-  Write-Host "--------------------------------------------------------"
-  Write-Host "Starting benchmark for: $($executable.Name) ($filePath)"
   Write-Host "--------------------------------------------------------"
 
   # Initialize an array to hold the elapsed times for the current file
@@ -264,15 +231,15 @@ foreach ($executable in $executables) {
     
     try {
       switch ($fileType) {
-        "jar" { 
+        ([ExecutableType]::Jar) {
           $output = java -jar $filePath $StepCount 2>&1
           $executionSuccess = $LASTEXITCODE -eq 0 
         }
-        "exe" { 
+        ([ExecutableType]::Exe) {
           $output = & $filePath $StepCount 2>&1
           $executionSuccess = $LASTEXITCODE -eq 0 
         }
-        "node" { 
+        ([ExecutableType]::Node) {
           $output = node $filePath $StepCount 2>&1
           $executionSuccess = $LASTEXITCODE -eq 0 
         }
@@ -322,6 +289,7 @@ foreach ($executable in $executables) {
   
   $payload = [ordered]@{
     parameters  = [ordered]@{
+      CILabel         = $CILabel
       RepetitionCount = $RepetitionCount
       CleanBuild      = $CleanBuild
       StepCount       = $StepCount
@@ -345,90 +313,34 @@ foreach ($executable in $executables) {
 
   Write-Host "All elapsed times for this run have been collected and saved to $outputFilePath"
 
-  # Collect statistics for CSV
-  $csvRecord = [ordered]@{
-    mean                              = $stats.mean
-    median                            = $stats.median
-    stddev                            = $stats.stddev
-    min                               = $stats.min
-    max                               = $stats.max
-    ci95_lower                        = $stats.ci95.lower
-    ci95_upper                        = $stats.ci95.upper
-    executable                        = $executable.Name
-    buildTimeMs                       = $relevantBuildTime
-    RepetitionCount                   = $RepetitionCount
-    CleanBuild                        = $CleanBuild
-    StepCount                         = $StepCount
-    Reference                         = $Reference
-    IOA                               = $IOA
-    JVM                               = $JVM
-    JS                                = $JS
-    Native                            = $Native
-    IoaKinds                          = $IoaKinds
-    CollectionTimestamp               = $machineInfo.CollectionTimestamp
-    GitCommitHash                     = $machineInfo.GitCommitHash
-    GitBranch                         = $machineInfo.GitBranch
-    DeviceManufacturer                = $machineInfo.DeviceManufacturer
-    DeviceModel                       = $machineInfo.DeviceModel
-    IsVirtualMachine                  = $machineInfo.IsVirtualMachine
-    OS                                = $machineInfo.OS
-    OSArchitecture                    = $machineInfo.OSArchitecture
-    WindowsBuildNumber                = $machineInfo.WindowsBuildNumber
-    TimeZone                          = $machineInfo.TimeZone
-    Username                          = $machineInfo.Username
-    BIOSVersion                       = $machineInfo.BIOSVersion
-    BIOSManufacturer                  = $machineInfo.BIOSManufacturer
-    SecureBootEnabled                 = $machineInfo.SecureBootEnabled
-    HyperVEnabled                     = $machineInfo.HyperVEnabled
-    CPU                               = $machineInfo.CPU
-    CPUCores                          = $machineInfo.CPUCores
-    CPULogicalProcessors              = $machineInfo.CPULogicalProcessors
-    CPUMaxClockSpeedMHz               = $machineInfo.CPUMaxClockSpeedMHz
-    TotalRAMGB                        = $machineInfo.TotalRAMGB
-    AvailableRAMGB                    = $machineInfo.AvailableRAMGB
-    RAMModuleCount                    = $machineInfo.RAMModuleCount
-    RAMSpeedMHz                       = $machineInfo.RAMSpeedMHz
-    RAMManufacturer                   = $machineInfo.RAMManufacturer
-    RAMPartNumber                     = $machineInfo.RAMPartNumber
-    RAMModuleCapacitiesGB             = $machineInfo.RAMModuleCapacitiesGB
-    DiskModel                         = $machineInfo.DiskModel
-    DiskSizeGB                        = $machineInfo.DiskSizeGB
-    DiskMediaType                     = $machineInfo.DiskMediaType
-    DiskInterfaceType                 = $machineInfo.DiskInterfaceType
-    SystemDriveFreeSpaceGB            = $machineInfo.SystemDriveFreeSpaceGB
-    PowerPlan                         = $machineInfo.PowerPlan
-    SystemUptimeHours                 = $machineInfo.SystemUptimeHours
-    RunningProcessCount               = $machineInfo.RunningProcessCount
-    WindowsDefenderEnabled            = $machineInfo.WindowsDefenderEnabled
-    WindowsDefenderRealTimeProtection = $machineInfo.WindowsDefenderRealTimeProtection
-    PowerShellVersion                 = $machineInfo.PowerShellVersion
-    JavaVersion                       = $machineInfo.JavaVersion
-    JavaDistribution                  = $machineInfo.JavaDistribution
-    NodeVersion                       = $machineInfo.NodeVersion
-    PythonVersion                     = $machineInfo.PythonVersion
-    GradleVersion                     = $machineInfo.GradleVersion
-    KotlinVersion                     = $machineInfo.KotlinVersion
-    mean                              = $stats.mean
-    median                            = $stats.median
-    stddev                            = $stats.stddev
-    min                               = $stats.min
-    max                               = $stats.max
-    ci95_lower                        = $stats.ci95.lower
-    ci95_upper                        = $stats.ci95.upper
-  }
+  # Build CSV record using utility function
+  $csvRecord = Build-BenchmarkCSVRecord `
+    -ExecutableName $executable.Name `
+    -Statistics $stats `
+    -MachineInfo $machineInfo `
+    -RepetitionCount $RepetitionCount `
+    -CleanBuild $CleanBuild `
+    -StepCount $StepCount `
+    -BuildTime $relevantBuildTime `
+    -AdditionalParameters @{
+      CILabel    = $CILabel
+      Reference = $Reference
+      IOA       = $IOA
+      JVM       = $JVM
+      JS        = $JS
+      Native    = $Native
+    }
   $csvRecords += $csvRecord
 
 } # End of executables loop
 
 # Write results files with underscore prefix to sort first alphabetically
 $csvFilePath = Join-Path $measurementDir "_results.csv"
-
-# Convert OrderedDictionaries to PSCustomObjects for proper CSV output
-$csvObjects = $csvRecords | ForEach-Object { New-Object PSObject -Property $_ }
-$csvObjects | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $csvFilePath -Encoding utf8
-
 $jsonFilePath = Join-Path $measurementDir "_results.json"
-$csvRecords | ConvertTo-Json | Out-File -FilePath $jsonFilePath -Encoding utf8
+
+Export-BenchmarkResultsToCSV -Results $csvRecords -OutputPath $csvFilePath
+Export-BenchmarkResultsToJSON -Results $csvRecords -OutputPath $jsonFilePath
 
 Write-Host "Summary results saved to $csvFilePath and $jsonFilePath"
 Write-Host "All benchmarks are complete."
+exit 0

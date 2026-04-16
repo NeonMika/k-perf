@@ -46,6 +46,13 @@ class KPerfCommandLineProcessor : CommandLineProcessor {
       "whether KIRHelperKit should be tested using KIRHelperKitTestingExtension",
       false,
       false
+    ),
+    CliOption(
+      "methods",
+      "<regex,...>",
+      "comma-separated list of regexes matched against a function's fully qualified name; only matching functions are instrumented (default: .* = all functions)",
+      false,
+      false
     )
   )
 
@@ -54,12 +61,13 @@ class KPerfCommandLineProcessor : CommandLineProcessor {
     value: String,
     configuration: CompilerConfiguration
   ) {
-    println("KPerfCommandLineProcessor - processOption ($option, $value)")
+    println("[kperf] KPerfCommandLineProcessor - processOption ($option, $value)")
     when (option.optionName) {
       "enabled" -> configuration.put(KPerfConfigurationKeys.ENABLED, value.toBoolean())
       "flushEarly" -> configuration.put(KPerfConfigurationKeys.FLUSH_EARLY, value.toBoolean())
       "instrumentPropertyAccessors" -> configuration.put(KPerfConfigurationKeys.INSTRUMENT_PROPERTY_ACCESSORS, value.toBoolean())
       "testKIR" -> configuration.put(KPerfConfigurationKeys.TEST_KIR, value.toBoolean())
+      "methods" -> configuration.put(KPerfConfigurationKeys.METHODS, value)
       else -> throw CliOptionProcessingException("KPerfCommandLineProcessor.processOption encountered unknown CLI compiler plugin option: ${option.optionName}")
     }
   }

@@ -97,7 +97,7 @@ def build_aggregated_call_graph(file_path: Path, symbols: Dict[str, str]) -> Met
                 # ... and "enter" the method
                 method_stack.append(called_method)
             elif line.startswith("<"):
-                method_id, duration = line[2:].split(';')
+                duration = line[2:]
                 # Remember how long the method ran ...
                 current_method().durations.append(int(duration))
                 # ... and "exit" the method

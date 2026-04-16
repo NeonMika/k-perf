@@ -1,0 +1,61 @@
+{
+  "parameters": {
+    "CILabel": "ci-linux-small",
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 5,
+    "Reference": true,
+    "IOA": true,
+    "JVM": true,
+    "JS": true,
+    "Native": true
+  },
+  "machineInfo": {
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "OS": "Ubuntu 24.04.4 LTS",
+    "OSArchitecture": "x86_64",
+    "CPU": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "TotalRAMGB": 15.61,
+    "AvailableRAMGB": 12.52,
+    "DiskSizeGB": 145,
+    "SystemDriveFreeSpaceGB": 84,
+    "SystemUptimeHours": 0.11,
+    "TimeZone": "Etc/UTC",
+    "Username": "runner",
+    "RunningProcessCount": 152,
+    "IsVirtualMachine": true,
+    "PowerShellVersion": "7.4.14",
+    "JavaVersion": "21.0.10",
+    "JavaDistribution": "\"21.0.10\"",
+    "NodeVersion": "v22.22.2",
+    "PythonVersion": "Python 3.12.3",
+    "GradleVersion": "Gradle 9.0.0",
+    "KotlinVersion": "Kotlin:        2.2.0",
+    "GitCommitHash": "0e0832f2a103336c0c07c94b8c73cfe372d6c388",
+    "GitBranch": "main",
+    "CollectionTimestamp": "2026-04-10 18:33:53"
+  },
+  "buildTimeMs": 14038.1058,
+  "executable": "commonmain_ioa_exe",
+  "repetitions": 3,
+  "times": [
+    2605.0,
+    1849.0,
+    1968.0
+  ],
+  "statistics": {
+    "count": 3,
+    "mean": 2140.6666666666665,
+    "median": 2605.0,
+    "stddev": 406.50256251754837,
+    "min": 1849.0,
+    "max": 2605.0,
+    "ci95": {
+      "lower": 1131.4809019148158,
+      "upper": 3149.852431418517
+    }
+  }
+}

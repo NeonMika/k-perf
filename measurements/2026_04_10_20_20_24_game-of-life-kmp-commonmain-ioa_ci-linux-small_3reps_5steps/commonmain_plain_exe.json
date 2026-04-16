@@ -1,0 +1,61 @@
+{
+  "parameters": {
+    "CILabel": "ci-linux-small",
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 5,
+    "Reference": true,
+    "IOA": true,
+    "JVM": true,
+    "JS": true,
+    "Native": true
+  },
+  "machineInfo": {
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "OS": "Ubuntu 24.04.4 LTS",
+    "OSArchitecture": "x86_64",
+    "CPU": "AMD EPYC 7763 64-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "TotalRAMGB": 15.61,
+    "AvailableRAMGB": 13.28,
+    "DiskSizeGB": 145,
+    "SystemDriveFreeSpaceGB": 84,
+    "SystemUptimeHours": 0.1,
+    "TimeZone": "Etc/UTC",
+    "Username": "runner",
+    "RunningProcessCount": 151,
+    "IsVirtualMachine": true,
+    "PowerShellVersion": "7.4.14",
+    "JavaVersion": "21.0.10",
+    "JavaDistribution": "\"21.0.10\"",
+    "NodeVersion": "v22.22.2",
+    "PythonVersion": "Python 3.12.3",
+    "GradleVersion": "Gradle 9.0.0",
+    "KotlinVersion": "Kotlin:        2.2.0",
+    "GitCommitHash": "94c7346734715bfb0d3416cc02568743a7897fbc",
+    "GitBranch": "main",
+    "CollectionTimestamp": "2026-04-10 20:18:44"
+  },
+  "buildTimeMs": 1210.491,
+  "executable": "commonmain_plain_exe",
+  "repetitions": 3,
+  "times": [
+    3970.0,
+    3798.0,
+    3619.0
+  ],
+  "statistics": {
+    "count": 3,
+    "mean": 3795.6666666666665,
+    "median": 3970.0,
+    "stddev": 175.51163304275116,
+    "min": 3619.0,
+    "max": 3970.0,
+    "ci95": {
+      "lower": 3359.940405759151,
+      "upper": 4231.392927574182
+    }
+  }
+}
