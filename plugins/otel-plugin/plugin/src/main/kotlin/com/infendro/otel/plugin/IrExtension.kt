@@ -29,6 +29,12 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.platform.jvm.JvmPlatform
 
+// Kotlin 2.2+ migrated IrFunction.valueParameters to a unified `parameters` list
+// that also contains receivers and context parameters. Filter by IrParameterKind.Regular
+// to preserve the old "valueParameters" semantics (just the regular/value parameters).
+private val IrFunction.regularParams: List<IrValueParameter>
+    get() = parameters.filter { it.kind == IrParameterKind.Regular }
+
 class IrExtension(
     val debug: Boolean,
     val host: String?,
@@ -192,14 +198,16 @@ class IrExtension(
             index: Int,
             value: IrExpression?
         ) {
-            putValueArgument(index, value)
+            val regulars = symbol.owner.regularParams
+            arguments[regulars[index].indexInParameters] = value
         }
 
         fun IrConstructorCall.argument(
             index: Int,
             value: IrExpression?
         ) {
-            putValueArgument(index, value)
+            val regulars = symbol.owner.regularParams
+            arguments[regulars[index].indexInParameters] = value
         }
 
         fun IrFunction.isMain() = name.toString() == "main"
@@ -207,8 +215,8 @@ class IrExtension(
 
         // region
         val println = getFunction("kotlin.io", "println") {
-            it.valueParameters.size == 1
-                && it.valueParameters[0].type == any.makeNullable()
+            it.regularParams.size == 1
+                && it.regularParams[0].type == any.makeNullable()
         }
 
         val StringBuilder = when (platform) {
@@ -216,15 +224,15 @@ class IrExtension(
             else -> getClass("kotlin.text", "StringBuilder")
         }
         val StringBuilder_constructor = StringBuilder.getConstructor {
-            it.valueParameters.isEmpty()
+            it.regularParams.isEmpty()
         }
         val StringBuilder_appendString = StringBuilder.getFunction("append") {
-            it.valueParameters.size == 1
-                && it.valueParameters[0].type == string.makeNullable()
+            it.regularParams.size == 1
+                && it.regularParams[0].type == string.makeNullable()
         }
         val StringBuilder_appendLong = StringBuilder.getFunction("append") {
-            it.valueParameters.size == 1
-                && it.valueParameters[0].type == long
+            it.regularParams.size == 1
+                && it.regularParams[0].type == long
         }
         val StringBuilder_toString = StringBuilder.getFunction("toString")
 
@@ -239,8 +247,8 @@ class IrExtension(
             "Instant"
         )
         val Instant_minus = Instant.getFunction("minus") {
-            it.valueParameters.size == 1
-                && it.valueParameters[0].type == Instant.type()
+            it.regularParams.size == 1
+                && it.regularParams[0].type == Instant.type()
         }
 
         val Clock = getClass(
@@ -299,7 +307,7 @@ class IrExtension(
             "ImplicitContextKeyed"
         )
         val Context_with = Context.getFunction("with") {
-            it.valueParameters.size == 1 && it.valueParameters[0].type == ImplicitContextKeyed.type()
+            it.regularParams.size == 1 && it.regularParams[0].type == ImplicitContextKeyed.type()
         }
         val Context_makeCurrent = Context.getFunction("makeCurrent")
         val ContextCompanion = Context.getClass("Companion")
@@ -308,23 +316,23 @@ class IrExtension(
         val SpanBuilder = getClass("io.opentelemetry.kotlin.api.trace", "SpanBuilder")
         val SpanBuilder_setParent = SpanBuilder.getFunction("setParent")
         val SpanBuilder_setStartTimestamp = SpanBuilder.getFunction("setStartTimestamp") {
-            it.valueParameters.size == 1 && it.valueParameters[0].type == Instant.type()
+            it.regularParams.size == 1 && it.regularParams[0].type == Instant.type()
         }
         val SpanBuilder_startSpan = SpanBuilder.getFunction("startSpan")
 
         val Span = getClass("io.opentelemetry.kotlin.api.trace", "Span")
         val Span_end = Span.getFunction("end") {
-            it.valueParameters.size == 1 && it.valueParameters[0].type == Instant.type()
+            it.regularParams.size == 1 && it.regularParams[0].type == Instant.type()
         }
 
         val await = getFunction("com.infendro.otel.util", "await") {
-            it.valueParameters.size == 1
-                && it.valueParameters[0].type == Exporter.type()
+            it.regularParams.size == 1
+                && it.regularParams[0].type == Exporter.type()
         }
         val await_debug = getFunction("com.infendro.otel.util", "await") {
-            it.valueParameters.size == 2
-                && it.valueParameters[0].type == Exporter.type()
-                && it.valueParameters[1].type == Instant.type()
+            it.regularParams.size == 2
+                && it.regularParams[0].type == Exporter.type()
+                && it.regularParams[1].type == Instant.type()
         }
         val env = getFunction("com.infendro.otel.util", "env")
         // endregion
@@ -510,8 +518,8 @@ class IrExtension(
             returnType = Span.type()
 
             body {
-                val name = valueParameters[0]
-                val context = valueParameters[1]
+                val name = regularParams[0]
+                val context = regularParams[1]
 
                 // val spanBuilder = tracer.spanBuilder(name)
                 val spanBuilder = irTemporary(
@@ -572,12 +580,12 @@ class IrExtension(
             body {
                 // context.makeCurrent()
                 +call(Context_makeCurrent) {
-                    dispatchReceiver = irGet(valueParameters[1])
+                    dispatchReceiver = irGet(regularParams[1])
                 }
 
                 // span.end(Clock.System.now())
                 +call(Span_end) {
-                    dispatchReceiver = irGet(valueParameters[0])
+                    dispatchReceiver = irGet(regularParams[0])
                     argument(
                         0,
                         call(now) {

@@ -1,7 +1,7 @@
 @file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
 
 plugins {
-  kotlin("multiplatform") version "2.3.0"
+  kotlin("multiplatform") version "2.3.10"
 }
 
 group = "io.github.neonmika"

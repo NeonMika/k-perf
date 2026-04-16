@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    kotlin("multiplatform") version "2.1.10"
+    kotlin("multiplatform") version "2.3.10"
     id("com.infendro.otel") version "1.0.0"
 }
 

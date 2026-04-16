@@ -1,8 +1,7 @@
 plugins {
-    kotlin("jvm") version "2.1.10"
+    kotlin("jvm") version "2.3.10"
 
     `java-gradle-plugin`
-    `kotlin-dsl`
 
     `maven-publish`
 }
@@ -23,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.10")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.10")
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable")
     implementation(gradleApi())
 
@@ -37,7 +36,8 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
-    testImplementation("com.bennyhuo.kotlin:kotlin-compile-testing-extensions:2.1.0-1.3.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("dev.zacsweers.kctfork:core:0.12.1")
 }
 
 tasks.test {

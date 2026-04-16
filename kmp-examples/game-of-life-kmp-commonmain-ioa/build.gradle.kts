@@ -1,7 +1,7 @@
 @file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
 
 plugins {
-  kotlin("multiplatform") version "2.3.0"
+  kotlin("multiplatform") version "2.3.10"
   id("io.github.neonmika.instrumentation-overhead-analyzer") version "0.2.1" // dependency on the instrumentation-overhead-analyzer plugin
 }
 

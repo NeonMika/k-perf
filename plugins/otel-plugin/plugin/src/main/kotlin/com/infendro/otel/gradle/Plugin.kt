@@ -2,7 +2,6 @@ package com.infendro.otel.gradle
 
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
@@ -26,7 +25,7 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
     ) {
         target.plugins.withId("org.jetbrains.kotlin.multiplatform") {
             target.extensions
-                .getByType<KotlinMultiplatformExtension>()
+                .getByType(KotlinMultiplatformExtension::class.java)
                 .addDependencies()
         }
         target.extensions.add("otel", Extension())

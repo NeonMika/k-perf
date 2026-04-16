@@ -1,7 +1,7 @@
 @file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
 
 plugins {
-  kotlin("multiplatform") version "2.3.0"
+  kotlin("multiplatform") version "2.3.10"
   id("io.github.neonmika.k-perf-plugin") version "0.2.1" // dependency on the k-perf-plugin plugin
 }
 
