@@ -24,7 +24,6 @@ class KPerfComponentRegistrar : CompilerPluginRegistrar() {
     // org.jetbrains.kotlin.cli.common.CLIConfigurationKeys contains default configuration keys
     val messageCollector = configuration.get(CLIConfigurationKeys.ORIGINAL_MESSAGE_COLLECTOR_KEY) ?: configuration.messageCollector
     /*
-    println(":) :) :)")
     messageCollector.report(
         CompilerMessageSeverity.INFO,
         "CLIConfigurationKeys.ALLOW_KOTLIN_PACKAGE - ${CLIConfigurationKeys.ALLOW_KOTLIN_PACKAGE} - ${

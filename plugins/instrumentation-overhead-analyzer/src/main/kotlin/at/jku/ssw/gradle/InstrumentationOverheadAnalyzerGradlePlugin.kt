@@ -67,7 +67,7 @@ class InstrumentationOverheadAnalyzerGradlePlugin : KotlinCompilerPluginSupportP
 
   override fun getPluginArtifact(): SubpluginArtifact {
     return SubpluginArtifact(
-      groupId = "at.jku.ssw",
+      groupId = "io.github.neonmika",
       artifactId = "instrumentation-overhead-analyzer",
       version = target.project.version.toString()
     )

@@ -1,3 +1,5 @@
+.env
+release.ps1
 .gradle
 .kotlin
 build
@@ -93,3 +95,5 @@ CLAUDE.md
 # Dynamically generated benchmarks & JS dependencies
 measurements/
 kotlin-js-store/
+**/dist
+.serena

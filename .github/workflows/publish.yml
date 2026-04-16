@@ -1,0 +1,64 @@
+# Publishes KIRHelperKit, k-perf, and instrumentation-overhead-analyzer to Maven Central.
+# Triggered when a GitHub Release is created (including pre-releases).
+#
+# Required repository secrets:
+#   MAVEN_CENTRAL_USERNAME      - User token username from central.sonatype.com
+#   MAVEN_CENTRAL_PASSWORD      - User token password from central.sonatype.com
+#   SIGNING_KEY_ID              - Last 8 characters of the GPG key ID
+#   SIGNING_PASSWORD            - Passphrase for the GPG private key
+#   GPG_KEY_CONTENTS            - ASCII-armored GPG private key (remove the first and last two lines + the very last newline)
+
+name: Publish to Maven Central
+
+on:
+  release:
+    types: [released, prereleased]
+
+jobs:
+  publish-to-maven-central:
+    name: Publish to Maven Central
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Make all files executable
+        run: chmod +x -R ./
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Publish KIRHelperKit
+        run: ./gradlew publishToMavenCentral publishToMavenLocal --no-configuration-cache
+        working-directory: KIRHelperKit
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
+
+      - name: Publish k-perf plugin
+        run: ./gradlew publishToMavenCentral publishToMavenLocal --no-configuration-cache
+        working-directory: plugins/k-perf
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
+
+      - name: Publish instrumentation-overhead-analyzer plugin
+        run: ./gradlew publishToMavenCentral publishToMavenLocal --no-configuration-cache
+        working-directory: plugins/instrumentation-overhead-analyzer
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}

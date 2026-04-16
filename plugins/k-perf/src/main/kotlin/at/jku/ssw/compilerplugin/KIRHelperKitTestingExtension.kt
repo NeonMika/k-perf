@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.IrStatement
@@ -54,7 +55,12 @@ class KIRHelperKitTestingExtension(
     debugFile.delete()
   }
 
-  fun appendToDebugFile(str: String) {
+  fun printText(str: String) {
+    val text = "[kperf] $str"
+    println(text)
+    messageCollector.report(CompilerMessageSeverity.INFO, text)
+
+    // Do not append [kperf] in file since we are the only ones writing there
     debugFile.appendText(str)
   }
 
@@ -138,8 +144,8 @@ class KIRHelperKitTestingExtension(
     )
     val bufferedFunc = bufferedFuncs.single { it.owner.parameters[0].type == sinkFunc.owner.returnType }
 
-    /*appendToDebugFile("Different versions of kotlinx.io.writeString:\n")
-    appendToDebugFile(
+    /*printText("Different versions of kotlinx.io.writeString:\n")
+    printText(
         pluginContext.referenceFunctions(
             CallableId(
                 FqName("kotlinx.io"),
@@ -619,7 +625,7 @@ class KIRHelperKitTestingExtension(
 
     //non existin constructor test
     val nonExistentConstructorNew = stringBuilderClassNew?.findConstructorOrNull(pluginContext, "(Boolean, String)")
-    appendToDebugFile("NonExistingTest for constructor (should be null): $nonExistentConstructorNew \n\n")
+    printText("NonExistingTest for constructor (should be null): $nonExistentConstructorNew \n\n")
 
     val stringBuilderAppendIntFuncNew = stringBuilderClassNew?.findFunctionOrNull(pluginContext, "append(int)")
     compareFunctionSymbols(stringBuilderAppendIntFunc, stringBuilderAppendIntFuncNew, true)
@@ -635,37 +641,37 @@ class KIRHelperKitTestingExtension(
 
     //negative example for function:
     val nonExistingFunc = pluginContext.findFunctionOrNull("kotlin/io/blabliblup()")
-    appendToDebugFile("NonExistingTest for function: $nonExistingFunc \n\n")
+    printText("NonExistingTest for function: $nonExistingFunc \n\n")
 
     //no parenthesis test for function (this should fail):
     runCatching {
       pluginContext.findFunctionOrNull("kotlin/io/println")
     }.onFailure { _ ->
-      appendToDebugFile("NoParenthesisTest for function failed successfully \n\n")
+      printText("NoParenthesisTest for function failed successfully \n\n")
     }.onSuccess {
-      appendToDebugFile("ERROR: NoParenthesisTest for function did not fail! \n\n")
+      printText("ERROR: NoParenthesisTest for function did not fail! \n\n")
     }
 
     //only package test for function (this should fail):
     runCatching {
       pluginContext.findFunctionOrNull("kotlin/io/")
     }.onFailure { _ ->
-      appendToDebugFile("onlyPackageTest for function failed successfully \n\n")
+      printText("onlyPackageTest for function failed successfully \n\n")
     }.onSuccess {
-      appendToDebugFile("ERROR: onlyPackageTest for function did not fail! \n\n")
+      printText("ERROR: onlyPackageTest for function did not fail! \n\n")
     }
 
     //negative example for class:
     val nonExistingClass = pluginContext.findClassOrNull("kotlin/io/Blabliblup")
-    appendToDebugFile("NonExistingTest for class: $nonExistingClass \n\n")
+    printText("NonExistingTest for class: $nonExistingClass \n\n")
 
     //only package test for class (this should fail):
     runCatching {
       pluginContext.findClassOrNull("kotlin/text/")
     }.onFailure { _ ->
-      appendToDebugFile("onlyPackageTest for class failed successfully \n\n")
+      printText("onlyPackageTest for class failed successfully \n\n")
     }.onSuccess {
-      appendToDebugFile("ERROR: onlyPackageTest for class did not fail! \n\n")
+      printText("ERROR: onlyPackageTest for class did not fail! \n\n")
     }
 
     val rawSinkClassNew = pluginContext.findClassOrNull("kotlinx/io/RawSink")
@@ -686,11 +692,11 @@ class KIRHelperKitTestingExtension(
 
     //Test findProperty with function call
     val functionCallTest = arrayListClass.findPropertyOrNull("size()")
-    appendToDebugFile("FunctionCallTest for property (null): $functionCallTest\n\n")
+    printText("FunctionCallTest for property (null): $functionCallTest\n\n")
 
     //negative example for property:
     val nonExistingProperty = pluginContext.findPropertyOrNull("kotlin/io/Blabliblup")
-    appendToDebugFile("NonExistingTest for property: $nonExistingProperty \n\n")
+    printText("NonExistingTest for property: $nonExistingProperty \n\n")
 
     val sinkFuncNew = systemFileSystem.findFunctionOrNull(pluginContext, "sink(*)")
     compareFunctionSymbols(sinkFunc, sinkFuncNew)
@@ -941,7 +947,7 @@ class KIRHelperKitTestingExtension(
     val printLnIntCall = DeclarationIrBuilder(pluginContext, firstFile.symbol).getCall(pluginContext) {
       callPrintLn(pluginContext, 42)
     }
-    appendToDebugFile("printLn with Number: " + printLnIntCall + "\n\n")
+    printText("printLn with Number: " + printLnIntCall + "\n\n")
 
     if (pluginContext.platform.isJvm()) {
       val atomicIntegerClass = pluginContext.findClass("java/util/concurrent/atomic/AtomicInteger")
@@ -952,61 +958,61 @@ class KIRHelperKitTestingExtension(
       val printLnFieldCall = DeclarationIrBuilder(pluginContext, firstFile.symbol).getCall(pluginContext) {
         callPrintLn(pluginContext, counterField)
       }
-      appendToDebugFile("printLn with Field: " + printLnFieldCall + "\n\n")
+      printText("printLn with Field: " + printLnFieldCall + "\n\n")
     }
 
     //myClass tests
     val myClass = pluginContext.findClassOrNull("test/MyClass")
 
     if (myClass != null) {
-      appendToDebugFile("myClass found\n")
+      printText("myClass found\n")
       // Test for a generic function with one type parameter
       val genericFunction = myClass.findFunctionOrNull(pluginContext, "genericFunction(*)")
       if (genericFunction != null) {
-        appendToDebugFile("genericFunction found\n")
+        printText("genericFunction found\n")
       } else {
-        appendToDebugFile("genericFunction not found\n")
+        printText("genericFunction not found\n")
       }
 
       // Test for a generic function with a different type parameter
       val anotherGenericFunction = myClass.findFunctionOrNull(pluginContext, "anotherGenericFunction(G)")
       if (anotherGenericFunction != null) {
-        appendToDebugFile("anotherGenericFunction found\n")
+        printText("anotherGenericFunction found\n")
       } else {
-        appendToDebugFile("anotherGenericFunction not found\n")
+        printText("anotherGenericFunction not found\n")
       }
 
       // Test for a static function in the companion object
       val staticFunction = myClass.findFunctionOrNull(pluginContext, "staticFunction()")
       if (staticFunction != null) {
-        appendToDebugFile("staticFunction found\n")
+        printText("staticFunction found\n")
       } else {
-        appendToDebugFile("staticFunction not found\n")
+        printText("staticFunction not found\n")
       }
 
       // Test a normal function in a class with similar other function
       val normalFunction = myClass.findFunctionOrNull(pluginContext, "normalFunction(int)")
       if (normalFunction != null) {
-        appendToDebugFile("normalFunction found\n")
+        printText("normalFunction found\n")
       } else {
-        appendToDebugFile("normalFunction not found\n")
+        printText("normalFunction not found\n")
       }
 
       // Test a normal function in a class with all default parameters given
       val defaultParamFunction =
         myClass.findFunctionOrNull(pluginContext, "normalFunction(Int, String)", ignoreNullability = true)
       if (defaultParamFunction != null) {
-        appendToDebugFile("Function with default params found\n")
+        printText("Function with default params found\n")
       } else {
-        appendToDebugFile("Function with default params not found\n")
+        printText("Function with default params not found\n")
       }
 
       // Test for a top-level function with a primitive type parameter
       val topLevelFunction = pluginContext.findFunctionOrNull("test/topLevelFunction(Int)")
       if (topLevelFunction != null) {
-        appendToDebugFile("topLevelFunction found\n")
+        printText("topLevelFunction found\n")
       } else {
-        appendToDebugFile("topLevelFunction not found\n")
+        printText("topLevelFunction not found\n")
       }
 
       val testString = pluginContext.createField(firstFile.symbol, "_testString") { convertArgToIrExpression("test") }
@@ -1016,7 +1022,7 @@ class KIRHelperKitTestingExtension(
       val pairCall = DeclarationIrBuilder(pluginContext, firstFile.symbol).getCall(pluginContext) {
         Pair(myClass, testString.symbol).call("foo(int)", 42)
       }
-      appendToDebugFile(pairCall.dump())
+      printText(pairCall.dump())
     }
   }
 
@@ -1028,71 +1034,71 @@ class KIRHelperKitTestingExtension(
     new: IrSimpleFunctionSymbol?,
     classCall: Boolean = false
   ) {
-    if (classCall) appendToDebugFile("IrClassSymbol.findFunction call:\n")
+    if (classCall) printText("IrClassSymbol.findFunction call:\n")
 
     if (new == null) {
-      appendToDebugFile("New method returned null for ${original.owner.name}\n\n")
+      printText("New method returned null for ${original.owner.name}\n\n")
       return
     }
 
     val matches = original == new
-    appendToDebugFile("Function ${original.owner.name}: ${if (matches) "MATCH" else "MISMATCH"}\n")
+    printText("Function ${original.owner.name}: ${if (matches) "MATCH" else "MISMATCH"}\n")
     if (!matches) {
-      appendToDebugFile("  Original: ${original.owner.kotlinFqName}\n")
-      appendToDebugFile("  New: ${new.owner.kotlinFqName}\n")
+      printText("  Original: ${original.owner.kotlinFqName}\n")
+      printText("  New: ${new.owner.kotlinFqName}\n")
     }
-    appendToDebugFile("\n")
+    printText("\n")
   }
 
   @OptIn(UnsafeDuringIrConstructionAPI::class)
   private fun compareClassSymbols(original: IrClassSymbol, new: IrClassSymbol?) {
     if (new == null) {
-      appendToDebugFile("New class returned null for ${original.owner.kotlinFqName}\n\n")
+      printText("New class returned null for ${original.owner.kotlinFqName}\n\n")
       return
     }
 
     val matches = original == new
-    appendToDebugFile("Class ${original.owner.kotlinFqName}: ${if (matches) "MATCH" else "MISMATCH"}\n")
+    printText("Class ${original.owner.kotlinFqName}: ${if (matches) "MATCH" else "MISMATCH"}\n")
     if (!matches) {
-      appendToDebugFile("  Original: ${original.owner.kotlinFqName}\n")
-      appendToDebugFile("  New: ${new.owner.kotlinFqName}\n")
+      printText("  Original: ${original.owner.kotlinFqName}\n")
+      printText("  New: ${new.owner.kotlinFqName}\n")
     }
-    appendToDebugFile("\n")
+    printText("\n")
   }
 
   @OptIn(UnsafeDuringIrConstructionAPI::class)
   private fun comparePropertySymbols(original: IrPropertySymbol, new: IrPropertySymbol?, classCall: Boolean = false) {
-    if (classCall) appendToDebugFile("IrClassSymbol.findProperty call:\n")
+    if (classCall) printText("IrClassSymbol.findProperty call:\n")
 
     if (new == null) {
-      appendToDebugFile("New property returned null for ${original.owner.name}\n\n")
+      printText("New property returned null for ${original.owner.name}\n\n")
       return
     }
 
     val matches = original == new
     val propertyFqName = "${original.owner.parent.kotlinFqName}.${original.owner.name}"
-    appendToDebugFile("Property $propertyFqName: ${if (matches) "MATCH" else "MISMATCH"}\n")
+    printText("Property $propertyFqName: ${if (matches) "MATCH" else "MISMATCH"}\n")
     if (!matches) {
-      appendToDebugFile("  Original: $propertyFqName\n")
-      appendToDebugFile("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
+      printText("  Original: $propertyFqName\n")
+      printText("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
     }
-    appendToDebugFile("\n")
+    printText("\n")
   }
 
   @OptIn(UnsafeDuringIrConstructionAPI::class)
   private fun compareConstructorSymbols(original: IrConstructorSymbol, new: IrConstructorSymbol?) {
     if (new == null) {
-      appendToDebugFile("New constructor returned null for ${original.owner.parent.kotlinFqName}\n\n")
+      printText("New constructor returned null for ${original.owner.parent.kotlinFqName}\n\n")
       return
     }
     val matches = original == new
     val constructorFqName = "${original.owner.parent.kotlinFqName}.${original.owner.name}"
-    appendToDebugFile("Constructor $constructorFqName: ${if (matches) "MATCH" else "MISMATCH"}\n")
+    printText("Constructor $constructorFqName: ${if (matches) "MATCH" else "MISMATCH"}\n")
     if (!matches) {
-      appendToDebugFile("  Original: $constructorFqName\n")
-      appendToDebugFile("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
+      printText("  Original: $constructorFqName\n")
+      printText("  New: ${new.owner.parent.kotlinFqName}.${new.owner.name}\n")
     }
-    appendToDebugFile("\n")
+    printText("\n")
   }
 
   private fun compareFieldDumps(dump1: String, dump2: String, variableName: String) {
@@ -1101,18 +1107,18 @@ class KIRHelperKitTestingExtension(
     val normalizedDump2 = dump2.lines()
 
     if (normalizedDump1.size != normalizedDump2.size) {
-      appendToDebugFile("fields $variableName do not match\n\n")
+      printText("fields $variableName do not match\n\n")
       return
     } else {
       for (i in normalizedDump1.indices) {
         val line1 = normalizedDump1[i].trim().split(" ").filter { !it.contains(variableName) }.joinToString(" ")
         val line2 = normalizedDump1[i].trim().split(" ").filter { !it.contains(variableName) }.joinToString(" ")
         if (line1 != line2) {
-          appendToDebugFile("fields $variableName do not match\n\n")
+          printText("fields $variableName do not match\n\n")
           return
         }
       }
-      appendToDebugFile("fields $variableName match\n\n")
+      printText("fields $variableName match\n\n")
     }
   }
 }

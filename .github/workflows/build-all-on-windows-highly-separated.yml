@@ -1,0 +1,139 @@
+name: Build all on Windows (highly separated)
+
+# Each project AND each build target (JVM, JS, Windows native) is a discrete step for
+# maximum failure visibility.
+# ⚠️ The hardcoded task names (jvmJar, jsProductionExecutableCompileSync,
+#    linkReleaseExecutableMingwX64) reflect the #1-priority tasks from the discovery lists
+#    in buildAll.ps1 and .github/scripts/Build-KmpExample.ps1.
+#    Keep all four in sync when changing the build order, project list, or task priorities.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-all-highly-separated-windows:
+    runs-on: windows-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      # Locally-published plugins (io.github.neonmika group) are published to mavenLocal
+      # within the same build. The cached Gradle module metadata can contain stale
+      # resolutions from a previous run (e.g. after a coordinate change). Deleting the
+      # cached metadata for this group forces Gradle to re-resolve from the freshly
+      # published mavenLocal artifacts.
+      - name: Clear stale Gradle module cache for locally-published artifacts
+        shell: pwsh
+        run: Get-ChildItem "$env:USERPROFILE\.gradle\caches" -Recurse -Directory -Filter "io.github.neonmika*" -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Build KIRHelperKit
+        working-directory: KIRHelperKit
+        shell: pwsh
+        run: .\gradlew clean build publishToMavenLocal
+
+      - name: Build instrumentation-overhead-analyzer plugin
+        working-directory: plugins/instrumentation-overhead-analyzer
+        shell: pwsh
+        run: .\gradlew clean build publishToMavenLocal
+
+      - name: Build k-perf plugin
+        working-directory: plugins/k-perf
+        shell: pwsh
+        run: .\gradlew clean build publishToMavenLocal
+
+      # game-of-life-kmp-commonmain
+      - name: Build game-of-life-kmp-commonmain – JVM
+        working-directory: kmp-examples/game-of-life-kmp-commonmain
+        shell: pwsh
+        run: .\gradlew clean jvmJar
+
+      - name: Build game-of-life-kmp-commonmain – JS
+        working-directory: kmp-examples/game-of-life-kmp-commonmain
+        shell: pwsh
+        run: .\gradlew jsProductionExecutableCompileSync
+
+      - name: Build game-of-life-kmp-commonmain – Windows native
+        working-directory: kmp-examples/game-of-life-kmp-commonmain
+        shell: pwsh
+        run: .\gradlew linkReleaseExecutableMingwX64
+
+      # game-of-life-kmp-commonmain-ioa
+      - name: Build game-of-life-kmp-commonmain-ioa – JVM
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
+        shell: pwsh
+        run: .\gradlew clean jvmJar
+
+      - name: Build game-of-life-kmp-commonmain-ioa – JS
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
+        shell: pwsh
+        run: .\gradlew jsProductionExecutableCompileSync
+
+      - name: Build game-of-life-kmp-commonmain-ioa – Windows native
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
+        shell: pwsh
+        run: .\gradlew linkReleaseExecutableMingwX64
+
+      # game-of-life-kmp-commonmain-k-perf
+      - name: Build game-of-life-kmp-commonmain-k-perf – JVM
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
+        shell: pwsh
+        run: .\gradlew clean jvmJar
+
+      - name: Build game-of-life-kmp-commonmain-k-perf – JS
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
+        shell: pwsh
+        run: .\gradlew jsProductionExecutableCompileSync
+
+      - name: Build game-of-life-kmp-commonmain-k-perf – Windows native
+        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
+        shell: pwsh
+        run: .\gradlew linkReleaseExecutableMingwX64
+
+      # game-of-life-kmp-dedicatedmain
+      - name: Build game-of-life-kmp-dedicatedmain – JVM
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
+        shell: pwsh
+        run: .\gradlew clean jvmJar
+
+      - name: Build game-of-life-kmp-dedicatedmain – JS
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
+        shell: pwsh
+        run: .\gradlew jsProductionExecutableCompileSync
+
+      - name: Build game-of-life-kmp-dedicatedmain – Windows native
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
+        shell: pwsh
+        run: .\gradlew linkReleaseExecutableMingwX64
+
+      # game-of-life-kmp-dedicatedmain-k-perf
+      - name: Build game-of-life-kmp-dedicatedmain-k-perf – JVM
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
+        shell: pwsh
+        run: .\gradlew clean jvmJar
+
+      - name: Build game-of-life-kmp-dedicatedmain-k-perf – JS
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
+        shell: pwsh
+        run: .\gradlew jsProductionExecutableCompileSync
+
+      - name: Build game-of-life-kmp-dedicatedmain-k-perf – Windows native
+        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
+        shell: pwsh
+        run: .\gradlew linkReleaseExecutableMingwX64

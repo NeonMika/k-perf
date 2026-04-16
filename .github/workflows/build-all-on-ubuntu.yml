@@ -5,8 +5,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build_all_on_ubuntu:
+  build-all-ubuntu:
     runs-on: ubuntu-latest
 
     permissions:
@@ -15,6 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Make all files executable
+        run: chmod +x -R ./
+
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
@@ -22,8 +29,13 @@ jobs:
           java-version: "21"
           cache: gradle
 
-      - name: Make all files executable
-        run: chmod +x -R ./
+      # Locally-published plugins (io.github.neonmika group) are published to mavenLocal
+      # within the same build. The cached Gradle module metadata can contain stale
+      # resolutions from a previous run (e.g. after a coordinate change). Deleting the
+      # cached metadata for this group forces Gradle to re-resolve from the freshly
+      # published mavenLocal artifacts.
+      - name: Clear stale Gradle module cache for locally-published artifacts
+        run: find ~/.gradle/caches -type d -name "io.github.neonmika*" -exec rm -rf {} + 2>/dev/null || true
 
       - name: Run buildAll.sh
         run: ./buildAll.sh

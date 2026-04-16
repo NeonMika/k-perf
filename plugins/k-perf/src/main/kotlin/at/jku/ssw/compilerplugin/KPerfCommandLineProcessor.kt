@@ -61,7 +61,7 @@ class KPerfCommandLineProcessor : CommandLineProcessor {
     value: String,
     configuration: CompilerConfiguration
   ) {
-    println("KPerfCommandLineProcessor - processOption ($option, $value)")
+    println("[kperf] KPerfCommandLineProcessor - processOption ($option, $value)")
     when (option.optionName) {
       "enabled" -> configuration.put(KPerfConfigurationKeys.ENABLED, value.toBoolean())
       "flushEarly" -> configuration.put(KPerfConfigurationKeys.FLUSH_EARLY, value.toBoolean())

@@ -1,15 +1,11 @@
 plugins {
   kotlin("jvm") version "2.3.0"
   `java-library`
-  `maven-publish`
+  id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
-group = "at.jku.ssw"
-version = "0.1.0"
-
-repositories {
-  mavenCentral()
-}
+group = "io.github.neonmika"
+version = "0.2.1"
 
 java {
   toolchain {
@@ -30,24 +26,43 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile> {
   }
 }
 
-tasks.register<Jar>("sourcesJar") {
-  description = "Generates the sources JAR for this project."
-  group = JavaBasePlugin.DOCUMENTATION_GROUP
-  archiveClassifier.set("sources")
-  from(sourceSets.main.get().allSource)
-}
-
-publishing {
-  publications {
-    create<MavenPublication>("KIRHelperKit") { // this name defines how the Gradle publish commands are named (in this case publishKIRHelperKitPublicationToMavenLocal). Since we can simply publish by calling "publish" / "publishToMavenLocal", this name is not extremely relevant.
-      from(components["java"])
-      groupId = project.group.toString()
-      artifactId = "KIRHelperKit"
-      version = project.version.toString() // import using implementation("<groupId>:<artifactId>:<version>")
-      artifact(tasks.named("sourcesJar").get())
-    }
+mavenPublishing {
+  publishToMavenCentral()
+  if (providers.gradleProperty("signingInMemoryKey").isPresent ||
+      providers.gradleProperty("signing.secretKeyRingFile").isPresent) {
+    signAllPublications()
   }
-  repositories {
-    mavenLocal()
+
+  coordinates(group.toString(), "KIRHelperKit", version.toString())
+
+  pom {
+    name = "KIRHelperKit"
+    description = "A utility library that simplifies Kotlin compiler plugin development by providing IR element finding, a call DSL, and abstracted file I/O utilities."
+    inceptionYear = "2025"
+    url = "https://github.com/NeonMika/k-perf/"
+    licenses {
+      license {
+        name = "GNU Lesser General Public License v3.0"
+        url = "https://www.gnu.org/licenses/lgpl-3.0.html"
+        distribution = "repo"
+      }
+    }
+    developers {
+      developer {
+        id = "NeonMika"
+        name = "Dr. Markus Weninger"
+        url = "https://github.com/NeonMika/"
+      }
+      developer {
+        id = "LorenzBader"
+        name = "Lorenz Bader"
+        url = "https://github.com/LorenzBader/"
+      }
+    }
+    scm {
+      url = "https://github.com/NeonMika/k-perf/"
+      connection = "scm:git:git://github.com/NeonMika/k-perf.git"
+      developerConnection = "scm:git:ssh://git@github.com/NeonMika/k-perf.git"
+    }
   }
 }

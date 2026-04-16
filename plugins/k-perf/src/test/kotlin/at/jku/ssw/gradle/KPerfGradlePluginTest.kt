@@ -15,7 +15,7 @@ class KPerfGradlePluginTest {
   fun setup() {
     project = ProjectBuilder.builder().build()
     project.plugins.apply("java") // how to apply kotlin plugin?
-    project.plugins.apply("at.jku.ssw.k-perf-plugin")
+    project.plugins.apply("io.github.neonmika.k-perf-plugin")
   }
 
   @Test
