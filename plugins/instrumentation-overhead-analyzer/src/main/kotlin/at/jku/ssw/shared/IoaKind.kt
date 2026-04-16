@@ -14,6 +14,7 @@ enum class IoaKind {
   TimeMonotonicGlobalInWholeMilliseconds,
   TimeMonotonicGlobalInWholeMicroseconds,
   TimeMonotonicGlobalInWholeNanoseconds,
+  TimeMonotonicGlobalReducedObjects,
 
   IncrementIntCounter,
   IncrementAtomicIntCounter,

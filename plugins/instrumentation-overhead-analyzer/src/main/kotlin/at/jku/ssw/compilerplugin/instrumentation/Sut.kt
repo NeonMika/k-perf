@@ -36,7 +36,7 @@ fun createSuts(): SutFields = SutFields(with(IoaContext.pluginContext) {
     )
 
     IoaKind.TimeMonotonicGlobalInWholeMilliseconds, IoaKind.TimeMonotonicGlobalInWholeMicroseconds,
-    IoaKind.TimeMonotonicGlobalInWholeNanoseconds -> listOf(
+    IoaKind.TimeMonotonicGlobalInWholeNanoseconds, IoaKind.TimeMonotonicGlobalReducedObjects -> listOf(
       createPropertyOfType(IoaContext.valueTimeMarkerClass.defaultType) {
         irCall(IoaContext.timeSourceMonotonicMarkNowFunction).apply {
           dispatchReceiver = irGetObject(IoaContext.timeSourceMonotonicClass)

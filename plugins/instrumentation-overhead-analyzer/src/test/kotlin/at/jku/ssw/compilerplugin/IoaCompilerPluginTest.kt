@@ -129,6 +129,9 @@ class IoaCompilerPluginTest {
   fun `test time monotonic global in whole nanoseconds kind`() = testKind(IoaKind.TimeMonotonicGlobalInWholeNanoseconds)
 
   @Test
+  fun `test time monotonic global reduced objects kind`() = testKind(IoaKind.TimeMonotonicGlobalReducedObjects)
+
+  @Test
   fun `test increment int counter kind`() = testKind(IoaKind.IncrementIntCounter)
 
   @Test

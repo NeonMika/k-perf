@@ -24,6 +24,8 @@ fun modifyFunction(function: IrFunction) =
     IoaKind.TimeMonotonicGlobalInWholeMicroseconds,
     IoaKind.TimeMonotonicGlobalInWholeNanoseconds -> modifyFunctionTimeMonotonicGlobalInSeconds(function)
 
+    IoaKind.TimeMonotonicGlobalReducedObjects -> modifyFunctionTimeMonotonicGlobalReducedObjects(function)
+
     IoaKind.IncrementIntCounter -> modifyFunctionIncrementCounter(function)
     IoaKind.IncrementAtomicIntCounter -> modifyFunctionIncrementAtomicCounter(function)
     IoaKind.RandomValue -> modifyFunctionRandomValue(function)
@@ -150,6 +152,28 @@ fun modifyFunctionTimeMonotonicGlobalInSeconds(function: IrFunction) {
         }
         arguments[1] = irGet(elapseStart!!)
       }
+    }
+  }
+}
+
+fun modifyFunctionTimeMonotonicGlobalReducedObjects(function: IrFunction) {
+  var elapseStart: IrVariable? = null
+  modifyFunctionAtBeginning(function) {
+    elapseStart = irTemporary(irCall(IoaContext.durationInWholeMillisecondsPropertyGetter).apply {
+      dispatchReceiver = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+        dispatchReceiver = IoaContext.sutFields[0]
+      }
+    })
+  }
+
+  modifyFunctionBeforeEachReturnOrAtEnd(function) {
+    IoaContext.sutFields[1] = irCall(IoaContext.longMinusFunction).apply {
+      arguments[0] = irCall(IoaContext.durationInWholeMillisecondsPropertyGetter).apply {
+        dispatchReceiver = irCall(IoaContext.valueTimeMarkerElapsedNowFunction).apply {
+          dispatchReceiver = IoaContext.sutFields[0]
+        }
+      }
+      arguments[1] = irGet(elapseStart!!)
     }
   }
 }

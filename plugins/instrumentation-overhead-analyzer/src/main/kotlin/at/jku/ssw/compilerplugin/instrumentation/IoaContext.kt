@@ -108,7 +108,7 @@ object IoaContext {
   }
   // </editor-fold>
 
-  // <editor-fold desc="Integer and Atomic Integer">
+  // <editor-fold desc="Primitives">
   val intIncrementFunction by lazy {
     pluginContext.referenceFunctions(
       CallableId(
@@ -119,6 +119,21 @@ object IoaContext {
     ).single { it.owner.hasShape(dispatchReceiver = true, regularParameters = 0) }
   }
 
+  val longMinusFunction by lazy {
+    pluginContext.referenceFunctions(
+      CallableId(
+        FqName("kotlin"),
+        FqName("Long"),
+        Name.identifier("minus")
+      )
+    ).single {
+      it.owner.hasShape(dispatchReceiver = true, regularParameters = 1) &&
+          it.owner.parameters[1].type == pluginContext.irBuiltIns.longType
+    }
+  }
+  // </editor-fold>
+
+  // <editor-fold desc="Integer and Atomic Integer">
   val atomicIntClass by lazy {
     pluginContext.referenceClass(
       ClassId(
