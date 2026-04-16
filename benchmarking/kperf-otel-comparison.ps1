@@ -160,6 +160,11 @@ foreach ($exe in $executables) {
       $runtimes += $ms
     }
     elseif ($execTime.Success) {
+      $ms = [int]$execTime.Groups[1].Value
+      Write-Host "  Run $($i+1): $ms ms" -ForegroundColor Green
+      $runtimes += $ms
+    }
+    else {
       Write-Host "  Run $($i+1): Failed to parse time" -ForegroundColor Red
     }
   }
@@ -237,12 +242,6 @@ foreach ($res in $allResults) {
   if ($null -ne $res.Min) { $minStr = "{0:N0}" -f $res.Min } else { $minStr = "N/A" }
   if ($null -ne $res.Max) { $maxStr = "{0:N0}" -f $res.Max } else { $maxStr = "N/A" }
   if ($null -ne $res.StdDev) { $stdStr = "{0:N2}" -f $res.StdDev } else { $stdStr = "N/A" }
-
-  $markdown | Out-File $mdFile -Encoding utf8
-
-  Write-Host "Measurements and stats saved successfully to folder: `n -> $resultsDir"
-  Write"evaleanlfih.inished."
-  if ($null -ne $res.StdDev) { $stdStr = "{0:N2}" -f $res.StdDev }
 
   $markdown += "`n| $($res.Executable) | $($res.Count) | {0} | {1} | {2} | {3} | {4} |" -f $meanStr, $medStr, $minStr, $maxStr, $stdStr
 }
