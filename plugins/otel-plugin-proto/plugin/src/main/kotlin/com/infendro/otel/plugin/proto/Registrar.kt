@@ -13,6 +13,8 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 class Registrar : CompilerPluginRegistrar() {
     override val supportsK2: Boolean = true
 
+    override val pluginId: String = "otel-plugin-proto"
+
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         val enabled = configuration[KEY_ENABLED] ?: true
         val debug = configuration[KEY_DEBUG] ?: false
