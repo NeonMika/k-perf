@@ -13,7 +13,6 @@ Available IoaKinds are read dynamically from:
 from __future__ import annotations
 
 import argparse
-import platform
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -24,13 +23,14 @@ _BENCHMARKING_DIR = _SCRIPT_DIR.parent
 _REPO_ROOT = _BENCHMARKING_DIR.parent
 sys.path.insert(0, str(_BENCHMARKING_DIR))
 
-from benchmark_types import BenchmarkExecutable, ExecutableType, IoaConfig
+from benchmark_types import IoaConfig
 from build import (
     ARTIFACT_VERSION,
     build_game_of_life_commonmain_ioa_variant,
     build_game_of_life_commonmain_reference,
     build_instrumentation_overhead_analyzer_plugin,
     build_kir_helper_kit,
+    invoke_get_ioa_executables,
 )
 from gradle_utils import invoke_gradle_clean
 from run import invoke_benchmark_suite
@@ -78,201 +78,6 @@ except FileNotFoundError:
         file=sys.stderr,
     )
     ALL_IOA_KINDS = []
-
-
-# ---------------------------------------------------------------------------
-# Native target helpers
-# ---------------------------------------------------------------------------
-
-
-def _native_targets_and_ext() -> tuple[list[str], str]:
-    system = platform.system()
-    if system == "Windows":
-        return ["mingwX64"], ".exe"
-    if system == "Darwin":
-        return ["macosArm64", "macosX64"], ".kexe"
-    return ["linuxX64"], ".kexe"
-
-
-def _native_platform_label() -> str:
-    system = platform.system()
-    if system == "Windows":
-        return "win"
-    if system == "Darwin":
-        return "mac"
-    return "linux"
-
-
-# ---------------------------------------------------------------------------
-# Executable collection
-# ---------------------------------------------------------------------------
-
-
-def _collect_executables(
-    ioa_configs: list[IoaConfig],
-    reference: bool,
-    ioa: bool,
-    jvm: bool,
-    js: bool,
-    native: bool,
-) -> list[BenchmarkExecutable]:
-    executables: list[BenchmarkExecutable] = []
-    native_targets, native_ext = _native_targets_and_ext()
-    nat_label = _native_platform_label()
-
-    plain_root = _REPO_ROOT / "kmp-examples" / "game-of-life-kmp-commonmain"
-    ioa_root = _REPO_ROOT / "kmp-examples" / "game-of-life-kmp-commonmain-ioa"
-
-    # Reference (uninstrumented) executables
-    if reference and jvm:
-        executables.append(
-            BenchmarkExecutable(
-                name="commonmain-plain-jar",
-                path=str(
-                    plain_root / "build" / "lib"
-                    / f"game-of-life-kmp-commonmain-jvm-{ARTIFACT_VERSION}.jar"
-                ),
-                type=ExecutableType.Jar,
-                config=None,
-            )
-        )
-
-    if reference and js:
-        executables.append(
-            BenchmarkExecutable(
-                name="commonmain-plain-node",
-                path=str(
-                    plain_root
-                    / "build"
-                    / "js"
-                    / "packages"
-                    / "game-of-life-kmp-commonmain"
-                    / "kotlin"
-                    / "game-of-life-kmp-commonmain.js"
-                ),
-                type=ExecutableType.Node,
-                config=None,
-            )
-        )
-
-    if reference and native:
-        found = False
-        for target in native_targets:
-            candidate = (
-                plain_root
-                / "build"
-                / "bin"
-                / target
-                / "releaseExecutable"
-                / f"game-of-life-kmp-commonmain{native_ext}"
-            )
-            if candidate.exists():
-                executables.append(
-                    BenchmarkExecutable(
-                        name=f"commonmain-plain-{nat_label}-exe",
-                        path=str(candidate),
-                        type=ExecutableType.Exe,
-                        config=None,
-                    )
-                )
-                found = True
-                break
-        if not found:
-            # Add the first target path even if it doesn't exist — run.py will report the error
-            executables.append(
-                BenchmarkExecutable(
-                    name=f"commonmain-plain-{nat_label}-exe",
-                    path=str(
-                        plain_root
-                        / "build"
-                        / "bin"
-                        / native_targets[0]
-                        / "releaseExecutable"
-                        / f"game-of-life-kmp-commonmain{native_ext}"
-                    ),
-                    type=ExecutableType.Exe,
-                    config=None,
-                )
-            )
-
-    # IOA variant executables
-    if ioa:
-        for cfg in ioa_configs:
-            suffix = cfg.suffix()
-
-            if jvm:
-                executables.append(
-                    BenchmarkExecutable(
-                        name=f"commonmain-ioa-{suffix}-jar",
-                        path=str(
-                            ioa_root
-                            / "build"
-                            / "lib"
-                            / f"game-of-life-kmp-commonmain-ioa-jvm-{ARTIFACT_VERSION}-{suffix}.jar"
-                        ),
-                        type=ExecutableType.Jar,
-                        config=cfg,
-                    )
-                )
-
-            if js:
-                executables.append(
-                    BenchmarkExecutable(
-                        name=f"commonmain-ioa-{suffix}-node",
-                        path=str(
-                            ioa_root
-                            / "build"
-                            / "js"
-                            / "packages"
-                            / f"game-of-life-kmp-commonmain-ioa-{suffix}"
-                            / "kotlin"
-                            / f"game-of-life-kmp-commonmain-ioa-{suffix}.js"
-                        ),
-                        type=ExecutableType.Node,
-                        config=cfg,
-                    )
-                )
-
-            if native:
-                found = False
-                for target in native_targets:
-                    candidate = (
-                        ioa_root
-                        / "build"
-                        / "bin"
-                        / target
-                        / "releaseExecutable"
-                        / f"game-of-life-kmp-commonmain-ioa-{suffix}{native_ext}"
-                    )
-                    if candidate.exists():
-                        executables.append(
-                            BenchmarkExecutable(
-                                name=f"commonmain-ioa-{suffix}-{nat_label}-exe",
-                                path=str(candidate),
-                                type=ExecutableType.Exe,
-                                config=cfg,
-                            )
-                        )
-                        found = True
-                        break
-                if not found:
-                    executables.append(
-                        BenchmarkExecutable(
-                            name=f"commonmain-ioa-{suffix}-{nat_label}-exe",
-                            path=str(
-                                ioa_root
-                                / "build"
-                                / "bin"
-                                / native_targets[0]
-                                / "releaseExecutable"
-                                / f"game-of-life-kmp-commonmain-ioa-{suffix}{native_ext}"
-                            ),
-                            type=ExecutableType.Exe,
-                            config=cfg,
-                        )
-                    )
-
-    return executables
 
 
 # ---------------------------------------------------------------------------
@@ -435,13 +240,14 @@ def main() -> None:
     print("==========================================")
 
     # Collect executables
-    executables = _collect_executables(
+    executables = invoke_get_ioa_executables(
         ioa_configs=ioa_configs,
         reference=args.reference,
         ioa=args.ioa,
         jvm=args.jvm,
         js=args.js,
         native=args.native,
+        artifact_version=ARTIFACT_VERSION,
     )
 
     if not executables:
@@ -513,3 +319,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -8,6 +8,260 @@ The benchmarking suite measures the execution time of Game of Life simulations u
 
 1. **K-Perf Benchmark** (`game-of-life-kmp-k-perf/`)
    - Evaluates the performance impact of the K-Perf compiler plugin
+   - Tests all combinations of `enabled`, `flushEarly`, `instrumentPropertyAccessors`, `testKIR`, and `methods` flags
+   - Tests both CommonMain and DedicatedMain architectural variants
+   - Produces measurements across JVM (JAR), JavaScript (Node.js), and Native targets
+
+2. **Instrumentation-Overhead-Analyzer Benchmark** (`game-of-life-kmp-commonmain-ioa/`)
+   - Measures the overhead introduced by the IOA plugin per `IoaKind`
+   - Available `IoaKind` values are read dynamically from `IoaKind.kt`
+   - Compares instrumented (per-kind) vs non-instrumented versions
+   - Focuses on CommonMain architecture across JVM, JS, and Native targets
+
+## Goals
+
+The benchmarks aim to:
+
+- Quantify the performance impact of compiler plugins on code execution
+- Compare optimization strategies (e.g., flush-early behavior in K-Perf)
+- Evaluate architectural decisions (CommonMain vs DedicatedMain)
+- Measure overhead introduced by instrumentation per `IoaKind`
+- Provide statistical analysis (mean, median, standard deviation, confidence intervals)
+
+## Shared Infrastructure
+
+All Python modules live in this (`benchmarking/`) directory:
+
+| Module | Purpose |
+|---|---|
+| `benchmark_types.py` | Enums and dataclasses (`KPerfConfig`, `IoaConfig`, `BenchmarkExecutable`, …) |
+| `gradle_utils.py` | Gradle task discovery, timed task execution, KMP build orchestration |
+| `statistics_utils.py` | Statistical analysis, machine-info collection, CSV/JSON export |
+| `build.py` | Build functions for all projects; `invoke_get_executables` / `invoke_get_ioa_executables` |
+| `run.py` | `invoke_benchmark_suite()` — the core measurement loop |
+
+## Artifact Layout
+
+Both suites use the same `dist/` → `bin/<suffix>/` pattern:
+
+- The Gradle build of each KMP example copies built artifacts (JARs, JS bundles, native binaries) into `dist/` via `doLast` copy blocks.
+- The Python build script immediately copies `dist/` into `bin/<suffix>/` after each variant build, so multiple configurations coexist without overwriting each other.
+- The benchmark runner picks executables from `bin/<suffix>/` by their standard Gradle-generated names (no variant suffix in the filename itself).
+
+Reference (uninstrumented) executables are read directly from the `game-of-life-kmp-commonmain/dist/` directory since there is only one configuration.
+
+## Results
+
+Benchmark results are stored in the `../measurements/` folder with subdirectories named by timestamp and benchmark type:
+
+```
+measurements/
+├── 2026_02_03_01_40_27_k-perf_local_3reps_20steps.../
+│   ├── commonmain-plain-jar.json
+│   ├── commonmain-k-perf-enabled-true-flushEarly-false-...-jar.json
+│   └── _results.csv / _results.json
+└── 2026_02_03_01_40_27_ioa_local_3reps_20steps.../
+    ├── commonmain-plain-jar.json
+    ├── commonmain-ioa-kind-none-jar.json
+    ├── commonmain-ioa-kind-stringbuilderappend-jar.json
+    └── _results.csv / _results.json
+```
+
+Each JSON file contains:
+
+- **executable**: Name of the benchmarked executable/variant
+- **repetitions**: Number of times the simulation was run
+- **times**: Array of execution times in microseconds for each repetition
+- **statistics**: Computed statistics including:
+  - `mean`: Average execution time
+  - `median`: Middle value of execution times
+  - `stddev`: Standard deviation
+  - `min`/`max`: Minimum and maximum times
+  - `ci95`: 95% confidence interval using t-distribution
+
+## Running the Benchmarks
+
+### Quick Start
+
+#### K-Perf Benchmark
+
+```bash
+cd benchmarking/game-of-life-kmp-k-perf
+python benchmark.py
+```
+
+#### Instrumentation-Overhead-Analyzer Benchmark
+
+```bash
+cd benchmarking/game-of-life-kmp-commonmain-ioa
+python benchmark.py
+```
+
+Both run with default parameters: 3 repetitions, 20 simulation steps, clean build enabled, all executables and platforms.
+
+### Parameters
+
+#### K-Perf Benchmark Parameters (`benchmark.py`)
+
+**`--repetition-count N` (default: 3)**
+- Number of times each executable is benchmarked.
+
+**`--clean-build true|false` (default: true)**
+- Rebuild all dependencies before benchmarking. Set to `false` to reuse existing binaries.
+
+**`--step-count N` (default: 20)**
+- Number of Game of Life simulation steps per benchmark run.
+
+**`--common`, `--dedicated` (default: true / false)**
+- Select which game type variants to include.
+
+**`--jvm`, `--js`, `--native` (default: true)**
+- Select target platforms.
+
+**`--reference true|false` (default: true)**
+- Include uninstrumented reference executables.
+
+**`--enabled`, `--flush-early`, `--instrument-property-accessors`, `--test-kir`**
+- Comma-separated boolean lists. The Cartesian product of all combinations is built and benchmarked.
+- Example: `--flush-early true,false` benchmarks both flushEarly variants.
+
+**`--methods REGEX[,REGEX...]` (default: `.*`)**
+- Comma-separated regex patterns for k-perf method filtering.
+
+**`--ci-label LABEL` (default: `local`)**
+- Label embedded in result directory names and JSON payloads for CI identification.
+
+Run `python benchmark.py --help` for full documentation.
+
+#### IOA Benchmark Parameters (`benchmark.py`)
+
+**`--repetition-count N` (default: 3)**
+- Number of times each executable is benchmarked.
+
+**`--clean-build true|false` (default: true)**
+- Rebuild all dependencies before benchmarking.
+
+**`--step-count N` (default: 20)**
+- Number of Game of Life simulation steps per benchmark run.
+
+**`--reference true|false` (default: true)**
+- Include the uninstrumented reference (plain commonmain) executable.
+
+**`--ioa true|false` (default: true)**
+- Include IOA-instrumented executables.
+
+**`--jvm`, `--js`, `--native` (default: true)**
+- Select target platforms.
+
+**`--ioa-kinds KIND[,KIND...]` (default: all available)**
+- Comma-separated `IoaKind` enum values to benchmark. Available kinds are parsed at runtime from `IoaKind.kt`. Example: `--ioa-kinds None,StringBuilderAppend`.
+
+**`--ci-label LABEL` (default: `local`)**
+- Label embedded in result directory names.
+
+Run `python benchmark.py --help` for full documentation (also shows all available `IoaKind` values).
+
+### Advanced Usage
+
+#### Combining Multiple Parameters (K-Perf)
+
+```bash
+# Run only CommonMain flushEarlyTrue variants with 100 repetitions and 50 simulation steps
+cd benchmarking/game-of-life-kmp-k-perf
+python benchmark.py --repetition-count 100 --step-count 50 --flush-early true --dedicated false
+
+# Compare both flushEarly variants in one invocation
+python benchmark.py --flush-early true,false --repetition-count 100 --step-count 25
+
+# Skip rebuild on a subsequent run
+python benchmark.py --flush-early true,false --repetition-count 100 --step-count 25 --clean-build false
+```
+
+#### IOA with Specific Kinds
+
+```bash
+cd benchmarking/game-of-life-kmp-commonmain-ioa
+
+# Benchmark only the None and StringBuilderAppend kinds, JVM only
+python benchmark.py --ioa-kinds None,StringBuilderAppend --jvm true --js false --native false
+
+# Skip rebuild on a second run
+python benchmark.py --clean-build false --repetition-count 50
+```
+
+#### Quick Smoke Test (Both Suites)
+
+```bash
+cd benchmarking/game-of-life-kmp-k-perf
+python benchmark.py --repetition-count 3 --step-count 5 --js false --native false
+
+cd ../game-of-life-kmp-commonmain-ioa
+python benchmark.py --repetition-count 3 --step-count 5 --js false --native false \
+    --ioa-kinds None
+```
+
+## Output Format
+
+The benchmarks produce timestamped result directories in the measurements folder.
+
+### K-Perf directory name pattern
+```
+{timestamp}_k-perf_{ci-label}_{N}reps_{N}steps_ref{t|f}_cmn{t|f}_ded{t|f}_{platforms}_en{...}_fe{...}_pa{...}_tkir{...}_m-{methods}
+```
+
+### IOA directory name pattern
+```
+{timestamp}_ioa_{ci-label}_{N}reps_{N}steps_ref{t|f}_ioa{t|f}_{platforms}_kinds-{kinds}
+```
+
+### Per-executable JSON structure
+
+```json
+{
+  "parameters": { "RepetitionCount": 3, "CleanBuild": true, "StepCount": 20, ... },
+  "machineInfo": { ... },
+  "buildTimeMs": 12345.6,
+  "executable": "commonmain-plain-jar",
+  "repetitions": 3,
+  "timeUnit": "microseconds",
+  "times": [68942, 65363, 68848],
+  "stepTimes": [[...], [...], [...]],
+  "statistics": {
+    "count": 3,
+    "mean": 67717.7,
+    "median": 68848.0,
+    "stddev": 1879.3,
+    "min": 65363,
+    "max": 68942,
+    "ci95": { "lower": 63046.7, "upper": 72388.6 }
+  },
+  "status": "ok"
+}
+```
+
+## Troubleshooting
+
+**No successful measurements / "Elapsed time not found"**
+- Ensure the executable was built successfully and the path is correct.
+- Try `--clean-build true` to force a fresh build.
+
+**Build failures**
+- Ensure JDK, Gradle, Node.js, and Kotlin compiler tools are installed.
+- Run with `--clean-build true` to ensure a clean build state.
+
+**Missing executables after build**
+- Some target platforms may not build on your system (e.g., native executables only build on supported platforms).
+- Use `--jvm false`, `--js false`, or `--native false` to skip unavailable platforms.
+
+
+This folder contains benchmarking scripts for evaluating the performance characteristics of the Game of Life Kotlin Multiplatform (KMP) implementation across different architectural variants and compiler plugins.
+
+## Overview
+
+The benchmarking suite measures the execution time of Game of Life simulations under two different instrumentation scenarios:
+
+1. **K-Perf Benchmark** (`game-of-life-kmp-k-perf/`)
+   - Evaluates the performance impact of the K-Perf compiler plugin
    - Compares `flushEarlyTrue` vs `flushEarlyFalse` compilation strategies
    - Tests both CommonMain and DedicatedMain architectural variants
    - Produces measurements across JVM (JAR), JavaScript (Node.js), and Native (Windows executable) targets

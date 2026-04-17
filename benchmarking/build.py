@@ -19,14 +19,16 @@ _REPO_ROOT = _BENCHMARKING_DIR.parent
 
 ARTIFACT_VERSION = "0.2.1"
 
-# Compute the platform label for native executable names once at import time,
-# matching the keys produced by the build timing functions.
+# Compute the platform label and native extension once at import time.
 if sys.platform.startswith("win"):
-    _NATIVE_PLATFORM_LABEL = "win"
+    NATIVE_PLATFORM_LABEL = "win"
+    NATIVE_EXT = ".exe"
 elif sys.platform == "darwin":
-    _NATIVE_PLATFORM_LABEL = "mac"
+    NATIVE_PLATFORM_LABEL = "mac"
+    NATIVE_EXT = ".kexe"
 else:
-    _NATIVE_PLATFORM_LABEL = "linux"
+    NATIVE_PLATFORM_LABEL = "linux"
+    NATIVE_EXT = ".kexe"
 
 
 def build_kir_helper_kit() -> dict[str, float]:
@@ -190,6 +192,14 @@ def build_game_of_life_commonmain_ioa_variant(config: IoaConfig) -> dict[str, fl
         f"{project_name} ({suffix})", project_path, gradle_args=gradle_args
     )
 
+    # Copy artifacts from dist/ into bin/<suffix>/ so multiple IoaKind variants can coexist
+    bin_dir = project_path / "bin" / suffix
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    dist_dir = project_path / "dist"
+    if dist_dir.exists():
+        for item in dist_dir.iterdir():
+            shutil.copy2(str(item), str(bin_dir))
+
     build_times: dict[str, float] = {}
     if "jvm" in timings:
         build_times[f"commonmain-ioa-{suffix}-jar"] = timings["jvm"]
@@ -314,7 +324,7 @@ def invoke_get_executables(
         if reference and native:
             executables.append(
                 BenchmarkExecutable(
-                    name=f"{game_type_str}-plain-{_NATIVE_PLATFORM_LABEL}-exe",
+                    name=f"{game_type_str}-plain-{NATIVE_PLATFORM_LABEL}-exe",
                     path=str(plain_root / "dist" / f"{project_name}{native_ext}"),
                     type=ExecutableType.Exe,
                     config=None,
@@ -352,7 +362,7 @@ def invoke_get_executables(
             if native:
                 executables.append(
                     BenchmarkExecutable(
-                        name=f"{game_type_str}-k-perf-{suffix}-{_NATIVE_PLATFORM_LABEL}-exe",
+                        name=f"{game_type_str}-k-perf-{suffix}-{NATIVE_PLATFORM_LABEL}-exe",
                         path=str(
                             k_perf_root / "bin" / suffix / f"{k_perf_project_name}{native_ext}"
                         ),
@@ -362,3 +372,90 @@ def invoke_get_executables(
                 )
 
     return executables
+
+
+def invoke_get_ioa_executables(
+    ioa_configs: list[IoaConfig],
+    reference: bool,
+    ioa: bool,
+    jvm: bool,
+    js: bool,
+    native: bool,
+    artifact_version: str,
+) -> list:
+    from benchmark_types import BenchmarkExecutable, ExecutableType
+
+    executables: list[BenchmarkExecutable] = []
+
+    plain_project_name = "game-of-life-kmp-commonmain"
+    ioa_project_name = "game-of-life-kmp-commonmain-ioa"
+    plain_root = _REPO_ROOT / "kmp-examples" / plain_project_name
+    ioa_root = _REPO_ROOT / "kmp-examples" / ioa_project_name
+
+    if reference and jvm:
+        executables.append(
+            BenchmarkExecutable(
+                name="commonmain-plain-jar",
+                path=str(plain_root / "dist" / f"{plain_project_name}-jvm-{artifact_version}.jar"),
+                type=ExecutableType.Jar,
+                config=None,
+            )
+        )
+
+    if reference and js:
+        executables.append(
+            BenchmarkExecutable(
+                name="commonmain-plain-node",
+                path=str(plain_root / "dist" / f"{plain_project_name}.js"),
+                type=ExecutableType.Node,
+                config=None,
+            )
+        )
+
+    if reference and native:
+        executables.append(
+            BenchmarkExecutable(
+                name=f"commonmain-plain-{NATIVE_PLATFORM_LABEL}-exe",
+                path=str(plain_root / "dist" / f"{plain_project_name}{NATIVE_EXT}"),
+                type=ExecutableType.Exe,
+                config=None,
+            )
+        )
+
+    for config in ioa_configs:
+        suffix = config.suffix()
+
+        if ioa and jvm:
+            executables.append(
+                BenchmarkExecutable(
+                    name=f"commonmain-ioa-{suffix}-jar",
+                    path=str(
+                        ioa_root / "bin" / suffix / f"{ioa_project_name}-jvm-{artifact_version}.jar"
+                    ),
+                    type=ExecutableType.Jar,
+                    config=config,
+                )
+            )
+
+        if ioa and js:
+            executables.append(
+                BenchmarkExecutable(
+                    name=f"commonmain-ioa-{suffix}-node",
+                    path=str(ioa_root / "bin" / suffix / f"{ioa_project_name}.js"),
+                    type=ExecutableType.Node,
+                    config=config,
+                )
+            )
+
+        if ioa and native:
+            executables.append(
+                BenchmarkExecutable(
+                    name=f"commonmain-ioa-{suffix}-{NATIVE_PLATFORM_LABEL}-exe",
+                    path=str(ioa_root / "bin" / suffix / f"{ioa_project_name}{NATIVE_EXT}"),
+                    type=ExecutableType.Exe,
+                    config=config,
+                )
+            )
+
+    return executables
+
