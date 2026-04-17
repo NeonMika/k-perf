@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from benchmark_types import GameType, KPerfConfig, get_game_type_string
+from benchmark_types import GameType, IoaConfig, KPerfConfig, get_game_type_string
 from gradle_utils import (
     GRADLEW_CMD,
     invoke_gradle_clean,
@@ -175,6 +175,34 @@ def build_game_of_life_commonmain_ioa() -> dict[str, float]:
         build_times["commonmain-ioa-mac-exe"] = timings["mac"]
 
     print("game-of-life-kmp-commonmain-ioa build completed successfully.")
+    return build_times
+
+
+def build_game_of_life_commonmain_ioa_variant(config: IoaConfig) -> dict[str, float]:
+    project_name = "game-of-life-kmp-commonmain-ioa"
+    project_path = _REPO_ROOT / "kmp-examples" / project_name
+    suffix = config.suffix()
+    gradle_args = [f"-PioaKind={config.kind}"]
+
+    print()
+    print(f"## Building {project_name} with suffix: {suffix}...")
+    timings = invoke_kmp_build_with_timings(
+        f"{project_name} ({suffix})", project_path, gradle_args=gradle_args
+    )
+
+    build_times: dict[str, float] = {}
+    if "jvm" in timings:
+        build_times[f"commonmain-ioa-{suffix}-jar"] = timings["jvm"]
+    if "js" in timings:
+        build_times[f"commonmain-ioa-{suffix}-node"] = timings["js"]
+    if "windows" in timings:
+        build_times[f"commonmain-ioa-{suffix}-win-exe"] = timings["windows"]
+    if "linux" in timings:
+        build_times[f"commonmain-ioa-{suffix}-linux-exe"] = timings["linux"]
+    if "mac" in timings:
+        build_times[f"commonmain-ioa-{suffix}-mac-exe"] = timings["mac"]
+
+    print(f"{project_name} build with {suffix} completed successfully.")
     return build_times
 
 

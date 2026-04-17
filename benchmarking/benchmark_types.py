@@ -57,6 +57,14 @@ class BenchmarkStatistics:
     ci95: Optional[ConfidenceInterval95] = None
 
 
+@dataclass
+class IoaConfig:
+    kind: str
+
+    def suffix(self) -> str:
+        return f"kind-{self.kind.lower()}"
+
+
 def get_game_type_string(game_type: GameType) -> str:
     if game_type == GameType.CommonMain:
         return "commonmain"

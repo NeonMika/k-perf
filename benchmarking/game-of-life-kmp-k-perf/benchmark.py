@@ -134,8 +134,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--clean-build", type=lambda v: v.lower() in ("true", "1", "yes"),
-        default=False, metavar="BOOL",
-        help="Rebuild all dependencies before benchmarking (default: false).",
+        default=True, metavar="BOOL",
+        help="Rebuild all dependencies before benchmarking (default: true).",
     )
     parser.add_argument(
         "--step-count", type=int, default=20, metavar="N",
