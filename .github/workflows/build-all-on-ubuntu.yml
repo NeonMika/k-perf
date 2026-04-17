@@ -37,5 +37,5 @@ jobs:
       - name: Clear stale Gradle module cache for locally-published artifacts
         run: find ~/.gradle/caches -type d -name "io.github.neonmika*" -exec rm -rf {} + 2>/dev/null || true
 
-      - name: Run buildAll.sh
-        run: ./buildAll.sh
+      - name: Run buildAll.py
+        run: python3 buildAll.py

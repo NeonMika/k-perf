@@ -1,7 +1,7 @@
 name: Build all on Ubuntu (separated)
 
 # Each project is built as a discrete step for fine-grained failure visibility.
-# ⚠️ Build order and project list mirror buildAll.sh and .github/scripts/build-kmp-example.sh.
+# ⚠️ Build order and project list mirror buildAll.py and .github/scripts/build-kmp-example.py.
 #    The highly-separated variant (build-all-on-ubuntu-highly-separated.yml) hardcodes task names
 #    based on this script's discovery priority lists.
 #    Keep all four in sync when adding/removing projects or changing the build order.
@@ -57,20 +57,20 @@ jobs:
 
       - name: Build game-of-life-kmp-commonmain
         working-directory: kmp-examples/game-of-life-kmp-commonmain
-        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
+        run: python3 $GITHUB_WORKSPACE/.github/scripts/build-kmp-example.py
 
       - name: Build game-of-life-kmp-commonmain-ioa
         working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
-        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
+        run: python3 $GITHUB_WORKSPACE/.github/scripts/build-kmp-example.py
 
       - name: Build game-of-life-kmp-commonmain-k-perf
         working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
-        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
+        run: python3 $GITHUB_WORKSPACE/.github/scripts/build-kmp-example.py
 
       - name: Build game-of-life-kmp-dedicatedmain
         working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
-        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
+        run: python3 $GITHUB_WORKSPACE/.github/scripts/build-kmp-example.py
 
       - name: Build game-of-life-kmp-dedicatedmain-k-perf
         working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
-        run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
+        run: python3 $GITHUB_WORKSPACE/.github/scripts/build-kmp-example.py
