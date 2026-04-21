@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 20,
+    "StepCount": 500,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,16 +14,19 @@
       true
     ],
     "FlushEarly": [
+      true,
       false
     ],
     "InstrumentPropertyAccessors": [
+      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*"
+      ".*",
+      "step"
     ]
   },
   "machineInfo": {
@@ -35,7 +38,7 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 13.91,
+    "AvailableRAMGB": 13.84,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 87,
     "SystemUptimeHours": 0.02,
@@ -50,13 +53,13 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "5eec8b2be0b5e59e9ef0c57734e9522d03fde258",
+    "GitCommitHash": "31eb424d5c227cbff389c65ac1e3aa43299a4aca",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-21 01:25:02"
+    "CollectionTimestamp": "2026-04-21 02:51:08"
   },
-  "buildTimeMs": 6055.0375,
-  "executable": "commonmain-plain-node",
-  "repetitions": 3,
+  "buildTimeMs": 3302.2502,
+  "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-node",
+  "repetitions": 50,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
