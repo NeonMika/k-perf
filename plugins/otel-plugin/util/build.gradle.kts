@@ -19,12 +19,15 @@ repositories {
 }
 
 kotlin {
+    applyDefaultHierarchyTemplate()
+
     jvm()
     js {
         nodejs()
         useCommonJs()
     }
     linuxX64()
+    mingwX64()
 
     sourceSets {
         commonMain.dependencies {
@@ -38,8 +41,6 @@ kotlin {
         }
         jsMain.dependencies {
             implementation("org.jetbrains.kotlin-wrappers:kotlin-node:2025.4.7-22.13.10")
-        }
-        linuxMain.dependencies {
         }
     }
 }

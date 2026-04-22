@@ -16,6 +16,47 @@ Push-Location "$ScriptRoot\.."
 
 
 
+# Runs $Command via cmd.exe with a wall-clock timeout. If the process hasn't exited
+# by $TimeoutSeconds, the entire process tree is killed via taskkill /t /f and the
+# function returns a sentinel string so the caller's regex naturally fails to match,
+# logging "Failed to parse time" instead of locking the whole benchmark.
+#
+# The taskkill invocation intentionally does its own stdout/stderr redirection
+# *inside* cmd.exe (>nul 2>&1). In Windows PowerShell 5.1, `2>&1 | Out-Null`
+# on a native exe wraps stderr lines as NativeCommandError records, which combined
+# with $ErrorActionPreference='Stop' terminates the script even when we pipe to null.
+# Redirecting inside cmd keeps PowerShell from seeing the stream at all.
+function Invoke-WithTimeout {
+  param(
+    [string]$Command,
+    [int]$TimeoutSeconds = 60
+  )
+
+  $psi = New-Object System.Diagnostics.ProcessStartInfo
+  $psi.FileName = "cmd.exe"
+  $psi.Arguments = "/c $Command 2>&1"
+  $psi.RedirectStandardOutput = $true
+  $psi.UseShellExecute = $false
+  $psi.CreateNoWindow = $true
+  $psi.WorkingDirectory = (Get-Location).Path
+
+  $proc = [System.Diagnostics.Process]::Start($psi)
+  $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
+
+  if (-not $proc.WaitForExit($TimeoutSeconds * 1000)) {
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'SilentlyContinue'
+    try {
+      & cmd.exe /c "taskkill /T /F /PID $($proc.Id) >nul 2>&1"
+    } catch {}
+    $ErrorActionPreference = $prevEap
+    try { $proc.WaitForExit(2000) | Out-Null } catch {}
+    return "[TIMEOUT after ${TimeoutSeconds}s]"
+  }
+
+  return $stdoutTask.Result
+}
+
 function Invoke-GradleBuild {
   param(
     [string]$Title,
@@ -70,21 +111,26 @@ Write-Host "=========================================="
 Write-Host "Compiling Comparison Projects"
 Write-Host "=========================================="
 
-# Build projects for all targets (excluding native for now)
-Invoke-GradleBuild -Title "Comparison Project (k-perf)" -Path ".\kmp-examples\comparison-k-perf" -Tasks @("jvmJar", "jsProductionExecutableCompileSync") -SkipClean $true
-Invoke-GradleBuild -Title "Comparison Project (otel)" -Path ".\kmp-examples\comparison-otel" -Tasks @("jvmJar", "jsProductionExecutableCompileSync") -SkipClean $true
-Invoke-GradleBuild -Title "Comparison Project (otel-proto)" -Path ".\kmp-examples\comparison-otel-proto" -Tasks @("jvmJar", "jsProductionExecutableCompileSync") -SkipClean $true
+# Build all three targets for every comparison project: JVM jar, JS bundle, Windows native (mingwX64).
+# linuxX64 targets stay declared in each build.gradle.kts for use on Linux hosts,
+# but we don't link them here because the Windows toolchain can't produce Linux binaries.
+Invoke-GradleBuild -Title "Comparison Project (k-perf)" -Path ".\kmp-examples\comparison-k-perf" -Tasks @("jvmJar", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
+Invoke-GradleBuild -Title "Comparison Project (otel)" -Path ".\kmp-examples\comparison-otel" -Tasks @("jvmJar", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
+Invoke-GradleBuild -Title "Comparison Project (otel-proto)" -Path ".\kmp-examples\comparison-otel-proto" -Tasks @("jvmJar", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 
 
 # Path resolving for execution
 $kperfJvm = "java -jar .\kmp-examples\comparison-k-perf\build\lib\comparison-k-perf-jvm-0.1.0-flushEarly-true.jar"
 $kperfJs = "node .\kmp-examples\comparison-k-perf\build\js\packages\comparison-k-perf-flushEarly-true\kotlin\comparison-k-perf-flushEarly-true.js"
+$kperfNative = ".\kmp-examples\comparison-k-perf\build\bin\mingwX64\releaseExecutable\comparison-k-perf-flushEarly-true.exe"
 
 $otelJvm = "java -jar .\kmp-examples\comparison-otel\build\lib\comparison-otel-jvm-1.0.0.jar"
-$otelJs = "cd .\kmp-examples\comparison-otel && .\gradlew jsNodeProductionRun -q"
+$otelJs = "node .\kmp-examples\comparison-otel\build\js\packages\comparison-otel\kotlin\comparison-otel.js"
+$otelNative = ".\kmp-examples\comparison-otel\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $otelProtoJvm = "java -jar .\kmp-examples\comparison-otel-proto\build\lib\comparison-otel-proto-jvm-1.0.0.jar"
-$otelProtoJs = "cd .\kmp-examples\comparison-otel-proto && .\gradlew jsNodeProductionRun -q"
+$otelProtoJs = "node .\kmp-examples\comparison-otel-proto\build\js\packages\comparison-otel-proto\kotlin\comparison-otel-proto.js"
+$otelProtoNative = ".\kmp-examples\comparison-otel-proto\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $executables = @(
   @{ Name = "k-perf JVM"; Command = $kperfJvm },
@@ -92,7 +138,10 @@ $executables = @(
   @{ Name = "otel-proto JVM"; Command = $otelProtoJvm },
   @{ Name = "k-perf JS (Node)"; Command = $kperfJs },
   @{ Name = "otel JS (Node)"; Command = $otelJs },
-  @{ Name = "otel-proto JS (Node)"; Command = $otelProtoJs }
+  @{ Name = "otel-proto JS (Node)"; Command = $otelProtoJs },
+  @{ Name = "k-perf Native (Win)"; Command = $kperfNative },
+  @{ Name = "otel Native (Win)"; Command = $otelNative },
+  @{ Name = "otel-proto Native (Win)"; Command = $otelProtoNative }
 )
 
 Write-Host "=========================================="
@@ -102,25 +151,40 @@ Write-Host "=========================================="
 
 $allResults = @()
 
+$otelConfigPath = (Resolve-Path "$ScriptRoot\otel-config.yaml").Path
+
+# Stop any stale Jaeger container from previous runs so it doesn't hold ports
+# 4317/4318 when we try to start otel-collector. Silent if it doesn't exist.
+try { docker stop jaeger 2>&1 | Out-Null } catch {}
+
 foreach ($exe in $executables) {
   Write-Host ""
-  
-  # up Docker resources directly when OTel trace collection tests.
+
+  # Boot or stop the OTel Collector depending on whether this executable exports traces.
+  # We use otel/opentelemetry-collector-contrib (not Jaeger all-in-one) because the
+  # latter's OTLP gRPC endpoint does not bind reliably to 0.0.0.0 under Docker Desktop
+  # for Windows, which causes kmpgrpc-native (tonic via FFI) gRPC calls from the proto
+  # exporter to hang indefinitely. The explicit 0.0.0.0 binding in otel-config.yaml
+  # matches the known-working sidequest setup.
   if ($exe.Name -match "otel") {
-    Write-Host "--- Booting Jaeger Collector via Docker ---"
+    Write-Host "--- Booting OTel Collector via Docker ---"
     try {
-      docker start jaeger 2>&1 | Out-Null
+      docker start otel-collector 2>&1 | Out-Null
       if ($LASTEXITCODE -ne 0) {
-        docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 -p 4318:4318 -e SPAN_STORAGE_TYPE=badger -e BADGER_EPHEMERAL=false -e BADGER_DIRECTORY=/badger -v jaeger-data:/badger jaegertracing/all-in-one:latest 2>&1 | Out-Null
+        docker run -d --name otel-collector `
+          -p 4317:4317 -p 4318:4318 `
+          -v "${otelConfigPath}:/etc/otel-collector-config.yaml" `
+          otel/opentelemetry-collector-contrib:latest `
+          --config=/etc/otel-collector-config.yaml 2>&1 | Out-Null
       }
     }
     catch {}
     Start-Sleep -Seconds 2
   }
   else {
-    Write-Host "--- Stopping active Jaeger containers to prevent caching/CPU interference for baseline metrics ---"
+    Write-Host "--- Stopping active OTel Collector to prevent caching/CPU interference for baseline metrics ---"
     try {
-      docker stop jaeger 2>&1 | Out-Null
+      docker stop otel-collector 2>&1 | Out-Null
     }
     catch {}
   }
@@ -130,7 +194,7 @@ foreach ($exe in $executables) {
   # Warmup
   Write-Host "Warmup iterations ($WarmupCount):"
   for ($i = 0; $i -lt $WarmupCount; $i++) {
-    $output = cmd.exe /c "$($exe.Command) 2>&1"
+    $output = Invoke-WithTimeout -Command $exe.Command -TimeoutSeconds 60
     
     # Delete k-perf trace/symbol output files automatically
     Get-ChildItem -Path "." -Filter "trace*.txt" -ErrorAction SilentlyContinue | Remove-Item -Force
@@ -155,7 +219,7 @@ foreach ($exe in $executables) {
   $runtimes = @()
   Write-Host "Measurement iterations ($RunCount):"
   for ($i = 0; $i -lt $RunCount; $i++) {
-    $output = cmd.exe /c "$($exe.Command) 2>&1"
+    $output = Invoke-WithTimeout -Command $exe.Command -TimeoutSeconds 60
     
     # Delete k-perf trace/symbol output files automatically
     Get-ChildItem -Path "." -Filter "trace*.txt" -ErrorAction SilentlyContinue | Remove-Item -Force

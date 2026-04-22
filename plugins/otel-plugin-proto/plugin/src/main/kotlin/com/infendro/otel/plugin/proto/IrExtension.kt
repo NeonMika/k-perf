@@ -3,6 +3,7 @@ package com.infendro.otel.plugin.proto
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
+import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.IrValueParameterBuilder
@@ -127,6 +128,8 @@ class IrExtension(
                     this.type = type
                     this.isFinal = final
                     this.isStatic = static
+                    // Kotlin 2.3 IR validation rejects public top-level backing fields.
+                    this.visibility = DescriptorVisibilities.PRIVATE
                 }
                 .apply(block)
                 .also(fields::add)

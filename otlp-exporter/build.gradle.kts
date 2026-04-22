@@ -19,12 +19,15 @@ repositories {
 }
 
 kotlin {
+    applyDefaultHierarchyTemplate()
+
     jvm()
     js {
         nodejs()
         useCommonJs()
     }
     linuxX64()
+    mingwX64()
 
     sourceSets {
         commonMain.dependencies {
@@ -43,6 +46,9 @@ kotlin {
         }
         linuxMain.dependencies {
             implementation("io.ktor:ktor-client-curl:3.1.0")
+        }
+        mingwMain.dependencies {
+            implementation("io.ktor:ktor-client-winhttp:3.1.0")
         }
     }
 }
