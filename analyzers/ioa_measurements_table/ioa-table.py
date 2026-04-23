@@ -256,15 +256,52 @@ def plot_table(
         norm=norm,
         linewidths=0.5,
         linecolor="white",
-        xticklabels=col_labels,
+        xticklabels=False,                # all x labels are placed manually at the top
         yticklabels=mean_piv.index.tolist(),
         annot_kws={"size": 8, "va": "center"},
         cbar=False,
     )
 
-    # Move x-axis tick labels to the top
-    ax.xaxis.tick_top()
-    ax.xaxis.set_label_position("top")
+    # ── Column group headers and individual target labels (both at the top) ───
+    # ax.twiny() puts its x-axis at the top. We need two stacked rows so we
+    # create two separate twin axes: ax_labels (close) and ax_groups (further).
+    # Using the main ax's tick_top() does not work once a twiny axis is present
+    # because twiny hides the main axis's top spine.
+    def _group(target: str) -> str:
+        if target == "jar":
+            return "JVM"
+        if target == "node":
+            return "JavaScript"
+        return "Native"
+
+    groups: list[tuple[str, int, int]] = []  # (label, start_col, end_col)
+    for col_idx, t in enumerate(mean_piv.columns):
+        g = _group(t)
+        if groups and groups[-1][0] == g:
+            groups[-1] = (g, groups[-1][1], col_idx + 1)
+        else:
+            groups.append((g, col_idx, col_idx + 1))
+
+    # Row 1 (closer to heatmap): individual target labels
+    ax_labels = ax.twiny()
+    ax_labels.set_xlim(ax.get_xlim())
+    ax_labels.set_xticks([i + 0.5 for i in range(n_cols)])
+    ax_labels.set_xticklabels(col_labels, fontsize=9)
+    ax_labels.tick_params(length=0, pad=4)
+    ax_labels.spines["top"].set_visible(False)
+
+    # Row 2 (further from heatmap): bold group headers
+    ax_groups = ax.twiny()
+    ax_groups.set_xlim(ax.get_xlim())
+    ax_groups.set_xticks([(s + e) / 2 for _, s, e in groups])
+    ax_groups.set_xticklabels([g for g, _, _ in groups], fontsize=10, fontweight="bold")
+    ax_groups.tick_params(length=0, pad=22)
+    ax_groups.spines["top"].set_visible(False)
+
+    # Dashed separator lines between groups
+    for _, g_start, _ in groups:
+        if g_start > 0:
+            ax.axvline(x=g_start, color="black", linewidth=1.5, linestyle="--", alpha=0.5)
 
     # ── Colorbar legend ───────────────────────────────────────────────────────
     cbar_ax = fig.add_axes([0.92, 0.15, 0.018, 0.7])
@@ -281,41 +318,9 @@ def plot_table(
     ])
     cbar.ax.tick_params(labelsize=8)
 
-    # ── Column group headers ──────────────────────────────────────────────────
-    # A secondary x-axis above the individual target labels groups them into
-    # JVM / JavaScript / Native bands with bold headings.
-    def _group(target: str) -> str:
-        if target == "jar":
-            return "JVM"
-        if target == "node":
-            return "JavaScript"
-        return "Native"
-
-    groups: list[tuple[str, int, int]] = []  # (label, start_col, end_col)
-    for col_idx, t in enumerate(mean_piv.columns):
-        g = _group(t)
-        if groups and groups[-1][0] == g:
-            groups[-1] = (g, groups[-1][1], col_idx + 1)
-        else:
-            groups.append((g, col_idx, col_idx + 1))
-
-    ax2 = ax.twiny()
-    ax2.set_xlim(ax.get_xlim())
-    ax2.xaxis.tick_top()
-    ax2.set_xticks([(s + e) / 2 for _, s, e in groups])
-    ax2.set_xticklabels([g for g, _, _ in groups], fontsize=10, fontweight="bold")
-    ax2.tick_params(length=0, pad=20)
-    ax2.spines["top"].set_visible(False)
-
-    # Dashed separator lines between groups
-    for _, g_start, _ in groups:
-        if g_start > 0:
-            ax.axvline(x=g_start, color="black", linewidth=1.5, linestyle="--", alpha=0.5)
-
-    ax.set_title(title, fontsize=13, fontweight="bold", pad=52)
+    ax.set_title(title, fontsize=13, fontweight="bold", pad=54)
     ax.set_xlabel("")
     ax.set_ylabel("IOA Kind", fontsize=10, labelpad=8)
-    ax.tick_params(axis="x", labelsize=9, rotation=0, pad=4)
     ax.tick_params(axis="y", labelsize=8, rotation=0)
 
     plt.tight_layout(rect=[0, 0, 0.91, 1])
