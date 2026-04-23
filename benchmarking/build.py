@@ -1,426 +1,461 @@
-import argparse
-import platform
-import subprocess
-import time
-from dataclasses import dataclass
+"""Build functions for benchmarking applications."""
+
+from __future__ import annotations
+
+import shutil
+import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
-from utils import find_first_gradle_task
+from benchmark_types import GameType, IoaConfig, KPerfConfig, get_game_type_string
+from gradle_utils import (
+    GRADLEW_CMD,
+    invoke_gradle_clean,
+    invoke_kmp_build_with_timings,
+)
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
+_BENCHMARKING_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _BENCHMARKING_DIR.parent
 
+ARTIFACT_VERSION = "0.2.1"
 
-@dataclass
-class KPerfConfig:
-    flush_early: bool
-    instrument_property_accessors: bool
-    test_kir: bool
-
-    def suffix(self) -> str:
-        return (
-            f"flushEarly-{'true' if self.flush_early else 'false'}-"
-            f"propAccessors-{'true' if self.instrument_property_accessors else 'false'}-"
-            f"testKIR-{'true' if self.test_kir else 'false'}"
-        )
-
-
-@dataclass
-class IoaConfig:
-    kind: str
-
-    def suffix(self) -> str:
-        return f"kind-{self.kind.lower()}"
+# Compute the platform label and native extension once at import time.
+if sys.platform.startswith("win"):
+    NATIVE_PLATFORM_LABEL = "win"
+    NATIVE_EXT = ".exe"
+elif sys.platform == "darwin":
+    NATIVE_PLATFORM_LABEL = "mac"
+    NATIVE_EXT = ".kexe"
+else:
+    NATIVE_PLATFORM_LABEL = "linux"
+    NATIVE_EXT = ".kexe"
 
 
-def _gradle_wrapper(cwd: Path) -> str:
-    if platform.system() == "Windows":
-        candidate = cwd / "gradlew.bat"
-        return str(candidate if candidate.exists() else "gradlew.bat")
-    candidate = cwd / "gradlew"
-    return str(candidate if candidate.exists() else "./gradlew")
+def build_kir_helper_kit() -> dict[str, float]:
+    import subprocess
+    import time
 
-
-def _run(cmd: List[str], cwd: Path) -> tuple[int, str, str]:
-    try:
-        completed = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, encoding="utf-8")
-        return completed.returncode, completed.stdout, completed.stderr
-    except FileNotFoundError:
-        return 127, "", ""
-    except Exception as exc:  # pragma: no cover - defensive
-        return 1, "", str(exc)
-
-
-def _print_banner(title: str, task: Optional[str] = None):
-    print("")
+    print()
     print("==========================================")
-    print(title)
-    if task:
-        print(f"Task: {task}")
+    print("## Building KIRHelperKit")
     print("==========================================")
 
+    path = _REPO_ROOT / "KIRHelperKit"
+    start = time.monotonic()
+    result = subprocess.run([GRADLEW_CMD, "build", "publishToMavenLocal"], cwd=path)
+    duration_ms = (time.monotonic() - start) * 1000
 
-def _invoke_gradle_task_if_present_timed(
-    task: Optional[str],
-    title: str,
-    cwd: Path,
-    gradle_args: Optional[List[str]] = None,
-) -> Optional[float]:
-    if not task:
-        print(f"Skipping {title} (task not found)")
-        return None
+    if result.returncode != 0:
+        print("ERROR: KIRHelperKit build failed!")
+        sys.exit(1)
 
-    gradle_args = gradle_args or []
-    _print_banner(title, task)
-
-    start = time.perf_counter()
-    rc, out, err = _run([_gradle_wrapper(cwd), *gradle_args, task], cwd=cwd)
-    duration_ms = (time.perf_counter() - start) * 1000
-
-    if out:
-        print(out.strip())
-    if err:
-        print(err.strip())
-    if rc != 0:
-        raise RuntimeError(f"{title} failed with exit code {rc}")
-
-    print(f"{title} completed successfully in {duration_ms:.2f} ms.")
-    return duration_ms
+    print(f"KIRHelperKit build completed successfully in {round(duration_ms, 2)} ms.")
+    return {"KirHelperKit": duration_ms}
 
 
-def _invoke_kmp_build_with_timings(
-    title: str,
-    path: Path,
-    gradle_args: Optional[List[str]] = None,
-) -> Dict[str, float]:
-    gradle_args = gradle_args or []
-    _print_banner(f"{title} (Kotlin Multiplatform)", str(path))
+def build_k_perf_plugin() -> dict[str, float]:
+    import subprocess
+    import time
 
-    rc, task_out, task_err = _run([_gradle_wrapper(path), "-q", "tasks", "--all"], cwd=path)
-    if task_out:
-        # help diagnose missing tasks without overwhelming output
-        print(task_out.strip())
-    if task_err:
-        print(task_err.strip())
-    if rc != 0:
-        raise RuntimeError(f"{title} task discovery failed with exit code {rc}")
+    print()
+    print("==========================================")
+    print("## Building k-perf (Kotlin compiler plugin)")
+    print("==========================================")
 
-    jvm_task = find_first_gradle_task(task_out, ["jvmJar", "compileKotlinJvm"])
-    js_task = find_first_gradle_task(
-        task_out,
-        [
-            "jsProductionExecutableCompileSync",
-            "jsProductionExecutableCompile",
-            "jsNodeProductionExecutableCompileSync",
-            "jsNodeProductionExecutableCompile",
-            "jsBrowserProductionWebpack",
-            "compileKotlinJs",
-        ],
+    path = _REPO_ROOT / "plugins" / "k-perf"
+    start = time.monotonic()
+    result = subprocess.run([GRADLEW_CMD, "build", "publishToMavenLocal"], cwd=path)
+    duration_ms = (time.monotonic() - start) * 1000
+
+    if result.returncode != 0:
+        print("ERROR: k-perf build failed!")
+        sys.exit(1)
+
+    print(f"k-perf build completed successfully in {round(duration_ms, 2)} ms.")
+    return {"KPerfPlugin": duration_ms}
+
+
+def build_instrumentation_overhead_analyzer_plugin() -> dict[str, float]:
+    import subprocess
+    import time
+
+    print()
+    print("==========================================")
+    print("## Building instrumentation-overhead-analyzer (Kotlin compiler plugin)")
+    print("==========================================")
+
+    path = _REPO_ROOT / "plugins" / "instrumentation-overhead-analyzer"
+    start = time.monotonic()
+    result = subprocess.run([GRADLEW_CMD, "build", "publishToMavenLocal"], cwd=path)
+    duration_ms = (time.monotonic() - start) * 1000
+
+    if result.returncode != 0:
+        print("ERROR: instrumentation-overhead-analyzer build failed!")
+        sys.exit(1)
+
+    print(
+        f"instrumentation-overhead-analyzer build completed successfully in {round(duration_ms, 2)} ms."
     )
-    windows_task = find_first_gradle_task(task_out, ["linkReleaseExecutableMingwX64", "linkDebugExecutableMingwX64"])
-    linux_task = find_first_gradle_task(task_out, ["linkReleaseExecutableLinuxX64", "linkDebugExecutableLinuxX64"])
-    mac_task = find_first_gradle_task(
-        task_out,
-        [
-            "linkReleaseExecutableMacosArm64",
-            "linkDebugExecutableMacosArm64",
-            "linkReleaseExecutableMacosX64",
-            "linkDebugExecutableMacosX64",
-        ],
-    )
-
-    timings: Dict[str, float] = {}
-    jvm_duration = _invoke_gradle_task_if_present_timed(jvm_task, f"{title} - JVM build", path, gradle_args)
-    if jvm_duration is not None:
-        timings["jvm"] = jvm_duration
-
-    js_duration = _invoke_gradle_task_if_present_timed(js_task, f"{title} - JS build", path, gradle_args)
-    if js_duration is not None:
-        timings["js"] = js_duration
-
-    system = platform.system().lower()
-    if system == "windows":
-        windows_duration = _invoke_gradle_task_if_present_timed(windows_task, f"{title} - Windows build", path, gradle_args)
-        if windows_duration is not None:
-            timings["native"] = windows_duration
-
-    if system == "linux":
-        linux_duration = _invoke_gradle_task_if_present_timed(linux_task, f"{title} - Linux build", path, gradle_args)
-        if linux_duration is not None:
-            timings["native"] = linux_duration
-
-    if system == "darwin":
-        mac_duration = _invoke_gradle_task_if_present_timed(mac_task, f"{title} - Mac build", path, gradle_args)
-        if mac_duration is not None:
-            timings["native"] = mac_duration
-
-    print(f"{title} completed successfully.")
-    return timings
+    return {"InstrumentationOverheadAnalyzerPlugin": duration_ms}
 
 
-def _clean_project(title: str, path: Path):
-    _print_banner(title)
-    rc, out, err = _run([_gradle_wrapper(path), "clean"], cwd=path)
-    if out:
-        print(out.strip())
-    if err:
-        print(err.strip())
-    if rc != 0:
-        raise RuntimeError(f"{title} clean failed with exit code {rc}")
+def build_game_of_life_commonmain_reference() -> dict[str, float]:
+    print()
+    print("==========================================")
+    print("## Building game-of-life-kmp-commonmain reference application (without plugin)")
+    print("==========================================")
 
-
-def _build_and_publish(title: str, path: Path, label: str) -> Dict[str, float]:
-    _print_banner(title)
-    start = time.perf_counter()
-    rc, out, err = _run([_gradle_wrapper(path), "build", "publishToMavenLocal"], cwd=path)
-    duration_ms = (time.perf_counter() - start) * 1000
-    if out:
-        print(out.strip())
-    if err:
-        print(err.strip())
-    if rc != 0:
-        raise RuntimeError(f"{title} failed with exit code {rc}")
-
-    print(f"{title} completed successfully in {duration_ms:.2f} ms.")
-    return {label: duration_ms}
-
-
-# Clean helpers
-
-def clean_kir_helperkit():
-    return _clean_project("## Cleaning KIRHelperKit", ROOT_DIR / "KIRHelperKit")
-
-
-def clean_kperf_plugin():
-    return _clean_project("## Cleaning k-perf (Kotlin compiler plugin)", ROOT_DIR / "plugins" / "k-perf")
-
-
-def clean_instrumentation_overhead_analyzer_plugin():
-    return _clean_project(
-        "## Cleaning instrumentation-overhead-analyzer (Kotlin compiler plugin)",
-        ROOT_DIR / "plugins" / "instrumentation-overhead-analyzer",
+    path = _REPO_ROOT / "kmp-examples" / "game-of-life-kmp-commonmain"
+    timings = invoke_kmp_build_with_timings(
+        "game-of-life-kmp-commonmain reference application", path
     )
 
-
-def clean_game_of_life_commonmain_reference():
-    return _clean_project(
-        "## Cleaning game-of-life-kmp-commonmain reference application",
-        ROOT_DIR / "kmp-examples" / "game-of-life-kmp-commonmain",
-    )
-
-
-def clean_game_of_life_commonmain_ioa():
-    return _clean_project(
-        "## Cleaning game-of-life-kmp-commonmain-ioa application",
-        ROOT_DIR / "kmp-examples" / "game-of-life-kmp-commonmain-ioa",
-    )
-
-
-def clean_game_of_life_dedicatedmain_reference():
-    return _clean_project(
-        "## Cleaning game-of-life-kmp-dedicatedmain reference application",
-        ROOT_DIR / "kmp-examples" / "game-of-life-kmp-dedicatedmain",
-    )
-
-
-def clean_game_of_life_commonmain_kperf_variant():
-    return _clean_project(
-        "## Cleaning game-of-life-kmp-commonmain-k-perf",
-        ROOT_DIR / "kmp-examples" / "game-of-life-kmp-commonmain-k-perf",
-    )
-
-
-def clean_game_of_life_dedicatedmain_kperf_variant():
-    return _clean_project(
-        "## Cleaning game-of-life-kmp-dedicatedmain-k-perf",
-        ROOT_DIR / "kmp-examples" / "game-of-life-kmp-dedicatedmain-k-perf",
-    )
-
-
-# Build helpers
-
-def build_kir_helperkit() -> Dict[str, float]:
-    return _build_and_publish("## Building KIRHelperKit", ROOT_DIR / "KIRHelperKit", "KirHelperKit")
-
-
-def build_kperf_plugin() -> Dict[str, float]:
-    return _build_and_publish("## Building k-perf (Kotlin compiler plugin)", ROOT_DIR / "plugins" / "k-perf", "KPerfPlugin")
-
-
-def build_instrumentation_overhead_analyzer_plugin() -> Dict[str, float]:
-    return _build_and_publish(
-        "## Building instrumentation-overhead-analyzer (Kotlin compiler plugin)",
-        ROOT_DIR / "plugins" / "instrumentation-overhead-analyzer",
-        "InstrumentationOverheadAnalyzerPlugin",
-    )
-
-
-def build_game_of_life_commonmain_reference() -> Dict[str, float]:
-    timings = _invoke_kmp_build_with_timings(
-        "## Building game-of-life-kmp-commonmain reference application (without plugin)",
-        ROOT_DIR / "kmp-examples" / "game-of-life-kmp-commonmain",
-    )
-    build_times: Dict[str, float] = {}
+    build_times: dict[str, float] = {}
     if "jvm" in timings:
         build_times["commonmain-plain-jar"] = timings["jvm"]
-        build_times["commonmain_plain_jar"] = timings["jvm"]
     if "js" in timings:
         build_times["commonmain-plain-node"] = timings["js"]
-        build_times["commonmain_plain_node"] = timings["js"]
-    if "native" in timings:
-        build_times["commonmain-plain-native"] = timings["native"]
-        build_times["commonmain_plain_native"] = timings["native"]
+    if "windows" in timings:
+        build_times["commonmain-plain-win-exe"] = timings["windows"]
+    if "linux" in timings:
+        build_times["commonmain-plain-linux-exe"] = timings["linux"]
+    if "mac" in timings:
+        build_times["commonmain-plain-mac-exe"] = timings["mac"]
+
     print("game-of-life-kmp-commonmain reference application build completed successfully.")
     return build_times
 
 
-def build_game_of_life_dedicatedmain_reference() -> Dict[str, float]:
-    timings = _invoke_kmp_build_with_timings(
-        "## Building game-of-life-kmp-dedicatedmain reference application (without plugin)",
-        ROOT_DIR / "kmp-examples" / "game-of-life-kmp-dedicatedmain",
+def build_game_of_life_dedicatedmain_reference() -> dict[str, float]:
+    print()
+    print("==========================================")
+    print("## Building game-of-life-kmp-dedicatedmain reference application (without plugin)")
+    print("==========================================")
+
+    path = _REPO_ROOT / "kmp-examples" / "game-of-life-kmp-dedicatedmain"
+    timings = invoke_kmp_build_with_timings(
+        "game-of-life-kmp-dedicatedmain reference application", path
     )
-    build_times: Dict[str, float] = {}
+
+    build_times: dict[str, float] = {}
     if "jvm" in timings:
         build_times["dedicatedmain-plain-jar"] = timings["jvm"]
     if "js" in timings:
         build_times["dedicatedmain-plain-node"] = timings["js"]
-    if "native" in timings:
-        build_times["dedicatedmain-plain-native"] = timings["native"]
+    if "windows" in timings:
+        build_times["dedicatedmain-plain-win-exe"] = timings["windows"]
+    if "linux" in timings:
+        build_times["dedicatedmain-plain-linux-exe"] = timings["linux"]
+    if "mac" in timings:
+        build_times["dedicatedmain-plain-mac-exe"] = timings["mac"]
+
     print("game-of-life-kmp-dedicatedmain reference application build completed successfully.")
     return build_times
 
 
-def build_game_of_life_commonmain_ioa() -> Dict[str, float]:
-    timings = _invoke_kmp_build_with_timings(
-        "## Building game-of-life-kmp-commonmain-ioa application",
-        ROOT_DIR / "kmp-examples" / "game-of-life-kmp-commonmain-ioa",
+def build_game_of_life_commonmain_ioa() -> dict[str, float]:
+    print()
+    print("==========================================")
+    print("## Building game-of-life-kmp-commonmain-ioa application")
+    print("==========================================")
+
+    path = _REPO_ROOT / "kmp-examples" / "game-of-life-kmp-commonmain-ioa"
+    timings = invoke_kmp_build_with_timings(
+        "game-of-life-kmp-commonmain-ioa application", path
     )
-    build_times: Dict[str, float] = {}
+
+    build_times: dict[str, float] = {}
     if "jvm" in timings:
-        build_times["commonmain_ioa_jar"] = timings["jvm"]
+        build_times["commonmain-ioa-jar"] = timings["jvm"]
     if "js" in timings:
-        build_times["commonmain_ioa_node"] = timings["js"]
-    if "native" in timings:
-        build_times["commonmain_ioa_native"] = timings["native"]
+        build_times["commonmain-ioa-node"] = timings["js"]
+    if "windows" in timings:
+        build_times["commonmain-ioa-win-exe"] = timings["windows"]
+    if "linux" in timings:
+        build_times["commonmain-ioa-linux-exe"] = timings["linux"]
+    if "mac" in timings:
+        build_times["commonmain-ioa-mac-exe"] = timings["mac"]
+
     print("game-of-life-kmp-commonmain-ioa build completed successfully.")
     return build_times
 
 
-def build_game_of_life_commonmain_ioa_variant(config: IoaConfig) -> Dict[str, float]:
+def build_game_of_life_commonmain_ioa_variant(config: IoaConfig) -> dict[str, float]:
     project_name = "game-of-life-kmp-commonmain-ioa"
-    project_path = ROOT_DIR / "kmp-examples" / project_name
+    project_path = _REPO_ROOT / "kmp-examples" / project_name
     suffix = config.suffix()
     gradle_args = [f"-PioaKind={config.kind}"]
 
-    print("")
+    print()
     print(f"## Building {project_name} with suffix: {suffix}...")
-    title = f"{project_name} ({suffix})"
-    timings = _invoke_kmp_build_with_timings(title, project_path, gradle_args)
+    timings = invoke_kmp_build_with_timings(
+        f"{project_name} ({suffix})", project_path, gradle_args=gradle_args
+    )
 
-    build_times: Dict[str, float] = {}
+    # Copy artifacts from dist/ into bin/<suffix>/ so multiple IoaKind variants can coexist
+    bin_dir = project_path / "bin" / suffix
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    dist_dir = project_path / "dist"
+    if dist_dir.exists():
+        for item in dist_dir.iterdir():
+            shutil.copy2(str(item), str(bin_dir))
 
+    build_times: dict[str, float] = {}
     if "jvm" in timings:
-        build_times[f"commonmain_ioa_{suffix}-jar"] = timings["jvm"]
+        build_times[f"commonmain-ioa-{suffix}-jar"] = timings["jvm"]
     if "js" in timings:
-        build_times[f"commonmain_ioa_{suffix}-node"] = timings["js"]
-    if "native" in timings:
-        build_times[f"commonmain_ioa_{suffix}-native"] = timings["native"]
+        build_times[f"commonmain-ioa-{suffix}-node"] = timings["js"]
+    if "windows" in timings:
+        build_times[f"commonmain-ioa-{suffix}-win-exe"] = timings["windows"]
+    if "linux" in timings:
+        build_times[f"commonmain-ioa-{suffix}-linux-exe"] = timings["linux"]
+    if "mac" in timings:
+        build_times[f"commonmain-ioa-{suffix}-mac-exe"] = timings["mac"]
+
     print(f"{project_name} build with {suffix} completed successfully.")
     return build_times
 
 
-def build_game_of_life_kperf_variant(game_type: str, config: KPerfConfig) -> Dict[str, float]:
-    project_name = (
-        "game-of-life-kmp-commonmain-k-perf" if game_type == "common" else "game-of-life-kmp-dedicatedmain-k-perf"
+def get_k_perf_suffix(config: KPerfConfig) -> str:
+    return (
+        f"enabled-{'true' if config.enabled else 'false'}"
+        f"-flushEarly-{'true' if config.flush_early else 'false'}"
+        f"-propAccessors-{'true' if config.instrument_property_accessors else 'false'}"
+        f"-testKIR-{'true' if config.test_kir else 'false'}"
     )
-    project_path = ROOT_DIR / "kmp-examples" / project_name
-    suffix = config.suffix()
+
+
+def build_game_of_life_k_perf_variant(
+    game_type: GameType, config: KPerfConfig
+) -> dict[str, float]:
+    if game_type == GameType.CommonMain:
+        project_name = "game-of-life-kmp-commonmain-k-perf"
+    else:
+        project_name = "game-of-life-kmp-dedicatedmain-k-perf"
+
+    project_path = _REPO_ROOT / "kmp-examples" / project_name
+    suffix = get_k_perf_suffix(config)
     gradle_args = [
+        f"-PkperfEnabled={str(config.enabled).lower()}",
         f"-PkperfFlushEarly={str(config.flush_early).lower()}",
         f"-PkperfInstrumentPropertyAccessors={str(config.instrument_property_accessors).lower()}",
         f"-PkperfTestKIR={str(config.test_kir).lower()}",
+        f"-PkperfMethods={config.methods}",
     ]
 
-    print("")
+    print()
     print(f"## Building {project_name} with suffix: {suffix}...")
     title = f"{project_name} ({suffix})"
-    timings = _invoke_kmp_build_with_timings(title, project_path, gradle_args)
+    timings = invoke_kmp_build_with_timings(title, project_path, gradle_args=gradle_args)
 
-    build_times: Dict[str, float] = {}
-    game_type_string = "commonmain" if game_type == "common" else "dedicatedmain"
+    # Copy artifacts from dist/ into bin/<suffix>/ so multiple configs can coexist
+    bin_dir = project_path / "bin" / suffix
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    dist_dir = project_path / "dist"
+    if dist_dir.exists():
+        for item in dist_dir.iterdir():
+            shutil.copy2(str(item), str(bin_dir))
+
+    build_times: dict[str, float] = {}
+    game_type_str = get_game_type_string(game_type)
 
     if "jvm" in timings:
-        build_times[f"{game_type_string}-k-perf-{suffix}-jar"] = timings["jvm"]
+        build_times[f"{game_type_str}-k-perf-{suffix}-jar"] = timings["jvm"]
     if "js" in timings:
-        build_times[f"{game_type_string}-k-perf-{suffix}-node"] = timings["js"]
-    if "native" in timings:
-        build_times[f"{game_type_string}-k-perf-{suffix}-native"] = timings["native"]
+        build_times[f"{game_type_str}-k-perf-{suffix}-node"] = timings["js"]
+    if "windows" in timings:
+        build_times[f"{game_type_str}-k-perf-{suffix}-win-exe"] = timings["windows"]
+    if "linux" in timings:
+        build_times[f"{game_type_str}-k-perf-{suffix}-linux-exe"] = timings["linux"]
+    if "mac" in timings:
+        build_times[f"{game_type_str}-k-perf-{suffix}-mac-exe"] = timings["mac"]
 
     print(f"{project_name} build with {suffix} completed successfully.")
     return build_times
 
 
-_CLEAN_TARGETS = {
-    "kirhelperkit": clean_kir_helperkit,
-    "kperf-plugin": clean_kperf_plugin,
-    "instrumentation-overhead-analyzer": clean_instrumentation_overhead_analyzer_plugin,
-    "gol-commonmain": clean_game_of_life_commonmain_reference,
-    "gol-commonmain-ioa": clean_game_of_life_commonmain_ioa,
-    "gol-dedicatedmain": clean_game_of_life_dedicatedmain_reference,
-    "gol-commonmain-k-perf": clean_game_of_life_commonmain_kperf_variant,
-    "gol-dedicatedmain-k-perf": clean_game_of_life_dedicatedmain_kperf_variant,
-}
+def invoke_get_executables(
+    game_types: list[GameType],
+    k_perf_combinations: list[KPerfConfig],
+    reference: bool,
+    jvm: bool,
+    js: bool,
+    native: bool,
+    native_ext: str,
+    artifact_version: str,
+) -> list:
+    from benchmark_types import BenchmarkExecutable, ExecutableType
+
+    executables: list[BenchmarkExecutable] = []
+
+    for game_type in game_types:
+        game_type_str = get_game_type_string(game_type)
+
+        if game_type == GameType.CommonMain:
+            project_name = "game-of-life-kmp-commonmain"
+            k_perf_project_name = "game-of-life-kmp-commonmain-k-perf"
+        else:
+            project_name = "game-of-life-kmp-dedicatedmain"
+            k_perf_project_name = "game-of-life-kmp-dedicatedmain-k-perf"
+
+        plain_root = _REPO_ROOT / "kmp-examples" / project_name
+        k_perf_root = _REPO_ROOT / "kmp-examples" / k_perf_project_name
+
+        if reference and jvm:
+            executables.append(
+                BenchmarkExecutable(
+                    name=f"{game_type_str}-plain-jar",
+                    path=str(plain_root / "dist" / f"{project_name}-jvm-{artifact_version}.jar"),
+                    type=ExecutableType.Jar,
+                    config=None,
+                )
+            )
+
+        if reference and js:
+            executables.append(
+                BenchmarkExecutable(
+                    name=f"{game_type_str}-plain-node",
+                    path=str(plain_root / "dist" / f"{project_name}.js"),
+                    type=ExecutableType.Node,
+                    config=None,
+                )
+            )
+
+        if reference and native:
+            executables.append(
+                BenchmarkExecutable(
+                    name=f"{game_type_str}-plain-{NATIVE_PLATFORM_LABEL}-exe",
+                    path=str(plain_root / "dist" / f"{project_name}{native_ext}"),
+                    type=ExecutableType.Exe,
+                    config=None,
+                )
+            )
+
+        for config in k_perf_combinations:
+            suffix = get_k_perf_suffix(config)
+
+            if jvm:
+                executables.append(
+                    BenchmarkExecutable(
+                        name=f"{game_type_str}-k-perf-{suffix}-jar",
+                        path=str(
+                            k_perf_root
+                            / "bin"
+                            / suffix
+                            / f"{k_perf_project_name}-jvm-{artifact_version}.jar"
+                        ),
+                        type=ExecutableType.Jar,
+                        config=config,
+                    )
+                )
+
+            if js:
+                executables.append(
+                    BenchmarkExecutable(
+                        name=f"{game_type_str}-k-perf-{suffix}-node",
+                        path=str(k_perf_root / "bin" / suffix / f"{k_perf_project_name}.js"),
+                        type=ExecutableType.Node,
+                        config=config,
+                    )
+                )
+
+            if native:
+                executables.append(
+                    BenchmarkExecutable(
+                        name=f"{game_type_str}-k-perf-{suffix}-{NATIVE_PLATFORM_LABEL}-exe",
+                        path=str(
+                            k_perf_root / "bin" / suffix / f"{k_perf_project_name}{native_ext}"
+                        ),
+                        type=ExecutableType.Exe,
+                        config=config,
+                    )
+                )
+
+    return executables
 
 
-_BUILD_TARGETS = {
-    "kirhelperkit": build_kir_helperkit,
-    "kperf-plugin": build_kperf_plugin,
-    "instrumentation-overhead-analyzer": build_instrumentation_overhead_analyzer_plugin,
-    "gol-commonmain-reference": build_game_of_life_commonmain_reference,
-    "gol-dedicatedmain-reference": build_game_of_life_dedicatedmain_reference,
-    "gol-commonmain-ioa": build_game_of_life_commonmain_ioa,
-}
+def invoke_get_ioa_executables(
+    ioa_configs: list[IoaConfig],
+    reference: bool,
+    ioa: bool,
+    jvm: bool,
+    js: bool,
+    native: bool,
+    artifact_version: str,
+) -> list:
+    from benchmark_types import BenchmarkExecutable, ExecutableType
 
+    executables: list[BenchmarkExecutable] = []
 
-def _parse_args():
-    parser = argparse.ArgumentParser(description="Python equivalent of benchmarking/build.ps1")
-    subparsers = parser.add_subparsers(dest="command")
+    plain_project_name = "game-of-life-kmp-commonmain"
+    ioa_project_name = "game-of-life-kmp-commonmain-ioa"
+    plain_root = _REPO_ROOT / "kmp-examples" / plain_project_name
+    ioa_root = _REPO_ROOT / "kmp-examples" / ioa_project_name
 
-    clean_parser = subparsers.add_parser("clean", help="Clean a target")
-    clean_parser.add_argument("target", choices=sorted(_CLEAN_TARGETS.keys()))
-
-    build_parser = subparsers.add_parser("build", help="Build a target")
-    build_parser.add_argument("target", choices=sorted(_BUILD_TARGETS.keys()))
-
-    kperf_parser = subparsers.add_parser("build-kperf", help="Build a k-perf Game of Life variant")
-    kperf_parser.add_argument("game_type", choices=["common", "dedicated"], help="Which variant to build")
-    kperf_parser.add_argument("--flush-early", action="store_true", default=False)
-    kperf_parser.add_argument("--instrument-property-accessors", action="store_true", default=False)
-    kperf_parser.add_argument("--test-kir", action="store_true", default=False)
-
-    return parser.parse_args()
-
-
-def main():
-    args = _parse_args()
-    if args.command == "clean":
-        _CLEAN_TARGETS[args.target]()
-    elif args.command == "build":
-        result = _BUILD_TARGETS[args.target]()
-        print(result)
-    elif args.command == "build-kperf":
-        cfg = KPerfConfig(
-            flush_early=args.flush_early,
-            instrument_property_accessors=args.instrument_property_accessors,
-            test_kir=args.test_kir,
+    if reference and jvm:
+        executables.append(
+            BenchmarkExecutable(
+                name="commonmain-plain-jar",
+                path=str(plain_root / "dist" / f"{plain_project_name}-jvm-{artifact_version}.jar"),
+                type=ExecutableType.Jar,
+                config=None,
+            )
         )
-        result = build_game_of_life_kperf_variant(args.game_type, cfg)
-        print(result)
-    else:
-        # If no args, print help
-        _parse_args()
 
+    if reference and js:
+        executables.append(
+            BenchmarkExecutable(
+                name="commonmain-plain-node",
+                path=str(plain_root / "dist" / f"{plain_project_name}.js"),
+                type=ExecutableType.Node,
+                config=None,
+            )
+        )
 
-if __name__ == "__main__":
-    main()
+    if reference and native:
+        executables.append(
+            BenchmarkExecutable(
+                name=f"commonmain-plain-{NATIVE_PLATFORM_LABEL}-exe",
+                path=str(plain_root / "dist" / f"{plain_project_name}{NATIVE_EXT}"),
+                type=ExecutableType.Exe,
+                config=None,
+            )
+        )
+
+    for config in ioa_configs:
+        suffix = config.suffix()
+
+        if ioa and jvm:
+            executables.append(
+                BenchmarkExecutable(
+                    name=f"commonmain-ioa-{suffix}-jar",
+                    path=str(
+                        ioa_root / "bin" / suffix / f"{ioa_project_name}-jvm-{artifact_version}.jar"
+                    ),
+                    type=ExecutableType.Jar,
+                    config=config,
+                )
+            )
+
+        if ioa and js:
+            executables.append(
+                BenchmarkExecutable(
+                    name=f"commonmain-ioa-{suffix}-node",
+                    path=str(ioa_root / "bin" / suffix / f"{ioa_project_name}.js"),
+                    type=ExecutableType.Node,
+                    config=config,
+                )
+            )
+
+        if ioa and native:
+            executables.append(
+                BenchmarkExecutable(
+                    name=f"commonmain-ioa-{suffix}-{NATIVE_PLATFORM_LABEL}-exe",
+                    path=str(ioa_root / "bin" / suffix / f"{ioa_project_name}{NATIVE_EXT}"),
+                    type=ExecutableType.Exe,
+                    config=config,
+                )
+            )
+
+    return executables
 

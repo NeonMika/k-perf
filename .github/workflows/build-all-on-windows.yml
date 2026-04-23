@@ -33,9 +33,12 @@ jobs:
       # cached metadata for this group forces Gradle to re-resolve from the freshly
       # published mavenLocal artifacts.
       - name: Clear stale Gradle module cache for locally-published artifacts
-        shell: pwsh
-        run: Get-ChildItem "$env:USERPROFILE\.gradle\caches" -Recurse -Directory -Filter "io.github.neonmika*" -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        shell: python
+        run: |
+          import glob, os, shutil
+          for d in glob.glob(os.path.expanduser("~/.gradle/caches/**/io.github.neonmika*"), recursive=True):
+              if os.path.isdir(d):
+                  shutil.rmtree(d, ignore_errors=True)
 
-      - name: Run buildAll.ps1
-        shell: pwsh
-        run: .\buildAll.ps1
+      - name: Run buildAll.py
+        run: python buildAll.py

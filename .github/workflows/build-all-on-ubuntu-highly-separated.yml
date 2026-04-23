@@ -4,7 +4,7 @@ name: Build all on Ubuntu (highly separated)
 # maximum failure visibility.
 # ⚠️ The hardcoded task names (jvmJar, jsProductionExecutableCompileSync,
 #    linkReleaseExecutableLinuxX64) reflect the #1-priority tasks from the discovery lists
-#    in buildAll.sh and .github/scripts/build-kmp-example.sh.
+#    in buildAll.py and .github/scripts/build-kmp-example.py.
 #    Keep all four in sync when changing the build order, project list, or task priorities.
 
 on:
