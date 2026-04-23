@@ -29,6 +29,17 @@ _MAC_CANDIDATES = [
     "linkDebugExecutableMacosArm64",
 ]
 
+# Only attempt to build the native target supported by the current host OS.
+if sys.platform.startswith("win"):
+    _NATIVE_CANDIDATES = _WINDOWS_CANDIDATES
+    _NATIVE_KEY = "windows"
+elif sys.platform == "darwin":
+    _NATIVE_CANDIDATES = _MAC_CANDIDATES
+    _NATIVE_KEY = "mac"
+else:
+    _NATIVE_CANDIDATES = _LINUX_CANDIDATES
+    _NATIVE_KEY = "linux"
+
 
 def find_first_gradle_task(task_list: str, candidates: list[str]) -> Optional[str]:
     for candidate in candidates:
@@ -130,15 +141,11 @@ def invoke_kmp_build(title: str, path: Path, clean_build: bool = True) -> None:
 
     jvm_task = find_first_gradle_task(task_list, _JVM_CANDIDATES)
     js_task = find_first_gradle_task(task_list, _JS_CANDIDATES)
-    windows_task = find_first_gradle_task(task_list, _WINDOWS_CANDIDATES)
-    linux_task = find_first_gradle_task(task_list, _LINUX_CANDIDATES)
-    mac_task = find_first_gradle_task(task_list, _MAC_CANDIDATES)
+    native_task = find_first_gradle_task(task_list, _NATIVE_CANDIDATES)
 
     invoke_gradle_task_if_present(jvm_task, f"{title} - JVM build", cwd=path)
     invoke_gradle_task_if_present(js_task, f"{title} - JS build", cwd=path)
-    invoke_gradle_task_if_present(windows_task, f"{title} - Windows build", cwd=path)
-    invoke_gradle_task_if_present(linux_task, f"{title} - Linux build", cwd=path)
-    invoke_gradle_task_if_present(mac_task, f"{title} - Mac build", cwd=path)
+    invoke_gradle_task_if_present(native_task, f"{title} - Native build", cwd=path)
 
     print(f"{title} completed successfully.")
 
@@ -172,9 +179,7 @@ def invoke_kmp_build_with_timings(
 
     jvm_task = find_first_gradle_task(task_list, _JVM_CANDIDATES)
     js_task = find_first_gradle_task(task_list, _JS_CANDIDATES)
-    windows_task = find_first_gradle_task(task_list, _WINDOWS_CANDIDATES)
-    linux_task = find_first_gradle_task(task_list, _LINUX_CANDIDATES)
-    mac_task = find_first_gradle_task(task_list, _MAC_CANDIDATES)
+    native_task = find_first_gradle_task(task_list, _NATIVE_CANDIDATES)
 
     jvm_duration = invoke_gradle_task_if_present_timed(
         jvm_task, f"{title} - JVM build", cwd=path, gradle_args=gradle_args
@@ -188,23 +193,11 @@ def invoke_kmp_build_with_timings(
     if js_duration is not None:
         timings["js"] = js_duration
 
-    windows_duration = invoke_gradle_task_if_present_timed(
-        windows_task, f"{title} - Windows build", cwd=path, gradle_args=gradle_args
+    native_duration = invoke_gradle_task_if_present_timed(
+        native_task, f"{title} - Native build", cwd=path, gradle_args=gradle_args
     )
-    if windows_duration is not None:
-        timings["windows"] = windows_duration
-
-    linux_duration = invoke_gradle_task_if_present_timed(
-        linux_task, f"{title} - Linux build", cwd=path, gradle_args=gradle_args
-    )
-    if linux_duration is not None:
-        timings["linux"] = linux_duration
-
-    mac_duration = invoke_gradle_task_if_present_timed(
-        mac_task, f"{title} - Mac build", cwd=path, gradle_args=gradle_args
-    )
-    if mac_duration is not None:
-        timings["mac"] = mac_duration
+    if native_duration is not None:
+        timings[_NATIVE_KEY] = native_duration
 
     print(f"{title} completed successfully.")
     return timings
