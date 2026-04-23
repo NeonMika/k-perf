@@ -324,12 +324,10 @@ python3 benchmark.py
 
 #### Instrumentation-Overhead-Analyzer Benchmark
 
-```powershell
+```bash
 cd benchmarking/game-of-life-kmp-commonmain-ioa
-.\run.ps1
+python3 benchmark.py
 ```
-
-The k-perf benchmark uses Python (`benchmark.py`); the IOA benchmark still uses PowerShell (`run.ps1`).
 
 Both will run with default parameters (3 repetitions, 20 simulation steps per execution, no clean build, all executables tested).
 
@@ -373,9 +371,9 @@ Both will run with default parameters (3 repetitions, 20 simulation steps per ex
 
 Run `python3 benchmark.py --help` for full parameter documentation.
 
-#### IOA Benchmark Parameters (`run.ps1`)
+#### IOA Benchmark Parameters (`benchmark.py`)
 
-The IOA benchmark retains its PowerShell interface. See `game-of-life-kmp-commonmain-ioa/run.ps1` for its `-RepetitionCount`, `-CleanBuild`, `-StepCount`, `-Reference`, `-IOA`, `-JVM`, `-JS`, `-Native`, and `-CILabel` parameters.
+See `game-of-life-kmp-commonmain-ioa/benchmark.py --help` for its `--repetition-count`, `--clean-build`, `--step-count`, `--reference`, `--ioa`, `--jvm`, `--js`, `--native`, `--ioa-kinds`, and `--ci-label` parameters.
 
 ### Advanced Usage
 
@@ -388,7 +386,7 @@ python3 benchmark.py --repetition-count 100 --step-count 50 --flush-early true -
 
 # Run IOA benchmark with faster iteration (25 repetitions, 5 steps) on JAR targets only, skip rebuild
 cd benchmarking/game-of-life-kmp-commonmain-ioa
-.\run.ps1 -RepetitionCount 25 -StepCount 5 -CleanBuild $false -JS $false -Native $false
+python3 benchmark.py --repetition-count 25 --step-count 5 --clean-build false --js false --native false
 ```
 
 #### Sequential Benchmark Runs
@@ -483,9 +481,9 @@ Both benchmarks use shared components located in the parent `benchmarking/` fold
 - **`build.py`**: Granular build functions for KIRHelperKit, k-perf plugin, and all Game of Life variants
 - **`run.py`**: `invoke_benchmark_suite()` — the core measurement loop
 
-### PowerShell modules (used by `run.ps1` in the IOA benchmark)
+### PowerShell modules (retained for reference only)
 
-- **`types.ps1`**, **`gradle_utils.ps1`**, **`statistics_utils.ps1`**, **`build.ps1`** — the original PowerShell equivalents of the Python modules above, retained for the IOA benchmark.
+- **`types.ps1`**, **`gradle_utils.ps1`**, **`statistics_utils.ps1`**, **`build.ps1`** — the original PowerShell equivalents of the Python modules above, no longer used by any benchmark entry point.
 
 ## Troubleshooting
 
@@ -526,9 +524,9 @@ python3 benchmark.py --flush-early true,false --repetition-count 50
 
 ### Measure Instrumentation Overhead
 
-```powershell
+```bash
 cd benchmarking/game-of-life-kmp-commonmain-ioa
-.\run.ps1 -JVM $true -JS $false -Native $false -RepetitionCount 100 -StepCount 50
+python3 benchmark.py --jvm true --js false --native false --repetition-count 100 --step-count 50
 # Compare the commonmain-plain-jar.json vs commonmain-ioa-jar.json results
 ```
 
