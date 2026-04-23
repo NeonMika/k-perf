@@ -481,9 +481,9 @@ Both benchmarks use shared components located in the parent `benchmarking/` fold
 - **`build.py`**: Granular build functions for KIRHelperKit, k-perf plugin, and all Game of Life variants
 - **`run.py`**: `invoke_benchmark_suite()` — the core measurement loop
 
-### PowerShell modules (retained for reference only)
+### Deprecated PowerShell scripts
 
-- **`types.ps1`**, **`gradle_utils.ps1`**, **`statistics_utils.ps1`**, **`build.ps1`** — the original PowerShell equivalents of the Python modules above, no longer used by any benchmark entry point.
+The original PowerShell scripts (`types.ps1`, `gradle_utils.ps1`, `statistics_utils.ps1`, `build.ps1`, `run.ps1`, `benchmark.ps1`, `ioa_run.ps1`) have been moved to `benchmarking/deprecated/` and are no longer used.
 
 ## Troubleshooting
 
