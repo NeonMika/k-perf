@@ -32,15 +32,14 @@ jobs:
           node-version: "22"
 
       - name: Run k-perf benchmark
-        shell: pwsh
+        working-directory: benchmarking/game-of-life-kmp-k-perf
         run: |
-          Set-Location benchmarking/game-of-life-kmp-k-perf
-          ./benchmark.ps1 -CleanBuild $false -RepetitionCount 50 -StepCount 500 `
-            -Reference $true -Common $true -Dedicated $false `
-            -JVM $true -JS $true -Native $true `
-            -Enabled @($true) -FlushEarly @($true, $false) `
-            -InstrumentPropertyAccessors @($true, $false) -TestKIR @($false) `
-            -Methods @(".*", "step") -CILabel "ci-windows-large"
+          python benchmark.py --clean-build false --repetition-count 50 --step-count 500 `
+            --reference true --common true --dedicated false `
+            --jvm true --js true --native true `
+            --enabled true --flush-early true,false `
+            --instrument-property-accessors true,false --test-kir false `
+            --methods ".*,step" --ci-label ci-windows-large
 
       - name: Commit and push benchmark results
         shell: pwsh

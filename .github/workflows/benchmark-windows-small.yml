@@ -33,10 +33,8 @@ jobs:
           node-version: "22"
 
       - name: Run k-perf benchmark
-        shell: pwsh
-        run: |
-          Set-Location benchmarking/game-of-life-kmp-k-perf
-          ./benchmark.ps1 -CleanBuild $false -RepetitionCount 3 -StepCount 20 -CILabel "ci-windows-small"
+        working-directory: benchmarking/game-of-life-kmp-k-perf
+        run: python benchmark.py --clean-build false --repetition-count 3 --step-count 20 --ci-label ci-windows-small
 
       - name: Commit and push benchmark results
         shell: pwsh
