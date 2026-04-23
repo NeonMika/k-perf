@@ -211,7 +211,7 @@ The benchmarks produce timestamped result directories in the measurements folder
 
 ### IOA directory name pattern
 ```
-{timestamp}_ioa_{ci-label}_{N}reps_{N}steps_ref{t|f}_ioa{t|f}_{platforms}_kinds-{kinds}
+{timestamp}_ioa_{ci-label}_{N}reps_{N}steps_ref{t|f}_ioa{t|f}_{platforms}_{N}kinds
 ```
 
 ### Per-executable JSON structure

@@ -273,12 +273,11 @@ def main() -> None:
     measurement_timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     ref_flag = "t" if args.reference else "f"
     ioa_flag = "t" if args.ioa else "f"
-    kinds_label = "+".join(args.ioa_kinds)
 
     measurement_dir_name = (
         f"{measurement_timestamp}_ioa_{args.ci_label}_{args.repetition_count}reps_{args.step_count}steps"
         f"_ref{ref_flag}_ioa{ioa_flag}_{platform_label}"
-        f"_kinds-{kinds_label}"
+        f"_{len(args.ioa_kinds)}kinds"
     )
     measurement_dir = _REPO_ROOT / "measurements" / measurement_dir_name
 
