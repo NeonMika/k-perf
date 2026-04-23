@@ -7,7 +7,7 @@ Usage (from this directory):
 Run python benchmark.py --help for full parameter documentation.
 
 Available IoaKinds are read dynamically from:
-    plugins/instrumentation-overhead-analyzer/src/main/kotlin/at/jku/ssw/shared/InstrumentationOverheadAnalyzerKind.kt
+    plugins/instrumentation-overhead-analyzer/src/main/kotlin/at/jku/ssw/shared/IoaKind.kt
 """
 
 from __future__ import annotations
@@ -52,19 +52,19 @@ _IOA_KIND_KT = (
     / "jku"
     / "ssw"
     / "shared"
-    / "InstrumentationOverheadAnalyzerKind.kt"
+    / "IoaKind.kt"
 )
 
 try:
     _kt_content = _IOA_KIND_KT.read_text(encoding="utf-8")
-    _start_marker = "enum class InstrumentationOverheadAnalyzerKind {"
+    _start_marker = "enum class IoaKind {"
     _start = _kt_content.find(_start_marker)
     if _start == -1:
-        raise ValueError("Could not find 'enum class InstrumentationOverheadAnalyzerKind {' in InstrumentationOverheadAnalyzerKind.kt")
+        raise ValueError("Could not find 'enum class IoaKind {' in IoaKind.kt")
     _start += len(_start_marker)
     _end = _kt_content.find("}", _start)
     if _end == -1:
-        raise ValueError("Could not find closing '}' of InstrumentationOverheadAnalyzerKind enum in InstrumentationOverheadAnalyzerKind.kt")
+        raise ValueError("Could not find closing '}' of IoaKind enum in IoaKind.kt")
     _enum_body = _kt_content[_start:_end].strip()
     ALL_IOA_KINDS: list[str] = [
         line.strip().rstrip(",")
@@ -73,7 +73,7 @@ try:
     ]
 except FileNotFoundError:
     print(
-        f"WARNING: InstrumentationOverheadAnalyzerKind.kt not found at {_IOA_KIND_KT}. "
+        f"WARNING: IoaKind.kt not found at {_IOA_KIND_KT}. "
         "IoaKind filtering will be unavailable.",
         file=sys.stderr,
     )

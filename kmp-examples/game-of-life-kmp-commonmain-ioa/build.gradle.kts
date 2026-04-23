@@ -1,7 +1,5 @@
 @file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
 
-import at.jku.ssw.shared.InstrumentationOverheadAnalyzerKind
-
 plugins {
   kotlin("multiplatform") version "2.3.0"
   id("io.github.neonmika.instrumentation-overhead-analyzer") version "0.2.1" // dependency on the instrumentation-overhead-analyzer plugin
@@ -15,13 +13,8 @@ repositories {
   mavenLocal() // Add this line to include mavenLocal()
 }
 
-val ioaKind = providers.gradleProperty("ioaKind")
-  .map { InstrumentationOverheadAnalyzerKind.valueOf(it) }
-  .getOrElse(InstrumentationOverheadAnalyzerKind.StringBuilderAppend)
-
 instrumentationOverheadAnalyzer {
   enabled = true
-  kind = ioaKind
 }
 
 kotlin {
