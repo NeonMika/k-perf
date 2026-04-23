@@ -198,7 +198,8 @@ def build_game_of_life_commonmain_ioa_variant(config: IoaConfig) -> dict[str, fl
     dist_dir = project_path / "dist"
     if dist_dir.exists():
         for item in dist_dir.iterdir():
-            shutil.copy2(str(item), str(bin_dir))
+            if item.is_file():
+                shutil.copy2(str(item), str(bin_dir))
 
     build_times: dict[str, float] = {}
     if "jvm" in timings:
@@ -254,7 +255,8 @@ def build_game_of_life_k_perf_variant(
     dist_dir = project_path / "dist"
     if dist_dir.exists():
         for item in dist_dir.iterdir():
-            shutil.copy2(str(item), str(bin_dir))
+            if item.is_file():
+                shutil.copy2(str(item), str(bin_dir))
 
     build_times: dict[str, float] = {}
     game_type_str = get_game_type_string(game_type)
