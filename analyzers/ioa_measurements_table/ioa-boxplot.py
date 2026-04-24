@@ -14,22 +14,6 @@ import numpy as np
 # ── Well-known targets ────────────────────────────────────────────────────────
 TARGET_PRIORITY = ["jar", "node"]
 
-def target_label(target: str) -> str:
-    labels = {
-        "jar":         "JVM",
-        "node":        "JS (Node)",
-        "linux-exe":   "Native (Linux)",
-        "windows-exe": "Native (Windows)",
-        "macos-exe":   "Native (macOS)",
-    }
-    if target in labels:
-        return labels[target]
-    if target.endswith("-exe"):
-        os_part = target[:-4].replace("-", " ").title()
-        return f"Native ({os_part})"
-    return target.title()
-
-
 PLAIN_KIND = "plain (reference)"
 
 KIND_LABELS: dict[str, str] = {
@@ -174,14 +158,6 @@ def build_grid(
     return kinds, targets
 
 
-def _group(target: str) -> str:
-    if target == "jar":
-        return "JVM"
-    if target == "node":
-        return "JavaScript"
-    return "Native"
-
-
 # ── Plotting ──────────────────────────────────────────────────────────────────
 
 def plot_boxgrid(
@@ -198,20 +174,14 @@ def plot_boxgrid(
     fig_w = n_cols * cell_w + 3.0   # extra left margin for row labels
     fig_h = n_rows * cell_h + 1.2   # extra top margin for column headers
 
-    # Global y-axis limits: same range for every cell so boxes are comparable
-    all_times = [t for times in raw.values() for t in times]
-    y_min = min(all_times)
-    y_max = max(all_times)
-    y_pad = (y_max - y_min) * 0.05
-    y_lo = max(0.0, y_min - y_pad)
-    y_hi = y_max + y_pad
-
-    # sharey=True: every subplot shares the same y-axis range
+    # sharey='col': subplots in the same column share their y-axis range,
+    # allowing direct comparison of kinds within a target while letting
+    # each target (JVM / JS / Native) use its own natural scale.
     fig, axes = plt.subplots(
         n_rows, n_cols,
         figsize=(fig_w, fig_h),
         squeeze=False,
-        sharey=True,
+        sharey="col",
     )
 
     for row_idx, kind in enumerate(kinds):
@@ -252,8 +222,6 @@ def plot_boxgrid(
                 ),
             )
 
-            ax.set_ylim(y_lo, y_hi)
-
             # Y-axis ticks and labels only on the leftmost column
             if col_idx == 0:
                 ax.tick_params(axis="y", labelsize=6, pad=2)
@@ -277,41 +245,8 @@ def plot_boxgrid(
             fontweight="bold" if kind == PLAIN_KIND else "normal",
         )
 
-    # ── Column target labels ──────────────────────────────────────────────────
-    for col_idx, target in enumerate(targets):
-        axes[0, col_idx].set_title(target_label(target), fontsize=8, pad=4)
-
     # ── Tight layout first so that get_position() returns final coordinates ───
     plt.tight_layout(rect=[0, 0, 1, 0.96])   # leave room at top for suptitle
-
-    # ── Column group headers placed AFTER tight_layout ────────────────────────
-    groups: list[tuple[str, int, int]] = []
-    for col_idx, t in enumerate(targets):
-        g = _group(t)
-        if groups and groups[-1][0] == g:
-            groups[-1] = (g, groups[-1][1], col_idx + 1)
-        else:
-            groups.append((g, col_idx, col_idx + 1))
-
-    for g_label, g_start, g_end in groups:
-        left  = axes[0, g_start].get_position().x0
-        right = axes[0, g_end - 1].get_position().x1
-        top   = axes[0, 0].get_position().y1
-        fig.text(
-            (left + right) / 2.0, top + 0.015,
-            g_label,
-            ha="center", va="bottom",
-            fontsize=9, fontweight="bold",
-            transform=fig.transFigure,
-        )
-
-    # Dashed vertical separators between groups
-    for _, g_start, _ in groups:
-        if g_start > 0:
-            for row_idx in range(n_rows):
-                axes[row_idx, g_start].spines["left"].set(
-                    linewidth=1.5, linestyle="--", color="black", alpha=0.5
-                )
 
     fig.suptitle(title, fontsize=12, fontweight="bold")
     fig.savefig(output_path, format="svg", bbox_inches="tight")
