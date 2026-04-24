@@ -8,14 +8,8 @@ from pathlib import Path
 
 import matplotlib
 matplotlib.rcParams["svg.fonttype"] = "none"  # embed text as real SVG text, not paths
-import matplotlib.colors as mcolors
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-
-# ── CLI defaults ──────────────────────────────────────────────────────────────
-DEFAULT_GREEN_RATIO = 1.1   # overhead ratio ≤ this → green  (10 % overhead)
-DEFAULT_RED_RATIO   = 2.0   # overhead ratio > this → red   (100 % overhead)
 
 # ── Well-known targets ────────────────────────────────────────────────────────
 TARGET_PRIORITY = ["jar", "node"]
@@ -180,31 +174,6 @@ def build_grid(
     return kinds, targets
 
 
-# ── Color helpers ─────────────────────────────────────────────────────────────
-
-_COLORS = {
-    "green": "#4CAF50",
-    "amber": "#FFC107",
-    "red":   "#F44336",
-    "plain": "#2196F3",   # blue for the plain reference row
-    "none":  "#E0E0E0",
-}
-
-_BG_ALPHA = "40"  # hex alpha ~25 %
-
-
-def _cell_color(ratio: float | None, is_plain: bool, green: float, red: float) -> str:
-    if is_plain:
-        return _COLORS["plain"]
-    if ratio is None:
-        return _COLORS["none"]
-    if ratio <= green:
-        return _COLORS["green"]
-    if ratio <= red:
-        return _COLORS["amber"]
-    return _COLORS["red"]
-
-
 def _group(target: str) -> str:
     if target == "jar":
         return "JVM"
@@ -220,103 +189,102 @@ def plot_boxgrid(
     kinds: list[str],
     targets: list[str],
     title: str,
-    green_ratio: float,
-    red_ratio: float,
     output_path: Path,
 ) -> None:
     n_rows = len(kinds)
     n_cols = len(targets)
 
     cell_w, cell_h = 2.2, 1.6
-    label_col_w = 3.2   # extra width for y-axis row labels
-    group_header_h = 0.55
-    fig_w = label_col_w + n_cols * cell_w
-    fig_h = group_header_h + n_rows * cell_h + 0.8
+    fig_w = n_cols * cell_w + 3.0   # extra left margin for row labels
+    fig_h = n_rows * cell_h + 1.2   # extra top margin for column headers
 
-    # Compute plain reference medians per target for overhead ratio
-    plain_medians: dict[str, float] = {}
-    for target in targets:
-        data = raw.get((PLAIN_KIND, target))
-        if data:
-            plain_medians[target] = float(np.median(data))
+    # Global y-axis limits: same range for every cell so boxes are comparable
+    all_times = [t for times in raw.values() for t in times]
+    y_min = min(all_times)
+    y_max = max(all_times)
+    y_pad = (y_max - y_min) * 0.05
+    y_lo = max(0.0, y_min - y_pad)
+    y_hi = y_max + y_pad
 
+    # sharey=True: every subplot shares the same y-axis range
     fig, axes = plt.subplots(
         n_rows, n_cols,
         figsize=(fig_w, fig_h),
         squeeze=False,
+        sharey=True,
     )
 
     for row_idx, kind in enumerate(kinds):
-        is_plain = kind == PLAIN_KIND
         for col_idx, target in enumerate(targets):
             ax = axes[row_idx, col_idx]
-            key = (kind, target)
-            times = raw.get(key)
+            times = raw.get((kind, target))
 
-            plain_ref = plain_medians.get(target)
-            if times and plain_ref and plain_ref > 0:
-                ratio = float(np.median(times)) / plain_ref
-            else:
-                ratio = None
-
-            fill_color = _cell_color(ratio, is_plain, green_ratio, red_ratio)
-            ax.set_facecolor(fill_color + _BG_ALPHA)
+            # Hide x-tick on every cell
+            ax.set_xticks([])
 
             if not times:
-                ax.set_xticks([])
-                ax.set_yticks([])
                 ax.text(0.5, 0.5, "–", ha="center", va="center",
                         transform=ax.transAxes, fontsize=10, color="#777777")
-                _style_cell(ax, row_idx, col_idx, n_rows, n_cols, kind, target, targets)
+                for spine in ax.spines.values():
+                    spine.set_linewidth(0.4)
+                    spine.set_color("#AAAAAA")
                 continue
 
-            # Modified box plot (Tukey: whiskers at 1.5×IQR, outliers shown individually)
-            bp = ax.boxplot(
+            # Modified box plot: Tukey 1.5×IQR whiskers, outliers shown individually
+            ax.boxplot(
                 times,
                 vert=True,
                 patch_artist=True,
                 showfliers=True,
                 widths=0.5,
-                boxprops=dict(facecolor=fill_color + "99", linewidth=0.8),
-                whiskerprops=dict(linewidth=0.8, linestyle="--"),
-                capprops=dict(linewidth=0.8),
+                boxprops=dict(facecolor="white", linewidth=0.8),
+                whiskerprops=dict(linewidth=0.8, linestyle="--", color="#555555"),
+                capprops=dict(linewidth=0.8, color="#555555"),
                 medianprops=dict(color="black", linewidth=1.5),
                 flierprops=dict(
                     marker="o",
                     markersize=3,
-                    markerfacecolor=fill_color,
-                    markeredgecolor="black",
-                    markeredgewidth=0.5,
-                    alpha=0.8,
+                    markerfacecolor="#888888",
+                    markeredgecolor="#444444",
+                    markeredgewidth=0.4,
+                    alpha=0.7,
                     linestyle="none",
                 ),
             )
 
-            # Annotate median value inside the box
-            median_val = float(np.median(times))
-            label = _fmt_ms(median_val)
-            ax.text(1.0, median_val, label,
-                    ha="center", va="bottom",
-                    fontsize=5.5, color="black", fontweight="bold")
+            ax.set_ylim(y_lo, y_hi)
 
-            ax.set_xticks([])
-            ax.tick_params(axis="y", labelsize=5.5, pad=1)
-            ax.yaxis.set_major_formatter(
-                plt.FuncFormatter(lambda v, _: _fmt_ms(v))
-            )
+            # Y-axis ticks and labels only on the leftmost column
+            if col_idx == 0:
+                ax.tick_params(axis="y", labelsize=6, pad=2)
+                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: _fmt_ms(v)))
+            else:
+                ax.tick_params(axis="y", left=False, labelleft=False)
 
-            _style_cell(ax, row_idx, col_idx, n_rows, n_cols, kind, target, targets)
+            for spine in ax.spines.values():
+                spine.set_linewidth(0.4)
+                spine.set_color("#AAAAAA")
 
-    # ── Row labels (kind names) on the right side of the last column ──────────
+    # ── Row labels (kind names) as y-axis labels on the leftmost column ───────
     for row_idx, kind in enumerate(kinds):
-        ax = axes[row_idx, -1]
-        ax.yaxis.set_label_position("right")
-        short = kind if kind == PLAIN_KIND else kind
-        axes[row_idx, 0].set_ylabel(short, fontsize=7, rotation=0,
-                                     ha="right", va="center", labelpad=4,
-                                     fontweight="bold" if kind == PLAIN_KIND else "normal")
+        axes[row_idx, 0].set_ylabel(
+            kind,
+            fontsize=7,
+            rotation=0,
+            ha="right",
+            va="center",
+            labelpad=6,
+            fontweight="bold" if kind == PLAIN_KIND else "normal",
+        )
 
-    # ── Column group headers ──────────────────────────────────────────────────
+    # ── Column target labels ──────────────────────────────────────────────────
+    for col_idx, target in enumerate(targets):
+        axes[0, col_idx].set_title(target_label(target), fontsize=8, pad=4)
+
+    # ── Tight layout first so that get_position() returns final coordinates ───
+    plt.tight_layout(rect=[0, 0, 1, 0.96])   # leave room at top for suptitle
+
+    # ── Column group headers placed AFTER tight_layout ────────────────────────
     groups: list[tuple[str, int, int]] = []
     for col_idx, t in enumerate(targets):
         g = _group(t)
@@ -325,43 +293,27 @@ def plot_boxgrid(
         else:
             groups.append((g, col_idx, col_idx + 1))
 
-    for col_idx, target in enumerate(targets):
-        axes[0, col_idx].set_title(target_label(target), fontsize=8, pad=3)
-
-    # Group labels drawn above the top row using fig.text
-    top_row_bbox = axes[0, 0].get_position()
     for g_label, g_start, g_end in groups:
-        left = axes[0, g_start].get_position().x0
+        left  = axes[0, g_start].get_position().x0
         right = axes[0, g_end - 1].get_position().x1
-        mid = (left + right) / 2.0
-        top = axes[0, 0].get_position().y1
-        fig.text(mid, top + 0.01, g_label,
-                 ha="center", va="bottom", fontsize=9, fontweight="bold",
-                 transform=fig.transFigure)
+        top   = axes[0, 0].get_position().y1
+        fig.text(
+            (left + right) / 2.0, top + 0.015,
+            g_label,
+            ha="center", va="bottom",
+            fontsize=9, fontweight="bold",
+            transform=fig.transFigure,
+        )
 
-    # Dashed group-separator lines
-    for g_label, g_start, _ in groups:
+    # Dashed vertical separators between groups
+    for _, g_start, _ in groups:
         if g_start > 0:
             for row_idx in range(n_rows):
                 axes[row_idx, g_start].spines["left"].set(
                     linewidth=1.5, linestyle="--", color="black", alpha=0.5
                 )
 
-    # ── Legend ────────────────────────────────────────────────────────────────
-    green_pct = (green_ratio - 1) * 100
-    red_pct   = (red_ratio   - 1) * 100
-    legend_patches = [
-        mpatches.Patch(color=_COLORS["plain"]  + _BG_ALPHA, label="Plain reference"),
-        mpatches.Patch(color=_COLORS["green"]  + _BG_ALPHA, label=f"≤ {green_pct:.0f}% overhead"),
-        mpatches.Patch(color=_COLORS["amber"]  + _BG_ALPHA, label=f"≤ {red_pct:.0f}% overhead"),
-        mpatches.Patch(color=_COLORS["red"]    + _BG_ALPHA, label=f"> {red_pct:.0f}% overhead"),
-    ]
-    fig.legend(handles=legend_patches, loc="lower center", ncol=4,
-               fontsize=7, framealpha=0.8,
-               bbox_to_anchor=(0.5, 0.0))
-
-    fig.suptitle(title, fontsize=12, fontweight="bold", y=1.01)
-    plt.tight_layout(rect=[0, 0.04, 1, 1])
+    fig.suptitle(title, fontsize=12, fontweight="bold")
     fig.savefig(output_path, format="svg", bbox_inches="tight")
     print(f"Saved: {output_path}")
     plt.close(fig)
@@ -378,22 +330,6 @@ def _fmt_ms(v: float) -> str:
     return f"{v * 1000:.0f}µs"
 
 
-def _style_cell(
-    ax: plt.Axes,
-    row_idx: int,
-    col_idx: int,
-    n_rows: int,
-    n_cols: int,
-    kind: str,
-    target: str,
-    targets: list[str],
-) -> None:
-    """Apply shared cell border / tick styling."""
-    for spine in ax.spines.values():
-        spine.set_linewidth(0.4)
-        spine.set_color("#AAAAAA")
-
-
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -401,7 +337,8 @@ def main() -> None:
         description=(
             "Generate a box-plot grid (SVG) for an IOA benchmark run. "
             "Each cell shows a modified box plot (Tukey 1.5×IQR, outliers visible) "
-            "of all repetition times for one IOA kind × execution target combination."
+            "of all repetition times for one IOA kind × execution target combination. "
+            "All cells share the same y-axis for direct comparison."
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -415,22 +352,6 @@ def main() -> None:
         "--output", "-o",
         default=None,
         help="Output SVG path (default: <folder>/ioa_boxplot.svg)",
-    )
-    parser.add_argument(
-        "--green",
-        type=float,
-        default=DEFAULT_GREEN_RATIO,
-        metavar="RATIO",
-        dest="green_ratio",
-        help="Overhead ratio upper bound for green cells (e.g. 1.1 = ≤10%% overhead)",
-    )
-    parser.add_argument(
-        "--red",
-        type=float,
-        default=DEFAULT_RED_RATIO,
-        metavar="RATIO",
-        dest="red_ratio",
-        help="Overhead ratio lower bound for red cells (e.g. 2.0 = >100%% overhead)",
     )
     args = parser.parse_args()
 
@@ -446,7 +367,7 @@ def main() -> None:
         f"{meta.get('steps', '?')} Steps · {platform}"
     )
 
-    plot_boxgrid(raw, kinds, targets, title, args.green_ratio, args.red_ratio, output)
+    plot_boxgrid(raw, kinds, targets, title, output)
 
 
 if __name__ == "__main__":
