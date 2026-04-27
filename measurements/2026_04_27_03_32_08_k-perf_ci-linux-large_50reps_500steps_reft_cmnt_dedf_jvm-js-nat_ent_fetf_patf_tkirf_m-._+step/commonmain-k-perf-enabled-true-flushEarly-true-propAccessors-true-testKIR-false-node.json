@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 20,
+    "StepCount": 500,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,16 +14,19 @@
       true
     ],
     "FlushEarly": [
+      true,
       false
     ],
     "InstrumentPropertyAccessors": [
+      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*"
+      ".*",
+      "step"
     ]
   },
   "machineInfo": {
@@ -35,13 +38,13 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.12,
+    "AvailableRAMGB": 14.3,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 86,
-    "SystemUptimeHours": 0.02,
+    "SystemUptimeHours": 0.03,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 165,
+    "RunningProcessCount": 172,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.4.14",
     "JavaVersion": "21.0.10",
@@ -50,13 +53,13 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "fbbb34192bdad22a2be26d5878ad999a51789c3c",
+    "GitCommitHash": "ab2c72749d67c11e514ca7bf305e87d02702a10e",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-04-27 01:45:51"
+    "CollectionTimestamp": "2026-04-27 03:24:38"
   },
-  "buildTimeMs": 5098.3931,
-  "executable": "commonmain-plain-node",
-  "repetitions": 3,
+  "buildTimeMs": 2903.966,
+  "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-node",
+  "repetitions": 50,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
