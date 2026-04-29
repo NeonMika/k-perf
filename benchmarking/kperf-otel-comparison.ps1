@@ -9,6 +9,18 @@ $ErrorActionPreference = "Stop"
 $ScriptRoot = $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($ScriptRoot)) { $ScriptRoot = '.' }
 
+# Rebuild $env:PATH from the registry so tools installed after this PowerShell
+# (or its parent terminal) was started — e.g. node — are visible to the
+# Invoke-WithTimeout cmd.exe child processes. Without this, a long-lived shell
+# inherits a stale PATH and JS variants silently fail with "'node' is not
+# recognized" even though node is installed.
+$machinePath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+$userPath    = [Environment]::GetEnvironmentVariable("PATH", "User")
+$pathEntries = (@($machinePath, $userPath, $env:PATH) -join ';') -split ';' |
+               Where-Object { $_ -and (Test-Path $_) } |
+               Select-Object -Unique
+$env:PATH    = $pathEntries -join ';'
+
 . "$ScriptRoot\types.ps1"
 . "$ScriptRoot\statistics_utils.ps1"
 
@@ -57,6 +69,28 @@ function Invoke-WithTimeout {
   return $stdoutTask.Result
 }
 
+# Persist the raw stdout (or [TIMEOUT...] sentinel) of a run whose output couldn't
+# be parsed into a number. Files land under <resultsDir>/failures/ so a subsequent
+# run leaves behind exactly the bytes that caused the regex miss — making it easy
+# to tell a node ENOENT, an exception trace, a hang killed at the wall-clock
+# timeout, and a silent zero-byte exit apart.
+function Save-FailureOutput {
+  param(
+    [string]$Phase,
+    [string]$ExeName,
+    [int]$Iteration,
+    [string]$RawOutput
+  )
+
+  if (-not (Test-Path $failuresDir)) {
+    New-Item -ItemType Directory -Path $failuresDir -Force | Out-Null
+  }
+
+  $safeName = ($ExeName -replace '[^A-Za-z0-9._-]+', '_').Trim('_')
+  $filePath = Join-Path $failuresDir ("{0}-{1}-{2:D2}.txt" -f $safeName, $Phase, $Iteration)
+  $RawOutput | Out-File -FilePath $filePath -Encoding utf8
+}
+
 function Invoke-GradleBuild {
   param(
     [string]$Title,
@@ -73,6 +107,12 @@ function Invoke-GradleBuild {
   Write-Host "=========================================="
 
   Push-Location $Path
+  # Under PowerShell 5.1 with $ErrorActionPreference='Stop', any stderr line
+  # from gradle (including benign Kotlin compiler warnings) is wrapped as a
+  # NativeCommandError and terminates the script. Relax EAP locally — we still
+  # detect real failures via $LASTEXITCODE below.
+  $prevEap = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
   try {
     if ($CleanBuild -and -not $SkipClean) {
       & .\gradlew clean @Tasks
@@ -80,12 +120,13 @@ function Invoke-GradleBuild {
     else {
       & .\gradlew @Tasks
     }
-    
+
     if ($LASTEXITCODE -ne 0) {
       throw "Failed to build $Title"
     }
   }
   finally {
+    $ErrorActionPreference = $prevEap
     Pop-Location
   }
 
@@ -114,9 +155,15 @@ Write-Host "=========================================="
 # Build all three targets for every comparison project: JVM jar, JS bundle, Windows native (mingwX64).
 # linuxX64 targets stay declared in each build.gradle.kts for use on Linux hosts,
 # but we don't link them here because the Windows toolchain can't produce Linux binaries.
-Invoke-GradleBuild -Title "Comparison Project (k-perf)" -Path ".\kmp-examples\comparison-k-perf" -Tasks @("jvmJar", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
-Invoke-GradleBuild -Title "Comparison Project (otel)" -Path ".\kmp-examples\comparison-otel" -Tasks @("jvmJar", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
-Invoke-GradleBuild -Title "Comparison Project (otel-proto)" -Path ".\kmp-examples\comparison-otel-proto" -Tasks @("jvmJar", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
+# `kotlinNpmInstall` is required because `jsProductionExecutableCompileSync`
+# does NOT transitively trigger it: the synced bundle only contains the
+# Kotlin-emitted .js files, not the runtime npm packages it requires
+# (e.g. @js-joda/core for kotlinx-datetime). Without npm install, build/js/
+# has no node_modules and `node ...comparison-*.js` crashes with
+# "Cannot find module '@js-joda/core'".
+Invoke-GradleBuild -Title "Comparison Project (k-perf)" -Path ".\kmp-examples\comparison-k-perf" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
+Invoke-GradleBuild -Title "Comparison Project (otel)" -Path ".\kmp-examples\comparison-otel" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
+Invoke-GradleBuild -Title "Comparison Project (otel-proto)" -Path ".\kmp-examples\comparison-otel-proto" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 
 
 # Path resolving for execution
@@ -150,6 +197,12 @@ Write-Host "Warmups: $WarmupCount | Runs: $RunCount"
 Write-Host "=========================================="
 
 $allResults = @()
+
+# Compute the results directory up-front so we can drop per-run debug dumps
+# under it the moment a run fails (instead of waiting until the loop ends).
+$timestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
+$resultsDir = ".\measurements\comparison_run_$timestamp"
+$failuresDir = Join-Path $resultsDir "failures"
 
 $otelConfigPath = (Resolve-Path "$ScriptRoot\otel-config.yaml").Path
 
@@ -212,6 +265,7 @@ foreach ($exe in $executables) {
     }
     else {
       Write-Host "  Warmup $($i+1): Failed to parse time"
+      Save-FailureOutput -Phase "warmup" -ExeName $exe.Name -Iteration ($i + 1) -RawOutput $outputStr
     }
   }
 
@@ -241,6 +295,7 @@ foreach ($exe in $executables) {
     }
     else {
       Write-Host "  Run $($i+1): Failed to parse time" -ForegroundColor Red
+      Save-FailureOutput -Phase "run" -ExeName $exe.Name -Iteration ($i + 1) -RawOutput $outputStr
     }
   }
 
@@ -268,8 +323,6 @@ Write-Host "=========================================="
 
 $machineInfo = Get-MachineInfo -GradleProjectPath ".\kmp-examples\comparison-k-perf"
 
-$timestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
-$resultsDir = ".\measurements\comparison_run_$timestamp"
 if (-Not (Test-Path $resultsDir)) {
   New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null
 }

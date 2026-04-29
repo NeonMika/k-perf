@@ -1,6 +1,7 @@
 package com.infendro.otlp
 
 import io.ktor.client.*
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.opentelemetry.kotlin.sdk.common.CompletableResultCode
@@ -12,7 +13,14 @@ class OtlpExporter(
     val host: String,
     val service: String
 ) : SpanExporter {
-    private val client = HttpClient()
+    private val client = HttpClient {
+        install(HttpTimeout) {
+            requestTimeoutMillis = 5_000
+            connectTimeoutMillis = 2_000
+            socketTimeoutMillis = 5_000
+        }
+        expectSuccess = false
+    }
     private val scope = CoroutineScope(Dispatchers.Default)
     private val jobs: MutableList<Job> = mutableListOf()
 
@@ -24,10 +32,14 @@ class OtlpExporter(
         spans: Collection<SpanData>
     ): CompletableResultCode {
         val job = scope.launch {
-            val payload = spans.serialize(service)
-            client.post("http://$host/v1/traces") {
-                contentType(ContentType.Application.Json)
-                setBody(payload)
+            try {
+                val payload = spans.serialize(service)
+                client.post("http://$host/v1/traces") {
+                    contentType(ContentType.Application.Json)
+                    setBody(payload)
+                }
+            } catch (_: Exception) {
+                // Match otel-proto semantics: ofSuccess returned eagerly regardless of RPC outcome.
             }
         }
         jobs.add(job)

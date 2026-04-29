@@ -93,9 +93,17 @@ function Get-MachineInfo {
 
   $machineInfo = [ordered]@{}
 
+  # PowerShell 5.1 (Desktop edition) does not auto-define $IsWindows / $IsLinux /
+  # $IsMacOS — those only exist in PowerShell Core 6+. Without this shim the
+  # entire OS-specific block below is skipped on Windows PS 5.1 and the result
+  # is an empty OS / CPU / RAM section in results.md.
+  $isWinHost = ($PSVersionTable.PSEdition -eq 'Desktop') -or $IsWindows
+  $isLinHost = [bool]$IsLinux
+  $isMacHost = [bool]$IsMacOS
+
   # --- OS-specific hardware and system information ---
 
-  if ($IsWindows) {
+  if ($isWinHost) {
     # Computer/Device Information
     $computerSystem = Get-CimInstance Win32_ComputerSystem
     $machineInfo.DeviceManufacturer = $computerSystem.Manufacturer
@@ -208,7 +216,7 @@ function Get-MachineInfo {
     }
     catch { $machineInfo.WindowsDefenderEnabled = "Unknown" }
 
-  } elseif ($IsLinux) {
+  } elseif ($isLinHost) {
     # Device info (from DMI when accessible — requires root on some systems)
     try {
       if (Test-Path "/sys/class/dmi/id/sys_vendor") {
@@ -298,7 +306,7 @@ function Get-MachineInfo {
     }
     catch { $machineInfo.IsVirtualMachine = "Unknown" }
 
-  } elseif ($IsMacOS) {
+  } elseif ($isMacHost) {
     # Operating System
     try { $machineInfo.OS = "$(sw_vers -productName 2>&1) $(sw_vers -productVersion 2>&1)".Trim() }
     catch { $machineInfo.OS = (uname -a 2>&1).ToString().Trim() }
@@ -342,34 +350,54 @@ function Get-MachineInfo {
 
   # --- Cross-platform runtime information ---
 
-  # PowerShell Version
-  $machineInfo.PowerShellVersion = "$($PSVersionTable.PSVersion.Major).$($PSVersionTable.PSVersion.Minor).$($PSVersionTable.PSVersion.Patch)"
+  # PowerShell Version. `Patch` only exists in PowerShell Core; on Desktop 5.1
+  # PSVersion is a System.Version (Major.Minor.Build.Revision), so just use ToString.
+  $machineInfo.PowerShellVersion = $PSVersionTable.PSVersion.ToString()
 
-  # Java Version and Distribution
+  # Native CLI version probes below all use `2>&1`. Under PowerShell 5.1 with
+  # $ErrorActionPreference='Stop' (set by the calling script), each stderr line
+  # from a native exe is wrapped as a NativeCommandError ErrorRecord and trips
+  # the catch even when the command succeeded — that is why JavaVersion previously
+  # came back "Not available" on a machine with Java installed. Run the probes
+  # under a relaxed EAP and restore it after.
+  $prevEap = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
   try {
-    $javaVersionOutput = java -version 2>&1
-    $javaVersionLine = $javaVersionOutput | Select-Object -First 1
-    if ($javaVersionLine -match '"(.+?)"') { $machineInfo.JavaVersion = $Matches[1] }
-    $javaDistLine = $javaVersionOutput | Select-Object -Skip 1 -First 2
-    if ($javaDistLine -match "OpenJDK|Oracle|Adoptium|Temurin|Azul|Amazon|GraalVM") {
-      $machineInfo.JavaDistribution = $Matches[0]
+    # Java Version and Distribution
+    try {
+      $javaVersionOutput = java -version 2>&1
+      $javaVersionLine = $javaVersionOutput | Select-Object -First 1
+      if ($javaVersionLine -match '"(.+?)"') { $machineInfo.JavaVersion = $Matches[1] }
+      $javaDistLine = $javaVersionOutput | Select-Object -Skip 1 -First 2
+      if ($javaDistLine -match "OpenJDK|Oracle|Adoptium|Temurin|Azul|Amazon|GraalVM") {
+        $machineInfo.JavaDistribution = $Matches[0]
+      }
     }
-  }
-  catch {
-    $machineInfo.JavaVersion = "Not available"
-    $machineInfo.JavaDistribution = "Not available"
-  }
+    catch {
+      $machineInfo.JavaVersion = "Not available"
+      $machineInfo.JavaDistribution = "Not available"
+    }
 
-  # Node.js Version
-  try { $machineInfo.NodeVersion = (node --version 2>&1).ToString().Trim() }
-  catch { $machineInfo.NodeVersion = "Not available" }
+    # Node.js Version
+    if (Get-Command node -ErrorAction SilentlyContinue) {
+      try { $machineInfo.NodeVersion = (node --version 2>&1 | Out-String).Trim() }
+      catch { $machineInfo.NodeVersion = "Not available" }
+    }
+    else { $machineInfo.NodeVersion = "Not available" }
 
-  # Python Version
-  try {
-    $pythonCmd = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
-    $machineInfo.PythonVersion = (& $pythonCmd --version 2>&1).ToString().Trim()
+    # Python Version
+    try {
+      $pythonCmd = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" }
+                   elseif (Get-Command python -ErrorAction SilentlyContinue) { "python" }
+                   else { $null }
+      if ($pythonCmd) { $machineInfo.PythonVersion = (& $pythonCmd --version 2>&1 | Out-String).Trim() }
+      else { $machineInfo.PythonVersion = "Not available" }
+    }
+    catch { $machineInfo.PythonVersion = "Not available" }
   }
-  catch { $machineInfo.PythonVersion = "Not available" }
+  finally {
+    $ErrorActionPreference = $prevEap
+  }
 
   # Gradle + Kotlin Version (via the project's gradlew wrapper)
   $gradlewName   = if ($IsWindows) { "gradlew.bat" } else { "gradlew" }
