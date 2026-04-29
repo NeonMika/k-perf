@@ -57,6 +57,50 @@ Each JSON file contains:
   - `min`/`max`: Minimum and maximum times
   - `ci95`: 95% confidence interval using t-distribution
 
+## Comparison Benchmark (`kperf-otel-comparison.ps1`)
+
+A separate script in this folder, `kperf-otel-comparison.ps1`, benchmarks three lightweight CPU workloads (`fibonacci(25)` + bubble sort) against three different instrumentation strategies on three platforms — 9 cells in total. The strategies are:
+
+- **k-perf** — the project's local timing plugin (sync trace flush)
+- **otel** — OpenTelemetry spans exported via HTTP/JSON to an OTLP collector
+- **otel-proto** — OpenTelemetry spans exported via gRPC/protobuf to the same collector
+
+Run it with:
+
+```powershell
+cd benchmarking
+.\kperf-otel-comparison.ps1                          # defaults: 5 warmups, 20 runs, clean build
+.\kperf-otel-comparison.ps1 -WarmupCount 1 -RunCount 3 -CleanBuild $false   # quick smoke test
+```
+
+Results land under `measurements/comparison_run_<timestamp>/` as `results.json` + `results.md`. Any iteration whose stdout fails the timing-line regex is dumped under `measurements/comparison_run_<timestamp>/failures/<exe>-<warmup|run>-<NN>.txt` so the cause (node not found, container hang, runtime crash, wall-clock timeout) is one read away.
+
+### Prerequisites
+
+The script bootstraps Gradle, the Kotlin/Native compiler, the bundled Yarn/Node used by the Kotlin Gradle plugin, npm packages (`@js-joda/core` etc.), and the OTel collector Docker container. It cannot install OS-level tooling — these must already be present on PATH:
+
+| Tool | Why | Notes |
+|---|---|---|
+| **JDK 17+** | Gradle 9.0 + Kotlin 2.3.10 | Temurin / Adoptium recommended |
+| **Node.js LTS** | JS variants run on `node` | A stale shell that predates the install is OK — the script refreshes PATH from the registry on startup |
+| **Docker Desktop** | OTLP collector container | Daemon must be running, not just installed (`docker info` must succeed) |
+| **Git** | Commit-hash + branch in `results.md` | Standard Git for Windows |
+
+You also need GitHub Packages credentials for the private `dcxp/opentelemetry-kotlin` Maven repo that hosts `io.opentelemetry.kotlin.*`. Put them in `~/.gradle/gradle.properties`:
+
+```properties
+GITHUB_USERNAME=<your github username>
+GITHUB_PASSWORD=<a GitHub PAT with read:packages scope>
+```
+
+The PAT only needs `read:packages`; no other scopes. A preflight check at the top of the script verifies all of the above and exits with a clear message if anything is missing — so a misconfigured fresh machine fails in seconds, not after a 20-minute build.
+
+### Reading the output
+
+`results.md` shows iteration count per row. A healthy run has `Iterations = <RunCount>` for all 9 rows. If any row shows fewer (or 0), check the matching files in `failures/` to see what each affected iteration printed.
+
+The `Mean (ms)` column for `otel` / `otel-proto` rows includes the time spent flushing spans to the collector (suffixed `(Included async flush)` in the live console output); the `k-perf` rows do not, which makes the absolute numbers across instrumentation strategies non-comparable in a strict sense — they answer "how long does this binary take to do its work *and* clean up after itself?", not "what is the per-call overhead?".
+
 ## Running the Benchmarks
 
 ### Quick Start

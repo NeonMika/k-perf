@@ -24,6 +24,74 @@ $env:PATH    = $pathEntries -join ';'
 . "$ScriptRoot\types.ps1"
 . "$ScriptRoot\statistics_utils.ps1"
 
+# Verify external prerequisites the script can't install itself. We catch the
+# common causes of a long, frustrating "build runs for 20 minutes then fails"
+# loop:
+#   - Java/Node/Git not on PATH
+#   - Docker installed but daemon not running (very common after a reboot)
+#   - GitHub Packages credentials missing in ~/.gradle/gradle.properties
+#     (required to fetch io.opentelemetry.kotlin.* from a private repo)
+function Test-Prerequisites {
+  $missing = @()
+
+  # Native CLI probes use 2>&1 which under PS 5.1 + EAP=Stop wraps any stderr
+  # line as a NativeCommandError; relax EAP locally just for the probes.
+  $prevEap = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    foreach ($tool in @(
+        @{ Name = 'java';   Hint = 'Install JDK 17+ (e.g. Temurin) and ensure java is on PATH.' },
+        @{ Name = 'node';   Hint = 'Install Node.js LTS and ensure node is on PATH.' },
+        @{ Name = 'git';    Hint = 'Install Git for Windows and ensure git is on PATH.' },
+        @{ Name = 'docker'; Hint = 'Install Docker Desktop and ensure docker is on PATH.' }
+      )) {
+      if (-not (Get-Command $tool.Name -ErrorAction SilentlyContinue)) {
+        $missing += "  [missing] $($tool.Name): $($tool.Hint)"
+      }
+    }
+
+    # Docker CLI present is not enough — `docker run` needs the daemon. `docker
+    # info` is the cheapest probe that touches it.
+    if (Get-Command docker -ErrorAction SilentlyContinue) {
+      docker info --format '{{.ServerVersion}}' *> $null
+      if ($LASTEXITCODE -ne 0) {
+        $missing += "  [stopped] docker daemon: Start Docker Desktop and wait for it to finish initializing."
+      }
+    }
+  }
+  finally {
+    $ErrorActionPreference = $prevEap
+  }
+
+  # GitHub Packages credentials. The build script consumes these via
+  # project.property("GITHUB_USERNAME") / GITHUB_PASSWORD; without them, the
+  # otlp-exporter / comparison-otel* projects fail to resolve dependencies.
+  $gradleProps = Join-Path $env:USERPROFILE ".gradle\gradle.properties"
+  if (-not (Test-Path $gradleProps)) {
+    $missing += "  [missing] ${gradleProps}: Create it with GITHUB_USERNAME=<user> and GITHUB_PASSWORD=<PAT with read:packages scope>."
+  }
+  else {
+    $propsContent = Get-Content $gradleProps -Raw
+    if ($propsContent -notmatch '(?m)^\s*GITHUB_USERNAME\s*=') {
+      $missing += "  [missing] GITHUB_USERNAME in ${gradleProps}"
+    }
+    if ($propsContent -notmatch '(?m)^\s*GITHUB_PASSWORD\s*=') {
+      $missing += "  [missing] GITHUB_PASSWORD in ${gradleProps} (a GitHub PAT with read:packages scope)"
+    }
+  }
+
+  if ($missing.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Preflight failed: cannot run the comparison benchmark." -ForegroundColor Red
+    foreach ($line in $missing) { Write-Host $line -ForegroundColor Red }
+    Write-Host ""
+    Write-Host "See benchmarking/README.md `"Comparison Benchmark (kperf-otel-comparison.ps1)`" for setup details."
+    throw "Preflight failed"
+  }
+}
+
+Test-Prerequisites
+
 Push-Location "$ScriptRoot\.."
 
 
