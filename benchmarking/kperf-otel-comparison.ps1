@@ -274,9 +274,35 @@ $failuresDir = Join-Path $resultsDir "failures"
 
 $otelConfigPath = (Resolve-Path "$ScriptRoot\otel-config.yaml").Path
 
+# All docker invocations below run with EAP=Continue locally because under
+# PowerShell 5.1 + $ErrorActionPreference='Stop', any stderr line from a native
+# command (e.g. "Error response from daemon: No such container: otel-collector"
+# when starting a not-yet-created container) is wrapped as a NativeCommandError
+# and throws — even when the stream is redirected to Out-Null. A `try/catch`
+# would silently swallow that throw and skip the very next `docker run` call,
+# leaving the benchmark to run with no collector and the otel-proto native exe
+# hanging on gRPC for the 60s timeout. We use $LASTEXITCODE to detect failures
+# instead.
+function Invoke-Docker {
+  param([string[]]$DockerArgs, [switch]$CaptureOutput)
+  $prevEap = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    if ($CaptureOutput) {
+      return (& docker @DockerArgs 2>&1)
+    }
+    else {
+      & docker @DockerArgs *> $null
+    }
+  }
+  finally {
+    $ErrorActionPreference = $prevEap
+  }
+}
+
 # Stop any stale Jaeger container from previous runs so it doesn't hold ports
 # 4317/4318 when we try to start otel-collector. Silent if it doesn't exist.
-try { docker stop jaeger 2>&1 | Out-Null } catch {}
+Invoke-Docker -DockerArgs @('stop', 'jaeger')
 
 foreach ($exe in $executables) {
   Write-Host ""
@@ -289,25 +315,46 @@ foreach ($exe in $executables) {
   # matches the known-working sidequest setup.
   if ($exe.Name -match "otel") {
     Write-Host "--- Booting OTel Collector via Docker ---"
-    try {
-      docker start otel-collector 2>&1 | Out-Null
+    Invoke-Docker -DockerArgs @('start', 'otel-collector')
+    if ($LASTEXITCODE -ne 0) {
+      # No existing container — create one. If a stale container of the same name
+      # exists in any state, blow it away first so `docker run` doesn't fail with
+      # "name already in use" (which used to be silently caught and leave us with
+      # no collector running).
+      Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector')
+      Invoke-Docker -DockerArgs @(
+        'run', '-d', '--name', 'otel-collector',
+        '-p', '4317:4317', '-p', '4318:4318',
+        '-v', "${otelConfigPath}:/etc/otel-collector-config.yaml",
+        'otel/opentelemetry-collector-contrib:latest',
+        '--config=/etc/otel-collector-config.yaml'
+      )
       if ($LASTEXITCODE -ne 0) {
-        docker run -d --name otel-collector `
-          -p 4317:4317 -p 4318:4318 `
-          -v "${otelConfigPath}:/etc/otel-collector-config.yaml" `
-          otel/opentelemetry-collector-contrib:latest `
-          --config=/etc/otel-collector-config.yaml 2>&1 | Out-Null
+        throw "Failed to start otel-collector container (docker run exited $LASTEXITCODE). Check that ports 4317/4318 are free and Docker Desktop is healthy."
       }
     }
-    catch {}
-    Start-Sleep -Seconds 2
+
+    # Wait until the collector is actually accepting connections on :4317. The
+    # old fixed 2s sleep was a guess; on slower machines or first-pull boots the
+    # gRPC port is not yet bound when the workload exe starts, and the kmpgrpc
+    # native (tonic FFI) client hangs the whole 60s wall-clock timeout instead
+    # of failing fast.
+    $deadline = (Get-Date).AddSeconds(30)
+    $ready = $false
+    while ((Get-Date) -lt $deadline) {
+      $probe = Test-NetConnection -ComputerName '127.0.0.1' -Port 4317 -WarningAction SilentlyContinue -InformationLevel Quiet
+      if ($probe) { $ready = $true; break }
+      Start-Sleep -Milliseconds 500
+    }
+    if (-not $ready) {
+      Write-Host "otel-collector logs:" -ForegroundColor Yellow
+      Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'otel-collector') -CaptureOutput | ForEach-Object { Write-Host $_ }
+      throw "otel-collector did not start listening on :4317 within 30s."
+    }
   }
   else {
     Write-Host "--- Stopping active OTel Collector to prevent caching/CPU interference for baseline metrics ---"
-    try {
-      docker stop otel-collector 2>&1 | Out-Null
-    }
-    catch {}
+    Invoke-Docker -DockerArgs @('stop', 'otel-collector')
   }
 
   Write-Host "--- Benchmarking: $($exe.Name) ---"
