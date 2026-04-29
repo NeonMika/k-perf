@@ -244,15 +244,17 @@ class IrExtension(
             "Duration"
         )
         val Duration_inWholeMilliseconds = Duration.getPropertyGetter("inWholeMilliseconds")!!
+        val Duration_inWholeNanoseconds = Duration.getPropertyGetter("inWholeNanoseconds")!!
 
         val Instant = getClass(
             "kotlinx.datetime",
             "Instant"
         )
-        val Instant_minus = Instant.getFunction("minus") {
-            it.regularParams.size == 1
-                && it.regularParams[0].type == Instant.type()
+        // Used to derive the anchor's epoch-nanos value at firstFile init time.
+        val Instant_toEpochMilliseconds = Instant.getFunction("toEpochMilliseconds") {
+            it.regularParams.isEmpty()
         }
+        val Instant_nanosecondsOfSecond = Instant.getPropertyGetter("nanosecondsOfSecond")!!
 
         val Clock = getClass(
             "kotlinx.datetime",
@@ -260,6 +262,38 @@ class IrExtension(
         )
         val System = Clock.getClass("System")
         val now = System.getFunction("now")
+
+        // kotlin.time.TimeSource.Monotonic.markNow() / TimeMark.elapsedNow().
+        // We resolve markNow via the TimeSource interface (single declaration) so
+        // we get an unambiguous IrSimpleFunctionSymbol; virtual dispatch resolves
+        // to Monotonic's override at runtime.
+        val TimeSource = getClass("kotlin.time", "TimeSource")
+        val TimeSource_markNow = TimeSource.getFunction("markNow")
+        val TimeSource_Monotonic = TimeSource.getClass("Monotonic")
+
+        val TimeMark = getClass("kotlin.time", "TimeMark")
+        val TimeMark_elapsedNow = TimeMark.getFunction("elapsedNow")
+
+        // kotlinx.datetime.DateTimeUnit.NANOSECOND — the unit constant we pass to
+        // the OTel (Long, DateTimeUnit) overloads of setStartTimestamp / Span.end.
+        val DateTimeUnit = getClass("kotlinx.datetime", "DateTimeUnit")
+        val DateTimeUnitCompanion = DateTimeUnit.getClass("Companion")
+        val DateTimeUnitCompanion_NANOSECOND = DateTimeUnitCompanion.getPropertyGetter("NANOSECOND")
+            ?: throw Exception("kotlinx.datetime.DateTimeUnit.Companion.NANOSECOND not found")
+
+        // Long arithmetic: anchorEpochNanos + elapsedNow().inWholeNanoseconds.
+        // Resolved here so per-span IR lowers to native add ops.
+        val Long_class = getClass("kotlin", "Long")
+        val Long_plus = Long_class.getFunction("plus") {
+            it.regularParams.size == 1 && it.regularParams[0].type == long
+        }
+        val Long_times = Long_class.getFunction("times") {
+            it.regularParams.size == 1 && it.regularParams[0].type == long
+        }
+        val Int_class = getClass("kotlin", "Int")
+        val Int_toLong = Int_class.getFunction("toLong") {
+            it.regularParams.isEmpty()
+        }
 
         val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
         val Exporter_constructor = Exporter.getConstructor()
@@ -318,14 +352,19 @@ class IrExtension(
 
         val SpanBuilder = getClass("io.opentelemetry.kotlin.api.trace", "SpanBuilder")
         val SpanBuilder_setParent = SpanBuilder.getFunction("setParent")
+        // (Long epochOffset, DateTimeUnit unit) overload — avoids Instant allocation per span.
         val SpanBuilder_setStartTimestamp = SpanBuilder.getFunction("setStartTimestamp") {
-            it.regularParams.size == 1 && it.regularParams[0].type == Instant.type()
+            it.regularParams.size == 2
+                && it.regularParams[0].type == long
+                && it.regularParams[1].type == DateTimeUnit.type()
         }
         val SpanBuilder_startSpan = SpanBuilder.getFunction("startSpan")
 
         val Span = getClass("io.opentelemetry.kotlin.api.trace", "Span")
         val Span_end = Span.getFunction("end") {
-            it.regularParams.size == 1 && it.regularParams[0].type == Instant.type()
+            it.regularParams.size == 2
+                && it.regularParams[0].type == long
+                && it.regularParams[1].type == DateTimeUnit.type()
         }
 
         val await = getFunction("com.infendro.otel.util", "await") {
@@ -505,6 +544,75 @@ class IrExtension(
             }
         }
 
+        // region timesource fields
+        // The whole point of this plugin variant: capture wall-clock and a monotonic
+        // mark exactly ONCE at firstFile static init, then synthesize per-span span
+        // timestamps as (anchor_epoch_nanos + monotonic_elapsed_nanos). This keeps a
+        // single Clock.System.now() call (consumed both for `_anchor` -> await_debug
+        // and for `_anchorEpochNanos`) and replaces every per-call wall-clock read
+        // with a cheap monotonic-clock read.
+        //
+        // NOTE on capture timing: top-level field initializers run at firstFile
+        // static-init, which is BEFORE main() entry but AFTER class loading. The
+        // module-load -> main-entry delta is microseconds; negligible compared to
+        // the millisecond-scale spans this benchmark measures.
+
+        // val anchor = Clock.System.now()
+        val anchor = buildField(
+            name = "_anchor",
+            type = Instant.type(),
+            static = true,
+        ) {
+            initializer = expression {
+                call(now) {
+                    dispatchReceiver = irGetObject(System)
+                }
+            }
+        }
+
+        // val anchorEpochNanos = anchor.toEpochMilliseconds() * 1_000_000L
+        //                          + anchor.nanosecondsOfSecond.toLong()
+        val anchorEpochNanos = buildField(
+            name = "_anchorEpochNanos",
+            type = long,
+            static = true,
+        ) {
+            initializer = expression {
+                call(Long_plus) {
+                    // (anchor.toEpochMilliseconds() * 1_000_000L)
+                    dispatchReceiver = call(Long_times) {
+                        dispatchReceiver = call(Instant_toEpochMilliseconds) {
+                            dispatchReceiver = irGetField(null, anchor)
+                        }
+                        argument(0, irLong(1_000_000L))
+                    }
+                    // + anchor.nanosecondsOfSecond.toLong()
+                    argument(0, call(Int_toLong) {
+                        dispatchReceiver = call(Instant_nanosecondsOfSecond) {
+                            dispatchReceiver = irGetField(null, anchor)
+                        }
+                    })
+                }
+            }
+        }
+
+        // val benchmarkMark = TimeSource.Monotonic.markNow()
+        // The interface return type (TimeMark) means Monotonic's ValueTimeMark is
+        // boxed once here. Per-span elapsedNow() is then a single virtual call —
+        // no further boxing per span.
+        val benchmarkMark = buildField(
+            name = "_benchmarkMark",
+            type = TimeMark.type(),
+            static = true,
+        ) {
+            initializer = expression {
+                call(TimeSource_markNow) {
+                    dispatchReceiver = irGetObject(TimeSource_Monotonic)
+                }
+            }
+        }
+        // endregion
+
         firstFile.addChildren(fields)
         // endregion
 
@@ -538,15 +646,23 @@ class IrExtension(
                     argument(0, irGet(context))
                 }
 
-                // spanBuilder.setStartTimestamp(Clock.System.now())
+                // spanBuilder.setStartTimestamp(
+                //     _anchorEpochNanos + _benchmarkMark.elapsedNow().inWholeNanoseconds,
+                //     DateTimeUnit.NANOSECOND
+                // )
                 +call(SpanBuilder_setStartTimestamp) {
                     dispatchReceiver = irGet(spanBuilder)
-                    argument(
-                        0,
-                        call(now) {
-                            dispatchReceiver = irGetObject(System)
-                        }
-                    )
+                    argument(0, call(Long_plus) {
+                        dispatchReceiver = irGetField(null, anchorEpochNanos)
+                        argument(0, call(Duration_inWholeNanoseconds) {
+                            dispatchReceiver = call(TimeMark_elapsedNow) {
+                                dispatchReceiver = irGetField(null, benchmarkMark)
+                            }
+                        })
+                    })
+                    argument(1, call(DateTimeUnitCompanion_NANOSECOND) {
+                        dispatchReceiver = irGetObject(DateTimeUnitCompanion)
+                    })
                 }
 
                 // val span = spanBuilder.startSpan()
@@ -586,15 +702,23 @@ class IrExtension(
                     dispatchReceiver = irGet(regularParams[1])
                 }
 
-                // span.end(Clock.System.now())
+                // span.end(
+                //     _anchorEpochNanos + _benchmarkMark.elapsedNow().inWholeNanoseconds,
+                //     DateTimeUnit.NANOSECOND
+                // )
                 +call(Span_end) {
                     dispatchReceiver = irGet(regularParams[0])
-                    argument(
-                        0,
-                        call(now) {
-                            dispatchReceiver = irGetObject(System)
-                        }
-                    )
+                    argument(0, call(Long_plus) {
+                        dispatchReceiver = irGetField(null, anchorEpochNanos)
+                        argument(0, call(Duration_inWholeNanoseconds) {
+                            dispatchReceiver = call(TimeMark_elapsedNow) {
+                                dispatchReceiver = irGetField(null, benchmarkMark)
+                            }
+                        })
+                    })
+                    argument(1, call(DateTimeUnitCompanion_NANOSECOND) {
+                        dispatchReceiver = irGetObject(DateTimeUnitCompanion)
+                    })
                 }
             }
         }
@@ -604,16 +728,6 @@ class IrExtension(
 
         fun IrFunction.modify() {
             body {
-                var start: IrVariable? = null
-                if (isMain() && debug) {
-                    // val start = Clock.System.now()
-                    start = irTemporary(
-                        call(now) {
-                            dispatchReceiver = irGetObject(System)
-                        }
-                    )
-                }
-
                 // val context = Context.current()
                 val context = irTemporary(
                     call(ContextCompanion_current) {
@@ -647,23 +761,18 @@ class IrExtension(
 
                         if (isMain()) {
                             if (debug) {
-                                // val end = Clock.System.now()
-                                val end = irTemporary(
-                                    call(now) {
-                                        dispatchReceiver = irGetObject(System)
-                                    }
-                                )
-
-                                // val ms = (end - start).inWholeMilliseconds
-                                val duration = irTemporary(
-                                    call(Instant_minus) {
-                                        dispatchReceiver = irGet(end)
-                                        argument(0, irGet(start!!))
-                                    }
-                                )
+                                // val ms = _benchmarkMark.elapsedNow().inWholeMilliseconds
+                                // No second Clock.System.now() call: the elapsed time
+                                // is read from the monotonic mark captured at firstFile
+                                // init (see _benchmarkMark above). The semantic is
+                                // "module-load to here", which for an instrumented
+                                // main is essentially "main duration" + microseconds
+                                // of static-init.
                                 val ms = irTemporary(
                                     call(Duration_inWholeMilliseconds) {
-                                        dispatchReceiver = irGet(duration)
+                                        dispatchReceiver = call(TimeMark_elapsedNow) {
+                                            dispatchReceiver = irGetField(null, benchmarkMark)
+                                        }
                                     }
                                 )
 
@@ -699,10 +808,14 @@ class IrExtension(
                             }
 
                             if (debug) {
-                                // await(exporter, start)
+                                // await(exporter, _anchor)
+                                // We pass the wall-clock anchor (the same Instant
+                                // that produced _anchorEpochNanos), keeping
+                                // util-proto's await_debug(exporter, start: Instant)
+                                // signature unchanged.
                                 +call(await_debug) {
                                     argument(0, irGetField(null, exporter))
-                                    argument(1, irGet(start!!))
+                                    argument(1, irGetField(null, anchor))
                                 }
                             } else {
                                 // await(exporter)

@@ -216,6 +216,11 @@ Invoke-GradleBuild -Title "OTel OTLP Exporter (proto)" -Path ".\otlp-exporter-pr
 Invoke-GradleBuild -Title "OTel Plugin Util (proto)" -Path ".\plugins\otel-plugin-proto\util" -Tasks @("publishToMavenLocal")
 Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")
 
+# proto-timesource shares util-proto and otlp-exporter-proto with proto — only the
+# plugin variant differs (it injects TimeSource.Monotonic.markNow() + elapsedNow()
+# instead of per-call Clock.System.now()).
+Invoke-GradleBuild -Title "OTel Plugin (proto-timesource)" -Path ".\plugins\otel-plugin-proto-timesource\plugin" -Tasks @("publishToMavenLocal")
+
 Write-Host "=========================================="
 Write-Host "Compiling Comparison Projects"
 Write-Host "=========================================="
@@ -232,6 +237,7 @@ Write-Host "=========================================="
 Invoke-GradleBuild -Title "Comparison Project (k-perf)" -Path ".\kmp-examples\comparison-k-perf" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 Invoke-GradleBuild -Title "Comparison Project (otel)" -Path ".\kmp-examples\comparison-otel" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 Invoke-GradleBuild -Title "Comparison Project (otel-proto)" -Path ".\kmp-examples\comparison-otel-proto" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
+Invoke-GradleBuild -Title "Comparison Project (otel-proto-timesource)" -Path ".\kmp-examples\comparison-otel-proto-timesource" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 
 
 # Path resolving for execution
@@ -247,16 +253,23 @@ $otelProtoJvm = "java -jar .\kmp-examples\comparison-otel-proto\build\lib\compar
 $otelProtoJs = "node .\kmp-examples\comparison-otel-proto\build\js\packages\comparison-otel-proto\kotlin\comparison-otel-proto.js"
 $otelProtoNative = ".\kmp-examples\comparison-otel-proto\build\bin\mingwX64\releaseExecutable\main.exe"
 
+$otelProtoTsJvm    = "java -jar .\kmp-examples\comparison-otel-proto-timesource\build\lib\comparison-otel-proto-timesource-jvm-1.0.0.jar"
+$otelProtoTsJs     = "node .\kmp-examples\comparison-otel-proto-timesource\build\js\packages\comparison-otel-proto-timesource\kotlin\comparison-otel-proto-timesource.js"
+$otelProtoTsNative = ".\kmp-examples\comparison-otel-proto-timesource\build\bin\mingwX64\releaseExecutable\main.exe"
+
 $executables = @(
   @{ Name = "k-perf JVM"; Command = $kperfJvm },
   @{ Name = "otel JVM"; Command = $otelJvm },
   @{ Name = "otel-proto JVM"; Command = $otelProtoJvm },
+  @{ Name = "otel-proto-timesource JVM"; Command = $otelProtoTsJvm },
   @{ Name = "k-perf JS (Node)"; Command = $kperfJs },
   @{ Name = "otel JS (Node)"; Command = $otelJs },
   @{ Name = "otel-proto JS (Node)"; Command = $otelProtoJs },
+  @{ Name = "otel-proto-timesource JS (Node)"; Command = $otelProtoTsJs },
   @{ Name = "k-perf Native (Win)"; Command = $kperfNative },
   @{ Name = "otel Native (Win)"; Command = $otelNative },
-  @{ Name = "otel-proto Native (Win)"; Command = $otelProtoNative }
+  @{ Name = "otel-proto Native (Win)"; Command = $otelProtoNative },
+  @{ Name = "otel-proto-timesource Native (Win)"; Command = $otelProtoTsNative }
 )
 
 Write-Host "=========================================="
