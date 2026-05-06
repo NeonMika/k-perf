@@ -159,68 +159,6 @@ Time spent inside each loaded binary:
 
 ---
 
-## 7. Discussion / things that came up
-
-### 7.1 Why does the supervisor's `Clock.System.now()` micro-benchmark show ~5× JS gap that we can't reproduce?
-
-The micro-benchmark measures **per-call cost in isolation** (one `Clock.System.now()` injected into an otherwise-empty function). It reports ~1957 ns/call on JS, ~376 ns for `TimeSource.Monotonic.markNow()`. Theoretical savings on our workload: 486 k calls × 1582 ns ≈ 768 ms — should be visible against an 8500 ms total.
-
-Profile says actual clock cost is ~48 ms (~99 ns/call), ~20× less than the micro-bench predicts. Three independent reasons:
-
-1. **JIT specialisation in the long-running workload.** V8 (and HotSpot) optimise the call site heavily after thousands of calls; the micro-bench harness doesn't reach the same steady state.
-2. **The timesource replacement isn't free.** `_anchorEpochNanos + _benchmarkMark.elapsedNow().inWholeNanoseconds` adds Long arithmetic; on JS that's a polyfilled 2-Int class (~7.7% of CPU). We trade one expensive thing for several cheap ones; net saving is small.
-3. **The OTel SDK was already monotonic-anchored.** `sdk-trace-jvm:1.0.570`'s `AnchoredClock.now() = clock.nanoTime() − this.nanoTime + this.epochNanos` is the same pattern we re-implemented in IR. Our IR optimisation duplicated what the SDK had internally.
-
-Both benchmarks are correct; they measure different things.
-
-### 7.2 Why does the OTel plugin call the clock twice per span?
-
-OTel spans require **two absolute wall-clock timestamps** (`start_time_unix_nano` and `end_time_unix_nano` in the OTLP Protobuf wire format), not a duration. The trace UI (Jaeger, etc.) renders waterfall diagrams across services on a global timeline — duration alone isn't enough; the consumer needs to know *when* on the timeline the span sat.
-
-k-perf only records elapsed durations (`<;42` = "exited, 42 µs elapsed") and so needs only one `markNow()` + one `elapsedNow()`.
-
-The timesource variant still produces two absolute timestamps, but synthesises them from one wall-clock anchor + monotonic offsets — so two cheap monotonic reads instead of two `Clock.System.now()` calls.
-
-### 7.3 Why do `OtlpExporter` and `util` look unused?
-
-Static grep finds zero callers because the constructor calls and the `await(exporter, ...)` calls are **synthesised by the IR plugin at compile time**, not written by hand. Each OTel plugin's `IrExtension.kt` has a `buildField("_exporter", ..., initializer = { call(Exporter_constructor) { ... } })` block that injects a top-level `OtlpExporter(host, service)` field into `firstFile`. At runtime every span goes through it. IntelliJ's "0 usages" indicator is correct about the static call graph; the plugin generates the dynamic callers.
-
-### 7.4 How does `otel-proto-timesource` create a span (one-screen summary)
-
-**Once at module load** (firstFile static-init):
-```
-_anchor          = Clock.System.now()               // single wall-clock read
-_anchorEpochNanos = anchor.toEpochMs() * 1_000_000 + anchor.nanosecondsOfSecond
-_benchmarkMark    = TimeSource.Monotonic.markNow()  // monotonic baseline
-_exporter, _processor, _provider, _tracer = OTel SDK plumbing
-```
-
-**Two helper functions injected once** (in firstFile):
-```
-fun _startSpan(name, ctx) = _tracer.spanBuilder(name)
-                               .setParent(ctx)
-                               .setStartTimestamp(_anchorEpochNanos + _benchmarkMark.elapsedNow().inWholeNanoseconds, NANOSECOND)
-                               .startSpan()
-                               .also { ctx.with(it).makeCurrent() }
-
-fun _endSpan(span, ctx)   = ctx.makeCurrent().also {
-                                span.end(_anchorEpochNanos + _benchmarkMark.elapsedNow().inWholeNanoseconds, NANOSECOND)
-                            }
-```
-
-**Every user function gets wrapped:**
-```
-fun yourFunction(...) {
-    val ctx  = Context.current()
-    val span = _startSpan("yourFunction", ctx)
-    try { …original body… } finally { _endSpan(span, ctx) }
-}
-```
-
-`main()` additionally runs `_processor.shutdown()` + `await(_exporter, _anchor)` in its finally to drain BSP queue before exit. **Zero `Clock.System.now()` calls per span.**
-
----
-
 ## 8. Files
 
 | File | Purpose |
@@ -248,4 +186,4 @@ PerfView.exe /AcceptEULA /NoGui /LogFile=<out>.perfview.log /DataFile=<out>.etl.
 PerfView.exe /AcceptEULA /NoGui /LogFile=<out>.export.log UserCommand SaveCPUStacks <out>.etl.zip <process-name-without-extension>
 ```
 
-Caveats: profiler overhead ~14% (JS), safepoint bias on JFR may under-sample tight JIT loops, Native app symbols don't resolve due to Kotlin/Native `-opt` vs `-g` mutual exclusion (still applies under PerfView — it's a Kotlin/Native limitation, not a profiler one). The previous Native pipeline (samply + Firefox Profiler JSON) was replaced after Smart App Control started blocking samply.exe; the data shape is unchanged because both tools wrap the same Windows kernel ETW.
+Caveats: profiler overhead ~14% (JS), safepoint bias on JFR may under-sample tight JIT loops.
