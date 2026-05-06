@@ -2,6 +2,8 @@ name: Benchmark (Linux, Small)
 
 on:
   push:
+    branches:
+      - main
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:

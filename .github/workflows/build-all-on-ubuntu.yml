@@ -2,7 +2,8 @@ name: Build all on Ubuntu
 
 on:
   push:
-  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
