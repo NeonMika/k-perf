@@ -1,5 +1,5 @@
 package com.infendro.otel.plugin.proto
-
+//This file is identical to normal otel
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
