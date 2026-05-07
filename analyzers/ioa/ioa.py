@@ -9,7 +9,7 @@ Arguments:
 
 Options:
     --transformation NAME   Transformation to apply to cell values (default: runtime).
-                            Available: runtime, ratio, overhead
+                            Available: runtime, function_runtime, function_overhead
     --steps-until N         Only consider the first N steps of each run (mutually
                             exclusive with --steps-skip).
     --steps-skip N          Skip the first N steps of each run (mutually exclusive
@@ -21,8 +21,8 @@ Output::
 
 Example::
 
-    python ioa.py ../../measurements/2026_04_23_13_54_53_... --transformation ratio
-    python ioa.py ../../measurements/2026_04_23_13_54_53_... --steps-skip 1 --transformation overhead
+    python ioa.py ../../measurements/2026_04_23_13_54_53_... --transformation function_runtime
+    python ioa.py ../../measurements/2026_04_23_13_54_53_... --steps-skip 1 --transformation function_overhead
 
 Per-step JSON files loaded (inside the folder):
     commonmain-ioa-kind-{kind}-{target}.json
@@ -230,8 +230,8 @@ def compute_value(
 # Transformations
 # ---------------------------------------------------------------------------
 
-TransformFn = Callable[[float, float, bool, int], tuple[str, str | None]]
-"""Signature: (baseline_us, value_us, is_step_avg, step_count) -> (latex_text, color_or_none)
+TransformFn = Callable[[float, float, bool, int, bool], tuple[str, str | None]]
+"""Signature: (baseline_us, value_us, is_step_avg, step_count, is_baseline) -> (latex_text, color_or_none)
 
 baseline_us  : mean µs of the plain/reference run under the same conditions
 value_us     : mean µs of the measured kind under the same conditions
@@ -239,7 +239,8 @@ is_step_avg  : True when --steps-until or --steps-skip was used (per-step mean)
                False for overall run measurement
 step_count   : number of steps contributing to the value
                (for overall: total steps in first run)
-color_or_none: xcolor name (e.g. "green!30", "red!40") or None for no highlight
+is_baseline  : True when this row is the plain/reference baseline itself
+color_or_none: xcolor name (e.g. "yellow!50", "red!30") or None for no highlight
 """
 
 
@@ -250,50 +251,74 @@ def _fmt_us(us: float) -> str:
         return f"{ms / 1000:.2f}\\,s"
     if ms >= 1:
         return f"{ms:.2f}\\,ms"
-    return f"{us:.1f}\\,$\\mu$s"
+    return f"{us:.3f}\\,$\\mu$s"
 
 
-def _ratio_color(ratio: float) -> str | None:
-    """Green/yellow/red cell color based on overhead ratio vs baseline."""
-    if ratio <= 1.1:
-        return "green!25"
-    if ratio <= 2.0:
-        return "yellow!50"
-    return "red!30"
+def _func_call_count(is_step_avg: bool, step_count: int) -> int:
+    """Number of traced function calls for the given measurement mode.
+
+    Per step: 4001 calls (one step of the game-of-life trace).
+    Overall:  4001 * step_count + 14 extra top-level calls.
+    """
+    if is_step_avg:
+        return 4001
+    return 4001 * step_count + 14
+
+
+def _func_time_us(value_us: float, is_step_avg: bool, step_count: int) -> float:
+    """Return the per-function-call time in µs."""
+    n = _func_call_count(is_step_avg, step_count)
+    return value_us / n if n > 0 else 0.0
 
 
 def _transform_runtime(
-    baseline: float, value: float, is_step_avg: bool, step_count: int
+    baseline: float, value: float, is_step_avg: bool, step_count: int, is_baseline: bool
 ) -> tuple[str, str | None]:
     """Show the raw runtime value; no cell colouring."""
     return _fmt_us(value), None
 
 
-def _transform_ratio(
-    baseline: float, value: float, is_step_avg: bool, step_count: int
+def _transform_function_runtime(
+    baseline: float, value: float, is_step_avg: bool, step_count: int, is_baseline: bool
 ) -> tuple[str, str | None]:
-    """Show value as a percentage of the baseline (100 % = same as plain)."""
-    if baseline == 0:
-        return "N/A", None
-    ratio = value / baseline
-    text = f"{ratio * 100:.1f}\\,\\%"
-    return text, _ratio_color(ratio)
+    """Show per-function-call time (runtime / number of traced calls); no colouring."""
+    ft = _func_time_us(value, is_step_avg, step_count)
+    return _fmt_us(ft), None
 
 
-def _transform_overhead(
-    baseline: float, value: float, is_step_avg: bool, step_count: int
+def _transform_function_overhead(
+    baseline: float, value: float, is_step_avg: bool, step_count: int, is_baseline: bool
 ) -> tuple[str, str | None]:
-    """Show absolute overhead (+/- µs or ms) vs the plain baseline."""
-    diff_us = value - baseline
-    text = ("+" if diff_us >= 0 else "") + _fmt_us(diff_us)
-    ratio = value / baseline if baseline > 0 else float("inf")
-    return text, _ratio_color(ratio)
+    """Show per-function overhead vs plain baseline.
+
+    For the baseline row itself the plain function runtime is shown (no colour).
+    Coloured yellow if overhead >= 2 µs, red if >= 10 µs.
+    """
+    if is_baseline:
+        ft = _func_time_us(value, is_step_avg, step_count)
+        return _fmt_us(ft), None
+
+    baseline_ft = _func_time_us(baseline, is_step_avg, step_count)
+    value_ft    = _func_time_us(value,    is_step_avg, step_count)
+    overhead    = value_ft - baseline_ft
+
+    sign = "+" if overhead >= 0 else ""
+    text = sign + _fmt_us(overhead)
+
+    if overhead >= 10.0:
+        color: str | None = "red!30"
+    elif overhead >= 2.0:
+        color = "yellow!50"
+    else:
+        color = None
+
+    return text, color
 
 
 TRANSFORMATIONS: dict[str, TransformFn] = {
-    "runtime":  _transform_runtime,
-    "ratio":    _transform_ratio,
-    "overhead": _transform_overhead,
+    "runtime":            _transform_runtime,
+    "function_runtime":   _transform_function_runtime,
+    "function_overhead":  _transform_function_overhead,
 }
 
 
@@ -360,30 +385,31 @@ def generate_latex_table(
     ordered_kinds = [k for k in KIND_ORDER if k in all_kinds_set]
     ordered_kinds += sorted(k for k in all_kinds_set if k not in KIND_ORDER)
 
-    col_spec = "l" + "r" * len(all_targets)
+    # Fixed-width centered columns for target data; all equal width so headers align.
+    target_col = r">{\centering\arraybackslash}p{3cm}"
+    col_spec = "l" + target_col * len(all_targets)
 
     lines: list[str] = []
-    lines.append(r"% Requires: \usepackage{booktabs}, \usepackage[table]{xcolor}")
+    lines.append(r"% Requires: \usepackage{booktabs}, \usepackage[table]{xcolor}, \usepackage{array}")
     lines.append(r"\begin{tabular}{" + col_spec + r"}")
     lines.append(r"\toprule")
 
-    # Column header
+    # Column header — target labels are centered by the column type
     header_parts = ["\\textbf{Kind}"] + [
         "\\textbf{" + _latex_escape(target_label(t)) + "}" for t in all_targets
     ]
     lines.append(" & ".join(header_parts) + r" \\")
     lines.append(r"\midrule")
 
-    # Plain reference row (shows raw runtime, no transform colouring)
+    # Plain reference row — passed through the transform with is_baseline=True
     plain_cells = [r"\textit{Plain (reference)}"]
     for t in all_targets:
         plain_entry = entry_map.get(("plain", t))
         if plain_entry:
             val, sc, is_step = compute_value(plain_entry, steps_until, steps_skip)
-            cell_text = _fmt_us(val)
-            if is_step:
-                cell_text += f"\\,/\\,step"
-            plain_cells.append(cell_text)
+            text, color = transform(val, val, is_step, sc, True)
+            cell = (r"\cellcolor{" + color + r"}" + text) if color else text
+            plain_cells.append(cell)
         else:
             plain_cells.append("--")
     lines.append(" & ".join(plain_cells) + r" \\")
@@ -407,7 +433,7 @@ def generate_latex_table(
             if plain_entry is not None:
                 baseline_val, _, _ = compute_value(plain_entry, steps_until, steps_skip)
 
-            text, color = transform(baseline_val, kind_val, is_step, step_count)
+            text, color = transform(baseline_val, kind_val, is_step, step_count, False)
 
             if color:
                 cell = r"\cellcolor{" + color + r"}" + text
