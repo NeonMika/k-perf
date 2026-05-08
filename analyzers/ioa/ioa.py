@@ -244,14 +244,25 @@ color_or_none: xcolor name (e.g. "yellow!50", "red!30") or None for no highlight
 """
 
 
-def _fmt_us(us: float) -> str:
+def _fmt_us(us: float, target: str | None = None) -> str:
     """Format a µs value as a compact string suitable for LaTeX cells."""
     ms = us / 1000.0
-    if ms >= 1000:
-        return f"{ms / 1000:.2f}\\,s"
-    if ms >= 1:
+    s = ms / 1000.0
+    ns = us * 1000.0
+
+    if (s >= 1 and target is None) or target == "s":
+        return f"{s:.2f}\\,s"
+
+    if (ms >= 1 and target is None) or target == "ms":
         return f"{ms:.2f}\\,ms"
-    return f"{us:.3f}\\,$\\mu$s"
+
+    if (us >= 1 and target is None) or target == "µs":
+        return f"{us:.2f}\\,$\\mu$s"
+
+    if (ns >= 1 and target is None) or target == "ns":
+        return f"{ns:.2f}\\,ns"
+
+    return f"{us:.2f}\\,µs"
 
 
 def _func_call_count(is_step_avg: bool, step_count: int) -> int:
@@ -260,9 +271,11 @@ def _func_call_count(is_step_avg: bool, step_count: int) -> int:
     Per step: 4001 calls (one step of the game-of-life trace).
     Overall:  4001 * step_count + 14 extra top-level calls.
     """
-    if is_step_avg:
-        return 4001
-    return 4001 * step_count + 14
+    calls = 4001 * step_count
+    if not is_step_avg:
+        calls += 14
+
+    return calls
 
 
 def _func_time_us(value_us: float, is_step_avg: bool, step_count: int) -> float:
@@ -275,7 +288,7 @@ def _transform_runtime(
     baseline: float, value: float, is_step_avg: bool, step_count: int, is_baseline: bool
 ) -> tuple[str, str | None]:
     """Show the raw runtime value; no cell colouring."""
-    return _fmt_us(value), None
+    return _fmt_us(value, "ms"), None
 
 
 def _transform_function_runtime(
@@ -283,7 +296,7 @@ def _transform_function_runtime(
 ) -> tuple[str, str | None]:
     """Show per-function-call time (runtime / number of traced calls); no colouring."""
     ft = _func_time_us(value, is_step_avg, step_count)
-    return _fmt_us(ft), None
+    return _fmt_us(ft, "ns"), None
 
 
 def _transform_function_overhead(
@@ -296,19 +309,19 @@ def _transform_function_overhead(
     """
     if is_baseline:
         ft = _func_time_us(value, is_step_avg, step_count)
-        return _fmt_us(ft), None
+        return _fmt_us(ft, "ns"), None
 
     baseline_ft = _func_time_us(baseline, is_step_avg, step_count)
     value_ft    = _func_time_us(value,    is_step_avg, step_count)
     overhead    = value_ft - baseline_ft
 
     sign = "+" if overhead >= 0 else ""
-    text = sign + _fmt_us(overhead)
+    text = sign + _fmt_us(overhead, "ns")
 
-    if overhead >= 10.0:
-        color: str | None = "red!30"
-    elif overhead >= 2.0:
-        color = "yellow!50"
+    if overhead >= 0.01:
+        color = "red!30"
+    elif overhead >= 0.002:
+        color: str | None = "yellow!30"
     else:
         color = None
 
@@ -386,8 +399,7 @@ def generate_latex_table(
     ordered_kinds += sorted(k for k in all_kinds_set if k not in KIND_ORDER)
 
     # Fixed-width centered columns for target data; all equal width so headers align.
-    target_col = r">{\centering\arraybackslash}p{3cm}"
-    col_spec = "l" + target_col * len(all_targets)
+    col_spec = "l" + "r" * len(all_targets)
 
     lines: list[str] = []
     lines.append(r"% Requires: \usepackage{booktabs}, \usepackage[table]{xcolor}, \usepackage{array}")
