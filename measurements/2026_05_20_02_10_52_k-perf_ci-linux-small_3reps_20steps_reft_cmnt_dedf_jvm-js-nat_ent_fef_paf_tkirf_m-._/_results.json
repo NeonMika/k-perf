@@ -1,0 +1,374 @@
+[
+  {
+    "mean": 43248.333333333336,
+    "median": 43626.0,
+    "stddev": 396.13928526887275,
+    "min": 42836.0,
+    "max": 43626.0,
+    "ci95_lower": 42264.87550449109,
+    "ci95_upper": 44231.791162175585,
+    "executable": "commonmain-plain-jar",
+    "buildTimeMs": 1411.1243,
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ],
+    "JVM": true,
+    "Common": true,
+    "Methods": [
+      ".*"
+    ],
+    "Native": true,
+    "Reference": true,
+    "Dedicated": false,
+    "FlushEarly": [
+      false
+    ],
+    "JS": true,
+    "CILabel": "ci-linux-small",
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-05-20 02:08:36",
+    "GitCommitHash": "85f86f6017bcf6382e845cbc68ada31a16fc442f",
+    "GitBranch": "main",
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "IsVirtualMachine": true,
+    "OS": "Ubuntu 24.04.4 LTS",
+    "OSArchitecture": "x86_64",
+    "TimeZone": "Etc/UTC",
+    "Username": "runner",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "TotalRAMGB": 15.62,
+    "AvailableRAMGB": 14.26,
+    "DiskSizeGB": 145,
+    "SystemDriveFreeSpaceGB": 86,
+    "SystemUptimeHours": 0.02,
+    "RunningProcessCount": 166,
+    "PowerShellVersion": "7.4.15",
+    "JavaVersion": "21.0.11",
+    "JavaDistribution": "\"21.0.11\"",
+    "NodeVersion": "v22.22.2",
+    "PythonVersion": "Python 3.12.3",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0"
+  },
+  {
+    "mean": null,
+    "median": null,
+    "stddev": null,
+    "min": null,
+    "max": null,
+    "ci95_lower": null,
+    "ci95_upper": null,
+    "executable": "commonmain-plain-node",
+    "buildTimeMs": 4655.2124,
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ],
+    "JVM": true,
+    "Common": true,
+    "Methods": [
+      ".*"
+    ],
+    "Native": true,
+    "Reference": true,
+    "Dedicated": false,
+    "FlushEarly": [
+      false
+    ],
+    "JS": true,
+    "CILabel": "ci-linux-small",
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-05-20 02:08:36",
+    "GitCommitHash": "85f86f6017bcf6382e845cbc68ada31a16fc442f",
+    "GitBranch": "main",
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "IsVirtualMachine": true,
+    "OS": "Ubuntu 24.04.4 LTS",
+    "OSArchitecture": "x86_64",
+    "TimeZone": "Etc/UTC",
+    "Username": "runner",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "TotalRAMGB": 15.62,
+    "AvailableRAMGB": 14.26,
+    "DiskSizeGB": 145,
+    "SystemDriveFreeSpaceGB": 86,
+    "SystemUptimeHours": 0.02,
+    "RunningProcessCount": 166,
+    "PowerShellVersion": "7.4.15",
+    "JavaVersion": "21.0.11",
+    "JavaDistribution": "\"21.0.11\"",
+    "NodeVersion": "v22.22.2",
+    "PythonVersion": "Python 3.12.3",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0"
+  },
+  {
+    "mean": 6821.666666666667,
+    "median": 6993.0,
+    "stddev": 171.00097465609176,
+    "min": 6651.0,
+    "max": 6993.0,
+    "ci95_lower": 6397.138594044321,
+    "ci95_upper": 7246.194739289013,
+    "executable": "commonmain-plain-linux-exe",
+    "buildTimeMs": 12541.0739,
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ],
+    "JVM": true,
+    "Common": true,
+    "Methods": [
+      ".*"
+    ],
+    "Native": true,
+    "Reference": true,
+    "Dedicated": false,
+    "FlushEarly": [
+      false
+    ],
+    "JS": true,
+    "CILabel": "ci-linux-small",
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-05-20 02:08:36",
+    "GitCommitHash": "85f86f6017bcf6382e845cbc68ada31a16fc442f",
+    "GitBranch": "main",
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "IsVirtualMachine": true,
+    "OS": "Ubuntu 24.04.4 LTS",
+    "OSArchitecture": "x86_64",
+    "TimeZone": "Etc/UTC",
+    "Username": "runner",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "TotalRAMGB": 15.62,
+    "AvailableRAMGB": 14.26,
+    "DiskSizeGB": 145,
+    "SystemDriveFreeSpaceGB": 86,
+    "SystemUptimeHours": 0.02,
+    "RunningProcessCount": 166,
+    "PowerShellVersion": "7.4.15",
+    "JavaVersion": "21.0.11",
+    "JavaDistribution": "\"21.0.11\"",
+    "NodeVersion": "v22.22.2",
+    "PythonVersion": "Python 3.12.3",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0"
+  },
+  {
+    "mean": 77537.0,
+    "median": 81891.0,
+    "stddev": 7343.922044793231,
+    "min": 69058.0,
+    "max": 81891.0,
+    "ci95_lower": 59304.933911283304,
+    "ci95_upper": 95769.0660887167,
+    "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-jar",
+    "buildTimeMs": 1825.054,
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ],
+    "JVM": true,
+    "Common": true,
+    "Methods": [
+      ".*"
+    ],
+    "Native": true,
+    "Reference": true,
+    "Dedicated": false,
+    "FlushEarly": [
+      false
+    ],
+    "JS": true,
+    "CILabel": "ci-linux-small",
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-05-20 02:08:36",
+    "GitCommitHash": "85f86f6017bcf6382e845cbc68ada31a16fc442f",
+    "GitBranch": "main",
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "IsVirtualMachine": true,
+    "OS": "Ubuntu 24.04.4 LTS",
+    "OSArchitecture": "x86_64",
+    "TimeZone": "Etc/UTC",
+    "Username": "runner",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "TotalRAMGB": 15.62,
+    "AvailableRAMGB": 14.26,
+    "DiskSizeGB": 145,
+    "SystemDriveFreeSpaceGB": 86,
+    "SystemUptimeHours": 0.02,
+    "RunningProcessCount": 166,
+    "PowerShellVersion": "7.4.15",
+    "JavaVersion": "21.0.11",
+    "JavaDistribution": "\"21.0.11\"",
+    "NodeVersion": "v22.22.2",
+    "PythonVersion": "Python 3.12.3",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0"
+  },
+  {
+    "mean": null,
+    "median": null,
+    "stddev": null,
+    "min": null,
+    "max": null,
+    "ci95_lower": null,
+    "ci95_upper": null,
+    "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
+    "buildTimeMs": 3172.1903,
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ],
+    "JVM": true,
+    "Common": true,
+    "Methods": [
+      ".*"
+    ],
+    "Native": true,
+    "Reference": true,
+    "Dedicated": false,
+    "FlushEarly": [
+      false
+    ],
+    "JS": true,
+    "CILabel": "ci-linux-small",
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-05-20 02:08:36",
+    "GitCommitHash": "85f86f6017bcf6382e845cbc68ada31a16fc442f",
+    "GitBranch": "main",
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "IsVirtualMachine": true,
+    "OS": "Ubuntu 24.04.4 LTS",
+    "OSArchitecture": "x86_64",
+    "TimeZone": "Etc/UTC",
+    "Username": "runner",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "TotalRAMGB": 15.62,
+    "AvailableRAMGB": 14.26,
+    "DiskSizeGB": 145,
+    "SystemDriveFreeSpaceGB": 86,
+    "SystemUptimeHours": 0.02,
+    "RunningProcessCount": 166,
+    "PowerShellVersion": "7.4.15",
+    "JavaVersion": "21.0.11",
+    "JavaDistribution": "\"21.0.11\"",
+    "NodeVersion": "v22.22.2",
+    "PythonVersion": "Python 3.12.3",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0"
+  },
+  {
+    "mean": 34177.666666666664,
+    "median": 34680.0,
+    "stddev": 469.4745289505421,
+    "min": 33750.0,
+    "max": 34680.0,
+    "ci95_lower": 33012.14631029741,
+    "ci95_upper": 35343.18702303592,
+    "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-linux-exe",
+    "buildTimeMs": 14008.6156,
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ],
+    "JVM": true,
+    "Common": true,
+    "Methods": [
+      ".*"
+    ],
+    "Native": true,
+    "Reference": true,
+    "Dedicated": false,
+    "FlushEarly": [
+      false
+    ],
+    "JS": true,
+    "CILabel": "ci-linux-small",
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-05-20 02:08:36",
+    "GitCommitHash": "85f86f6017bcf6382e845cbc68ada31a16fc442f",
+    "GitBranch": "main",
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "IsVirtualMachine": true,
+    "OS": "Ubuntu 24.04.4 LTS",
+    "OSArchitecture": "x86_64",
+    "TimeZone": "Etc/UTC",
+    "Username": "runner",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "TotalRAMGB": 15.62,
+    "AvailableRAMGB": 14.26,
+    "DiskSizeGB": 145,
+    "SystemDriveFreeSpaceGB": 86,
+    "SystemUptimeHours": 0.02,
+    "RunningProcessCount": 166,
+    "PowerShellVersion": "7.4.15",
+    "JavaVersion": "21.0.11",
+    "JavaDistribution": "\"21.0.11\"",
+    "NodeVersion": "v22.22.2",
+    "PythonVersion": "Python 3.12.3",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0"
+  }
+]
