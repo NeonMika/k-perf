@@ -292,8 +292,22 @@ function Invoke-Docker {
   }
 }
 
-# Stop any stale Jaeger container from previous runs.
-Invoke-Docker -DockerArgs @('stop', 'jaeger')
+
+Invoke-Docker -DockerArgs @('network', 'create', 'otel-net')
+Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector', 'jaeger')
+Invoke-Docker -DockerArgs @(
+  'run', '-d', '--name', 'jaeger', '--network', 'otel-net',
+  '-p', '16686:16686',
+  'jaegertracing/all-in-one:1.65.0',
+  '--collector.otlp.enabled=true'
+)
+if ($LASTEXITCODE -ne 0) {
+  throw "Failed to start jaeger container (docker run exited $LASTEXITCODE). Check Docker Desktop health and port 16686 availability."
+}
+# Jaeger needs a couple of seconds for the OTLP receiver to bind inside the
+# container (not exposed to the host, so we can't easily poll a port).
+Start-Sleep -Seconds 3
+Write-Host "Jaeger UI: http://localhost:16686 (services appear once a benchmark cell runs)" -ForegroundColor Cyan
 
 # Parse `### Elapsed time: <ns>` (total) and `!!! Elapsed time <i>: <ns>` (per-step).
 # Main.kt emits nanoseconds via `Duration.inWholeNanoseconds` — this picks up the
@@ -374,8 +388,10 @@ foreach ($exe in $executables) {
     Invoke-Docker -DockerArgs @('start', 'otel-collector')
     if ($LASTEXITCODE -ne 0) {
       Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector')
+      # Attach to otel-net so the collector's otlp/jaeger exporter can resolve
+      # `jaeger:4317`. See the Phase 2 setup block at script entry.
       Invoke-Docker -DockerArgs @(
-        'run', '-d', '--name', 'otel-collector',
+        'run', '-d', '--name', 'otel-collector', '--network', 'otel-net',
         '-p', '4317:4317', '-p', '4318:4318',
         '-v', "${otelConfigPath}:/etc/otel-collector-config.yaml",
         'otel/opentelemetry-collector-contrib:latest',
