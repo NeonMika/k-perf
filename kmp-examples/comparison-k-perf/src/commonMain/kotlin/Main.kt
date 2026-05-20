@@ -19,24 +19,19 @@ fun bubbleSort(arr: IntArray) {
 }
 
 fun workload() {
-    // 1. Recursive workload
-    val fibResult = fibonacci(25)
-    println("Fibonacci(25) = $fibResult")
-
-    // 2. Iterative workload
+    fibonacci(10)
     val arr = intArrayOf(64, 34, 25, 12, 22, 11, 90, 88, 77, 66, 55, 44, 33, 22, 11)
     bubbleSort(arr)
-    println("Sorted array: ${arr.joinToString(", ")}")
 }
 
-fun main() {
-    println("Starting workload...")
+fun main(args: Array<String>) {
+    val steps = args.mapNotNull { it.toIntOrNull() }.firstOrNull() ?: 1
+
     val start = TimeSource.Monotonic.markNow()
-    
-    workload()
-    
-    val end = TimeSource.Monotonic.markNow()
-    val ms = (end - start).inWholeMilliseconds
-    println("Workload finished.")
-    println("Execution finished - $ms ms elapsed")
+    repeat(steps) { i ->
+        val stepStart = start.elapsedNow()
+        workload()
+        println("!!! Elapsed time $i: ${(start.elapsedNow() - stepStart).inWholeNanoseconds}")
+    }
+    println("### Elapsed time: ${start.elapsedNow().inWholeNanoseconds}")
 }

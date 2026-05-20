@@ -1,7 +1,8 @@
-param(
+﻿param(
   [bool]$CleanBuild = $true,
-  [int]$WarmupCount = 5,
-  [int]$RunCount = 20
+  [int]$WarmupCount = 0,
+  [int]$RunCount = 20,
+  [int]$StepCount = 150
 )
 
 $ErrorActionPreference = "Stop"
@@ -24,18 +25,10 @@ $env:PATH    = $pathEntries -join ';'
 . "$ScriptRoot\types.ps1"
 . "$ScriptRoot\statistics_utils.ps1"
 
-# Verify external prerequisites the script can't install itself. We catch the
-# common causes of a long, frustrating "build runs for 20 minutes then fails"
-# loop:
-#   - Java/Node/Git not on PATH
-#   - Docker installed but daemon not running (very common after a reboot)
-#   - GitHub Packages credentials missing in ~/.gradle/gradle.properties
-#     (required to fetch io.opentelemetry.kotlin.* from a private repo)
+# Verify external prerequisites the script can't install itself.
 function Test-Prerequisites {
   $missing = @()
 
-  # Native CLI probes use 2>&1 which under PS 5.1 + EAP=Stop wraps any stderr
-  # line as a NativeCommandError; relax EAP locally just for the probes.
   $prevEap = $ErrorActionPreference
   $ErrorActionPreference = 'Continue'
   try {
@@ -50,8 +43,6 @@ function Test-Prerequisites {
       }
     }
 
-    # Docker CLI present is not enough — `docker run` needs the daemon. `docker
-    # info` is the cheapest probe that touches it.
     if (Get-Command docker -ErrorAction SilentlyContinue) {
       docker info --format '{{.ServerVersion}}' *> $null
       if ($LASTEXITCODE -ne 0) {
@@ -63,9 +54,6 @@ function Test-Prerequisites {
     $ErrorActionPreference = $prevEap
   }
 
-  # GitHub Packages credentials. The build script consumes these via
-  # project.property("GITHUB_USERNAME") / GITHUB_PASSWORD; without them, the
-  # otlp-exporter / comparison-otel* projects fail to resolve dependencies.
   $gradleProps = Join-Path $env:USERPROFILE ".gradle\gradle.properties"
   if (-not (Test-Path $gradleProps)) {
     $missing += "  [missing] ${gradleProps}: Create it with GITHUB_USERNAME=<user> and GITHUB_PASSWORD=<PAT with read:packages scope>."
@@ -94,18 +82,11 @@ Test-Prerequisites
 
 Push-Location "$ScriptRoot\.."
 
+# Per-step wall-clock budget scales with StepCount so long otel-JS runs at high
+# StepCount don't blow the timeout. Floor at 60s for tiny smoke runs.
+$RunTimeoutSeconds = [Math]::Max(60, 5 * $StepCount)
 
-
-# Runs $Command via cmd.exe with a wall-clock timeout. If the process hasn't exited
-# by $TimeoutSeconds, the entire process tree is killed via taskkill /t /f and the
-# function returns a sentinel string so the caller's regex naturally fails to match,
-# logging "Failed to parse time" instead of locking the whole benchmark.
-#
-# The taskkill invocation intentionally does its own stdout/stderr redirection
-# *inside* cmd.exe (>nul 2>&1). In Windows PowerShell 5.1, `2>&1 | Out-Null`
-# on a native exe wraps stderr lines as NativeCommandError records, which combined
-# with $ErrorActionPreference='Stop' terminates the script even when we pipe to null.
-# Redirecting inside cmd keeps PowerShell from seeing the stream at all.
+# Runs $Command via cmd.exe with a wall-clock timeout. See original commentary.
 function Invoke-WithTimeout {
   param(
     [string]$Command,
@@ -137,11 +118,6 @@ function Invoke-WithTimeout {
   return $stdoutTask.Result
 }
 
-# Persist the raw stdout (or [TIMEOUT...] sentinel) of a run whose output couldn't
-# be parsed into a number. Files land under <resultsDir>/failures/ so a subsequent
-# run leaves behind exactly the bytes that caused the regex miss — making it easy
-# to tell a node ENOENT, an exception trace, a hang killed at the wall-clock
-# timeout, and a silent zero-byte exit apart.
 function Save-FailureOutput {
   param(
     [string]$Phase,
@@ -175,10 +151,6 @@ function Invoke-GradleBuild {
   Write-Host "=========================================="
 
   Push-Location $Path
-  # Under PowerShell 5.1 with $ErrorActionPreference='Stop', any stderr line
-  # from gradle (including benign Kotlin compiler warnings) is wrapped as a
-  # NativeCommandError and terminates the script. Relax EAP locally — we still
-  # detect real failures via $LASTEXITCODE below.
   $prevEap = $ErrorActionPreference
   $ErrorActionPreference = 'Continue'
   try {
@@ -201,6 +173,19 @@ function Invoke-GradleBuild {
   Write-Host "$Title built successfully."
 }
 
+# Extract (variant, platform) from an exe display name. Used for grouping the
+# overhead table and looking up per-platform method counts.
+function Get-VariantAndPlatform {
+  param([string]$ExeName)
+  $platform =
+    if     ($ExeName -match 'JVM$')             { 'JVM' }
+    elseif ($ExeName -match 'JS \(Node\)$')     { 'JS' }
+    elseif ($ExeName -match 'Native \(Win\)$')  { 'Native' }
+    else                                         { 'Unknown' }
+  $variant = $ExeName -replace ' (JVM|JS \(Node\)|Native \(Win\))$', ''
+  return @{ Variant = $variant; Platform = $platform }
+}
+
 Write-Host "=========================================="
 Write-Host "Compiling Required Plugins and Dependencies"
 Write-Host "=========================================="
@@ -216,41 +201,35 @@ Invoke-GradleBuild -Title "OTel OTLP Exporter (proto)" -Path ".\otlp-exporter-pr
 Invoke-GradleBuild -Title "OTel Plugin Util (proto)" -Path ".\plugins\otel-plugin-proto\util" -Tasks @("publishToMavenLocal")
 Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")
 
-# proto-timesource shares util-proto and otlp-exporter-proto with proto — only the
-# plugin variant differs (it injects TimeSource.Monotonic.markNow() + elapsedNow()
-# instead of per-call Clock.System.now()).
 Invoke-GradleBuild -Title "OTel Plugin (proto-timesource)" -Path ".\plugins\otel-plugin-proto-timesource\plugin" -Tasks @("publishToMavenLocal")
 
 Write-Host "=========================================="
 Write-Host "Compiling Comparison Projects"
 Write-Host "=========================================="
 
-# Build all three targets for every comparison project: JVM jar, JS bundle, Windows native (mingwX64).
-# linuxX64 targets stay declared in each build.gradle.kts for use on Linux hosts,
-# but we don't link them here because the Windows toolchain can't produce Linux binaries.
-# `kotlinNpmInstall` is required because `jsProductionExecutableCompileSync`
-# does NOT transitively trigger it: the synced bundle only contains the
-# Kotlin-emitted .js files, not the runtime npm packages it requires
-# (e.g. @js-joda/core for kotlinx-datetime). Without npm install, build/js/
-# has no node_modules and `node ...comparison-*.js` crashes with
-# "Cannot find module '@js-joda/core'".
+Invoke-GradleBuild -Title "Comparison Project (baseline)" -Path ".\kmp-examples\comparison-baseline" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 Invoke-GradleBuild -Title "Comparison Project (k-perf)" -Path ".\kmp-examples\comparison-k-perf" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 Invoke-GradleBuild -Title "Comparison Project (otel)" -Path ".\kmp-examples\comparison-otel" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 Invoke-GradleBuild -Title "Comparison Project (otel-proto)" -Path ".\kmp-examples\comparison-otel-proto" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 Invoke-GradleBuild -Title "Comparison Project (otel-proto-timesource)" -Path ".\kmp-examples\comparison-otel-proto-timesource" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 
 
-# Path resolving for execution
-$kperfJvm = "java -jar .\kmp-examples\comparison-k-perf\build\lib\comparison-k-perf-jvm-0.1.0-flushEarly-true.jar"
-$kperfJs = "node .\kmp-examples\comparison-k-perf\build\js\packages\comparison-k-perf-flushEarly-true\kotlin\comparison-k-perf-flushEarly-true.js"
-$kperfNative = ".\kmp-examples\comparison-k-perf\build\bin\mingwX64\releaseExecutable\comparison-k-perf-flushEarly-true.exe"
+# Path resolving for execution. StepCount is appended at run time as the
+# positional argv[0] each Main.kt reads.
+$baselineJvm    = "java -jar .\kmp-examples\comparison-baseline\build\lib\comparison-baseline-jvm-0.1.0.jar"
+$baselineJs     = "node .\kmp-examples\comparison-baseline\build\js\packages\comparison-baseline\kotlin\comparison-baseline.js"
+$baselineNative = ".\kmp-examples\comparison-baseline\build\bin\mingwX64\releaseExecutable\comparison-baseline.exe"
 
-$otelJvm = "java -jar .\kmp-examples\comparison-otel\build\lib\comparison-otel-jvm-1.0.0.jar"
-$otelJs = "node .\kmp-examples\comparison-otel\build\js\packages\comparison-otel\kotlin\comparison-otel.js"
+$kperfJvm    = "java -jar .\kmp-examples\comparison-k-perf\build\lib\comparison-k-perf-jvm-0.1.0-flushEarly-false.jar"
+$kperfJs     = "node .\kmp-examples\comparison-k-perf\build\js\packages\comparison-k-perf-flushEarly-false\kotlin\comparison-k-perf-flushEarly-false.js"
+$kperfNative = ".\kmp-examples\comparison-k-perf\build\bin\mingwX64\releaseExecutable\comparison-k-perf-flushEarly-false.exe"
+
+$otelJvm    = "java -jar .\kmp-examples\comparison-otel\build\lib\comparison-otel-jvm-1.0.0.jar"
+$otelJs     = "node .\kmp-examples\comparison-otel\build\js\packages\comparison-otel\kotlin\comparison-otel.js"
 $otelNative = ".\kmp-examples\comparison-otel\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoJvm = "java -jar .\kmp-examples\comparison-otel-proto\build\lib\comparison-otel-proto-jvm-1.0.0.jar"
-$otelProtoJs = "node .\kmp-examples\comparison-otel-proto\build\js\packages\comparison-otel-proto\kotlin\comparison-otel-proto.js"
+$otelProtoJvm    = "java -jar .\kmp-examples\comparison-otel-proto\build\lib\comparison-otel-proto-jvm-1.0.0.jar"
+$otelProtoJs     = "node .\kmp-examples\comparison-otel-proto\build\js\packages\comparison-otel-proto\kotlin\comparison-otel-proto.js"
 $otelProtoNative = ".\kmp-examples\comparison-otel-proto\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $otelProtoTsJvm    = "java -jar .\kmp-examples\comparison-otel-proto-timesource\build\lib\comparison-otel-proto-timesource-jvm-1.0.0.jar"
@@ -258,44 +237,44 @@ $otelProtoTsJs     = "node .\kmp-examples\comparison-otel-proto-timesource\build
 $otelProtoTsNative = ".\kmp-examples\comparison-otel-proto-timesource\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $executables = @(
-  @{ Name = "k-perf JVM"; Command = $kperfJvm },
-  @{ Name = "otel JVM"; Command = $otelJvm },
-  @{ Name = "otel-proto JVM"; Command = $otelProtoJvm },
-  @{ Name = "otel-proto-timesource JVM"; Command = $otelProtoTsJvm },
-  @{ Name = "k-perf JS (Node)"; Command = $kperfJs },
-  @{ Name = "otel JS (Node)"; Command = $otelJs },
-  @{ Name = "otel-proto JS (Node)"; Command = $otelProtoJs },
+  @{ Name = "baseline JVM";                   Command = $baselineJvm },
+  @{ Name = "k-perf JVM";                     Command = $kperfJvm },
+  @{ Name = "otel JVM";                       Command = $otelJvm },
+  @{ Name = "otel-proto JVM";                 Command = $otelProtoJvm },
+  @{ Name = "otel-proto-timesource JVM";      Command = $otelProtoTsJvm },
+  @{ Name = "baseline JS (Node)";             Command = $baselineJs },
+  @{ Name = "k-perf JS (Node)";               Command = $kperfJs },
+  @{ Name = "otel JS (Node)";                 Command = $otelJs },
+  @{ Name = "otel-proto JS (Node)";           Command = $otelProtoJs },
   @{ Name = "otel-proto-timesource JS (Node)"; Command = $otelProtoTsJs },
-  @{ Name = "k-perf Native (Win)"; Command = $kperfNative },
-  @{ Name = "otel Native (Win)"; Command = $otelNative },
-  @{ Name = "otel-proto Native (Win)"; Command = $otelProtoNative },
+  @{ Name = "baseline Native (Win)";          Command = $baselineNative },
+  @{ Name = "k-perf Native (Win)";            Command = $kperfNative },
+  @{ Name = "otel Native (Win)";              Command = $otelNative },
+  @{ Name = "otel-proto Native (Win)";        Command = $otelProtoNative },
   @{ Name = "otel-proto-timesource Native (Win)"; Command = $otelProtoTsNative }
 )
 
 Write-Host "=========================================="
 Write-Host "Running Measurements"
-Write-Host "Warmups: $WarmupCount | Runs: $RunCount"
+Write-Host "Warmups: $WarmupCount | Runs: $RunCount | StepCount: $StepCount | Run timeout: ${RunTimeoutSeconds}s"
 Write-Host "=========================================="
 
 $allResults = @()
 
 # Compute the results directory up-front so we can drop per-run debug dumps
-# under it the moment a run fails (instead of waiting until the loop ends).
+# under it the moment a run fails.
 $timestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
 $resultsDir = ".\measurements\comparison_run_$timestamp"
 $failuresDir = Join-Path $resultsDir "failures"
+$tracesDir   = Join-Path $resultsDir "traces"
+
+# methods_per_step keyed by platform name ("JVM"/"JS"/"Native"). Filled in on the
+# first k-perf measurement iteration for each platform; used later for overhead.
+$methodsPerStep = @{}
+$tracePreserved = @{}
 
 $otelConfigPath = (Resolve-Path "$ScriptRoot\otel-config.yaml").Path
 
-# All docker invocations below run with EAP=Continue locally because under
-# PowerShell 5.1 + $ErrorActionPreference='Stop', any stderr line from a native
-# command (e.g. "Error response from daemon: No such container: otel-collector"
-# when starting a not-yet-created container) is wrapped as a NativeCommandError
-# and throws — even when the stream is redirected to Out-Null. A `try/catch`
-# would silently swallow that throw and skip the very next `docker run` call,
-# leaving the benchmark to run with no collector and the otel-proto native exe
-# hanging on gRPC for the 60s timeout. We use $LASTEXITCODE to detect failures
-# instead.
 function Invoke-Docker {
   param([string[]]$DockerArgs, [switch]$CaptureOutput)
   $prevEap = $ErrorActionPreference
@@ -313,27 +292,87 @@ function Invoke-Docker {
   }
 }
 
-# Stop any stale Jaeger container from previous runs so it doesn't hold ports
-# 4317/4318 when we try to start otel-collector. Silent if it doesn't exist.
+# Stop any stale Jaeger container from previous runs.
 Invoke-Docker -DockerArgs @('stop', 'jaeger')
+
+# Parse `### Elapsed time: <ns>` (total) and `!!! Elapsed time <i>: <ns>` (per-step).
+# Main.kt emits nanoseconds via `Duration.inWholeNanoseconds` — this picks up the
+# ~100 ns resolution of the underlying QPC/hrtime clocks and avoids the µs-truncation
+# that previously made Native baseline reports collapse to 0. Returns
+# @{ TotalNanos = <long?>; StepNanos = <double[]> }; TotalNanos is null when the
+# regex didn't match.
+function Get-ElapsedFromOutput {
+  param([string]$OutputStr)
+
+  $totalMatch = [regex]::Match($OutputStr, '(?m)^### Elapsed time:\s*(\d+)\s*$')
+  $totalNanos = if ($totalMatch.Success) { [long]$totalMatch.Groups[1].Value } else { $null }
+
+  $stepNanos = @()
+  $stepMatches = [regex]::Matches($OutputStr, '(?m)^!!! Elapsed time (\d+):\s*(\d+)\s*$')
+  foreach ($m in $stepMatches) {
+    $stepNanos += [double]$m.Groups[2].Value
+  }
+
+  return @{ TotalNanos = $totalNanos; StepNanos = $stepNanos }
+}
+
+# k-perf writes `trace_<platform>_<random>.txt` and `symbols_<platform>_<random>.txt`
+# to cwd. On the first measurement iteration of each k-perf variant we move
+# the trace to <resultsDir>/traces/<exe-safe-name>.txt and count lines/2/StepCount
+# to derive methods_per_step. Subsequent iterations delete trace/symbol files.
+function Invoke-PostRunCleanup {
+  param(
+    [string]$ExeName,
+    [bool]$IsMeasurement
+  )
+
+  $traceFiles  = @(Get-ChildItem -Path "." -Filter "trace*.txt"  -ErrorAction SilentlyContinue)
+  $symbolFiles = @(Get-ChildItem -Path "." -Filter "symbols*.txt" -ErrorAction SilentlyContinue)
+
+  $isKperf = $ExeName -match 'k-perf'
+  $vp = Get-VariantAndPlatform -ExeName $ExeName
+  $shouldPreserve = $IsMeasurement -and $isKperf -and (-not $tracePreserved.ContainsKey($ExeName)) -and ($traceFiles.Count -gt 0)
+
+  if ($shouldPreserve) {
+    if (-not (Test-Path $tracesDir)) {
+      New-Item -ItemType Directory -Path $tracesDir -Force | Out-Null
+    }
+    $safeName = ($ExeName -replace '[^A-Za-z0-9._-]+', '_').Trim('_')
+    $targetTrace = Join-Path $tracesDir "$safeName.txt"
+    Move-Item -Path $traceFiles[0].FullName -Destination $targetTrace -Force
+
+    $lineCount = (Get-Content $targetTrace | Measure-Object -Line).Lines
+    if ($lineCount % 2 -ne 0) {
+      Write-Host "  WARN: trace for $ExeName has odd line count $lineCount; truncating to even" -ForegroundColor Yellow
+      $lineCount = $lineCount - 1
+    }
+    if ($StepCount -gt 0) {
+      $mps = [Math]::Floor($lineCount / 2 / $StepCount)
+      $methodsPerStep[$vp.Platform] = $mps
+      Write-Host "  Preserved trace $safeName.txt ($lineCount lines) → methods/step = $mps for platform $($vp.Platform)" -ForegroundColor Cyan
+    }
+    $tracePreserved[$ExeName] = $true
+
+    # Remove any remaining trace files plus all symbol files
+    if ($traceFiles.Count -gt 1) {
+      $traceFiles | Select-Object -Skip 1 | ForEach-Object { Remove-Item -Force $_.FullName }
+    }
+  }
+  else {
+    $traceFiles | ForEach-Object { Remove-Item -Force -ErrorAction SilentlyContinue $_.FullName }
+  }
+
+  $symbolFiles | ForEach-Object { Remove-Item -Force -ErrorAction SilentlyContinue $_.FullName }
+}
 
 foreach ($exe in $executables) {
   Write-Host ""
 
   # Boot or stop the OTel Collector depending on whether this executable exports traces.
-  # We use otel/opentelemetry-collector-contrib (not Jaeger all-in-one) because the
-  # latter's OTLP gRPC endpoint does not bind reliably to 0.0.0.0 under Docker Desktop
-  # for Windows, which causes kmpgrpc-native (tonic via FFI) gRPC calls from the proto
-  # exporter to hang indefinitely. The explicit 0.0.0.0 binding in otel-config.yaml
-  # matches the known-working sidequest setup.
   if ($exe.Name -match "otel") {
     Write-Host "--- Booting OTel Collector via Docker ---"
     Invoke-Docker -DockerArgs @('start', 'otel-collector')
     if ($LASTEXITCODE -ne 0) {
-      # No existing container — create one. If a stale container of the same name
-      # exists in any state, blow it away first so `docker run` doesn't fail with
-      # "name already in use" (which used to be silently caught and leave us with
-      # no collector running).
       Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector')
       Invoke-Docker -DockerArgs @(
         'run', '-d', '--name', 'otel-collector',
@@ -347,11 +386,6 @@ foreach ($exe in $executables) {
       }
     }
 
-    # Wait until the collector is actually accepting connections on :4317. The
-    # old fixed 2s sleep was a guess; on slower machines or first-pull boots the
-    # gRPC port is not yet bound when the workload exe starts, and the kmpgrpc
-    # native (tonic FFI) client hangs the whole 60s wall-clock timeout instead
-    # of failing fast.
     $deadline = (Get-Date).AddSeconds(30)
     $ready = $false
     while ((Get-Date) -lt $deadline) {
@@ -371,25 +405,18 @@ foreach ($exe in $executables) {
   }
 
   Write-Host "--- Benchmarking: $($exe.Name) ---"
-  
+  $invocation = "$($exe.Command) $StepCount"
+
   # Warmup
   Write-Host "Warmup iterations ($WarmupCount):"
   for ($i = 0; $i -lt $WarmupCount; $i++) {
-    $output = Invoke-WithTimeout -Command $exe.Command -TimeoutSeconds 60
-    
-    # Delete k-perf trace/symbol output files automatically
-    Get-ChildItem -Path "." -Filter "trace*.txt" -ErrorAction SilentlyContinue | Remove-Item -Force
-    Get-ChildItem -Path "." -Filter "symbol*.txt" -ErrorAction SilentlyContinue | Remove-Item -Force
-
+    $output = Invoke-WithTimeout -Command $invocation -TimeoutSeconds $RunTimeoutSeconds
     $outputStr = $output -join "`n"
-    $flushTime = [regex]::Match($outputStr, "Flush finished - (\d+) ms elapsed")
-    $execTime = [regex]::Match($outputStr, "Execution finished - (\d+) ms elapsed")
-    
-    if ($flushTime.Success) {
-      Write-Host "  Warmup $($i+1): $($flushTime.Groups[1].Value) ms (Included async flush)"
-    }
-    elseif ($execTime.Success) {
-      Write-Host "  Warmup $($i+1): $($execTime.Groups[1].Value) ms"
+    Invoke-PostRunCleanup -ExeName $exe.Name -IsMeasurement $false
+
+    $parsed = Get-ElapsedFromOutput -OutputStr $outputStr
+    if ($null -ne $parsed.TotalNanos) {
+      Write-Host ("  Warmup {0}: total {1:N3} ms ({2} steps)" -f ($i+1), ($parsed.TotalNanos / 1000000.0), $parsed.StepNanos.Count)
     }
     else {
       Write-Host "  Warmup $($i+1): Failed to parse time"
@@ -398,28 +425,24 @@ foreach ($exe in $executables) {
   }
 
   # Actual measurements
-  $runtimes = @()
+  $totalNanosList = @()
+  $perRunStepNanos = @()
   Write-Host "Measurement iterations ($RunCount):"
   for ($i = 0; $i -lt $RunCount; $i++) {
-    $output = Invoke-WithTimeout -Command $exe.Command -TimeoutSeconds 60
-    
-    # Delete k-perf trace/symbol output files automatically
-    Get-ChildItem -Path "." -Filter "trace*.txt" -ErrorAction SilentlyContinue | Remove-Item -Force
-    Get-ChildItem -Path "." -Filter "symbol*.txt" -ErrorAction SilentlyContinue | Remove-Item -Force
-
+    $output = Invoke-WithTimeout -Command $invocation -TimeoutSeconds $RunTimeoutSeconds
     $outputStr = $output -join "`n"
-    $flushTime = [regex]::Match($outputStr, "Flush finished - (\d+) ms elapsed")
-    $execTime = [regex]::Match($outputStr, "Execution finished - (\d+) ms elapsed")
-    
-    if ($flushTime.Success) {
-      $ms = [int]$flushTime.Groups[1].Value
-      Write-Host "  Run $($i+1): $ms ms (Included async flush)" -ForegroundColor Green
-      $runtimes += $ms
-    }
-    elseif ($execTime.Success) {
-      $ms = [int]$execTime.Groups[1].Value
-      Write-Host "  Run $($i+1): $ms ms" -ForegroundColor Green
-      $runtimes += $ms
+
+    # Cleanup runs *before* parsing so a k-perf trace from a successful run is
+    # preserved by Invoke-PostRunCleanup. Parsing only consumes stdout, not
+    # the trace file, so the order is correct.
+    Invoke-PostRunCleanup -ExeName $exe.Name -IsMeasurement $true
+
+    $parsed = Get-ElapsedFromOutput -OutputStr $outputStr
+    if ($null -ne $parsed.TotalNanos) {
+      $totalMs = $parsed.TotalNanos / 1000000.0
+      Write-Host ("  Run {0}: total {1:N3} ms ({2} steps)" -f ($i+1), $totalMs, $parsed.StepNanos.Count) -ForegroundColor Green
+      $totalNanosList += [double]$parsed.TotalNanos
+      $perRunStepNanos += , @($parsed.StepNanos)
     }
     else {
       Write-Host "  Run $($i+1): Failed to parse time" -ForegroundColor Red
@@ -427,20 +450,30 @@ foreach ($exe in $executables) {
     }
   }
 
-  # Statistical computations
-  $numericTimes = $runtimes | ForEach-Object { [double]$_ }
-  $stats = Get-BenchmarkStatistics -Values $numericTimes
+  # Flatten per-step times across all runs to compute a per-step mean/median.
+  $flatStepNanos = @()
+  foreach ($runSteps in $perRunStepNanos) {
+    foreach ($s in $runSteps) { $flatStepNanos += [double]$s }
+  }
+
+  $totalStats = Get-BenchmarkStatistics -Values $totalNanosList
+  $stepStats  = Get-BenchmarkStatistics -Values $flatStepNanos
 
   $allResults += [ordered]@{
-    Executable = $exe.Name
-    Count      = $stats.count
-    Mean       = $stats.mean
-    Median     = $stats.median
-    StdDev     = $stats.stddev
-    Min        = $stats.min
-    Max        = $stats.max
-    CI95Upper  = $stats.ci95.upper
-    Times      = $numericTimes
+    Executable       = $exe.Name
+    Count            = $totalStats.count
+    TotalMeanNanos   = $totalStats.mean
+    TotalMedianNanos = $totalStats.median
+    TotalStdDevNanos = $totalStats.stddev
+    TotalMinNanos    = $totalStats.min
+    TotalMaxNanos    = $totalStats.max
+    StepMeanNanos    = $stepStats.mean
+    StepMedianNanos  = $stepStats.median
+    StepStdDevNanos  = $stepStats.stddev
+    StepMinNanos     = $stepStats.min
+    StepMaxNanos     = $stepStats.max
+    TotalsNanos      = $totalNanosList
+    PerRunStepNanos  = $perRunStepNanos
   }
 }
 
@@ -455,16 +488,172 @@ if (-Not (Test-Path $resultsDir)) {
   New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null
 }
 
+# --- Per-step median curve + steady-state detection -----------------------
+# For each (variant, platform), compute the per-step median across runs
+# (one median per step index, shape: StepCount). Then auto-detect a
+# "steady-state start" — the first step index whose median falls within
+# K × (tail-median) of the tail. Used to compute steady-state overhead so
+# the cold-start prefix (very expensive on JVM) doesn't dominate.
+
+function Get-PerStepMedians {
+  param([object[]]$PerRunStepValues)
+  if ($null -eq $PerRunStepValues -or $PerRunStepValues.Count -eq 0) { return @() }
+  $stepCount = ($PerRunStepValues | ForEach-Object { $_.Count } | Measure-Object -Maximum).Maximum
+  if ($null -eq $stepCount -or $stepCount -le 0) { return @() }
+  $medians = @()
+  for ($s = 0; $s -lt $stepCount; $s++) {
+    $values = @()
+    foreach ($run in $PerRunStepValues) {
+      if ($s -lt $run.Count) { $values += [double]$run[$s] }
+    }
+    if ($values.Count -eq 0) { $medians += $null; continue }
+    $sorted = @($values | Sort-Object)
+    $mid = [Math]::Floor($sorted.Count / 2)
+    if ($sorted.Count % 2 -eq 1) {
+      $medians += [double]$sorted[$mid]
+    } else {
+      $medians += ([double]$sorted[$mid - 1] + [double]$sorted[$mid]) / 2.0
+    }
+  }
+  return ,$medians
+}
+
+# Returns the first step index where the per-step median falls within
+# $ThresholdMultiplier × tail-median, where tail-median is the median of
+# step medians in the last 50% of step indices. With sawtooth (otel-*)
+# this picks a relatively late index since many tail samples are spikes;
+# that's intentional — the "steady mean" is then averaged over a mix of
+# spike and quiet samples, which approximates real steady-state cost.
+function Get-SteadyStateStart {
+  param(
+    [object[]]$Medians,
+    [double]$ThresholdMultiplier = 2.0
+  )
+  $n = $Medians.Count
+  if ($n -lt 8) { return 0 }
+
+  $tailStart = [Math]::Floor($n / 2)
+  $tail = @()
+  for ($i = $tailStart; $i -lt $n; $i++) {
+    if ($null -ne $Medians[$i]) { $tail += [double]$Medians[$i] }
+  }
+  if ($tail.Count -eq 0) { return 0 }
+  $tailSorted = @($tail | Sort-Object)
+  $tailMedian = [double]$tailSorted[[Math]::Floor($tailSorted.Count / 2)]
+  if ($tailMedian -le 0) { return 0 }
+
+  $limit = $ThresholdMultiplier * $tailMedian
+  for ($i = 0; $i -lt $n; $i++) {
+    if ($null -ne $Medians[$i] -and [double]$Medians[$i] -le $limit) { return $i }
+  }
+  return $tailStart
+}
+
+# Mean of $Values[$Start..end] (inclusive), ignoring nulls.
+function Get-MeanFromIndex {
+  param([object[]]$Values, [int]$Start)
+  $acc = 0.0; $n = 0
+  for ($i = $Start; $i -lt $Values.Count; $i++) {
+    if ($null -ne $Values[$i]) { $acc += [double]$Values[$i]; $n++ }
+  }
+  if ($n -eq 0) { return $null }
+  return $acc / $n
+}
+
+# Build a per-(variant,platform) summary: medians + steady-state start +
+# steady-state mean step time. Store on $allResults for downstream use.
+# All values in nanoseconds; convert at display time.
+foreach ($res in $allResults) {
+  $medians = Get-PerStepMedians -PerRunStepValues $res.PerRunStepNanos
+  $steady  = Get-SteadyStateStart -Medians $medians -ThresholdMultiplier 2.0
+  $steadyMean = Get-MeanFromIndex -Values $medians -Start $steady
+  $res['PerStepMedianNanos'] = $medians
+  $res['SteadyStateStart']   = $steady
+  $res['SteadyStepNanos']    = $steadyMean
+}
+
+# --- Overhead calculation --------------------------------------------------
+# Compute two flavours of overhead (both in ns/method):
+#   1) Full-run flat:  uses StepMeanNanos / baseline.StepMeanNanos (all samples)
+#   2) Steady-state:   uses SteadyStepNanos (per-step median, averaged over
+#                      the auto-detected steady region) for both terms.
+# Steady-state is the one to quote when reporting "the cost of one
+# instrumented method call at warm steady state".
+# Formula:  overhead_ns_per_method = (instr_ns - base_ns) / methods_per_step
+
+$baselineFullByPlatform   = @{}
+$baselineSteadyByPlatform = @{}
+foreach ($res in $allResults) {
+  $vp = Get-VariantAndPlatform -ExeName $res.Executable
+  if ($vp.Variant -eq 'baseline') {
+    if ($null -ne $res.StepMeanNanos)   { $baselineFullByPlatform[$vp.Platform]   = $res.StepMeanNanos }
+    if ($null -ne $res.SteadyStepNanos) { $baselineSteadyByPlatform[$vp.Platform] = $res.SteadyStepNanos }
+  }
+}
+
+$overheadRows = @()
+foreach ($res in $allResults) {
+  $vp = Get-VariantAndPlatform -ExeName $res.Executable
+  if ($vp.Variant -eq 'baseline') { continue }
+
+  $mps         = $methodsPerStep[$vp.Platform]
+  $stepMean    = $res.StepMeanNanos
+  $stepSteady  = $res.SteadyStepNanos
+  $baselineFull   = $baselineFullByPlatform[$vp.Platform]
+  $baselineSteady = $baselineSteadyByPlatform[$vp.Platform]
+
+  $ohFull = $null
+  if ($null -ne $baselineFull -and $null -ne $stepMean -and $null -ne $mps -and $mps -gt 0) {
+    $ohFull = ($stepMean - $baselineFull) / $mps
+  }
+  $ohSteady = $null
+  if ($null -ne $baselineSteady -and $null -ne $stepSteady -and $null -ne $mps -and $mps -gt 0) {
+    $ohSteady = ($stepSteady - $baselineSteady) / $mps
+  }
+
+  $overheadRows += [ordered]@{
+    Variant                  = $vp.Variant
+    Platform                 = $vp.Platform
+    StepMeanNanos            = $stepMean
+    BaselineStepNanos        = $baselineFull
+    SteadyStepNanos          = $stepSteady
+    BaselineSteadyStepNanos  = $baselineSteady
+    SteadyStateStart         = $res.SteadyStateStart
+    MethodsPerStep           = $mps
+    OverheadNsFullRun        = $ohFull
+    OverheadNsSteadyState    = $ohSteady
+  }
+}
+
+# --- Emit per-step median CSV ---------------------------------------------
+# One row per (variant, platform, step). Use this in Excel/Python to plot
+# the JIT warmup curve. Values in nanoseconds (divide by 1000 for µs).
+$csvPath = Join-Path $resultsDir "per_step_medians.csv"
+$csvLines = @("variant,platform,step,median_ns,steady_state_start")
+foreach ($res in $allResults) {
+  $vp = Get-VariantAndPlatform -ExeName $res.Executable
+  $medians = $res.PerStepMedianNanos
+  $steady  = $res.SteadyStateStart
+  if ($null -eq $medians -or $medians.Count -eq 0) { continue }
+  for ($i = 0; $i -lt $medians.Count; $i++) {
+    $m = if ($null -ne $medians[$i]) { "{0:F0}" -f [double]$medians[$i] } else { "" }
+    $csvLines += "$($vp.Variant),$($vp.Platform),$i,$m,$steady"
+  }
+}
+$csvLines | Out-File -FilePath $csvPath -Encoding utf8
+
 $jsonOutput = [ordered]@{
-  Parameters  = @{ WarmupCount = $WarmupCount; RunCount = $RunCount; CleanBuild = $CleanBuild }
-  MachineInfo = $machineInfo
-  Results     = $allResults
+  Parameters     = @{ WarmupCount = $WarmupCount; RunCount = $RunCount; StepCount = $StepCount; CleanBuild = $CleanBuild }
+  MachineInfo    = $machineInfo
+  MethodsPerStep = $methodsPerStep
+  Results        = $allResults
+  Overhead       = $overheadRows
 }
 
 $jsonFile = "$resultsDir\results.json"
 $mdFile = "$resultsDir\results.md"
 
-$jsonOutput | ConvertTo-Json -Depth 6 | Out-File $jsonFile -Encoding utf8
+$jsonOutput | ConvertTo-Json -Depth 10 | Out-File $jsonFile -Encoding utf8
 
 # Generate Markdown file
 $markdown = @"
@@ -473,7 +662,9 @@ $markdown = @"
 ## Parameters
 - **Warmup Iterations:** $WarmupCount
 - **Run Iterations:** $RunCount
+- **Step Count (workload calls per process):** $StepCount
 - **Clean Build:** $CleanBuild
+- **Run timeout (s):** $RunTimeoutSeconds
 
 ## System Information
 - **OS:** $($machineInfo.OS) $($machineInfo.OSArchitecture)
@@ -486,24 +677,153 @@ $markdown = @"
 - **Device:** $($machineInfo.DeviceManufacturer) - $($machineInfo.DeviceModel)
 - **Git Branch:** $($machineInfo.GitBranch)
 
+## Methods per step (k-perf trace, lines/2/StepCount)
+
+| Platform | methods_per_step |
+|---|---:|
+"@
+
+foreach ($plat in @('JVM','JS','Native')) {
+  $val = if ($methodsPerStep.ContainsKey($plat)) { $methodsPerStep[$plat] } else { 'N/A' }
+  $markdown += "`n| $plat | $val |"
+}
+
+$markdown += @"
+
+
 ## Execution Summary
 
-| Executable | Iterations | Mean (ms) | Median (ms) | Min (ms) | Max (ms) | StdDev |
-|------------|------------|-----------|-------------|----------|----------|--------|
+Total time = wall-clock of the whole process (warmup + StepCount steps + plugin teardown).
+Step time = mean across all flat per-step samples (RunCount × StepCount samples).
+
+| Executable | Iterations | Total mean (ms) | Total median (ms) | Step mean (µs) | Step median (µs) | Step stddev (µs) |
+|------------|-----------:|----------------:|------------------:|---------------:|-----------------:|-----------------:|
 "@
 
 foreach ($res in $allResults) {
-  if ($null -ne $res.Mean) { $meanStr = "{0:N2}" -f $res.Mean } else { $meanStr = "N/A" }
-  if ($null -ne $res.Median) { $medStr = "{0:N2}" -f $res.Median } else { $medStr = "N/A" }
-  if ($null -ne $res.Min) { $minStr = "{0:N0}" -f $res.Min } else { $minStr = "N/A" }
-  if ($null -ne $res.Max) { $maxStr = "{0:N0}" -f $res.Max } else { $maxStr = "N/A" }
-  if ($null -ne $res.StdDev) { $stdStr = "{0:N2}" -f $res.StdDev } else { $stdStr = "N/A" }
+  $totalMean   = if ($null -ne $res.TotalMeanNanos)   { "{0:N2}" -f ($res.TotalMeanNanos / 1000000.0) } else { "N/A" }
+  $totalMedian = if ($null -ne $res.TotalMedianNanos) { "{0:N2}" -f ($res.TotalMedianNanos / 1000000.0) } else { "N/A" }
+  $stepMean    = if ($null -ne $res.StepMeanNanos)    { "{0:N2}" -f ($res.StepMeanNanos / 1000.0) } else { "N/A" }
+  $stepMedian  = if ($null -ne $res.StepMedianNanos)  { "{0:N2}" -f ($res.StepMedianNanos / 1000.0) } else { "N/A" }
+  $stepStdDev  = if ($null -ne $res.StepStdDevNanos)  { "{0:N2}" -f ($res.StepStdDevNanos / 1000.0) } else { "N/A" }
 
-  $markdown += "`n| $($res.Executable) | $($res.Count) | {0} | {1} | {2} | {3} | {4} |" -f $meanStr, $medStr, $minStr, $maxStr, $stdStr
+  $markdown += "`n| $($res.Executable) | $($res.Count) | $totalMean | $totalMedian | $stepMean | $stepMedian | $stepStdDev |"
 }
+
+$markdown += @"
+
+
+## Overhead per instrumented method
+
+Two overhead numbers per (variant, platform):
+- **Full-run** uses the arithmetic mean over *all* per-step samples
+  (RunCount × StepCount). Heavily biased by the first ~5–10 cold steps on
+  JVM where step 0 alone can be 1000× the steady-state cost — so this
+  overestimates the warm-state overhead.
+- **Steady-state** uses the auto-detected stable region (`SS-start`): the
+  first step index whose per-step median (across runs) is within 2× the
+  median of the latter-50% tail. Recommended quotation when reporting
+  "cost of one instrumented method call at warm steady state".
+
+`overhead_ns_per_method = (step_ns_instrumented − step_ns_baseline) / methods_per_step`
+(per-step timings are collected at nanosecond resolution via `Duration.inWholeNanoseconds`
+and the QPC/hrtime backing clocks; display columns below show µs/ms for readability.)
+
+methods_per_step is derived from the preserved k-perf trace under `traces/`
+(trace lines / 2 / StepCount). For the otel-* variants this is a lower bound
+(those plugins also instrument the `repeat { }` lambda body, ~+1 method per
+step, ~0.5% underestimate).
+
+| Variant | Platform | SS-start | Step mean (µs) | Baseline mean (µs) | Steady (µs) | Baseline steady (µs) | Methods/step | Overhead full (ns) | Overhead steady (ns) |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+"@
+
+foreach ($row in $overheadRows) {
+  $ss         = if ($null -ne $row.SteadyStateStart)         { "$($row.SteadyStateStart)" }                              else { "N/A" }
+  $stepMean   = if ($null -ne $row.StepMeanNanos)            { "{0:N2}" -f ($row.StepMeanNanos / 1000.0) }                else { "N/A" }
+  $baseMean   = if ($null -ne $row.BaselineStepNanos)        { "{0:N2}" -f ($row.BaselineStepNanos / 1000.0) }            else { "N/A" }
+  $stepSteady = if ($null -ne $row.SteadyStepNanos)          { "{0:N2}" -f ($row.SteadyStepNanos / 1000.0) }              else { "N/A" }
+  $baseSteady = if ($null -ne $row.BaselineSteadyStepNanos)  { "{0:N2}" -f ($row.BaselineSteadyStepNanos / 1000.0) }      else { "N/A" }
+  $mps        = if ($null -ne $row.MethodsPerStep)           { "$($row.MethodsPerStep)" }                                  else { "N/A" }
+  $ohFull     = if ($null -ne $row.OverheadNsFullRun)        { "{0:N1}" -f $row.OverheadNsFullRun }                       else { "N/A" }
+  $ohSteady   = if ($null -ne $row.OverheadNsSteadyState)    { "{0:N1}" -f $row.OverheadNsSteadyState }                   else { "N/A" }
+  $markdown += "`n| $($row.Variant) | $($row.Platform) | $ss | $stepMean | $baseMean | $stepSteady | $baseSteady | $mps | $ohFull | $ohSteady |"
+}
+
+# --- Per-step curve table: median µs at selected step indices --------------
+# Picks indices that span the cold→warm transition. Edit the array if you
+# want different resolution.
+$curveStepIndices = @(0, 1, 2, 5, 10, 25, 50, 75, 100, 125, ($StepCount - 1))
+$curveStepIndices = @($curveStepIndices | Where-Object { $_ -lt $StepCount } | Sort-Object -Unique)
+$curveHeaderCells = $curveStepIndices | ForEach-Object { "s$_" }
+$curveDivider = ($curveStepIndices | ForEach-Object { "---:" }) -join ' | '
+
+$markdown += @"
+
+
+## Per-step median curve (µs)
+
+Per-step median across all $RunCount runs, sampled at selected step indices.
+Shows the JIT warm-up shape: cold steps on the left, steady-state on the
+right. Full data (every step) is in `per_step_medians.csv` and in
+`results.json` under `Results[*].PerStepMedians`.
+
+Sawtooth pattern in otel-* rows is BatchSpanProcessor flushes intersecting
+the dcxp persistent-list O(n²) bug (GEMINI.md Finding #1, 2026-05-04).
+
+| Variant | Platform | $($curveHeaderCells -join ' | ') |
+|---|---|$curveDivider|
+"@
+
+foreach ($res in $allResults) {
+  $vp = Get-VariantAndPlatform -ExeName $res.Executable
+  $medians = $res.PerStepMedianNanos
+  if ($null -eq $medians -or $medians.Count -eq 0) { continue }
+  $cells = @()
+  foreach ($idx in $curveStepIndices) {
+    if ($idx -lt $medians.Count -and $null -ne $medians[$idx]) {
+      # Display as µs with 2 decimals so sub-µs values (Native baseline ~0.4)
+      # remain visible. Large values like 12000 µs still print fine.
+      $cells += "{0:N2}" -f ([double]$medians[$idx] / 1000.0)
+    } else {
+      $cells += "—"
+    }
+  }
+  $markdown += "`n| $($vp.Variant) | $($vp.Platform) | $($cells -join ' | ') |"
+}
+
+$markdown += @"
+
+
+## Per-step times (JIT warmup curves)
+
+Full per-step medians (one value per step index, across all runs) are in
+`per_step_medians.csv` for plotting (units: nanoseconds). The raw
+per-(run × step) ns samples are in `results.json` under
+`Results[*].PerRunStepNanos`.
+
+Notes on interpretation:
+- **JVM** HotSpot tiered compilation has two thresholds (~200 calls for C1,
+  ~10k for C2). With ~180 user methods per step, expect two inflection
+  points: one near step 1–2 and another near step 55. In practice the
+  observed curve often shows a single steep drop in the first 5–10 steps
+  followed by a slow tail — the second knee can be invisible when the hot
+  path is trivial.
+- **JS** V8 uses Ignition → Sparkplug → Maglev → Turbofan tiers; different
+  curve shape than JVM.
+- **Kotlin/Native** is AOT — expect flat from step 1.
+- **otel-* variants** have monotonic upward drift + periodic spikes
+  superimposed on the JIT curve from the dcxp
+  `BatchSpanProcessor.removeSpanDataFromBatch` O(n²) bug. Steady-state
+  overhead averages over both quiet and spike samples.
+"@
 
 $markdown | Out-File $mdFile -Encoding utf8
 
 Write-Host "Measurements and stats saved successfully to folder: `n -> $resultsDir"
+Write-Host "  results.json          (raw + statistics)"
+Write-Host "  results.md            (summary tables + per-step curve)"
+Write-Host "  per_step_medians.csv  (long-form per-step medians for plotting)"
+Write-Host "  traces/               (k-perf trace per platform, one preserved per variant)"
 Write-Host "Benchmark evaluation finished."
 Pop-Location

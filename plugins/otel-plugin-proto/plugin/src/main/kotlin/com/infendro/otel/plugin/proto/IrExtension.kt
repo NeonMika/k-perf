@@ -40,6 +40,8 @@ class IrExtension(
     val debug: Boolean,
     val host: String?,
     val service: String?,
+    val maxQueueSize: Int = 2048,
+    val maxExportBatchSize: Int = Int.MAX_VALUE,
 ) : IrGenerationExtension {
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(
@@ -277,7 +279,7 @@ class IrExtension(
             "BatchSpanProcessorBuilder"
         )
         val ProcessorBuilder_setMaxQueueSize = ProcessorBuilder.getFunction("setMaxQueueSize")
-        val ProcessorBuilder_setMaxExportBatchSize = ProcessorBuilder.getFunction("setMaxQueueSize")
+        val ProcessorBuilder_setMaxExportBatchSize = ProcessorBuilder.getFunction("setMaxExportBatchSize")
         val ProcessorBuilder_build = ProcessorBuilder.getFunction("build")
 
         val TracerProvider = getClass(
@@ -447,8 +449,8 @@ class IrExtension(
 
         // val processor = BatchSpanProcessor
         //     .builder(exporter)
-        //     .setMaxQueueSize(Int.MAX_VALUE)
-        //     .setMaxExportBatchSize(2048)
+        //     .setMaxQueueSize(<maxQueueSize>)
+        //     .setMaxExportBatchSize(<maxExportBatchSize>)
         //     .build()
         val processor = buildField(
             name = "_processor",
@@ -458,9 +460,9 @@ class IrExtension(
             initializer = expression {
                 call(ProcessorBuilder_build) {
                     dispatchReceiver = call(ProcessorBuilder_setMaxExportBatchSize) {
-                        argument(0, irInt(Int.MAX_VALUE))
+                        argument(0, irInt(maxExportBatchSize))
                         dispatchReceiver = call(ProcessorBuilder_setMaxQueueSize) {
-                            argument(0, irInt(2048))
+                            argument(0, irInt(maxQueueSize))
                             dispatchReceiver = call(ProcessorCompanion_builder) {
                                 argument(0, irGetField(null, exporter))
                                 dispatchReceiver = irGetObject(ProcessorCompanion)

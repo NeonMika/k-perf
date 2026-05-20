@@ -20,10 +20,20 @@ repositories {
     mavenCentral()
 }
 
+val otelProtoTsMaxQueueSize = providers.gradleProperty("otelProtoTsMaxQueueSize")
+    .map { it.toInt() }
+    .getOrElse(2048)
+
+val otelProtoTsMaxExportBatchSize = providers.gradleProperty("otelProtoTsMaxExportBatchSize")
+    .map { it.toInt() }
+    .getOrElse(Int.MAX_VALUE)
+
 otelProtoTimesource {
     host = "localhost:4317"
     service = "comparison-otel-proto-timesource"
     debug = true
+    maxQueueSize = otelProtoTsMaxQueueSize
+    maxExportBatchSize = otelProtoTsMaxExportBatchSize
 }
 
 kotlin {
@@ -52,8 +62,11 @@ kotlin {
             }
         }
     }
+    @OptIn(org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalMainFunctionArgumentsDsl::class)
     js {
-        nodejs()
+        nodejs {
+            passProcessArgvToMainFunction()
+        }
         useCommonJs()
         binaries.executable()
     }

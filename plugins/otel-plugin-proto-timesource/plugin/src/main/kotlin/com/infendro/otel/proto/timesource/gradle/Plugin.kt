@@ -13,6 +13,8 @@ class Extension() {
     var debug: Boolean = false
     var host: String? = null
     var service: String? = null
+    var maxQueueSize: Int = 2048
+    var maxExportBatchSize: Int = Int.MAX_VALUE
 }
 
 class Plugin : KotlinCompilerPluginSupportPlugin {
@@ -52,6 +54,8 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
                 add(SubpluginOption("debug", extension.debug.toString()))
                 if (extension.host != null) add(SubpluginOption("host", extension.host!!))
                 if (extension.service != null) add(SubpluginOption("service", extension.service!!))
+                add(SubpluginOption("maxQueueSize", extension.maxQueueSize.toString()))
+                add(SubpluginOption("maxExportBatchSize", extension.maxExportBatchSize.toString()))
             }
         }
     }

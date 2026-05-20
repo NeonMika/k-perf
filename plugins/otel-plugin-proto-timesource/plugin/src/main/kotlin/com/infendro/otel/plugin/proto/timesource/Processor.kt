@@ -3,6 +3,8 @@ package com.infendro.otel.plugin.proto.timesource
 import com.infendro.otel.plugin.proto.timesource.ConfigurationKeys.KEY_DEBUG
 import com.infendro.otel.plugin.proto.timesource.ConfigurationKeys.KEY_ENABLED
 import com.infendro.otel.plugin.proto.timesource.ConfigurationKeys.KEY_HOST
+import com.infendro.otel.plugin.proto.timesource.ConfigurationKeys.KEY_MAX_EXPORT_BATCH_SIZE
+import com.infendro.otel.plugin.proto.timesource.ConfigurationKeys.KEY_MAX_QUEUE_SIZE
 import com.infendro.otel.plugin.proto.timesource.ConfigurationKeys.KEY_SERVICE
 import org.jetbrains.kotlin.compiler.plugin.*
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
@@ -36,6 +38,18 @@ class Processor : CommandLineProcessor {
             "<string>",
             "the service name used when exporting",
             required = false
+        ),
+        CliOption(
+            "maxQueueSize",
+            "<int>",
+            "BatchSpanProcessor maxQueueSize (default 2048)",
+            required = false
+        ),
+        CliOption(
+            "maxExportBatchSize",
+            "<int>",
+            "BatchSpanProcessor maxExportBatchSize (default Int.MAX_VALUE)",
+            required = false
         )
     )
 
@@ -49,6 +63,8 @@ class Processor : CommandLineProcessor {
             "debug" -> configuration.put(KEY_DEBUG, value.toBoolean())
             "host" -> configuration.put(KEY_HOST, value)
             "service" -> configuration.put(KEY_SERVICE, value)
+            "maxQueueSize" -> configuration.put(KEY_MAX_QUEUE_SIZE, value.toInt())
+            "maxExportBatchSize" -> configuration.put(KEY_MAX_EXPORT_BATCH_SIZE, value.toInt())
             else -> throw CliOptionProcessingException("unknown option: ${option.optionName}")
         }
     }

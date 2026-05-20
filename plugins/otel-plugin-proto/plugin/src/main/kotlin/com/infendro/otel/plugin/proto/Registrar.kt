@@ -3,6 +3,8 @@ package com.infendro.otel.plugin.proto
 import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_DEBUG
 import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_ENABLED
 import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_HOST
+import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_MAX_EXPORT_BATCH_SIZE
+import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_MAX_QUEUE_SIZE
 import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_SERVICE
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
@@ -20,10 +22,12 @@ class Registrar : CompilerPluginRegistrar() {
         val debug = configuration[KEY_DEBUG] ?: false
         val host = configuration[KEY_HOST]
         val service = configuration[KEY_SERVICE]
+        val maxQueueSize = configuration[KEY_MAX_QUEUE_SIZE] ?: 2048
+        val maxExportBatchSize = configuration[KEY_MAX_EXPORT_BATCH_SIZE] ?: Int.MAX_VALUE
 
         if (!enabled) return
 
-        val extension = IrExtension(debug, host, service)
+        val extension = IrExtension(debug, host, service, maxQueueSize, maxExportBatchSize)
         IrGenerationExtension.registerExtension(extension)
     }
 }

@@ -52,8 +52,11 @@ kotlin {
             }
         }
     }
+    @OptIn(org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalMainFunctionArgumentsDsl::class)
     js {
-        nodejs()
+        nodejs {
+            passProcessArgvToMainFunction()
+        }
         useCommonJs()
         binaries.executable()
     }
