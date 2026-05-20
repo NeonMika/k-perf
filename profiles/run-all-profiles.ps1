@@ -16,7 +16,11 @@ param(
   [string[]]$Platforms = @('jvm','js','native'),
   [int]$TopN           = 30,
   [switch]$SkipCapture,                       # render markdown from already-captured profiles
-  [int]$WarmupRuns     = 1                    # warmup runs before each profiled capture
+  [int]$WarmupRuns     = 1,                   # warmup runs before each profiled capture
+  [int]$StepCount      = 500                  # workload() invocations per profiled run. Default 500
+                                              # to give JFR (~20ms sampling) + cpuprof + PerfView
+                                              # enough samples; single-step runs (~hundreds of ms)
+                                              # produce empty JFR recordings.
 )
 
 $ErrorActionPreference = 'Stop'
@@ -64,9 +68,9 @@ $IsElevated = (New-Object Security.Principal.WindowsPrincipal([Security.Principa
 $variantSpec = @{
   'k-perf' = @{
     Display = 'k-perf'
-    Jar     = 'kmp-examples\comparison-k-perf\build\lib\comparison-k-perf-jvm-0.1.0-flushEarly-true.jar'
-    Js      = 'kmp-examples\comparison-k-perf\build\js\packages\comparison-k-perf-flushEarly-true\kotlin\comparison-k-perf-flushEarly-true.js'
-    Exe     = 'kmp-examples\comparison-k-perf\build\bin\mingwX64\releaseExecutable\comparison-k-perf-flushEarly-true.exe'
+    Jar     = 'kmp-examples\comparison-k-perf\build\lib\comparison-k-perf-jvm-0.1.0-flushEarly-false.jar'
+    Js      = 'kmp-examples\comparison-k-perf\build\js\packages\comparison-k-perf-flushEarly-false\kotlin\comparison-k-perf-flushEarly-false.js'
+    Exe     = 'kmp-examples\comparison-k-perf\build\bin\mingwX64\releaseExecutable\comparison-k-perf-flushEarly-false.exe'
     JsDir   = 'js-kperf'                                                      # legacy dir name (no hyphen)
     NeedsCollector = $false
   }
@@ -166,9 +170,9 @@ function Run-FrameSearch {
 function Capture-Jvm {
   param([hashtable]$Spec, [string]$ProfilePath)
   if (-not (Test-Path $Spec.Jar)) { throw "jar missing: $($Spec.Jar) -- build the variant first" }
-  for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & java -jar $Spec.Jar 2>&1 } }
+  for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & java -jar $Spec.Jar $StepCount 2>&1 } }
   $sw = [Diagnostics.Stopwatch]::StartNew()
-  $out = Invoke-Native { & java "-XX:StartFlightRecording=settings=profile,filename=$ProfilePath" -jar $Spec.Jar 2>&1 }
+  $out = Invoke-Native { & java "-XX:StartFlightRecording=settings=profile,filename=$ProfilePath" -jar $Spec.Jar $StepCount 2>&1 }
   $sw.Stop()
   return @{ Wall = $sw.ElapsedMilliseconds; Workload = (Parse-WorkloadMs ($out -join "`n")); Stdout = $out }
 }
@@ -177,11 +181,11 @@ function Capture-Js {
   param([hashtable]$Spec, [string]$ProfileDir, [string]$ProfileName)
   if (-not (Test-Path $Spec.Js)) { throw "js bundle missing: $($Spec.Js) -- build the variant first" }
   if (-not (Test-Path $ProfileDir)) { New-Item -ItemType Directory -Path $ProfileDir -Force | Out-Null }
-  for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & node $Spec.Js 2>&1 } }
+  for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & node $Spec.Js $StepCount 2>&1 } }
   $sw = [Diagnostics.Stopwatch]::StartNew()
   # Absolute paths -- Node mangles relative paths under --cpu-prof (see profiles/REPORT.md section 8).
   $absDir = (Resolve-Path $ProfileDir).Path
-  $out = Invoke-Native { & node '--cpu-prof' "--cpu-prof-dir=$absDir" "--cpu-prof-name=$ProfileName" $Spec.Js 2>&1 }
+  $out = Invoke-Native { & node '--cpu-prof' "--cpu-prof-dir=$absDir" "--cpu-prof-name=$ProfileName" $Spec.Js $StepCount 2>&1 }
   $sw.Stop()
   return @{ Wall = $sw.ElapsedMilliseconds; Workload = (Parse-WorkloadMs ($out -join "`n")); Stdout = $out }
 }
@@ -206,10 +210,10 @@ function Capture-Native {
     if (-not $IsElevated) {
       throw "no .etl.zip at $EtlPath and parent shell not elevated -- run Capture-NativeBatch first or relaunch as admin"
     }
-    for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & $Spec.Exe 2>&1 } }
+    for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & $Spec.Exe $StepCount 2>&1 } }
     Remove-KperfTraceLeftovers
     $sw = [Diagnostics.Stopwatch]::StartNew()
-    Invoke-Native { & $PerfViewPath /AcceptEULA /NoGui "/LogFile=$capLog" "/DataFile=$EtlPath" /BufferSizeMB=256 /CircularMB=500 run "$($Spec.Exe)" 2>&1 | Out-Null }
+    Invoke-Native { & $PerfViewPath /AcceptEULA /NoGui "/LogFile=$capLog" "/DataFile=$EtlPath" /BufferSizeMB=256 /CircularMB=500 run "$($Spec.Exe) $StepCount" 2>&1 | Out-Null }
     $sw.Stop()
     $wall = $sw.ElapsedMilliseconds
   } else {
@@ -258,11 +262,11 @@ function Capture-NativeBatch {
     $dir = Split-Path $j.EtlPath -Parent
     if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
     # Warmup outside the capture so JIT/loader caches are warm.
-    for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & $j.Exe 2>&1 } }
+    for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & $j.Exe $StepCount 2>&1 } }
     Remove-KperfTraceLeftovers
     $lines += "echo. >> `"$resultPath`""
     $lines += "echo === capturing $($j.Name) === >> `"$resultPath`""
-    $lines += "`"$PerfViewPath`" /AcceptEULA /NoGui ""/LogFile=$($j.CapLog)"" ""/DataFile=$($j.EtlPath)"" /BufferSizeMB=256 /CircularMB=500 run ""$($j.Exe)"" >> `"$resultPath`" 2>&1"
+    $lines += "`"$PerfViewPath`" /AcceptEULA /NoGui ""/LogFile=$($j.CapLog)"" ""/DataFile=$($j.EtlPath)"" /BufferSizeMB=256 /CircularMB=500 run ""$($j.Exe) $StepCount"" >> `"$resultPath`" 2>&1"
     $lines += "echo capture exit=%ERRORLEVEL% >> `"$resultPath`""
   }
   $lines += "echo. >> `"$resultPath`""

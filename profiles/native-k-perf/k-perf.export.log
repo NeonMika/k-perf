@@ -1947,3 +1947,348 @@ Done Resolving all symbols for modules with inclusive times > 10
    at PerfViewExtensibility.Extensions.ExecuteUserCommand(String command, String[] args)
    at PerfView.CommandProcessor.ExecuteCommand(CommandLineArgs parsedArgs)]
 [DONE 22:26:21 FAIL: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-k-perf\k-perf.export.log UserCommand SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-true]
+PerfView logging started at 20/05/2026 20:22:28
+[EXECUTING: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-k-perf\k-perf.export.log UserCommand SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]
+[Running User Command: SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]
+Found a existing unzipped file C:\Users\loren\AppData\Local\Temp\PerfView\k-perf.etl_81d34d6d.etl
+Creating ETLX file C:\Users\loren\AppData\Local\Temp\PerfView\k-perf.etl_81d34d6d_8090622a.etlx from C:\Users\loren\AppData\Local\Temp\PerfView\k-perf.etl_81d34d6d.etl
+[Opening a log file of size 15 MB.]
+WARNING: Time:     272,2141 PID: 13264: Stack refers to event with time 10,7204 MSec that could not be found
+WARNING: Time:     451,9938 PID: 13264: CLR Stack trying to be given to same event twice (can happen with lost events)
+WARNING: Time:     606,6671 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     613,7611 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     622,4404 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     627,4806 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     629,9912 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     639,0548 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     661,8032 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     674,9201 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     680,8059 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     689,6905 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     689,9410 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     826,9808 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     833,6386 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     835,6361 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     836,3160 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     838,1467 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     839,3757 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     840,2107 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     843,0349 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     862,0795 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     863,1851 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     897,0739 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     926,8531 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     964,5272 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     973,2614 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     978,9464 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     985,3562 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1002,8667 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1007,8536 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1016,7718 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1035,9613 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1040,8358 PID:   -1: Found a user stack definition without any uses
+[ELAPSED  2 seconds.     READ    131.072 events.     TIMESTAMP   1.055ms.     WRITTEN    20MB.     ]
+WARNING: Time:    1064,0120 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1065,0124 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1068,7152 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1075,1947 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1084,1479 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1084,5039 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1085,9528 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1086,4712 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1090,2518 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1093,1164 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1098,1319 PID:   -1: Found a user stack definition without any uses
+WARNING: Two events with the same Timestamp 1105,4569
+WARNING: Two events with the same Timestamp 1105,6640
+WARNING: Two events with the same Timestamp 1105,7516
+WARNING: Two events with the same Timestamp 1106,1535
+WARNING: Two events with the same Timestamp 1106,9573
+WARNING: Time:    1112,9200 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1116,2229 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1122,0638 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1128,1283 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1131,0419 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1137,1842 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1144,0469 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1152,7061 PID: 27004: Thread end on a terminated thread 21532 that ended at 1152,5601
+WARNING: Time:    1155,0341 PID: 21360: Thread end on a terminated thread 18380 that ended at 1152,3798
+WARNING: Time:    1155,0346 PID: 21360: Thread end on a terminated thread 22020 that ended at 1152,3793
+WARNING: Time:    1155,0427 PID: 21360: Thread end on a terminated thread 17492 that ended at 1152,3789
+WARNING: Time:    1155,9706 PID: 21360: Thread end on a terminated thread 14304 that ended at 1152,3778
+WARNING: Time:    1156,9004 PID: 27096: Thread end on a terminated thread 19844 that ended at 1152,4956
+WARNING: Time:    1156,9014 PID: 27096: Thread end on a terminated thread 2872 that ended at 1152,496
+WARNING: Time:    1157,4112 PID: 27096: Thread end on a terminated thread 9884 that ended at 1152,4943
+WARNING: Time:    1169,8012 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8025 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8037 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8112 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8196 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8219 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8278 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8293 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8368 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8396 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8410 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8445 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8483 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8520 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8545 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8551 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8647 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8767 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8870 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,8884 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9009 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9021 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9150 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9217 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9286 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9297 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9354 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9505 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9550 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9554 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9615 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1169,9741 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1170,0034 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1170,0099 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1170,0130 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1170,0315 PID:   -1: Found a user stack definition without any uses
+[ELAPSED  2 seconds.     READ    262.144 events.     TIMESTAMP   1.813ms.     WRITTEN    31MB.     ]
+WARNING: Warning: 51 undefined kernel stacks at the end of the trace.
+There were 1007 address that did not resolve to a module or method in process PerfView (13264)
+There were 3972 address that did not resolve to a module or method in process Idle (0)
+There were 133 address that did not resolve to a module or method in process  (-1)
+There were 955 address that did not resolve to a module or method in process claude (21508)
+There were 507 address that did not resolve to a module or method in process MsMpEng (5540)
+There were 10 address that did not resolve to a module or method in process csrss (1112)
+There were 34 address that did not resolve to a module or method in process services (1224)
+There were 381 address that did not resolve to a module or method in process dwm (1740)
+There were 19 address that did not resolve to a module or method in process lsass (1272)
+There were 20 address that did not resolve to a module or method in process svchost (4660)
+There were 49 address that did not resolve to a module or method in process logioptionsplus_appbroker (9936)
+There were 1807 address that did not resolve to a module or method in process claude (17824)
+There were 72 address that did not resolve to a module or method in process svchost (1588)
+There were 16 address that did not resolve to a module or method in process svchost (1848)
+There were 188 address that did not resolve to a module or method in process explorer (12544)
+There were 28 address that did not resolve to a module or method in process svchost (12364)
+There were 348 address that did not resolve to a module or method in process claude (25892)
+There were 105 address that did not resolve to a module or method in process svchost (2032)
+There were 23 address that did not resolve to a module or method in process svchost (2280)
+There were 128 address that did not resolve to a module or method in process logioptionsplus_agent (13756)
+There were 67 address that did not resolve to a module or method in process idea64 (18584)
+There were 805 address that did not resolve to a module or method in process claude (22284)
+There were 143 address that did not resolve to a module or method in process svchost (3132)
+There were 31 address that did not resolve to a module or method in process svchost (3424)
+There were 16 address that did not resolve to a module or method in process svchost (4012)
+There were 104 address that did not resolve to a module or method in process svchost (3552)
+There were 18 address that did not resolve to a module or method in process spoolsv (4552)
+There were 60 address that did not resolve to a module or method in process svchost (4956)
+There were 53 address that did not resolve to a module or method in process CxAudioSvc (4972)
+There were 8 address that did not resolve to a module or method in process svchost (5096)
+There were 76 address that did not resolve to a module or method in process IntelAudioService (3596)
+There were 169 address that did not resolve to a module or method in process OneApp.IGCC.WinService (5388)
+There were 374 address that did not resolve to a module or method in process WhatsApp.Root (15944)
+There were 57 address that did not resolve to a module or method in process ThunderboltService (5504)
+There were 99 address that did not resolve to a module or method in process powershell (22652)
+There were 11 address that did not resolve to a module or method in process DiscordSystemHelper (17192)
+There were 149 address that did not resolve to a module or method in process Discord (16588)
+There were 9 address that did not resolve to a module or method in process sihost (11556)
+There were 28 address that did not resolve to a module or method in process ETDCtrl (11616)
+There were 405 address that did not resolve to a module or method in process svchost (11840)
+There were 27 address that did not resolve to a module or method in process taskhostw (11940)
+There were 4 address that did not resolve to a module or method in process svchost (13504)
+There were 17 address that did not resolve to a module or method in process svchost (9580)
+There were 6 address that did not resolve to a module or method in process StartMenuExperienceHost (14836)
+There were 16 address that did not resolve to a module or method in process msedgewebview2 (7884)
+There were 201 address that did not resolve to a module or method in process ctfmon (4324)
+There were 1 address that did not resolve to a module or method in process aesm_service (9752)
+There were 8 address that did not resolve to a module or method in process OneDrive.Sync.Service (2608)
+There were 70 address that did not resolve to a module or method in process Discord (8044)
+There were 17 address that did not resolve to a module or method in process Discord (10720)
+There were 45 address that did not resolve to a module or method in process Discord (3000)
+There were 8 address that did not resolve to a module or method in process svchost (16636)
+There were 6 address that did not resolve to a module or method in process OneDrive (5336)
+There were 9 address that did not resolve to a module or method in process chrome (2224)
+There were 19 address that did not resolve to a module or method in process chrome (16032)
+There were 15 address that did not resolve to a module or method in process chrome (10356)
+There were 15 address that did not resolve to a module or method in process chrome (7996)
+There were 24 address that did not resolve to a module or method in process SearchIndexer (1932)
+There were 20 address that did not resolve to a module or method in process chrome (2808)
+There were 10 address that did not resolve to a module or method in process msedgewebview2 (13744)
+There were 4 address that did not resolve to a module or method in process chrome (4036)
+There were 15 address that did not resolve to a module or method in process chrome (1648)
+There were 451 address that did not resolve to a module or method in process MicrosoftSecurityApp (20636)
+There were 9 address that did not resolve to a module or method in process fsnotifier (11624)
+There were 1 address that did not resolve to a module or method in process jetbrainsd (7388)
+There were 9 address that did not resolve to a module or method in process cef_server (9424)
+There were 28 address that did not resolve to a module or method in process claude (16140)
+There were 14 address that did not resolve to a module or method in process claude (21716)
+There were 4 address that did not resolve to a module or method in process claude (21908)
+There were 3 address that did not resolve to a module or method in process claude (24352)
+There were 95 address that did not resolve to a module or method in process powershell (23784)
+There were 10 address that did not resolve to a module or method in process com.docker.backend (18484)
+There were 26 address that did not resolve to a module or method in process Docker Desktop (22256)
+There were 79 address that did not resolve to a module or method in process powershell (9636)
+There were 12 address that did not resolve to a module or method in process chrome (13676)
+There were 129 address that did not resolve to a module or method in process powershell (28364)
+There were 15 address that did not resolve to a module or method in process chrome (22144)
+There were 14 address that did not resolve to a module or method in process conhost (28936)
+There were 215 address that did not resolve to a module or method in process comparison-k-perf-flushEarly-false (17748)
+There were 316 address that did not resolve to a module or method in process conhost (23164)
+There were 180 address that did not resolve to a module or method in process git (21360)
+There were 100 address that did not resolve to a module or method in process conhost (27096)
+There were 322 address that did not resolve to a module or method in process git (27004)
+339 distinct processes.
+Totals
+   177.647 events.
+     7.366 events with stack traces.
+     2.974 events with code addresses in them.
+   312.687 total code address instances. (stacks or other)
+    15.163 unique code addresses. 
+    72.290 unique stacks.
+       111 unique managed methods parsed.
+    49.699 dynamic methods.
+[Conversion complete 177.647 events.  Conversion took 2 sec.]
+A total of 15162 symbolic addresses were looked up.
+Addresses outside any module: 1070 out of 15162 (7,1%)
+Done with symbolic lookup.
+ETL Size 15,154 MB ETLX Size 42,675 MB
+WARNING NO _NT_SYMBOL_PATH set ...
+Symbol reader _NT_SYMBOL_PATH= {
+    profiles\native-k-perf;
+    SRV*C:\Users\loren\AppData\Local\Temp\SymbolCache;
+    }
+This can be set using the File -> Set Symbol Path dialog on the Stack Viewer.
+Created SymbolReader with SymbolPath profiles\native-k-perf;SRV*C:\Users\loren\AppData\Local\Temp\SymbolCache
+Setting SymbolReaderOptions forces clearing Pdb lookup cache
+Resolving all symbols for modules with inclusive times > 50
+Cache-Only set: will only look on the local machine.
+Got a total of 13 samples
+Done Resolving all symbols for modules with inclusive times > 50
+WARNING NO _NT_SYMBOL_PATH set ...
+Symbol reader _NT_SYMBOL_PATH= {
+    profiles\native-k-perf;
+    }
+This can be set using the File -> Set Symbol Path dialog on the Stack Viewer.
+Created SymbolReader with SymbolPath profiles\native-k-perf
+Setting SymbolReaderOptions forces clearing Pdb lookup cache
+Resolving all symbols for modules with inclusive times > 10
+Got a total of 13 samples
+Resolving symbols (count=10) for module c:\windows\system32\ntoskrnl.exe 
+[Loading symbols for c:\windows\system32\ntoskrnl.exe]
+No R2R perfmap signature for c:\windows\system32\ntoskrnl.exe in trace.
+FindSymbolFilePath: *{ Locating PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: Probed file location c:\windows\system32\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-k-perf\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\ntoskrnl.exe.
+FindSymbolFilePath: *{ Locating PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for ntkrnlmp.pdb 7427da99-c3d7-3720-2bfb-359c2b0e1a5e 1 10.0.26100.8457 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\ntoskrnl.exe to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\ntoskrnl.exe to a volume-based path.
+Failed to find PDB for c:\windows\system32\ntoskrnl.exe
+Could not find symbols.
+Resolving symbols (count=13) for module c:\windows\system32\ntdll.dll 
+[Loading symbols for c:\windows\system32\ntdll.dll]
+No R2R perfmap signature for c:\windows\system32\ntdll.dll in trace.
+FindSymbolFilePath: *{ Locating PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntdll.dll
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\ntdll.dll
+FindSymbolFilePath: Probed file location c:\windows\system32\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-k-perf\ntdll.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\ntdll.dll.
+FindSymbolFilePath: *{ Locating PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntdll.dll
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for ntdll.pdb 794bbce4-3c34-5ade-6883-e3f78dc2928f 1 10.0.26100.8328 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\ntdll.dll to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\ntdll.dll to a volume-based path.
+Failed to find PDB for c:\windows\system32\ntdll.dll
+Could not find symbols.
+Done Resolving all symbols for modules with inclusive times > 10
+[Exception Occurred: System.NullReferenceException: Object reference not set to an instance of an object.
+   at PerfViewExtensibility.Extensions.ExecuteUserCommand(String command, String[] args)
+   at PerfView.CommandProcessor.ExecuteCommand(CommandLineArgs parsedArgs)]
+[DONE 20:22:31 FAIL: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-k-perf\k-perf.export.log UserCommand SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]
+PerfView logging started at 20/05/2026 20:33:24
+[EXECUTING: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-k-perf\k-perf.export.log UserCommand SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]
+[Running User Command: SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]
+Found a existing unzipped file C:\Users\loren\AppData\Local\Temp\PerfView\k-perf.etl_81d34d6d.etl
+Found a existing ETLX file in cache: C:\Users\loren\AppData\Local\Temp\PerfView\k-perf.etl_81d34d6d_8090622a.etlx
+WARNING NO _NT_SYMBOL_PATH set ...
+Symbol reader _NT_SYMBOL_PATH= {
+    profiles\native-k-perf;
+    SRV*C:\Users\loren\AppData\Local\Temp\SymbolCache;
+    }
+This can be set using the File -> Set Symbol Path dialog on the Stack Viewer.
+Created SymbolReader with SymbolPath profiles\native-k-perf;SRV*C:\Users\loren\AppData\Local\Temp\SymbolCache
+Setting SymbolReaderOptions forces clearing Pdb lookup cache
+Resolving all symbols for modules with inclusive times > 50
+Cache-Only set: will only look on the local machine.
+Got a total of 13 samples
+Done Resolving all symbols for modules with inclusive times > 50
+WARNING NO _NT_SYMBOL_PATH set ...
+Symbol reader _NT_SYMBOL_PATH= {
+    profiles\native-k-perf;
+    }
+This can be set using the File -> Set Symbol Path dialog on the Stack Viewer.
+Created SymbolReader with SymbolPath profiles\native-k-perf
+Setting SymbolReaderOptions forces clearing Pdb lookup cache
+Resolving all symbols for modules with inclusive times > 10
+Got a total of 13 samples
+Resolving symbols (count=10) for module c:\windows\system32\ntoskrnl.exe 
+[Loading symbols for c:\windows\system32\ntoskrnl.exe]
+No R2R perfmap signature for c:\windows\system32\ntoskrnl.exe in trace.
+FindSymbolFilePath: *{ Locating PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: Probed file location c:\windows\system32\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-k-perf\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\ntoskrnl.exe.
+FindSymbolFilePath: *{ Locating PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for ntkrnlmp.pdb 7427da99-c3d7-3720-2bfb-359c2b0e1a5e 1 10.0.26100.8457 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\ntoskrnl.exe to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\ntoskrnl.exe to a volume-based path.
+Failed to find PDB for c:\windows\system32\ntoskrnl.exe
+Could not find symbols.
+Resolving symbols (count=13) for module c:\windows\system32\ntdll.dll 
+[Loading symbols for c:\windows\system32\ntdll.dll]
+No R2R perfmap signature for c:\windows\system32\ntdll.dll in trace.
+FindSymbolFilePath: *{ Locating PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntdll.dll
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\ntdll.dll
+FindSymbolFilePath: Probed file location c:\windows\system32\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-k-perf\ntdll.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\ntdll.dll.
+FindSymbolFilePath: *{ Locating PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntdll.dll
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for ntdll.pdb 794bbce4-3c34-5ade-6883-e3f78dc2928f 1 10.0.26100.8328 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\ntdll.dll to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\ntdll.dll to a volume-based path.
+Failed to find PDB for c:\windows\system32\ntdll.dll
+Could not find symbols.
+Done Resolving all symbols for modules with inclusive times > 10
+[Exception Occurred: System.NullReferenceException: Object reference not set to an instance of an object.
+   at PerfViewExtensibility.Extensions.ExecuteUserCommand(String command, String[] args)
+   at PerfView.CommandProcessor.ExecuteCommand(CommandLineArgs parsedArgs)]
+[DONE 20:33:24 FAIL: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-k-perf\k-perf.export.log UserCommand SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]

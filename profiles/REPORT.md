@@ -187,3 +187,139 @@ PerfView.exe /AcceptEULA /NoGui /LogFile=<out>.export.log UserCommand SaveCPUSta
 ```
 
 Caveats: profiler overhead ~14% (JS), safepoint bias on JFR may under-sample tight JIT loops.
+
+---
+
+## 13. Post-fix re-profile (2026-05-20)
+
+After the `setMaxExportBatchSize` typo fix landed in `otel-plugin-proto` and
+`otel-plugin-proto-timesource` (commit `69e411d`, defaults now
+`queueSize=2048, batchSize=Int.MAX_VALUE`), the picture changes materially.
+The JSON `otel` baseline is unchanged on purpose — it still uses the
+unpatched plugin.
+
+Capture: `profiles/run-all-profiles.ps1 -StepCount 3000`. StepCount=3000 was
+chosen because the post-fix otel-proto JVM workload now runs at ~0.2 ms per
+step (was ~2 ms pre-fix) and JFR's 10 ms sampling produced fewer than 10
+samples at the previous StepCount=1 default. Even at 3000 steps the
+otel-proto JVM profile is sample-poor (5 samples) and the timesource
+sibling (34 samples, same code path) is the more reliable read on JVM.
+
+Native data in this section is partially stale: the .etl.zip recapture
+needs UAC approval which wasn't granted on the StepCount=3000 re-run, so
+the perfView.xml.zip artefacts are from the StepCount=1 sweep and contain
+similar limitations. Re-run with admin elevation to refresh.
+
+### 13.1 dcxp persistent-list / `removeSpanDataFromBatch` n² — essentially gone
+
+Pre-fix (2026-05-04) `removeSpanDataFromBatch`-family frames
+(`AbstractPersistentList.contains` / `recyclableRemoveAll` /
+`TrieIterator.fillPathIfNeeded`) on JVM otel-proto: **~38% in-stack
+time**. Post-fix (2026-05-20) on JVM otel-proto-timesource:
+**1 sample / 34 ≈ 3%**.
+
+Mechanism: with the bounded queue (2048), the persistent-list never grows
+beyond that bound during a process. The n² cost cap moves from
+~25M comparisons per export (unbounded × 512 batches) to at most
+~4M (2048²) — and in practice well below because the queue is often
+nearly empty post-drain.
+
+**Implication: Phase 5 (dcxp fork to convert `removeAll(list)` →
+`removeAll(set)`) is no longer on the critical path.** The fix would still
+be correct upstream, but the queue cap has already extracted ~90% of the
+available win. Skip Phase 5; spend that day on Phase 8 instead.
+
+### 13.2 Trace-ID base16 validation is the new dominant frame
+
+Pre-fix this was hidden under the n² persistent-list churn. Post-fix it
+emerges as the top self-time frame on both JVM and JS.
+
+**JVM otel-proto-timesource (34 samples)**: `java.lang.String.charAt` —
+190 ms self, **19 / 34 samples (56%)**, called inclusively from
+`OtelEncodingUtils.isValidBase16String` → `TraceId.isValid` →
+`SpanContext.isValid`. The OTel SDK validates every trace ID's
+hex-character set on every span creation; with ~180 spans per workload
+step, that's ~540 000 base16 validations per StepCount=3000 run.
+
+**JS otel-proto (1467 samples)**: `get_isValid` (api-all.js:102) —
+67 ms self + dependent `charCodeAt` (75 ms) + `String` walking — together
+~25 % of inclusive CPU on the same code path.
+
+Fix would live in dcxp's `OtelEncodingUtils.isValidBase16String` (or its
+caller in `SpanContext.isValid`). Easy upstream patch: skip validation for
+SDK-generated trace IDs (they're always valid by construction). Worth a
+PR. **Strong Phase 8 candidate.**
+
+### 13.3 JS Long polyfill cost — relative share grew
+
+Pre-fix: 7.8 % of JS otel-proto CPU on Long arithmetic (`add`, `multiply`,
+`lessThan`, `subtract`, `shiftRight`, `bitwiseAnd`, `equalsLong`).
+Post-fix: same regex matches ~19 % of the (much smaller) pie:
+
+| Frame | self ms | hits |
+|---|---:|---:|
+| `add` | 104.8 | 65 |
+| `multiply` | 69.6 | 43 |
+| `subtract` | 46.8 | 28 |
+| `lessThan` | 50.7 | 31 |
+| `shiftRight` | 29.7 | 19 |
+| `bitwiseAnd` | 28.9 | 18 |
+| `equalsLong` | 25.6 | 16 |
+| `millis` (@js-joda) | 156.2 | 96 |
+
+The polyfill cost didn't shrink in absolute terms; the pie did. Translating
+the JS span-ID / timestamp path from Kotlin `Long` to JS `Number` (53-bit
+precision, fine for these magnitudes) would harvest ~15–20 % on JS. **A
+Phase 8 candidate** (alongside the trace-ID validation fix).
+
+### 13.4 OTel SDK span construction & context propagation — small but persistent
+
+Steady ~10 % of JVM otel-proto-timesource CPU in:
+
+- `SdkSpanBuilder.startSpan` (30 ms / 3 samples)
+- `MainKt._startSpan` (30 ms self, 80 ms total — the IR-injected wrapper)
+- `Context.getOrElse` / `ArrayBasedContext` / `Span.fromContext` (10 ms total)
+- `Span.<init>` from the OTLP protobuf bindings (10 ms)
+- `kmpgrpc CodedOutputStreamImpl.writeBytes` (10 ms — gRPC encoding)
+
+No single dominant frame; consistent with the "bypass the SDK on the hot
+path" idea (Path B / direct protobuf encoder, GEMINI Hypothesis 6). But
+the predicted 10–12 % win is small now that the bigger fish (n², trace-ID
+validation) is identified.
+
+### 13.5 `Intrinsics.throwParameterIsNullNPE` — disappeared from top frames
+
+Pre-fix (2026-05-04) this was 260 ms self / 6 % of JVM otel CPU. Post-fix
+it appears 0 times in the top 30 of otel-proto-timesource and otel-proto.
+Only `Intrinsics.sanitizeStackTrace` (10 ms / 1 sample / ~3 %) and
+`Intrinsics.areEqual` (10 ms / 1 sample) show up — different functions,
+not the same per-parameter null check.
+
+**Implication: the recommended Phase 8 cheap-win (`-Xno-param-assertions`)
+would touch the OTel JSON variant (still on the older code path) but not
+the proto variants we're trying to make faster.** Lower priority than
+2026-05-04 thinking suggested.
+
+### 13.6 Updated Phase 8 recommendation
+
+Based on the new top-N tables:
+
+| Old plan candidate | Old expectation | Post-fix profile says |
+|---|---|---|
+| `-Xno-param-assertions` (intrinsics) | ~6 % JVM | No longer in top 30 on the variants we care about |
+| Direct protobuf encoder (Path B) | ~10–12 % JVM | Plausible but ~10 % is now the *whole* sub-frame budget |
+| JS Long → Number | ~7–8 % JS | Now ~19 % of a smaller JS pie — bigger relative win |
+| **NEW: skip trace-ID validation for SDK-gen'd IDs** | n/a | **~56 % JVM, ~25 % JS** |
+
+Switch Phase 8's target. New recommended pick:
+**patch dcxp's `OtelEncodingUtils.isValidBase16String` to short-circuit
+for SDK-generated IDs.** Either via a `@JvmField val skipValidation = true`
+constructor option on `SpanContext`, or via a separate
+`SdkSpanContext(trustedHexIds: true)` factory path that bypasses the
+character-set scan. Lives in the same dcxp fork we'd set up for Phase 5
+(now skipped), so the infrastructure cost is similar — but the payoff is
+~5× larger. JS gets the same dcxp patch as a side benefit.
+
+Fallback if the dcxp fork is too invasive: JS Long → Number (Phase 8
+fallback B) is now the second-best lever — bigger than originally
+expected.

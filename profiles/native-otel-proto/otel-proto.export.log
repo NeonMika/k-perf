@@ -2229,3 +2229,355 @@ Done Resolving all symbols for modules with inclusive times > 10
    at PerfViewExtensibility.Extensions.ExecuteUserCommand(String command, String[] args)
    at PerfView.CommandProcessor.ExecuteCommand(CommandLineArgs parsedArgs)]
 [DONE 22:27:44 FAIL: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-otel-proto\otel-proto.export.log UserCommand SaveCPUStacks profiles\native-otel-proto\otel-proto.etl.zip main]
+PerfView logging started at 20/05/2026 20:22:46
+[EXECUTING: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-otel-proto\otel-proto.export.log UserCommand SaveCPUStacks profiles\native-otel-proto\otel-proto.etl.zip main]
+[Running User Command: SaveCPUStacks profiles\native-otel-proto\otel-proto.etl.zip main]
+Found a existing unzipped file C:\Users\loren\AppData\Local\Temp\PerfView\otel-proto.etl_268c32fb.etl
+Creating ETLX file C:\Users\loren\AppData\Local\Temp\PerfView\otel-proto.etl_268c32fb_1df7f4d0.etlx from C:\Users\loren\AppData\Local\Temp\PerfView\otel-proto.etl_268c32fb.etl
+[Opening a log file of size 14 MB.]
+WARNING: Time:     108,2412 PID: 13916: Stack refers to event with time 10,3866 MSec that could not be found
+WARNING: Time:     246,4195 PID: 13916: CLR Stack trying to be given to same event twice (can happen with lost events)
+WARNING: Time:     462,1871 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     462,2217 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     594,1048 PID: 13916: ImageSize not consistent over all Loads Size 0x51000
+    FILE: C:\Windows\System32\cfgmgr32.dll
+    BASE: 0x1ec24220000
+    SIZE: 0x54000
+WARNING: Time:     594,1092 PID: 13916: ImageSize not consistent over all Loads Size 0x51000
+    FILE: C:\Windows\System32\cfgmgr32.dll
+    BASE: 0x1ec241c0000
+    SIZE: 0x54000
+WARNING: Time:     718,5628 PID:   -1: Found a user stack definition without any uses
+[ELAPSED  1 seconds.     READ    131.072 events.     TIMESTAMP     757ms.     WRITTEN    22MB.     ]
+WARNING: Time:     824,4903 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,4906 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,4913 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,4927 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,4950 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5131 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5175 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5178 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5346 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5382 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5421 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5430 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5438 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5461 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5462 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5474 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5482 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5489 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5494 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5502 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5503 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5508 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5545 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5561 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5649 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5756 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5767 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5824 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5854 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5855 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5883 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5921 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5929 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5932 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5957 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5959 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,5998 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6018 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6045 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6047 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6097 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6158 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6164 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6198 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6294 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6353 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6361 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6371 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6382 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6392 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6401 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6414 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6421 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6432 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6440 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6450 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6451 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     824,6513 PID:   -1: Found a user stack definition without any uses
+[ELAPSED  2 seconds.     READ    262.144 events.     TIMESTAMP   1.495ms.     WRITTEN    30MB.     ]
+WARNING: Warning: 58 undefined kernel stacks at the end of the trace.
+There were 866 address that did not resolve to a module or method in process PerfView (13916)
+There were 1837 address that did not resolve to a module or method in process Idle (0)
+There were 2 address that did not resolve to a module or method in process  (-1)
+There were 23 address that did not resolve to a module or method in process services (1224)
+There were 19 address that did not resolve to a module or method in process lsass (1272)
+There were 116 address that did not resolve to a module or method in process svchost (3132)
+There were 28 address that did not resolve to a module or method in process svchost (4160)
+There were 35 address that did not resolve to a module or method in process svchost (4660)
+There were 19 address that did not resolve to a module or method in process CxAudioSvc (4972)
+There were 16 address that did not resolve to a module or method in process svchost (4980)
+There were 19 address that did not resolve to a module or method in process IntelAudioService (3596)
+There were 29 address that did not resolve to a module or method in process OneApp.IGCC.WinService (5388)
+There were 19 address that did not resolve to a module or method in process ThunderboltService (5504)
+There were 254 address that did not resolve to a module or method in process MsMpEng (5540)
+There were 4 address that did not resolve to a module or method in process WmiPrvSE (7136)
+There were 11 address that did not resolve to a module or method in process svchost (13504)
+There were 28 address that did not resolve to a module or method in process logioptionsplus_agent (13756)
+There were 178 address that did not resolve to a module or method in process WhatsApp.Root (15944)
+There were 18 address that did not resolve to a module or method in process claude (16140)
+There were 77 address that did not resolve to a module or method in process Discord (16588)
+There were 28 address that did not resolve to a module or method in process svchost (12364)
+There were 12 address that did not resolve to a module or method in process Discord (8044)
+There were 11 address that did not resolve to a module or method in process svchost (16636)
+There were 5 address that did not resolve to a module or method in process OneDrive (5336)
+There were 18 address that did not resolve to a module or method in process chrome (16032)
+There were 35 address that did not resolve to a module or method in process idea64 (18584)
+There were 21 address that did not resolve to a module or method in process SearchIndexer (1932)
+There were 49 address that did not resolve to a module or method in process msedgewebview2 (13744)
+There were 68 address that did not resolve to a module or method in process MicrosoftSecurityApp (20636)
+There were 6 address that did not resolve to a module or method in process cef_server (7684)
+There were 22 address that did not resolve to a module or method in process cef_server (9424)
+There were 15 address that did not resolve to a module or method in process claude (17824)
+There were 19 address that did not resolve to a module or method in process powershell (23784)
+There were 17 address that did not resolve to a module or method in process com.docker.backend (13796)
+There were 47 address that did not resolve to a module or method in process com.docker.backend (18484)
+There were 72 address that did not resolve to a module or method in process Docker Desktop (22256)
+There were 5 address that did not resolve to a module or method in process vmwp (13680)
+There were 72 address that did not resolve to a module or method in process Docker Desktop (9520)
+There were 59 address that did not resolve to a module or method in process powershell (22652)
+There were 19 address that did not resolve to a module or method in process powershell (9636)
+There were 4 address that did not resolve to a module or method in process chrome (4368)
+There were 11 address that did not resolve to a module or method in process msrdc (22228)
+There were 83 address that did not resolve to a module or method in process claude (25892)
+There were 39 address that did not resolve to a module or method in process powershell (28364)
+There were 4 address that did not resolve to a module or method in process smartscreen (25608)
+There were 4 address that did not resolve to a module or method in process audiodg (23328)
+There were 44 address that did not resolve to a module or method in process docker (24768)
+There were 6 address that did not resolve to a module or method in process conhost (13828)
+There were 470 address that did not resolve to a module or method in process main (5524)
+There were 312 address that did not resolve to a module or method in process conhost (23648)
+336 distinct processes.
+Totals
+   166.133 events.
+     1.809 events with stack traces.
+       783 events with code addresses in them.
+    58.468 total code address instances. (stacks or other)
+     5.252 unique code addresses. 
+    15.563 unique stacks.
+        98 unique managed methods parsed.
+    48.829 dynamic methods.
+[Conversion complete 166.133 events.  Conversion took 2 sec.]
+A total of 5251 symbolic addresses were looked up.
+Addresses outside any module: 375 out of 5251 (7,1%)
+Done with symbolic lookup.
+ETL Size 14,071 MB ETLX Size 39,860 MB
+WARNING NO _NT_SYMBOL_PATH set ...
+Symbol reader _NT_SYMBOL_PATH= {
+    profiles\native-otel-proto;
+    SRV*C:\Users\loren\AppData\Local\Temp\SymbolCache;
+    }
+This can be set using the File -> Set Symbol Path dialog on the Stack Viewer.
+Created SymbolReader with SymbolPath profiles\native-otel-proto;SRV*C:\Users\loren\AppData\Local\Temp\SymbolCache
+Setting SymbolReaderOptions forces clearing Pdb lookup cache
+Resolving all symbols for modules with inclusive times > 50
+Cache-Only set: will only look on the local machine.
+Got a total of 27 samples
+Done Resolving all symbols for modules with inclusive times > 50
+WARNING NO _NT_SYMBOL_PATH set ...
+Symbol reader _NT_SYMBOL_PATH= {
+    profiles\native-otel-proto;
+    }
+This can be set using the File -> Set Symbol Path dialog on the Stack Viewer.
+Created SymbolReader with SymbolPath profiles\native-otel-proto
+Setting SymbolReaderOptions forces clearing Pdb lookup cache
+Resolving all symbols for modules with inclusive times > 10
+Got a total of 27 samples
+Resolving symbols (count=16) for module c:\windows\system32\ntoskrnl.exe 
+[Loading symbols for c:\windows\system32\ntoskrnl.exe]
+No R2R perfmap signature for c:\windows\system32\ntoskrnl.exe in trace.
+FindSymbolFilePath: *{ Locating PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: Probed file location c:\windows\system32\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-otel-proto\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\ntoskrnl.exe.
+FindSymbolFilePath: *{ Locating PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for ntkrnlmp.pdb 7427da99-c3d7-3720-2bfb-359c2b0e1a5e 1 10.0.26100.8457 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\ntoskrnl.exe to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\ntoskrnl.exe to a volume-based path.
+Failed to find PDB for c:\windows\system32\ntoskrnl.exe
+Could not find symbols.
+Resolving symbols (count=27) for module c:\windows\system32\ntdll.dll 
+[Loading symbols for c:\windows\system32\ntdll.dll]
+No R2R perfmap signature for c:\windows\system32\ntdll.dll in trace.
+FindSymbolFilePath: *{ Locating PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntdll.dll
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\ntdll.dll
+FindSymbolFilePath: Probed file location c:\windows\system32\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-otel-proto\ntdll.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\ntdll.dll.
+FindSymbolFilePath: *{ Locating PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntdll.dll
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for ntdll.pdb 794bbce4-3c34-5ade-6883-e3f78dc2928f 1 10.0.26100.8328 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\ntdll.dll to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\ntdll.dll to a volume-based path.
+Failed to find PDB for c:\windows\system32\ntdll.dll
+Could not find symbols.
+Resolving symbols (count=20) for module c:\windows\system32\kernel32.dll 
+[Loading symbols for c:\windows\system32\kernel32.dll]
+No R2R perfmap signature for c:\windows\system32\kernel32.dll in trace.
+FindSymbolFilePath: *{ Locating PDB kernel32.pdb GUID 639b06f3-7603-0222-dc25-a08d1f57cb93 Age 1 Version 10.0.26100.8328
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\kernel32.dll
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\kernel32.dll
+FindSymbolFilePath: Probed file location c:\windows\system32\kernel32.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\kernel32.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\kernel32.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-otel-proto\kernel32.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB kernel32.pdb GUID 639b06f3-7603-0222-dc25-a08d1f57cb93 Age 1 Version 10.0.26100.8328
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\kernel32.dll.
+FindSymbolFilePath: *{ Locating PDB kernel32.pdb GUID 639b06f3-7603-0222-dc25-a08d1f57cb93 Age 1 Version 10.0.26100.8328 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\kernel32.dll
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for kernel32.pdb 639b06f3-7603-0222-dc25-a08d1f57cb93 1 10.0.26100.8328 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\kernel32.dll to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\kernel32.dll to a volume-based path.
+Failed to find PDB for c:\windows\system32\kernel32.dll
+Could not find symbols.
+Resolving symbols (count=16) for module c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe 
+[Loading symbols for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe]
+LookupSymbolsForModule: Binary format unspecified for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe, looking up PDB info from local file.
+No PDB signature for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe in trace.
+FindSymbolFilePathForModule: searching for PDB for DLL c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe.
+FindSymbolFilePathForModule: c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe does not have a codeview debug signature.
+[Failed to find PDB file for DLL c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe]
+Attempting to convert c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe to a volume-based path in case the file inside of a container.
+Unable to convert c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe to a volume-based path.
+WARNING: The log file does not contain exact PDB signature information for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe and the file at this path is not the file used in the trace.
+PDB files cannot be unambiguously matched to the EXE.
+Did you merge the ETL file before transferring it off the collection machine?  If not, doing the merge will fix this.
+The /UnsafePdbMatch option will force an ambiguous match, but this is not recommended.
+Failed to find PDB for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe
+Could not find symbols.
+Done Resolving all symbols for modules with inclusive times > 10
+[Exception Occurred: System.NullReferenceException: Object reference not set to an instance of an object.
+   at PerfViewExtensibility.Extensions.ExecuteUserCommand(String command, String[] args)
+   at PerfView.CommandProcessor.ExecuteCommand(CommandLineArgs parsedArgs)]
+[DONE 20:22:49 FAIL: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-otel-proto\otel-proto.export.log UserCommand SaveCPUStacks profiles\native-otel-proto\otel-proto.etl.zip main]
+PerfView logging started at 20/05/2026 20:33:59
+[EXECUTING: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-otel-proto\otel-proto.export.log UserCommand SaveCPUStacks profiles\native-otel-proto\otel-proto.etl.zip main]
+[Running User Command: SaveCPUStacks profiles\native-otel-proto\otel-proto.etl.zip main]
+Found a existing unzipped file C:\Users\loren\AppData\Local\Temp\PerfView\otel-proto.etl_268c32fb.etl
+Found a existing ETLX file in cache: C:\Users\loren\AppData\Local\Temp\PerfView\otel-proto.etl_268c32fb_1df7f4d0.etlx
+WARNING NO _NT_SYMBOL_PATH set ...
+Symbol reader _NT_SYMBOL_PATH= {
+    profiles\native-otel-proto;
+    SRV*C:\Users\loren\AppData\Local\Temp\SymbolCache;
+    }
+This can be set using the File -> Set Symbol Path dialog on the Stack Viewer.
+Created SymbolReader with SymbolPath profiles\native-otel-proto;SRV*C:\Users\loren\AppData\Local\Temp\SymbolCache
+Setting SymbolReaderOptions forces clearing Pdb lookup cache
+Resolving all symbols for modules with inclusive times > 50
+Cache-Only set: will only look on the local machine.
+Got a total of 27 samples
+Done Resolving all symbols for modules with inclusive times > 50
+WARNING NO _NT_SYMBOL_PATH set ...
+Symbol reader _NT_SYMBOL_PATH= {
+    profiles\native-otel-proto;
+    }
+This can be set using the File -> Set Symbol Path dialog on the Stack Viewer.
+Created SymbolReader with SymbolPath profiles\native-otel-proto
+Setting SymbolReaderOptions forces clearing Pdb lookup cache
+Resolving all symbols for modules with inclusive times > 10
+Got a total of 27 samples
+Resolving symbols (count=16) for module c:\windows\system32\ntoskrnl.exe 
+[Loading symbols for c:\windows\system32\ntoskrnl.exe]
+No R2R perfmap signature for c:\windows\system32\ntoskrnl.exe in trace.
+FindSymbolFilePath: *{ Locating PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: Probed file location c:\windows\system32\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-otel-proto\ntkrnlmp.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\ntoskrnl.exe.
+FindSymbolFilePath: *{ Locating PDB ntkrnlmp.pdb GUID 7427da99-c3d7-3720-2bfb-359c2b0e1a5e Age 1 Version 10.0.26100.8457 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntoskrnl.exe
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for ntkrnlmp.pdb 7427da99-c3d7-3720-2bfb-359c2b0e1a5e 1 10.0.26100.8457 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\ntoskrnl.exe to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\ntoskrnl.exe to a volume-based path.
+Failed to find PDB for c:\windows\system32\ntoskrnl.exe
+Could not find symbols.
+Resolving symbols (count=27) for module c:\windows\system32\ntdll.dll 
+[Loading symbols for c:\windows\system32\ntdll.dll]
+No R2R perfmap signature for c:\windows\system32\ntdll.dll in trace.
+FindSymbolFilePath: *{ Locating PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntdll.dll
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\ntdll.dll
+FindSymbolFilePath: Probed file location c:\windows\system32\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\ntdll.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-otel-proto\ntdll.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\ntdll.dll.
+FindSymbolFilePath: *{ Locating PDB ntdll.pdb GUID 794bbce4-3c34-5ade-6883-e3f78dc2928f Age 1 Version 10.0.26100.8328 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\ntdll.dll
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for ntdll.pdb 794bbce4-3c34-5ade-6883-e3f78dc2928f 1 10.0.26100.8328 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\ntdll.dll to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\ntdll.dll to a volume-based path.
+Failed to find PDB for c:\windows\system32\ntdll.dll
+Could not find symbols.
+Resolving symbols (count=20) for module c:\windows\system32\kernel32.dll 
+[Loading symbols for c:\windows\system32\kernel32.dll]
+No R2R perfmap signature for c:\windows\system32\kernel32.dll in trace.
+FindSymbolFilePath: *{ Locating PDB kernel32.pdb GUID 639b06f3-7603-0222-dc25-a08d1f57cb93 Age 1 Version 10.0.26100.8328
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\kernel32.dll
+FindSymbolFilePath: Checking relative to DLL path c:\windows\system32\kernel32.dll
+FindSymbolFilePath: Probed file location c:\windows\system32\kernel32.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols.pri\retail\dll\kernel32.pdb does not exist
+FindSymbolFilePath: Probed file location c:\windows\system32\symbols\retail\dll\kernel32.pdb does not exist
+FindSymbolFilePath: Probed file location profiles\native-otel-proto\kernel32.pdb does not exist
+FindSymbolFilePath: *} Failed to find PDB kernel32.pdb GUID 639b06f3-7603-0222-dc25-a08d1f57cb93 Age 1 Version 10.0.26100.8328
+FindSymbolFilePathForModule: searching for PDB for DLL c:\windows\system32\kernel32.dll.
+FindSymbolFilePath: *{ Locating PDB kernel32.pdb GUID 639b06f3-7603-0222-dc25-a08d1f57cb93 Age 1 Version 10.0.26100.8328 (WinBuild.160101.0800)
+FindSymbolFilePath: Pdb is for DLL c:\windows\system32\kernel32.dll
+FindSymbolFilePath: } Hit Cache, returning NULL
+FindSymbolFilePathForModule returns NULL for kernel32.pdb 639b06f3-7603-0222-dc25-a08d1f57cb93 1 10.0.26100.8328 (WinBuild.160101.0800)
+Attempting to convert c:\windows\system32\kernel32.dll to a volume-based path in case the file inside of a container.
+Unable to convert c:\windows\system32\kernel32.dll to a volume-based path.
+Failed to find PDB for c:\windows\system32\kernel32.dll
+Could not find symbols.
+Resolving symbols (count=16) for module c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe 
+[Loading symbols for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe]
+LookupSymbolsForModule: Binary format unspecified for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe, looking up PDB info from local file.
+No PDB signature for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe in trace.
+FindSymbolFilePathForModule: searching for PDB for DLL c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe.
+FindSymbolFilePathForModule: c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe does not have a codeview debug signature.
+[Failed to find PDB file for DLL c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe]
+Attempting to convert c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe to a volume-based path in case the file inside of a container.
+Unable to convert c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe to a volume-based path.
+WARNING: The log file does not contain exact PDB signature information for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe and the file at this path is not the file used in the trace.
+PDB files cannot be unambiguously matched to the EXE.
+Did you merge the ETL file before transferring it off the collection machine?  If not, doing the merge will fix this.
+The /UnsafePdbMatch option will force an ambiguous match, but this is not recommended.
+Failed to find PDB for c:\users\loren\documents\projects\k-perf_masterproject\kmp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main.exe
+Could not find symbols.
+Done Resolving all symbols for modules with inclusive times > 10
+[Exception Occurred: System.NullReferenceException: Object reference not set to an instance of an object.
+   at PerfViewExtensibility.Extensions.ExecuteUserCommand(String command, String[] args)
+   at PerfView.CommandProcessor.ExecuteCommand(CommandLineArgs parsedArgs)]
+[DONE 20:33:59 FAIL: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-otel-proto\otel-proto.export.log UserCommand SaveCPUStacks profiles\native-otel-proto\otel-proto.etl.zip main]

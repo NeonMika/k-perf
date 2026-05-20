@@ -2,11 +2,11 @@
 
 **Variant:** `otel-proto-timesource`  
 **Platform:** js  
-**SUMMARY rendered:** 2026-05-05 22:28:15  
-**Profile file last captured:** 2026-05-05 22:28:14  
+**SUMMARY rendered:** 2026-05-20 20:42:40  
+**Profile file last captured:** 2026-05-20 20:42:39  
 **Profile file:** [otel-proto-timesource.cpuprofile](otel-proto-timesource.cpuprofile)  
-**Wall time (capture run):** 9484 ms (incl. profiler overhead)  
-**Workload-reported time:** 9169 ms  
+**Wall time (capture run):** 2994 ms (incl. profiler overhead)  
+**Workload-reported time:** 2761 ms  
 
 ---
 
@@ -14,73 +14,73 @@
 
 ```
 Profile: otel-proto-timesource.cpuprofile
-Wall: 9312.5 ms total, 6454 nodes, 5702 samples
+Wall: 2895.8 ms total, 2686 nodes, 1810 samples
 
 === Top 30 by SELF time ===
   self ms |  total ms |   hits |  function   (file)
-   775.0  |    1046.1  |    457  | protoOf.e2                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:7226)
-   652.5  |     652.5  |    391  | toTypedArray                                       (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:2797)
-   567.9  |     567.9  |    325  | (idle)                                             (:-1)
-   446.1  |    1187.5  |    267  | protoOf.o8                                         (.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:8987)
-   409.7  |     411.3  |    240  | add                                                (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1818)
-   383.2  |     431.7  |    225  | equals                                             (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:2231)
-   381.0  |     381.0  |    226  | (garbage collector)                                (:-1)
-   343.2  |     343.2  |    200  | arrayCopy                                          (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:3081)
-   217.4  |    1290.7  |    127  | protoOf.c2                                         (.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:216)
-   196.7  |     524.3  |    110  | subtract                                           (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1723)
-   168.7  |     168.7  |    105  | captureStack                                       (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:2370)
-   158.1  |     688.2  |     93  | divide                                             (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1857)
-   152.8  |     302.0  |     93  | writeVarUInt64                                     (.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1208)
-   124.8  |     124.8  |     74  | bitwiseAnd                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1953)
-    95.9  |     100.8  |     59  | internalConnectMultiple                            (node:net:1176)
-    95.4  |      95.4  |    165  | (program)                                          (:-1)
-    94.4  |     490.6  |     55  | toProto                                            (.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:3810)
-    87.4  |     448.7  |     51  | multiply                                           (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1735)
-    84.7  |     258.8  |     52  | lessThan                                           (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1849)
-    79.0  |      79.0  |     44  | isNegative                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1719)
-    77.5  |     522.9  |     44  | protoOf.s4r                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:593)
-    76.0  |     728.5  |     46  | (anonymous)                                        (.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:8898)
-    73.6  |      73.6  |     44  | protoOf.y4o                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:1431)
-    71.8  |     215.6  |     43  | get_isValid                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:102)
-    65.9  |      65.9  |     35  | fromNumber                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1799)
-    65.4  |      65.4  |     39  | utf8Size                                           (.../packages/comparison-otel-proto-timesource/kotlin/okio-parent-okio.js:16)
-    64.4  |      64.4  |     38  | toNumber                                           (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1664)
-    63.7  |      63.7  |     36  | charCodeAt                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:2029)
-    56.6  |      56.6  |     34  | wrapSafe                                           (node:internal/modules/cjs/loader:1720)
-    56.3  |     145.7  |     32  | protoOf.zi                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11007)
+   192.4  |     192.4  |    117  | add                                                (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1777)
+   150.3  |    1003.3  |     95  | protoOf.s4r                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:594)
+   142.0  |     305.2  |     89  | subtract                                           (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1682)
+   112.0  |     115.3  |     70  | protoOf.y4o                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:1431)
+   110.6  |     110.6  |     68  | (garbage collector)                                (:-1)
+   102.2  |     539.3  |     62  | toDuration_0                                       (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11340)
+    97.8  |     291.5  |     61  | protoOf.zi                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:10966)
+    95.3  |      95.3  |     56  | isNegative                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1678)
+    80.2  |      80.2  |     48  | shiftRight                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1874)
+    71.0  |     306.3  |     43  | get_isValid                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:102)
+    70.7  |      72.3  |     44  | equals                                             (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:2190)
+    66.8  |      66.8  |     40  | equalsLong                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1666)
+    62.7  |      62.7  |     36  | charCodeAt                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1988)
+    59.4  |    1684.6  |     35  | _startSpan                                         (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139)
+    58.7  |      91.7  |     37  | roundToLong                                        (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:5355)
+    57.8  |     145.7  |     35  | protoOf.b5a                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1760)
+    57.1  |     235.7  |     32  | protoOf.d58                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:399)
+    56.2  |      56.2  |     36  | hrtime                                             (:-1)
+    55.9  |     865.9  |     33  | protoOf.pc                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6881)
+    51.1  |      51.1  |     32  | wrapSafe                                           (node:internal/modules/cjs/loader:1720)
+    47.2  |      47.2  |     30  | bitwiseAnd                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1912)
+    46.8  |     133.1  |     28  | protoOf.o4p                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:734)
+    46.6  |     171.8  |     29  | durationOfNanosNormalized                          (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11364)
+    41.6  |      43.2  |     26  | shiftLeft                                          (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1887)
+    41.1  |     185.4  |     24  | multiply                                           (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1694)
+    35.3  |      35.3  |     22  | writeBuffer                                        (:-1)
+    34.7  |      34.7  |     22  | toNumber                                           (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1623)
+    34.0  |   15921.3  |     22  | fibonacci                                          (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28)
+    32.4  |     120.3  |     20  | lessThan                                           (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1808)
+    28.8  |     104.4  |     16  | _get_links__eq4bew                                 (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:526)
 
 === Top 30 by TOTAL (inclusive) time ===
   self ms |  total ms |   hits |  function   (file)
-    13.3  |   75933.9  |      7  | fibonacci                                          (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25)
-     0.0  |    9312.2  |      0  | (root)                                             (:-1)
-     0.0  |    8777.5  |      0  | (anonymous)                                        (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:0)
-    12.1  |    6315.7  |      7  | protoOf.n8                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4733)
-     0.0  |    4691.8  |      0  | wrapModuleLoad                                     (node:internal/modules/cjs/loader:237)
-     0.0  |    4691.8  |      0  | (anonymous)                                        (node:internal/modules/cjs/loader:1238)
-     0.0  |    4683.4  |      0  | (anonymous)                                        (node:internal/modules/cjs/loader:1537)
-     0.0  |    4681.8  |      0  | (anonymous)                                        (node:internal/modules/cjs/loader:1925)
-     0.0  |    4675.1  |      0  | (anonymous)                                        (node:internal/modules/cjs/loader:1781)
-     0.0  |    4439.8  |      0  | (anonymous)                                        (node:internal/main/run_main_module:0)
-     0.0  |    4438.1  |      0  | executeUserEntryPoint                              (node:internal/modules/run_main:139)
-     0.0  |    4311.6  |      0  | mainWrapper                                        (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:125)
-     0.0  |    4311.6  |      0  | main                                               (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:80)
-     0.0  |    4296.1  |      0  | workload                                           (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:66)
-     6.5  |    4019.9  |      4  | protoOf.r8                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4788)
-     9.3  |    3821.4  |      5  | protoOf.m4a                                        (.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1314)
-    11.6  |    3818.7  |      7  | protoOf.l4a                                        (.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1303)
-     2.8  |    3351.0  |      1  | protoOf.qq                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-coroutines-core.js:9144)
-     2.1  |    3342.8  |      1  | listOnTimeout                                      (node:internal/timers:545)
-     0.0  |    3342.0  |      0  | (anonymous)                                        (.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-coroutines-core.js:10875)
-     2.0  |    3342.0  |      1  | protoOf.x1g                                        (.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-coroutines-core.js:11052)
-     1.3  |    3342.0  |      1  | processTimers                                      (node:internal/timers:525)
-     0.0  |    3279.7  |      0  | _endSpan                                           (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:121)
-    30.4  |    3167.5  |     17  | protoOf.r12                                        (.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-coroutines-core.js:6255)
-     1.7  |    3166.6  |      1  | protoOf.r5g                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1550)
-    16.0  |    3059.5  |     10  | protoOf.o4s                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:514)
-     0.0  |    2974.7  |      0  | endInternal                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:421)
-     8.4  |    2842.4  |      5  | updateCellSend                                     (.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-coroutines-core.js:4423)
-     3.3  |    2828.8  |      2  | tryResumeReceiver                                  (.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-coroutines-core.js:4538)
-     0.0  |    2825.5  |      0  | dispatchResume                                     (.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-coroutines-core.js:867)
+    34.0  |   15921.3  |     22  | fibonacci                                          (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28)
+     0.0  |    5116.9  |      0  | (anonymous)                                        (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:0)
+     0.0  |    2895.5  |      0  | (root)                                             (:-1)
+     1.6  |    2839.0  |      1  | wrapModuleLoad                                     (node:internal/modules/cjs/loader:237)
+     0.0  |    2837.4  |      0  | (anonymous)                                        (node:internal/modules/cjs/loader:1238)
+     0.0  |    2834.1  |      0  | (anonymous)                                        (node:internal/modules/cjs/loader:1537)
+     0.0  |    2834.1  |      0  | (anonymous)                                        (node:internal/modules/cjs/loader:1925)
+     0.0  |    2823.3  |      0  | (anonymous)                                        (node:internal/modules/cjs/loader:1781)
+     0.0  |    2606.4  |      0  | (anonymous)                                        (node:internal/main/run_main_module:0)
+     0.0  |    2604.9  |      0  | executeUserEntryPoint                              (node:internal/modules/run_main:139)
+     0.0  |    2489.0  |      0  | mainWrapper                                        (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:151)
+     5.3  |    2489.0  |      3  | main                                               (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:81)
+     1.6  |    1978.7  |      1  | workload                                           (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:69)
+    59.4  |    1684.6  |     35  | _startSpan                                         (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139)
+   150.3  |    1003.3  |     95  | protoOf.s4r                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:594)
+    55.9  |     865.9  |     33  | protoOf.pc                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6881)
+     0.0  |     858.2  |      0  | ValueTimeMark__elapsedNow_impl_eonqvs              (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11469)
+     0.0  |     851.1  |      0  | protoOf.dj                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11500)
+    17.6  |     849.4  |     10  | protoOf.pc                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6842)
+     0.0  |     570.1  |      0  | _endSpan                                           (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:147)
+   102.2  |     539.3  |     62  | toDuration_0                                       (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11340)
+    11.4  |     436.8  |      7  | compare                                            (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1606)
+     0.0  |     320.2  |      0  | durationOfNanos                                    (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11419)
+    71.0  |     306.3  |     43  | get_isValid                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:102)
+   142.0  |     305.2  |     89  | subtract                                           (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1682)
+    97.8  |     291.5  |     61  | protoOf.zi                                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:10966)
+    57.1  |     235.7  |     32  | protoOf.d58                                        (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:399)
+     0.0  |     235.7  |      0  | require                                            (node:internal/modules/helpers:151)
+     0.0  |     235.7  |      0  | (anonymous)                                        (node:internal/modules/cjs/loader:1567)
+    11.2  |     207.0  |      6  | Duration__plus_impl_yu9v8f                         (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11008)
 ```
 
 ## Targeted suspect searches
@@ -90,88 +90,87 @@ Wall: 9312.5 ms total, 6454 nodes, 5702 samples
 Regex: `now|markNow|elapsed|nanoTime|hrtime|currentTimeMillis|Instant`
 
 ```
-Found 64 matching node(s) for /now|markNow|elapsed|nanoTime|hrtime|currentTimeMillis|Instant/
+Found 62 matching node(s) for /now|markNow|elapsed|nanoTime|hrtime|currentTimeMillis|Instant/
 
-Aggregate match: self=64.8 ms, total=531.2 ms, hits=38
+Aggregate match: self=61.0 ms, total=976.5 ms, hits=39
 
 === Top 5 CALLERS of matched frames (by self-in-match) ===
   match-self ms |  match-total ms |   hits  |  caller (file:line)
-         37.1  |            37.1   |      22  | hrtime  (node:internal/process/per_thread:77)
-         15.1  |            52.2   |       9  | protoOf.pc  (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6922)
-          3.4  |             8.2   |       2  | protoOf.o8  (.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-coroutines-core.js:6068)
-          3.3  |             3.3   |       2  | protoOf.a4d  (.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:3073)
-          1.7  |             1.7   |       1  | insert  (node:internal/timers:386)
+         56.2  |            56.2   |      36  | hrtime  (node:internal/process/per_thread:77)
+          4.9  |            62.1   |       3  | protoOf.pc  (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6881)
+          0.0  |           849.4   |       0  | protoOf.dj  (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11500)
+          0.0  |             8.7   |       0  | main  (.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:81)
 
 === Heaviest 5 matching call chains (root <- ... <- match) ===
-[self 8.5ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            _endSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:121
-              protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11538
-                ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11507
-                  protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6883
-                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6922
+[self 12.7ms]
+  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+              protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11500
+                ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11469
+                  protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6842
+                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6881
                       hrtime@node:internal/process/per_thread:77
                         hrtime@:-1
 
-[self 6.8ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:113
-              protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11538
-                ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11507
-                  protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6883
-                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6922
+[self 8.0ms]
+  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            _endSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:147
+              protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11500
+                ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11469
+                  protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6842
+                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6881
                       hrtime@node:internal/process/per_thread:77
                         hrtime@:-1
 
-[self 6.5ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            _endSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:121
-              protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11538
-                ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11507
-                  protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6883
-                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6922
+[self 5.9ms]
+  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+              protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11500
+                ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11469
+                  protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6842
+                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6881
                       hrtime@node:internal/process/per_thread:77
                         hrtime@:-1
 
-[self 5.2ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            _endSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:121
-              protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11538
-                ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11507
-                  protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6883
-                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6922
+[self 5.8ms]
+  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            _endSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:147
+              protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11500
+                ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11469
+                  protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6842
+                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6881
                       hrtime@node:internal/process/per_thread:77
                         hrtime@:-1
 
-[self 3.4ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-              _endSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:121
-                protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11538
-                  ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11507
-                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6883
-                      protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6922
-                        hrtime@node:internal/process/per_thread:77
+[self 4.9ms]
+  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+              protoOf.dj@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11500
+                ValueTimeMark__elapsedNow_impl_eonqvs@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:11469
+                  protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6842
+                    protoOf.pc@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:6881
+                      hrtime@node:internal/process/per_thread:77
+                        hrtime@:-1
 ```
 
 ### Persistent-list / O(n^2) lookups
@@ -179,88 +178,88 @@ Aggregate match: self=64.8 ms, total=531.2 ms, hits=38
 Regex: `AbstractPersistentList|AbstractList\.indexOf|recyclableRemoveAll|protoOf\.c2|protoOf\.e2`
 
 ```
-Found 114 matching node(s) for /AbstractPersistentList|AbstractList\.indexOf|recyclableRemoveAll|protoOf\.c2|protoOf\.e2/
+Found 5 matching node(s) for /AbstractPersistentList|AbstractList\.indexOf|recyclableRemoveAll|protoOf\.c2|protoOf\.e2/
 
-Aggregate match: self=997.5 ms, total=3824.4 ms, hits=587
+Aggregate match: self=19.8 ms, total=90.9 ms, hits=13
 
 === Top 5 CALLERS of matched frames (by self-in-match) ===
   match-self ms |  match-total ms |   hits  |  caller (file:line)
-        775.0  |          1046.1   |     457  | protoOf.c2  (.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:216)
-        217.4  |          1290.7   |     127  | (anonymous)  (.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:203)
-          3.5  |          1405.3   |       2  | removeAll  (.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660)
-          1.7  |             6.7   |       1  | contentType  (.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-http.js:1438)
-          0.0  |            68.2   |       0  | protoOf.o8  (.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:2540)
+         10.0  |            25.6   |       7  | recyclableRemoveAll  (.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:787)
+          8.1  |            49.5   |       5  | removeAll  (.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660)
+          1.7  |             6.6   |       1  | protoOf.c2  (.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:216)
+          0.0  |             6.6   |       0  | (anonymous)  (.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:203)
+          0.0  |             2.5   |       0  | protoOf.o8  (.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:2540)
 
 === Heaviest 5 matching call chains (root <- ... <- match) ===
-[self 156.6ms]
-  protoOf.r8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4788
-    protoOf.n8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4733
-      protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1253
-        exportCurrentBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1068
-          protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1457
-            protoOf.z4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:341
-              protoOf.q4u@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:989
-                removeAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660
-                  recyclableRemoveAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:787
-                    (anon)@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:203
-                      protoOf.c2@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:216
-                        protoOf.e2@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:7226
+[self 10.0ms]
+  protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1254
+    flush@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1060
+      protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1377
+        exportCurrentBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1069
+          protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1458
+            removeSpanDataFromBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1047
+              protoOf.y4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:213
+                protoOf.z4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:341
+                  protoOf.q4u@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:989
+                    removeAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660
+                      recyclableRemoveAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:787
+                        protoOf.e2@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:7185
 
-[self 102.7ms]
-  protoOf.r8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4788
-    protoOf.n8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4733
-      protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1253
-        exportCurrentBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1068
-          protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1457
-            protoOf.z4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:341
-              protoOf.q4u@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:989
-                removeAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660
-                  recyclableRemoveAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:787
-                    (anon)@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:203
-                      protoOf.c2@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:216
-                        protoOf.e2@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:7226
+[self 8.1ms]
+  protoOf.n8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4692
+    protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1254
+      flush@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1060
+        protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1377
+          exportCurrentBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1069
+            protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1458
+              removeSpanDataFromBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1047
+                protoOf.y4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:213
+                  protoOf.z4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:341
+                    protoOf.q4u@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:989
+                      removeAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660
+                        recyclableRemoveAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:787
 
-[self 99.8ms]
-  protoOf.r8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4788
-    protoOf.n8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4733
-      protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1253
-        exportCurrentBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1068
-          protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1457
+[self 1.7ms]
+  protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1377
+    exportCurrentBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1069
+      protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1458
+        removeSpanDataFromBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1047
+          protoOf.y4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:213
             protoOf.z4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:341
               protoOf.q4u@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:989
                 removeAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660
                   recyclableRemoveAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:787
                     (anon)@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:203
                       protoOf.c2@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:216
-                        protoOf.e2@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:7226
+                        protoOf.e2@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:7185
 
-[self 94.0ms]
-  protoOf.r8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4788
-    protoOf.n8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4733
-      protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1253
-        exportCurrentBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1068
-          protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1457
-            protoOf.z4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:341
-              protoOf.q4u@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:989
-                removeAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660
-                  recyclableRemoveAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:787
-                    (anon)@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:203
-                      protoOf.c2@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:216
-                        protoOf.e2@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:7226
+[self NaNms]
+  flush@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1060
+    protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1377
+      exportCurrentBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1069
+        protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1458
+          removeSpanDataFromBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1047
+            protoOf.y4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:213
+              protoOf.z4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:341
+                protoOf.q4u@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:989
+                  removeAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660
+                    recyclableRemoveAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:787
+                      (anon)@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:203
+                        protoOf.c2@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:216
 
-[self 53.9ms]
-  protoOf.r8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4788
-    protoOf.n8@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:4733
-      protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1253
-        exportCurrentBatch@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1068
-          protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1457
-            protoOf.z4t@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:341
-              protoOf.q4u@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:989
-                removeAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:660
-                  recyclableRemoveAll@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:787
-                    (anon)@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:203
-                      protoOf.c2@.../packages/comparison-otel-proto-timesource/kotlin/Kotlin-Immutable-Collections-kotlinx-collections-immutable.js:216
-                        protoOf.e2@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:7226
+[self NaNms]
+  proceedLoop@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-utils.js:1365
+    protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-utils.js:1375
+      l@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:3052
+        protoOf.e30@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:2973
+          protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:2983
+            protoOf.f26@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-utils.js:1455
+              proceedLoop@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-utils.js:1365
+                protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-utils.js:1375
+                  l@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:2615
+                    protoOf.e30@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:2530
+                      protoOf.o8@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-client-core.js:2540
+                        protoOf.e26@.../packages/comparison-otel-proto-timesource/kotlin/ktor-ktor-utils.js:1451
 ```
 
 ### Long-polyfill arithmetic (JS only)
@@ -268,88 +267,88 @@ Aggregate match: self=997.5 ms, total=3824.4 ms, hits=587
 Regex: `^subtract$|^divide$|^multiply$|^bitwiseAnd$|^lessThan$|^equalsLong$`
 
 ```
-Found 519 matching node(s) for /^subtract$|^divide$|^multiply$|^bitwiseAnd$|^lessThan$|^equalsLong$/
+Found 204 matching node(s) for /^subtract$|^divide$|^multiply$|^bitwiseAnd$|^lessThan$|^equalsLong$/
 
-Aggregate match: self=704.0 ms, total=2098.9 ms, hits=411
+Aggregate match: self=329.4 ms, total=733.9 ms, hits=203
 
 === Top 5 CALLERS of matched frames (by self-in-match) ===
   match-self ms |  match-total ms |   hits  |  caller (file:line)
-        181.3  |           471.4   |     103  | compare  (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1647)
-        119.7  |           492.5   |      71  | modulo  (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1949)
-         99.9  |           274.1   |      61  | multiply  (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1735)
-         63.1  |           289.6   |      37  | divide  (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1857)
-         43.7  |            43.7   |      27  | protoOf.d1l  (.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1118)
+        178.1  |           339.8   |     112  | compare  (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1606)
+         46.9  |           134.8   |      27  | multiply  (.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1694)
+         45.5  |            45.5   |      29  | protoOf.o4p  (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:734)
+         37.1  |           166.3   |      22  | normalizeToNanos  (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:337)
+          4.8  |             4.8   |       3  | (root)  (:-1)
 
 === Heaviest 5 matching call chains (root <- ... <- match) ===
-[self 16.7ms]
-  protoOf.l4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1303
-    protoOf.a4d@.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:1977
-      protoOf.m4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1314
-        protoOf.l4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1303
-          protoOf.a4d@.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:3073
-            protoOf.j4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1286
-              protoOf.u4c@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1290
-                writeULongLe@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1422
-                  writeLongLe@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1432
-                    protoOf.c1l@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:551
-                      protoOf.d1l@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1118
-                        bitwiseAnd@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1953
+[self 19.4ms]
+  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+              _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+                protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:594
+                  protoOf.d58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:399
+                    protoOf.r4s@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:1352
+                      protoOf.o4p@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:734
+                        bitwiseAnd@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1912
 
-[self 16.3ms]
-  protoOf.l4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1303
-    protoOf.a4d@.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:1977
-      protoOf.m4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1314
-        protoOf.l4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1303
-          protoOf.a4d@.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:3073
-            protoOf.j4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1286
-              protoOf.u4c@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1290
-                writeULongLe@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1422
-                  writeLongLe@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1432
-                    protoOf.c1l@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:551
-                      protoOf.d1l@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1118
-                        bitwiseAnd@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1953
+[self 12.8ms]
+  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+              _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+                protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:594
+                  protoOf.d58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:399
+                    protoOf.r4s@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:1352
+                      protoOf.o4p@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:734
+                        bitwiseAnd@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1912
 
-[self 13.7ms]
-  protoOf.m4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1314
-    protoOf.l4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1303
-      protoOf.a4d@.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:1977
-        protoOf.m4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1314
-          protoOf.l4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1303
-            protoOf.a4d@.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:3073
-              protoOf.j4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1286
-                protoOf.u4c@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1290
-                  writeULongLe@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1422
-                    writeLongLe@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1432
-                      reverseBytes_0@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:2252
-                        bitwiseAnd@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1953
+[self 8.3ms]
+  workload@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:69
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+                  protoOf.x4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:587
+                    normalizeToNanos@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:337
+                      multiply@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1694
+                        lessThan@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1808
 
-[self 12.3ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            _endSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:121
-              protoOf.o4s@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:514
-                endInternal@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:421
-                  protoOf.x57@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1616
-                    protoOf.r5g@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1550
-                      protoOf.r12@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-coroutines-core.js:6255
-                        divide@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1857
+[self 8.1ms]
+  workload@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:69
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                  _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+                    protoOf.x4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:587
+                      normalizeToNanos@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:337
+                        multiply@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1694
 
-[self 10.6ms]
-  protoOf.l4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1303
-    protoOf.a4d@.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:1977
-      protoOf.m4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1314
-        protoOf.l4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1303
-          protoOf.a4d@.../packages/comparison-otel-proto-timesource/kotlin/otlp-exporter-proto.js:3073
-            protoOf.j4a@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1286
-              protoOf.u4c@.../packages/comparison-otel-proto-timesource/kotlin/grpc-kmp-kmp-grpc-core.js:1290
-                writeULongLe@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1422
-                  writeLongLe@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1432
-                    protoOf.c1l@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:551
-                      protoOf.d1l@.../packages/comparison-otel-proto-timesource/kotlin/kotlinx-io-kotlinx-io-core.js:1118
-                        bitwiseAnd@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1953
+[self 7.9ms]
+  workload@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:69
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                  _endSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:147
+                    protoOf.o4s@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:515
+                      normalizeToNanos@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-api-all.js:337
+                        multiply@.../packages/comparison-otel-proto-timesource/kotlin/kotlin-kotlin-stdlib.js:1694
 ```
 
 ### OTel SDK Span construction
@@ -357,86 +356,86 @@ Aggregate match: self=704.0 ms, total=2098.9 ms, hits=411
 Regex: `Span\.<init>|SdkSpanBuilder|RecordEventsReadableSpan|BatchSpanProcessor`
 
 ```
-Found 11 matching node(s) for /Span\.<init>|SdkSpanBuilder|RecordEventsReadableSpan|BatchSpanProcessor/
+Found 7 matching node(s) for /Span\.<init>|SdkSpanBuilder|RecordEventsReadableSpan|BatchSpanProcessor/
 
-Aggregate match: self=11.9 ms, total=28.7 ms, hits=7
+Aggregate match: self=6.4 ms, total=21.0 ms, hits=4
 
 === Top 5 CALLERS of matched frames (by self-in-match) ===
   match-self ms |  match-total ms |   hits  |  caller (file:line)
-         11.9  |            20.2   |       7  | protoOf.y58  (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:455)
-          0.0  |             1.7   |       0  | protoOf.t5g  (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1597)
-          0.0  |             6.7   |       0  | protoOf.k2a  (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1659)
+          6.4  |            12.9   |       4  | protoOf.y58  (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:456)
+          0.0  |             1.5   |       0  | protoOf.t5g  (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1598)
+          0.0  |             6.5   |       0  | protoOf.k2a  (.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1669)
 
 === Heaviest 5 matching call chains (root <- ... <- match) ===
-[self 3.4ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                  _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:113
-                    protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:593
-                      protoOf.y58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:455
-                        RecordEventsReadableSpan@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:482
+[self 3.2ms]
+  mainWrapper@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:151
+    main@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:81
+      workload@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:69
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                  _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+                    protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:594
+                      protoOf.y58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:456
+                        RecordEventsReadableSpan@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:483
 
-[self 1.7ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                  _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:113
-                    protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:593
-                      protoOf.y58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:455
-                        RecordEventsReadableSpan@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:482
+[self 3.2ms]
+  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                  _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+                    protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:594
+                      protoOf.y58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:456
+                        RecordEventsReadableSpan@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:483
 
-[self 1.7ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                  _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:113
-                    protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:593
-                      protoOf.y58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:455
-                        RecordEventsReadableSpan@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:482
+[self NaNms]
+  (root)@:-1
+    (anon)@node:internal/main/run_main_module:0
+      executeUserEntryPoint@node:internal/modules/run_main:139
+        wrapModuleLoad@node:internal/modules/cjs/loader:237
+          (anon)@node:internal/modules/cjs/loader:1238
+            (anon)@node:internal/modules/cjs/loader:1537
+              (anon)@node:internal/modules/cjs/loader:1925
+                (anon)@node:internal/modules/cjs/loader:1781
+                  (anon)@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:0
+                    (anon)@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:0
+                      protoOf.t5g@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1598
+                        BatchSpanProcessorBuilder@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1648
 
-[self 1.7ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                  _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:113
-                    protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:593
-                      protoOf.y58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:455
-                        RecordEventsReadableSpan@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:482
+[self NaNms]
+  (root)@:-1
+    (anon)@node:internal/main/run_main_module:0
+      executeUserEntryPoint@node:internal/modules/run_main:139
+        wrapModuleLoad@node:internal/modules/cjs/loader:237
+          (anon)@node:internal/modules/cjs/loader:1238
+            (anon)@node:internal/modules/cjs/loader:1537
+              (anon)@node:internal/modules/cjs/loader:1925
+                (anon)@node:internal/modules/cjs/loader:1781
+                  (anon)@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:0
+                    (anon)@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:0
+                      protoOf.k2a@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1669
+                        BatchSpanProcessor@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:1607
 
-[self 1.7ms]
-  fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:25
-                  _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:113
-                    protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:593
-                      protoOf.y58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:455
-                        RecordEventsReadableSpan@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:482
+[self NaNms]
+  workload@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:69
+    fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+      fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+        fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+          fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+            fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+              fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                fibonacci@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:28
+                  _startSpan@.../packages/comparison-otel-proto-timesource/kotlin/comparison-otel-proto-timesource.js:139
+                    protoOf.s4r@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:594
+                      protoOf.y58@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:456
+                        RecordEventsReadableSpan@.../packages/comparison-otel-proto-timesource/kotlin/opentelemetry-kotlin-sdk-sdk-trace.js:483
 ```
 
 ---

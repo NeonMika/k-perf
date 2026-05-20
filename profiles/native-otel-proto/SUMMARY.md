@@ -1,12 +1,16 @@
 ﻿# Profile -- otel-proto (Protobuf/gRPC) (native)
 
+> WARNING: capture failed in this run; analyzing the previously captured profile instead.
+> Profile file was last written at **2026-05-20 20:33:59** -- not from the most recent `run-all-profiles.ps1` invocation.
+> Common cause on Windows 11: Smart App Control blocks unsigned `samply.exe`.
+
 **Variant:** `otel-proto`  
 **Platform:** native  
-**SUMMARY rendered:** 2026-05-05 22:27:45  
-**Profile file last captured:** 2026-05-05 22:27:44  
+**SUMMARY rendered:** 2026-05-20 20:42:28  
+**Profile file last captured:** 2026-05-20 20:33:59  
 **Profile file:** [otel-proto.perfView.xml.zip](otel-proto.perfView.xml.zip)  
-**Wall time (capture run):** 0 ms (incl. profiler overhead)  
-**Workload-reported time:** 6406 ms  
+**Wall time (capture run):** n/a (capture skipped or failed)  
+**Workload-reported time:** unknown (no marker line in stdout)  
 
 ---
 
@@ -14,72 +18,56 @@
 
 ```
 Profile: otel-proto.perfView.xml.zip
-Frames: 52, Stacks: 2157, Samples: 7111, recorded weight: 6.15 s
+Frames: 34, Stacks: 543, Samples: 27, recorded weight: 0.04 s
 
 === Top 30 by SELF time ===
   self ms | total ms |   hits | function
-   5384  |     6098  |   6153  | ...mp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main!?
-    331  |     5922  |    379  | c:\windows\system32\kernel32!?
-    234  |     5944  |    299  | c:\windows\system32\ntdll!?
-    100  |      115  |    142  | c:\windows\system32\ntoskrnl!?
-     80  |      434  |    103  | c:\windows\system32\msvcrt!?
-     10  |       19  |     21  | c:\windows\system32\drivers\tcpip.sys!?
-      2  |        4  |      4  | c:\windows\system32\drivers\netio.sys!?
-      1  |        2  |      1  | c:\windows\system32\drivers\ntfs.sys!?
-      1  |       20  |      2  | c:\windows\system32\drivers\afd.sys!?
-      1  |       47  |      3  | c:\windows\system32\kernelbase!?
-      1  |       26  |      1  | c:\windows\system32\ws2_32!?
-      0  |        0  |      1  | c:\windows\system32\drivers\wdf01000.sys!?
-      0  |       24  |      2  | c:\windows\system32\mswsock!?
+     32  |       34  |     15  | c:\windows\system32\ntoskrnl!?
+      3  |       41  |      5  | c:\windows\system32\ntdll!?
+      3  |       17  |      5  | ...mp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main!?
+      2  |        4  |      1  | c:\windows\system32\drivers\ntfs.sys!?
+      1  |       37  |      1  | ?!?
 
 === Top 30 by TOTAL (inclusive) time ===
   self ms | total ms |   hits | function
-      0  |     6146  |      0  | Process64 main (1604) Args: 
-   5384  |     6098  |   6153  | ...mp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main!?
-    234  |     5944  |    299  | c:\windows\system32\ntdll!?
-    331  |     5922  |    379  | c:\windows\system32\kernel32!?
-      0  |     5479  |      0  | Thread (27340) CPU=5963ms (Startup Thread)
-     80  |      434  |    103  | c:\windows\system32\msvcrt!?
-      0  |      218  |      0  | Thread (18100) CPU=278ms
-      0  |      202  |      0  | BROKEN
-      0  |      126  |      0  | Thread (14812) CPU=211ms (tokio-rt-worker)
-      0  |      124  |      0  | ?!?
-    100  |      115  |    142  | c:\windows\system32\ntoskrnl!?
-      0  |       99  |      0  | Thread (18520) CPU=189ms (tokio-rt-worker)
-      0  |       96  |      0  | Thread (24528) CPU=204ms (tokio-rt-worker)
-      1  |       47  |      3  | c:\windows\system32\kernelbase!?
-      0  |       45  |      0  | Thread (28784) CPU=80ms
-      1  |       26  |      1  | c:\windows\system32\ws2_32!?
-      0  |       24  |      2  | c:\windows\system32\mswsock!?
-      1  |       20  |      2  | c:\windows\system32\drivers\afd.sys!?
-     10  |       19  |     21  | c:\windows\system32\drivers\tcpip.sys!?
-      0  |       15  |      0  | Thread (14968) CPU=36ms
-      0  |       14  |      0  | Thread (21484) CPU=34ms
-      0  |       14  |      0  | Thread (11400) CPU=27ms
-      0  |       13  |      0  | Thread (33376) CPU=33ms
-      0  |       12  |      0  | Thread (24944) CPU=28ms
-      0  |        7  |      0  | Thread (17948) CPU=16ms
-      2  |        4  |      4  | c:\windows\system32\drivers\netio.sys!?
-      0  |        4  |      0  | Thread (30444) CPU=7ms (tokio-rt-worker)
+      3  |       41  |      5  | c:\windows\system32\ntdll!?
+      0  |       41  |      0  | Process64 main (5524) Args: 
+      1  |       37  |      1  | ?!?
+     32  |       34  |     15  | c:\windows\system32\ntoskrnl!?
+      0  |       24  |      0  | Thread (26772) CPU=17ms (Startup Thread)
+      0  |       21  |      0  | c:\windows\system32\kernel32!?
+      3  |       17  |      5  | ...mp-examples\comparison-otel-proto\build\bin\mingwx64\releaseexecutable\main!?
+      0  |        6  |      0  | c:\windows\system32\kernelbase!?
+      0  |        5  |      0  | Thread (9240) CPU=6ms (tokio-rt-worker)
+      0  |        5  |      0  | c:\windows\system32\ws2_32!?
+      2  |        4  |      1  | c:\windows\system32\drivers\ntfs.sys!?
+      0  |        4  |      0  | c:\windows\system32\drivers\fltmgr.sys!?
+      0  |        3  |      0  | Thread (22240) CPU=2ms (tokio-rt-worker)
+      0  |        3  |      0  | c:\windows\system32\drivers\luafv.sys!?
+      0  |        3  |      0  | c:\windows\system32\drivers\bfs.sys!?
+      0  |        3  |      0  | c:\windows\system32\drivers\bindflt.sys!?
+      0  |        3  |      0  | c:\windows\system32\drivers\appid.sys!?
+      0  |        3  |      0  | Thread (28012) CPU=1ms (tokio-rt-worker)
       0  |        3  |      0  | c:\windows\system32\drivers\condrv.sys!?
-      0  |        3  |      0  | c:\windows\system32\drivers\fltmgr.sys!?
-      1  |        2  |      1  | c:\windows\system32\drivers\ntfs.sys!?
+      0  |        2  |      0  | c:\windows\system32\mswsock!?
+      0  |        2  |      0  | Thread (28220) CPU=1ms
+      0  |        2  |      0  | c:\windows\system32\drivers\bam.sys!?
+      0  |        2  |      0  | Thread (22184) CPU=2ms
+      0  |        1  |      0  | c:\windows\system32\bcrypt!?
+      0  |        1  |      0  | c:\windows\system32\rpcrt4!?
+      0  |        1  |      0  | c:\windows\system32\fwpuclnt!?
+      0  |        1  |      0  | Thread (26124) CPU=1ms (tokio-rt-worker)
+      0  |        0  |      0  | c:\windows\system32\dnsapi!?
+      0  |        0  |      0  | Thread (22864) CPU=1ms
+      0  |        0  |      0  | Thread (28264) CPU=1ms
 
 === Self-time attributed by MODULE / loaded binary ===
   self ms |    %  |   hits | module
-   5384  |  87.6%  |   6153  | main
-    331  |   5.4%  |    379  | kernel32
-    234  |   3.8%  |    299  | ntdll
-    100  |   1.6%  |    142  | ntoskrnl
-     80  |   1.3%  |    103  | msvcrt
-     10  |   0.2%  |     21  | tcpip
-      2  |   0.0%  |      4  | netio
-      1  |   0.0%  |      1  | ntfs
-      1  |   0.0%  |      2  | afd
-      1  |   0.0%  |      3  | kernelbase
-      1  |   0.0%  |      1  | ws2_32
-      0  |   0.0%  |      1  | wdf01000
-      0  |   0.0%  |      2  | mswsock
+     32  |  78.2%  |     15  | ntoskrnl
+      3  |   8.3%  |      5  | ntdll
+      3  |   7.6%  |      5  | main
+      2  |   4.6%  |      1  | ntfs
+      1  |   1.3%  |      1  | (unresolved)
 ```
 
 ## Targeted suspect searches
@@ -90,7 +78,7 @@ Regex: `now|markNow|elapsed|nanoTime|hrtime|currentTimeMillis|Instant`
 
 ```
 Pattern /now|markNow|elapsed|nanoTime|hrtime|currentTimeMillis|Instant/
-Matched 0 of 7111 samples
+Matched 0 of 27 samples
 Aggregate: self=0 ms (on top), total=0 ms (anywhere in stack)
 
 === Top 5 CALLERS ===
@@ -105,7 +93,7 @@ Regex: `AbstractPersistentList|AbstractList\.indexOf|recyclableRemoveAll|protoOf
 
 ```
 Pattern /AbstractPersistentList|AbstractList\.indexOf|recyclableRemoveAll|protoOf\.c2|protoOf\.e2/
-Matched 0 of 7111 samples
+Matched 0 of 27 samples
 Aggregate: self=0 ms (on top), total=0 ms (anywhere in stack)
 
 === Top 5 CALLERS ===
@@ -120,7 +108,7 @@ Regex: `^subtract$|^divide$|^multiply$|^bitwiseAnd$|^lessThan$|^equalsLong$`
 
 ```
 Pattern /^subtract$|^divide$|^multiply$|^bitwiseAnd$|^lessThan$|^equalsLong$/
-Matched 0 of 7111 samples
+Matched 0 of 27 samples
 Aggregate: self=0 ms (on top), total=0 ms (anywhere in stack)
 
 === Top 5 CALLERS ===
@@ -135,7 +123,7 @@ Regex: `Span\.<init>|SdkSpanBuilder|RecordEventsReadableSpan|BatchSpanProcessor`
 
 ```
 Pattern /Span\.<init>|SdkSpanBuilder|RecordEventsReadableSpan|BatchSpanProcessor/
-Matched 0 of 7111 samples
+Matched 0 of 27 samples
 Aggregate: self=0 ms (on top), total=0 ms (anywhere in stack)
 
 === Top 5 CALLERS ===
