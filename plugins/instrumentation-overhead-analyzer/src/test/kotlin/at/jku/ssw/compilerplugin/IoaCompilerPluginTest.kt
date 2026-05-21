@@ -161,6 +161,9 @@ class IoaCompilerPluginTest {
   @Test
   fun `test add unique to set kind`() = testKind(IoaKind.AddUniqueToSet)
 
+  @Test
+  fun `test poc try finally increment int kind`() = testKind(IoaKind.PocTryFinallyIncrementInt)
+
   fun compile(
     sourceFiles: List<SourceFile>,
     compilerPluginRegistrar: CompilerPluginRegistrar = IoaComponentRegistrar(),
