@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 20,
+    "StepCount": 500,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,16 +14,19 @@
       true
     ],
     "FlushEarly": [
+      true,
       false
     ],
     "InstrumentPropertyAccessors": [
+      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*"
+      ".*",
+      "step"
     ]
   },
   "machineInfo": {
@@ -31,32 +34,32 @@
     "DeviceModel": "Virtual Machine",
     "OS": "Ubuntu 24.04.4 LTS",
     "OSArchitecture": "x86_64",
-    "CPU": "AMD EPYC 7763 64-Core Processor",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 13.88,
+    "AvailableRAMGB": 14.02,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 86,
-    "SystemUptimeHours": 0.11,
+    "SystemUptimeHours": 0.1,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 153,
+    "RunningProcessCount": 151,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.4.15",
     "JavaVersion": "21.0.11",
     "JavaDistribution": "\"21.0.11\"",
-    "NodeVersion": "v22.22.2",
+    "NodeVersion": "v22.22.3",
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "8833d57b38e80f8d4c3d9da9038bc7142ba09168",
+    "GitCommitHash": "a84f8fde9ddd6bfe4ea06b178641b9634d8d97fc",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-05-21 02:07:38"
+    "CollectionTimestamp": "2026-05-21 04:00:13"
   },
-  "buildTimeMs": 4438.3347,
-  "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-  "repetitions": 3,
+  "buildTimeMs": 3313.8906,
+  "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-node",
+  "repetitions": 50,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
