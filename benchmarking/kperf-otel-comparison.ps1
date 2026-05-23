@@ -576,16 +576,41 @@ function Get-MeanFromIndex {
   return $acc / $n
 }
 
+# Percentile of $Values[$Start..end] (inclusive), ignoring nulls.
+# $Percentile is in [0,1]; uses linear interpolation between the two
+# closest order statistics (same convention as numpy.percentile default).
+# Used to compute a lower-envelope (P10) "clean per-method cost" that
+# is robust against batch-flush spikes in otel-* rows.
+function Get-PercentileFromIndex {
+  param([object[]]$Values, [int]$Start, [double]$Percentile)
+  $samples = New-Object 'System.Collections.Generic.List[double]'
+  for ($i = $Start; $i -lt $Values.Count; $i++) {
+    if ($null -ne $Values[$i]) { [void]$samples.Add([double]$Values[$i]) }
+  }
+  if ($samples.Count -eq 0) { return $null }
+  $sorted = $samples | Sort-Object
+  $n = $sorted.Count
+  if ($n -eq 1) { return [double]$sorted[0] }
+  $rank = ($n - 1) * $Percentile
+  $lo = [Math]::Floor($rank)
+  $hi = [Math]::Ceiling($rank)
+  if ($lo -eq $hi) { return [double]$sorted[[int]$lo] }
+  $frac = $rank - $lo
+  return [double]$sorted[[int]$lo] * (1.0 - $frac) + [double]$sorted[[int]$hi] * $frac
+}
+
 # Build a per-(variant,platform) summary: medians + steady-state start +
 # steady-state mean step time. Store on $allResults for downstream use.
 # All values in nanoseconds; convert at display time.
 foreach ($res in $allResults) {
   $medians = Get-PerStepMedians -PerRunStepValues $res.PerRunStepNanos
   $steady  = Get-SteadyStateStart -Medians $medians -ThresholdMultiplier 2.0
-  $steadyMean = Get-MeanFromIndex -Values $medians -Start $steady
+  $steadyMean     = Get-MeanFromIndex      -Values $medians -Start $steady
+  $steadyEnvelope = Get-PercentileFromIndex -Values $medians -Start $steady -Percentile 0.10
   $res['PerStepMedianNanos'] = $medians
   $res['SteadyStateStart']   = $steady
   $res['SteadyStepNanos']    = $steadyMean
+  $res['EnvelopeStepNanos']  = $steadyEnvelope
 }
 
 # --- Overhead calculation --------------------------------------------------
@@ -597,13 +622,15 @@ foreach ($res in $allResults) {
 # instrumented method call at warm steady state".
 # Formula:  overhead_ns_per_method = (instr_ns - base_ns) / methods_per_step
 
-$baselineFullByPlatform   = @{}
-$baselineSteadyByPlatform = @{}
+$baselineFullByPlatform     = @{}
+$baselineSteadyByPlatform   = @{}
+$baselineEnvelopeByPlatform = @{}
 foreach ($res in $allResults) {
   $vp = Get-VariantAndPlatform -ExeName $res.Executable
   if ($vp.Variant -eq 'baseline') {
-    if ($null -ne $res.StepMeanNanos)   { $baselineFullByPlatform[$vp.Platform]   = $res.StepMeanNanos }
-    if ($null -ne $res.SteadyStepNanos) { $baselineSteadyByPlatform[$vp.Platform] = $res.SteadyStepNanos }
+    if ($null -ne $res.StepMeanNanos)     { $baselineFullByPlatform[$vp.Platform]     = $res.StepMeanNanos }
+    if ($null -ne $res.SteadyStepNanos)   { $baselineSteadyByPlatform[$vp.Platform]   = $res.SteadyStepNanos }
+    if ($null -ne $res.EnvelopeStepNanos) { $baselineEnvelopeByPlatform[$vp.Platform] = $res.EnvelopeStepNanos }
   }
 }
 
@@ -612,11 +639,13 @@ foreach ($res in $allResults) {
   $vp = Get-VariantAndPlatform -ExeName $res.Executable
   if ($vp.Variant -eq 'baseline') { continue }
 
-  $mps         = $methodsPerStep[$vp.Platform]
-  $stepMean    = $res.StepMeanNanos
-  $stepSteady  = $res.SteadyStepNanos
-  $baselineFull   = $baselineFullByPlatform[$vp.Platform]
-  $baselineSteady = $baselineSteadyByPlatform[$vp.Platform]
+  $mps          = $methodsPerStep[$vp.Platform]
+  $stepMean     = $res.StepMeanNanos
+  $stepSteady   = $res.SteadyStepNanos
+  $stepEnvelope = $res.EnvelopeStepNanos
+  $baselineFull     = $baselineFullByPlatform[$vp.Platform]
+  $baselineSteady   = $baselineSteadyByPlatform[$vp.Platform]
+  $baselineEnvelope = $baselineEnvelopeByPlatform[$vp.Platform]
 
   $ohFull = $null
   if ($null -ne $baselineFull -and $null -ne $stepMean -and $null -ne $mps -and $mps -gt 0) {
@@ -626,18 +655,25 @@ foreach ($res in $allResults) {
   if ($null -ne $baselineSteady -and $null -ne $stepSteady -and $null -ne $mps -and $mps -gt 0) {
     $ohSteady = ($stepSteady - $baselineSteady) / $mps
   }
+  $ohEnvelope = $null
+  if ($null -ne $baselineEnvelope -and $null -ne $stepEnvelope -and $null -ne $mps -and $mps -gt 0) {
+    $ohEnvelope = ($stepEnvelope - $baselineEnvelope) / $mps
+  }
 
   $overheadRows += [ordered]@{
-    Variant                  = $vp.Variant
-    Platform                 = $vp.Platform
-    StepMeanNanos            = $stepMean
-    BaselineStepNanos        = $baselineFull
-    SteadyStepNanos          = $stepSteady
-    BaselineSteadyStepNanos  = $baselineSteady
-    SteadyStateStart         = $res.SteadyStateStart
-    MethodsPerStep           = $mps
-    OverheadNsFullRun        = $ohFull
-    OverheadNsSteadyState    = $ohSteady
+    Variant                    = $vp.Variant
+    Platform                   = $vp.Platform
+    StepMeanNanos              = $stepMean
+    BaselineStepNanos          = $baselineFull
+    SteadyStepNanos            = $stepSteady
+    BaselineSteadyStepNanos    = $baselineSteady
+    EnvelopeStepNanos          = $stepEnvelope
+    BaselineEnvelopeStepNanos  = $baselineEnvelope
+    SteadyStateStart           = $res.SteadyStateStart
+    MethodsPerStep             = $mps
+    OverheadNsFullRun          = $ohFull
+    OverheadNsSteadyState      = $ohSteady
+    OverheadNsEnvelope         = $ohEnvelope
   }
 }
 
@@ -731,7 +767,7 @@ $markdown += @"
 
 ## Overhead per instrumented method
 
-Two overhead numbers per (variant, platform):
+Three overhead numbers per (variant, platform):
 - **Full-run** uses the arithmetic mean over *all* per-step samples
   (RunCount × StepCount). Heavily biased by the first ~5–10 cold steps on
   JVM where step 0 alone can be 1000× the steady-state cost — so this
@@ -740,6 +776,15 @@ Two overhead numbers per (variant, platform):
   first step index whose per-step median (across runs) is within 2× the
   median of the latter-50% tail. Recommended quotation when reporting
   "cost of one instrumented method call at warm steady state".
+- **Envelope (P10)** is the 10th-percentile per-step median over the
+  steady region. For otel-* rows the steady region contains a sawtooth
+  of quiet steps interleaved with batch-flush spikes; the arithmetic
+  mean blends both into a single inflated number that hides the
+  per-method instrumentation cost behind amortized flush work. The P10
+  envelope picks the quietest samples and approximates "what one
+  instrumented method costs when no flush is occurring". Useful as a
+  lower bound; compare against `Overhead steady (ns)` to read off the
+  flush-amortization share.
 
 `overhead_ns_per_method = (step_ns_instrumented − step_ns_baseline) / methods_per_step`
 (per-step timings are collected at nanosecond resolution via `Duration.inWholeNanoseconds`
@@ -750,20 +795,23 @@ methods_per_step is derived from the preserved k-perf trace under `traces/`
 (those plugins also instrument the `repeat { }` lambda body, ~+1 method per
 step, ~0.5% underestimate).
 
-| Variant | Platform | SS-start | Step mean (µs) | Baseline mean (µs) | Steady (µs) | Baseline steady (µs) | Methods/step | Overhead full (ns) | Overhead steady (ns) |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Variant | Platform | SS-start | Step mean (µs) | Baseline mean (µs) | Steady (µs) | Baseline steady (µs) | Envelope P10 (µs) | Baseline envelope (µs) | Methods/step | Overhead full (ns) | Overhead steady (ns) | Overhead envelope (ns) |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 "@
 
 foreach ($row in $overheadRows) {
-  $ss         = if ($null -ne $row.SteadyStateStart)         { "$($row.SteadyStateStart)" }                              else { "N/A" }
-  $stepMean   = if ($null -ne $row.StepMeanNanos)            { "{0:N2}" -f ($row.StepMeanNanos / 1000.0) }                else { "N/A" }
-  $baseMean   = if ($null -ne $row.BaselineStepNanos)        { "{0:N2}" -f ($row.BaselineStepNanos / 1000.0) }            else { "N/A" }
-  $stepSteady = if ($null -ne $row.SteadyStepNanos)          { "{0:N2}" -f ($row.SteadyStepNanos / 1000.0) }              else { "N/A" }
-  $baseSteady = if ($null -ne $row.BaselineSteadyStepNanos)  { "{0:N2}" -f ($row.BaselineSteadyStepNanos / 1000.0) }      else { "N/A" }
-  $mps        = if ($null -ne $row.MethodsPerStep)           { "$($row.MethodsPerStep)" }                                  else { "N/A" }
-  $ohFull     = if ($null -ne $row.OverheadNsFullRun)        { "{0:N1}" -f $row.OverheadNsFullRun }                       else { "N/A" }
-  $ohSteady   = if ($null -ne $row.OverheadNsSteadyState)    { "{0:N1}" -f $row.OverheadNsSteadyState }                   else { "N/A" }
-  $markdown += "`n| $($row.Variant) | $($row.Platform) | $ss | $stepMean | $baseMean | $stepSteady | $baseSteady | $mps | $ohFull | $ohSteady |"
+  $ss           = if ($null -ne $row.SteadyStateStart)           { "$($row.SteadyStateStart)" }                                else { "N/A" }
+  $stepMean     = if ($null -ne $row.StepMeanNanos)              { "{0:N2}" -f ($row.StepMeanNanos / 1000.0) }                  else { "N/A" }
+  $baseMean     = if ($null -ne $row.BaselineStepNanos)          { "{0:N2}" -f ($row.BaselineStepNanos / 1000.0) }              else { "N/A" }
+  $stepSteady   = if ($null -ne $row.SteadyStepNanos)            { "{0:N2}" -f ($row.SteadyStepNanos / 1000.0) }                else { "N/A" }
+  $baseSteady   = if ($null -ne $row.BaselineSteadyStepNanos)    { "{0:N2}" -f ($row.BaselineSteadyStepNanos / 1000.0) }        else { "N/A" }
+  $stepEnv      = if ($null -ne $row.EnvelopeStepNanos)          { "{0:N2}" -f ($row.EnvelopeStepNanos / 1000.0) }              else { "N/A" }
+  $baseEnv      = if ($null -ne $row.BaselineEnvelopeStepNanos)  { "{0:N2}" -f ($row.BaselineEnvelopeStepNanos / 1000.0) }      else { "N/A" }
+  $mps          = if ($null -ne $row.MethodsPerStep)             { "$($row.MethodsPerStep)" }                                    else { "N/A" }
+  $ohFull       = if ($null -ne $row.OverheadNsFullRun)          { "{0:N1}" -f $row.OverheadNsFullRun }                         else { "N/A" }
+  $ohSteady     = if ($null -ne $row.OverheadNsSteadyState)      { "{0:N1}" -f $row.OverheadNsSteadyState }                     else { "N/A" }
+  $ohEnvelope   = if ($null -ne $row.OverheadNsEnvelope)         { "{0:N1}" -f $row.OverheadNsEnvelope }                        else { "N/A" }
+  $markdown += "`n| $($row.Variant) | $($row.Platform) | $ss | $stepMean | $baseMean | $stepSteady | $baseSteady | $stepEnv | $baseEnv | $mps | $ohFull | $ohSteady | $ohEnvelope |"
 }
 
 # --- Per-step curve table: median µs at selected step indices --------------
