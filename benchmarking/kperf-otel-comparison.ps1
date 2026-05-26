@@ -282,8 +282,6 @@ $tracesDir   = Join-Path $resultsDir "traces"
 $methodsPerStep = @{}
 $tracePreserved = @{}
 
-$otelConfigPath = (Resolve-Path "$ScriptRoot\otel-config.yaml").Path
-
 function Invoke-Docker {
   param([string[]]$DockerArgs, [switch]$CaptureOutput)
   $prevEap = $ErrorActionPreference
@@ -302,21 +300,13 @@ function Invoke-Docker {
 }
 
 
-Invoke-Docker -DockerArgs @('network', 'create', 'otel-net')
+# Clean up any stale containers from previous runs. Jaeger (all-in-one) is the
+# only container used now — it accepts OTLP/gRPC on :4317 and OTLP/HTTP on
+# :4318 directly (since Jaeger 1.49), so the previous otel-collector hop is
+# redundant. Jaeger is started/stopped per-variant below so baseline and
+# k-perf rows don't see background CPU from an idle Jaeger container.
 Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector', 'jaeger')
-Invoke-Docker -DockerArgs @(
-  'run', '-d', '--name', 'jaeger', '--network', 'otel-net',
-  '-p', '16686:16686',
-  'jaegertracing/all-in-one:1.65.0',
-  '--collector.otlp.enabled=true'
-)
-if ($LASTEXITCODE -ne 0) {
-  throw "Failed to start jaeger container (docker run exited $LASTEXITCODE). Check Docker Desktop health and port 16686 availability."
-}
-# Jaeger needs a couple of seconds for the OTLP receiver to bind inside the
-# container (not exposed to the host, so we can't easily poll a port).
-Start-Sleep -Seconds 3
-Write-Host "Jaeger UI: http://localhost:16686 (services appear once a benchmark cell runs)" -ForegroundColor Cyan
+Write-Host "Jaeger UI will boot on demand at http://localhost:16686 once an otel-* variant runs." -ForegroundColor Cyan
 
 # Parse `### Elapsed time: <ns>` (total) and `!!! Elapsed time <i>: <ns>` (per-step).
 # Main.kt emits nanoseconds via `Duration.inWholeNanoseconds` — this picks up the
@@ -391,23 +381,24 @@ function Invoke-PostRunCleanup {
 foreach ($exe in $executables) {
   Write-Host ""
 
-  # Boot or stop the OTel Collector depending on whether this executable exports traces.
+  # Boot or stop the Jaeger backend depending on whether this executable
+  # exports traces. Jaeger all-in-one accepts OTLP natively on :4317 (gRPC)
+  # and :4318 (HTTP), so the apps talk to it directly with no OTel Collector
+  # hop in between. Stopped between non-otel rows so background CPU from an
+  # idle Jaeger container doesn't bias baseline / k-perf measurements.
   if ($exe.Name -match "otel") {
-    Write-Host "--- Booting OTel Collector via Docker ---"
-    Invoke-Docker -DockerArgs @('start', 'otel-collector')
+    Write-Host "--- Booting Jaeger (OTLP backend + UI) via Docker ---"
+    Invoke-Docker -DockerArgs @('start', 'jaeger')
     if ($LASTEXITCODE -ne 0) {
-      Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector')
-      # Attach to otel-net so the collector's otlp/jaeger exporter can resolve
-      # `jaeger:4317`. See the Phase 2 setup block at script entry.
+      Invoke-Docker -DockerArgs @('rm', '-f', 'jaeger')
       Invoke-Docker -DockerArgs @(
-        'run', '-d', '--name', 'otel-collector', '--network', 'otel-net',
-        '-p', '4317:4317', '-p', '4318:4318',
-        '-v', "${otelConfigPath}:/etc/otel-collector-config.yaml",
-        'otel/opentelemetry-collector-contrib:latest',
-        '--config=/etc/otel-collector-config.yaml'
+        'run', '-d', '--name', 'jaeger',
+        '-p', '4317:4317', '-p', '4318:4318', '-p', '16686:16686',
+        'jaegertracing/all-in-one:1.65.0',
+        '--collector.otlp.enabled=true'
       )
       if ($LASTEXITCODE -ne 0) {
-        throw "Failed to start otel-collector container (docker run exited $LASTEXITCODE). Check that ports 4317/4318 are free and Docker Desktop is healthy."
+        throw "Failed to start jaeger container (docker run exited $LASTEXITCODE). Check that ports 4317/4318/16686 are free and Docker Desktop is healthy."
       }
     }
 
@@ -419,14 +410,14 @@ foreach ($exe in $executables) {
       Start-Sleep -Milliseconds 500
     }
     if (-not $ready) {
-      Write-Host "otel-collector logs:" -ForegroundColor Yellow
-      Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'otel-collector') -CaptureOutput | ForEach-Object { Write-Host $_ }
-      throw "otel-collector did not start listening on :4317 within 30s."
+      Write-Host "jaeger logs:" -ForegroundColor Yellow
+      Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'jaeger') -CaptureOutput | ForEach-Object { Write-Host $_ }
+      throw "jaeger did not start listening on :4317 within 30s."
     }
   }
   else {
-    Write-Host "--- Stopping active OTel Collector to prevent caching/CPU interference for baseline metrics ---"
-    Invoke-Docker -DockerArgs @('stop', 'otel-collector')
+    Write-Host "--- Stopping Jaeger to prevent CPU interference for baseline / k-perf metrics ---"
+    Invoke-Docker -DockerArgs @('stop', 'jaeger')
   }
 
   Write-Host "--- Benchmarking: $($exe.Name) ---"
