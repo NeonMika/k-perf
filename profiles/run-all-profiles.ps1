@@ -12,7 +12,7 @@
 #   .\profiles\run-all-profiles.ps1 -TopN 50                  # bigger top-N tables
 
 param(
-  [string[]]$Variants  = @('k-perf','otel','otel-proto','otel-proto-timesource'),
+  [string[]]$Variants  = @('k-perf','otel','otel-proto','otel-proto-timesource','otel-proto-anchored'),
   [string[]]$Platforms = @('jvm','js','native'),
   [int]$TopN           = 30,
   [switch]$SkipCapture,                       # render markdown from already-captured profiles
@@ -96,6 +96,14 @@ $variantSpec = @{
     Js      = 'kmp-examples\comparison-otel-proto-timesource\build\js\packages\comparison-otel-proto-timesource\kotlin\comparison-otel-proto-timesource.js'
     Exe     = 'kmp-examples\comparison-otel-proto-timesource\build\bin\mingwX64\releaseExecutable\main.exe'
     JsDir   = 'js-otel-proto-timesource'
+    NeedsCollector = $true
+  }
+  'otel-proto-anchored' = @{
+    Display = 'otel-proto-anchored (Protobuf/gRPC + SDK AnchoredClock)'
+    Jar     = 'kmp-examples\comparison-otel-proto-anchored\build\lib\comparison-otel-proto-anchored-jvm-1.0.0.jar'
+    Js      = 'kmp-examples\comparison-otel-proto-anchored\build\js\packages\comparison-otel-proto-anchored\kotlin\comparison-otel-proto-anchored.js'
+    Exe     = 'kmp-examples\comparison-otel-proto-anchored\build\bin\mingwX64\releaseExecutable\main.exe'
+    JsDir   = 'js-otel-proto-anchored'
     NeedsCollector = $true
   }
 }

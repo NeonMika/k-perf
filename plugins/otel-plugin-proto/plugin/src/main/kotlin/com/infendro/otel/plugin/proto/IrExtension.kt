@@ -220,10 +220,42 @@ class IrExtension(
         // endregion
 
         // region
+        val println = getFunction("kotlin.io", "println") {
+            it.regularParams.size == 1
+                && it.regularParams[0].type == any.makeNullable()
+        }
+
+        val StringBuilder = when (platform) {
+            is JvmPlatform -> getClass("java.lang", "StringBuilder")
+            else -> getClass("kotlin.text", "StringBuilder")
+        }
+        val StringBuilder_constructor = StringBuilder.getConstructor {
+            it.regularParams.isEmpty()
+        }
+        val StringBuilder_appendString = StringBuilder.getFunction("append") {
+            it.regularParams.size == 1
+                && it.regularParams[0].type == string.makeNullable()
+        }
+        val StringBuilder_appendLong = StringBuilder.getFunction("append") {
+            it.regularParams.size == 1
+                && it.regularParams[0].type == long
+        }
+        val StringBuilder_toString = StringBuilder.getFunction("toString")
+
+        val Duration = getClass(
+            "kotlin.time",
+            "Duration"
+        )
+        val Duration_inWholeMilliseconds = Duration.getPropertyGetter("inWholeMilliseconds")!!
+
         val Instant = getClass(
             "kotlinx.datetime",
             "Instant"
         )
+        val Instant_minus = Instant.getFunction("minus") {
+            it.regularParams.size == 1
+                && it.regularParams[0].type == Instant.type()
+        }
 
         val Clock = getClass(
             "kotlinx.datetime",
@@ -314,6 +346,11 @@ class IrExtension(
         val await = getFunction("com.infendro.otel.util", "await") {
             it.regularParams.size == 1
                 && it.regularParams[0].type == Exporter.type()
+        }
+        val await_debug = getFunction("com.infendro.otel.util", "await") {
+            it.regularParams.size == 2
+                && it.regularParams[0].type == Exporter.type()
+                && it.regularParams[1].type == Instant.type()
         }
         val env = getFunction("com.infendro.otel.util", "env")
         // endregion
@@ -596,6 +633,16 @@ class IrExtension(
 
         fun IrFunction.modify() {
             body {
+                var start: IrVariable? = null
+                if (isMain() && debug) {
+                    // val start = Clock.System.now()
+                    start = irTemporary(
+                        call(now) {
+                            dispatchReceiver = irGetObject(System)
+                        }
+                    )
+                }
+
                 // val context = Context.current()
                 val context = irTemporary(
                     call(ContextCompanion_current) {
@@ -628,14 +675,69 @@ class IrExtension(
                         }
 
                         if (isMain()) {
+                            if (debug) {
+                                // val end = Clock.System.now()
+                                val end = irTemporary(
+                                    call(now) {
+                                        dispatchReceiver = irGetObject(System)
+                                    }
+                                )
+
+                                // val ms = (end - start).inWholeMilliseconds
+                                val duration = irTemporary(
+                                    call(Instant_minus) {
+                                        dispatchReceiver = irGet(end)
+                                        argument(0, irGet(start!!))
+                                    }
+                                )
+                                val ms = irTemporary(
+                                    call(Duration_inWholeMilliseconds) {
+                                        dispatchReceiver = irGet(duration)
+                                    }
+                                )
+
+                                // println("Execution finished - $ms ms elapsed")
+                                val builder = irTemporary(
+                                    call(StringBuilder_constructor)
+                                )
+                                +call(StringBuilder_appendString) {
+                                    dispatchReceiver = irGet(builder)
+                                    argument(0, irString("Execution finished - "))
+                                }
+                                +call(StringBuilder_appendLong) {
+                                    dispatchReceiver = irGet(builder)
+                                    argument(0, irGet(ms))
+                                }
+                                +call(StringBuilder_appendString) {
+                                    dispatchReceiver = irGet(builder)
+                                    argument(0, irString(" ms elapsed"))
+                                }
+                                val string = irTemporary(
+                                    call(StringBuilder_toString) {
+                                        dispatchReceiver = irGet(builder)
+                                    }
+                                )
+                                +call(println) {
+                                    argument(0, irGet(string))
+                                }
+                            }
+
                             // processor.shutdown()
                             +call(SpanProcessor_shutdown) {
                                 dispatchReceiver = irGetField(null, processor)
                             }
 
-                            // await(exporter)
-                            +call(await) {
-                                argument(0, irGetField(null, exporter))
+                            if (debug) {
+                                // await(exporter, start)
+                                +call(await_debug) {
+                                    argument(0, irGetField(null, exporter))
+                                    argument(1, irGet(start!!))
+                                }
+                            } else {
+                                // await(exporter)
+                                +call(await) {
+                                    argument(0, irGetField(null, exporter))
+                                }
                             }
                         }
                     }

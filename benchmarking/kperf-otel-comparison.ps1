@@ -202,6 +202,7 @@ Invoke-GradleBuild -Title "OTel Plugin Util (proto)" -Path ".\plugins\otel-plugi
 Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")
 
 Invoke-GradleBuild -Title "OTel Plugin (proto-timesource)" -Path ".\plugins\otel-plugin-proto-timesource\plugin" -Tasks @("publishToMavenLocal")
+Invoke-GradleBuild -Title "OTel Plugin (proto-anchored)" -Path ".\plugins\otel-plugin-proto-anchored\plugin" -Tasks @("publishToMavenLocal")
 
 Write-Host "=========================================="
 Write-Host "Compiling Comparison Projects"
@@ -212,6 +213,7 @@ Invoke-GradleBuild -Title "Comparison Project (k-perf)" -Path ".\kmp-examples\co
 Invoke-GradleBuild -Title "Comparison Project (otel)" -Path ".\kmp-examples\comparison-otel" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 Invoke-GradleBuild -Title "Comparison Project (otel-proto)" -Path ".\kmp-examples\comparison-otel-proto" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 Invoke-GradleBuild -Title "Comparison Project (otel-proto-timesource)" -Path ".\kmp-examples\comparison-otel-proto-timesource" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
+Invoke-GradleBuild -Title "Comparison Project (otel-proto-anchored)" -Path ".\kmp-examples\comparison-otel-proto-anchored" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
 
 
 # Path resolving for execution. StepCount is appended at run time as the
@@ -236,22 +238,29 @@ $otelProtoTsJvm    = "java -jar .\kmp-examples\comparison-otel-proto-timesource\
 $otelProtoTsJs     = "node .\kmp-examples\comparison-otel-proto-timesource\build\js\packages\comparison-otel-proto-timesource\kotlin\comparison-otel-proto-timesource.js"
 $otelProtoTsNative = ".\kmp-examples\comparison-otel-proto-timesource\build\bin\mingwX64\releaseExecutable\main.exe"
 
+$otelProtoAnchoredJvm    = "java -jar .\kmp-examples\comparison-otel-proto-anchored\build\lib\comparison-otel-proto-anchored-jvm-1.0.0.jar"
+$otelProtoAnchoredJs     = "node .\kmp-examples\comparison-otel-proto-anchored\build\js\packages\comparison-otel-proto-anchored\kotlin\comparison-otel-proto-anchored.js"
+$otelProtoAnchoredNative = ".\kmp-examples\comparison-otel-proto-anchored\build\bin\mingwX64\releaseExecutable\main.exe"
+
 $executables = @(
-  @{ Name = "baseline JVM";                   Command = $baselineJvm },
-  @{ Name = "k-perf JVM";                     Command = $kperfJvm },
-  @{ Name = "otel JVM";                       Command = $otelJvm },
-  @{ Name = "otel-proto JVM";                 Command = $otelProtoJvm },
-  @{ Name = "otel-proto-timesource JVM";      Command = $otelProtoTsJvm },
-  @{ Name = "baseline JS (Node)";             Command = $baselineJs },
-  @{ Name = "k-perf JS (Node)";               Command = $kperfJs },
-  @{ Name = "otel JS (Node)";                 Command = $otelJs },
-  @{ Name = "otel-proto JS (Node)";           Command = $otelProtoJs },
-  @{ Name = "otel-proto-timesource JS (Node)"; Command = $otelProtoTsJs },
-  @{ Name = "baseline Native (Win)";          Command = $baselineNative },
-  @{ Name = "k-perf Native (Win)";            Command = $kperfNative },
-  @{ Name = "otel Native (Win)";              Command = $otelNative },
-  @{ Name = "otel-proto Native (Win)";        Command = $otelProtoNative },
-  @{ Name = "otel-proto-timesource Native (Win)"; Command = $otelProtoTsNative }
+  @{ Name = "baseline JVM";                       Command = $baselineJvm },
+  @{ Name = "k-perf JVM";                         Command = $kperfJvm },
+  @{ Name = "otel JVM";                           Command = $otelJvm },
+  @{ Name = "otel-proto JVM";                     Command = $otelProtoJvm },
+  @{ Name = "otel-proto-timesource JVM";          Command = $otelProtoTsJvm },
+  @{ Name = "otel-proto-anchored JVM";            Command = $otelProtoAnchoredJvm },
+  @{ Name = "baseline JS (Node)";                 Command = $baselineJs },
+  @{ Name = "k-perf JS (Node)";                   Command = $kperfJs },
+  @{ Name = "otel JS (Node)";                     Command = $otelJs },
+  @{ Name = "otel-proto JS (Node)";               Command = $otelProtoJs },
+  @{ Name = "otel-proto-timesource JS (Node)";    Command = $otelProtoTsJs },
+  @{ Name = "otel-proto-anchored JS (Node)";      Command = $otelProtoAnchoredJs },
+  @{ Name = "baseline Native (Win)";              Command = $baselineNative },
+  @{ Name = "k-perf Native (Win)";                Command = $kperfNative },
+  @{ Name = "otel Native (Win)";                  Command = $otelNative },
+  @{ Name = "otel-proto Native (Win)";            Command = $otelProtoNative },
+  @{ Name = "otel-proto-timesource Native (Win)"; Command = $otelProtoTsNative },
+  @{ Name = "otel-proto-anchored Native (Win)";   Command = $otelProtoAnchoredNative }
 )
 
 Write-Host "=========================================="
