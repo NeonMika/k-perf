@@ -42,6 +42,7 @@ class IrExtension(
     val service: String?,
     val maxQueueSize: Int = 2048,
     val maxExportBatchSize: Int = Int.MAX_VALUE,
+    val useSimpleSpanProcessor: Boolean = false,
 ) : IrGenerationExtension {
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(
@@ -266,11 +267,16 @@ class IrExtension(
         val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
         val Exporter_constructor = Exporter.getConstructor()
 
+        val SpanProcessor = getClass(
+            "io.opentelemetry.kotlin.sdk.trace",
+            "SpanProcessor"
+        )
+        val SpanProcessor_shutdown = SpanProcessor.getFunction("shutdown")
+
         val Processor = getClass(
             "io.opentelemetry.kotlin.sdk.trace.export",
             "BatchSpanProcessor"
         )
-        val Processor_shutdown = Processor.getFunction("shutdown")
         val ProcessorCompanion = Processor.getClass("Companion")
         val ProcessorCompanion_builder = ProcessorCompanion.getFunction("builder")
 
@@ -281,6 +287,13 @@ class IrExtension(
         val ProcessorBuilder_setMaxQueueSize = ProcessorBuilder.getFunction("setMaxQueueSize")
         val ProcessorBuilder_setMaxExportBatchSize = ProcessorBuilder.getFunction("setMaxExportBatchSize")
         val ProcessorBuilder_build = ProcessorBuilder.getFunction("build")
+
+        val SimpleProcessor = getClass(
+            "io.opentelemetry.kotlin.sdk.trace.export",
+            "SimpleSpanProcessor"
+        )
+        val SimpleProcessorCompanion = SimpleProcessor.getClass("Companion")
+        val SimpleProcessorCompanion_create = SimpleProcessorCompanion.getFunction("create")
 
         val TracerProvider = getClass(
             "io.opentelemetry.kotlin.sdk.trace",
@@ -447,25 +460,39 @@ class IrExtension(
             }
         }
 
-        // val processor = BatchSpanProcessor
+        // When useSimpleSpanProcessor:
+        //   val processor: SpanProcessor = SimpleSpanProcessor.create(exporter)
+        // Otherwise:
+        //   val processor: SpanProcessor = BatchSpanProcessor
         //     .builder(exporter)
         //     .setMaxQueueSize(<maxQueueSize>)
         //     .setMaxExportBatchSize(<maxExportBatchSize>)
         //     .build()
+        // Field is typed as the SpanProcessor interface so the same field can
+        // hold either implementation; shutdown is resolved on the interface.
         val processor = buildField(
             name = "_processor",
-            type = Processor.type(),
+            type = SpanProcessor.type(),
             static = true,
         ) {
-            initializer = expression {
-                call(ProcessorBuilder_build) {
-                    dispatchReceiver = call(ProcessorBuilder_setMaxExportBatchSize) {
-                        argument(0, irInt(maxExportBatchSize))
-                        dispatchReceiver = call(ProcessorBuilder_setMaxQueueSize) {
-                            argument(0, irInt(maxQueueSize))
-                            dispatchReceiver = call(ProcessorCompanion_builder) {
-                                argument(0, irGetField(null, exporter))
-                                dispatchReceiver = irGetObject(ProcessorCompanion)
+            initializer = if (useSimpleSpanProcessor) {
+                expression {
+                    call(SimpleProcessorCompanion_create) {
+                        dispatchReceiver = irGetObject(SimpleProcessorCompanion)
+                        argument(0, irGetField(null, exporter))
+                    }
+                }
+            } else {
+                expression {
+                    call(ProcessorBuilder_build) {
+                        dispatchReceiver = call(ProcessorBuilder_setMaxExportBatchSize) {
+                            argument(0, irInt(maxExportBatchSize))
+                            dispatchReceiver = call(ProcessorBuilder_setMaxQueueSize) {
+                                argument(0, irInt(maxQueueSize))
+                                dispatchReceiver = call(ProcessorCompanion_builder) {
+                                    argument(0, irGetField(null, exporter))
+                                    dispatchReceiver = irGetObject(ProcessorCompanion)
+                                }
                             }
                         }
                     }
@@ -696,7 +723,7 @@ class IrExtension(
                             }
 
                             // processor.shutdown()
-                            +call(Processor_shutdown) {
+                            +call(SpanProcessor_shutdown) {
                                 dispatchReceiver = irGetField(null, processor)
                             }
 

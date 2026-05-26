@@ -28,12 +28,17 @@ val otelProtoMaxExportBatchSize = providers.gradleProperty("otelProtoMaxExportBa
     .map { it.toInt() }
     .getOrElse(Int.MAX_VALUE)
 
+val otelProtoUseSimpleProcessor = providers.gradleProperty("otelProtoUseSimpleProcessor")
+    .map { it.toBoolean() }
+    .getOrElse(false)
+
 otelProto {
     host = "localhost:4317"
     service = "comparison-otel-proto"
     debug = true
     maxQueueSize = otelProtoMaxQueueSize
     maxExportBatchSize = otelProtoMaxExportBatchSize
+    useSimpleSpanProcessor = otelProtoUseSimpleProcessor
 }
 
 kotlin {

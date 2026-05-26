@@ -6,6 +6,7 @@ import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_HOST
 import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_MAX_EXPORT_BATCH_SIZE
 import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_MAX_QUEUE_SIZE
 import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_SERVICE
+import com.infendro.otel.plugin.proto.ConfigurationKeys.KEY_USE_SIMPLE_SPAN_PROCESSOR
 import org.jetbrains.kotlin.compiler.plugin.*
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -50,6 +51,12 @@ class Processor : CommandLineProcessor {
             "<int>",
             "BatchSpanProcessor maxExportBatchSize (default Int.MAX_VALUE)",
             required = false
+        ),
+        CliOption(
+            "useSimpleSpanProcessor",
+            "<true|false>",
+            "use SimpleSpanProcessor (sync export, no batching) instead of BatchSpanProcessor (default false)",
+            required = false
         )
     )
 
@@ -65,6 +72,7 @@ class Processor : CommandLineProcessor {
             "service" -> configuration.put(KEY_SERVICE, value)
             "maxQueueSize" -> configuration.put(KEY_MAX_QUEUE_SIZE, value.toInt())
             "maxExportBatchSize" -> configuration.put(KEY_MAX_EXPORT_BATCH_SIZE, value.toInt())
+            "useSimpleSpanProcessor" -> configuration.put(KEY_USE_SIMPLE_SPAN_PROCESSOR, value.toBoolean())
             else -> throw CliOptionProcessingException("unknown option: ${option.optionName}")
         }
     }
