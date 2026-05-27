@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 20,
+    "StepCount": 500,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,16 +14,19 @@
       true
     ],
     "FlushEarly": [
+      true,
       false
     ],
     "InstrumentPropertyAccessors": [
+      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*"
+      ".*",
+      "step"
     ]
   },
   "machineInfo": {
@@ -31,17 +34,17 @@
     "DeviceModel": "Virtual Machine",
     "OS": "Ubuntu 24.04.4 LTS",
     "OSArchitecture": "x86_64",
-    "CPU": "AMD EPYC 7763 64-Core Processor",
+    "CPU": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 13.91,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 86,
-    "SystemUptimeHours": 0.15,
+    "SystemUptimeHours": 0.03,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 151,
+    "RunningProcessCount": 162,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.4.15",
     "JavaVersion": "21.0.11",
@@ -50,13 +53,13 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "d3ff2791c4b4e395757ecd7385a6fd3c39cec958",
+    "GitCommitHash": "9e1f4b48fb65860b10b8307a0dfb069bcc9febe2",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-05-27 02:13:38"
+    "CollectionTimestamp": "2026-05-27 04:04:50"
   },
-  "buildTimeMs": 4683.7798,
-  "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-  "repetitions": 3,
+  "buildTimeMs": 5862.585,
+  "executable": "commonmain-plain-node",
+  "repetitions": 50,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
