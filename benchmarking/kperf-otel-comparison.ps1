@@ -745,8 +745,7 @@ $markdown += @"
 
 ## Execution Summary
 
-Total time = wall-clock of the whole process (warmup + StepCount steps + plugin teardown).
-Step time = mean across all flat per-step samples (RunCount × StepCount samples).
+Total = wall-clock per process. Step = mean across RunCount × StepCount samples.
 
 | Executable | Iterations | Total mean (ms) | Total median (ms) | Step mean (µs) | Step median (µs) | Step stddev (µs) |
 |------------|-----------:|----------------:|------------------:|---------------:|-----------------:|-----------------:|
@@ -767,33 +766,13 @@ $markdown += @"
 
 ## Overhead per instrumented method
 
-Three overhead numbers per (variant, platform):
-- **Full-run** uses the arithmetic mean over *all* per-step samples
-  (RunCount × StepCount). Heavily biased by the first ~5–10 cold steps on
-  JVM where step 0 alone can be 1000× the steady-state cost — so this
-  overestimates the warm-state overhead.
-- **Steady-state** uses the auto-detected stable region (`SS-start`): the
-  first step index whose per-step median (across runs) is within 2× the
-  median of the latter-50% tail. Recommended quotation when reporting
-  "cost of one instrumented method call at warm steady state".
-- **Envelope (P10)** is the 10th-percentile per-step median over the
-  steady region. For otel-* rows the steady region contains a sawtooth
-  of quiet steps interleaved with batch-flush spikes; the arithmetic
-  mean blends both into a single inflated number that hides the
-  per-method instrumentation cost behind amortized flush work. The P10
-  envelope picks the quietest samples and approximates "what one
-  instrumented method costs when no flush is occurring". Useful as a
-  lower bound; compare against `Overhead steady (ns)` to read off the
-  flush-amortization share.
+``overhead_ns/method = (step_ns_instrumented − step_ns_baseline) / methods_per_step``
 
-`overhead_ns_per_method = (step_ns_instrumented − step_ns_baseline) / methods_per_step`
-(per-step timings are collected at nanosecond resolution via `Duration.inWholeNanoseconds`
-and the QPC/hrtime backing clocks; display columns below show µs/ms for readability.)
+- **Full**: mean over all steps. Cold-JVM-biased.
+- **Steady**: mean from ``SS-start`` onward (first step ≤ 2× tail-median). Quote this.
+- **Envelope (P10)**: 10th percentile of steady-region per-step medians. Sawtooth-aware lower bound.
 
-methods_per_step is derived from the preserved k-perf trace under `traces/`
-(trace lines / 2 / StepCount). For the otel-* variants this is a lower bound
-(those plugins also instrument the `repeat { }` lambda body, ~+1 method per
-step, ~0.5% underestimate).
+methods/step from preserved k-perf trace (``traces/``); otel-* underestimate by ~0.5 % (skipped ``repeat { }`` lambda body).
 
 | Variant | Platform | SS-start | Step mean (µs) | Baseline mean (µs) | Steady (µs) | Baseline steady (µs) | Envelope P10 (µs) | Baseline envelope (µs) | Methods/step | Overhead full (ns) | Overhead steady (ns) | Overhead envelope (ns) |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -827,13 +806,7 @@ $markdown += @"
 
 ## Per-step median curve (µs)
 
-Per-step median across all $RunCount runs, sampled at selected step indices.
-Shows the JIT warm-up shape: cold steps on the left, steady-state on the
-right. Full data (every step) is in `per_step_medians.csv` and in
-`results.json` under `Results[*].PerStepMedians`.
-
-Sawtooth pattern in otel-* rows is BatchSpanProcessor flushes intersecting
-the dcxp persistent-list O(n²) bug (GEMINI.md Finding #1, 2026-05-04).
+Sampled step indices across $RunCount runs. otel-* sawtooth = BSP flushes. Full data in ``per_step_medians.csv`` / ``results.json::Results[*].PerRunStepNanos``.
 
 | Variant | Platform | $($curveHeaderCells -join ' | ') |
 |---|---|$curveDivider|
@@ -858,28 +831,7 @@ foreach ($res in $allResults) {
 
 $markdown += @"
 
-
-## Per-step times (JIT warmup curves)
-
-Full per-step medians (one value per step index, across all runs) are in
-`per_step_medians.csv` for plotting (units: nanoseconds). The raw
-per-(run × step) ns samples are in `results.json` under
-`Results[*].PerRunStepNanos`.
-
-Notes on interpretation:
-- **JVM** HotSpot tiered compilation has two thresholds (~200 calls for C1,
-  ~10k for C2). With ~180 user methods per step, expect two inflection
-  points: one near step 1–2 and another near step 55. In practice the
-  observed curve often shows a single steep drop in the first 5–10 steps
-  followed by a slow tail — the second knee can be invisible when the hot
-  path is trivial.
-- **JS** V8 uses Ignition → Sparkplug → Maglev → Turbofan tiers; different
-  curve shape than JVM.
-- **Kotlin/Native** is AOT — expect flat from step 1.
-- **otel-* variants** have monotonic upward drift + periodic spikes
-  superimposed on the JIT curve from the dcxp
-  `BatchSpanProcessor.removeSpanDataFromBatch` O(n²) bug. Steady-state
-  overhead averages over both quiet and spike samples.
+> Curve shape: JVM C1≈step 1-2, C2≈step 55. JS V8 tiered. Native AOT (flat). otel-* drift + sawtooth = dcxp BSP/persistent-list interaction.
 "@
 
 $markdown | Out-File $mdFile -Encoding utf8

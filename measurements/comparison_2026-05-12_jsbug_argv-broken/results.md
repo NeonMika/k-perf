@@ -28,8 +28,7 @@
 
 ## Execution Summary
 
-Total time = wall-clock of the whole process (warmup + StepCount steps + plugin teardown).
-Step time = mean across all flat per-step samples (RunCount Ã— StepCount samples).
+Total = wall-clock per process. Step = mean across RunCount × StepCount samples.
 
 | Executable | Iterations | Total mean (ms) | Total median (ms) | Step mean (Âµs) | Step median (Âµs) | Step stddev (Âµs) |
 |------------|-----------:|----------------:|------------------:|---------------:|-----------------:|-----------------:|
@@ -51,12 +50,12 @@ Step time = mean across all flat per-step samples (RunCount Ã— StepCount samp
 
 ## Overhead per instrumented method
 
-overhead_ns_per_method = (step_mean_Âµs_instrumented âˆ’ step_mean_Âµs_baseline) Ã— 1000 / methods_per_step
+`overhead_ns/method = (step_ns_instrumented − step_ns_baseline) / methods_per_step`
 
-methods_per_step is derived from the preserved k-perf trace under 	races/
-(trace lines / 2 / StepCount). For the otel-* variants this is a lower bound
-since those plugins also instrument the epeat { } lambda body itself
-(~+1 method per step, ~0.5% systematic underestimate).
+- **Full**: mean over all steps. Cold-JVM-biased.
+- **Steady**: mean from `SS-start` onward (first step ≤ 2× tail-median). Quote this.
+
+methods/step from preserved k-perf trace (`traces/`); otel-* underestimate by ~0.5 % (skipped `repeat { }` lambda body).
 
 | Variant | Platform | Step mean (Âµs) | Baseline step (Âµs) | Methods/step | Overhead (ns/method) |
 |---|---|---:|---:|---:|---:|
@@ -75,18 +74,4 @@ since those plugins also instrument the epeat { } lambda body itself
 
 ## Per-step times (JIT warmup curves)
 
-Full per-step samples are in esults.json under Results[*].PerRunStepMicros
-(shape: RunCount Ã— StepCount). To plot the JIT warmup curve, take the per-step
-median across runs for a given (variant, platform).
-
-Notes on interpretation:
-- **JVM** HotSpot tiered compilation has two thresholds (~200 calls for C1,
-  ~10k for C2). With ~180 user methods per step, expect two inflection
-  points: one near step 1â€“2 and another near step 55.
-- **JS** V8 uses Ignition â†’ Sparkplug â†’ Maglev â†’ Turbofan tiers; different
-  curve shape than JVM.
-- **Kotlin/Native** is AOT â€” expect flat from step 1.
-- **otel-* variants** have monotonic upward drift superimposed on the JIT
-  curve from the dcxp BatchSpanProcessor.removeSpanDataFromBatch O(nÂ²) bug
-  (GEMINI.md Finding #1, 2026-05-04). For "steady-state" otel numbers, ignore
-  steps before the C2 knee and average over the tail.
+> Curve shape: JVM C1≈step 1-2, C2≈step 55. JS V8 tiered. Native AOT (flat). otel-* drift + sawtooth = dcxp BSP/persistent-list interaction.
