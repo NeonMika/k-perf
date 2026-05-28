@@ -9,7 +9,7 @@ from typing import Optional
 
 from benchmark_types import GameType, IoaConfig, KPerfConfig, get_game_type_string
 from gradle_utils import (
-    GRADLEW_CMD,
+    gradlew_for,
     invoke_gradle_clean,
     invoke_kmp_build_with_timings,
 )
@@ -42,7 +42,7 @@ def build_kir_helper_kit() -> dict[str, float]:
 
     path = _REPO_ROOT / "KIRHelperKit"
     start = time.monotonic()
-    result = subprocess.run([GRADLEW_CMD, "build", "publishToMavenLocal"], cwd=path)
+    result = subprocess.run([gradlew_for(path), "build", "publishToMavenLocal"], cwd=path)
     duration_ms = (time.monotonic() - start) * 1000
 
     if result.returncode != 0:
@@ -64,7 +64,7 @@ def build_k_perf_plugin() -> dict[str, float]:
 
     path = _REPO_ROOT / "plugins" / "k-perf"
     start = time.monotonic()
-    result = subprocess.run([GRADLEW_CMD, "build", "publishToMavenLocal"], cwd=path)
+    result = subprocess.run([gradlew_for(path), "build", "publishToMavenLocal"], cwd=path)
     duration_ms = (time.monotonic() - start) * 1000
 
     if result.returncode != 0:
@@ -86,7 +86,7 @@ def build_instrumentation_overhead_analyzer_plugin() -> dict[str, float]:
 
     path = _REPO_ROOT / "plugins" / "instrumentation-overhead-analyzer"
     start = time.monotonic()
-    result = subprocess.run([GRADLEW_CMD, "build", "publishToMavenLocal"], cwd=path)
+    result = subprocess.run([gradlew_for(path), "build", "publishToMavenLocal"], cwd=path)
     duration_ms = (time.monotonic() - start) * 1000
 
     if result.returncode != 0:
