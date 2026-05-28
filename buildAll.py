@@ -26,7 +26,7 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(_REPO_ROOT / "benchmarking"))
 
-from gradle_utils import GRADLEW_CMD, invoke_kmp_build  # noqa: E402
+from gradle_utils import gradlew_for, invoke_kmp_build  # noqa: E402
 
 
 def _run_gradle(title: str, path: Path, tasks: list[str], clean_build: bool) -> None:
@@ -37,7 +37,7 @@ def _run_gradle(title: str, path: Path, tasks: list[str], clean_build: bool) -> 
     print(f"Tasks: {' '.join(tasks)}")
     print("==========================================")
 
-    cmd = ([GRADLEW_CMD, "clean"] if clean_build else [GRADLEW_CMD]) + tasks
+    cmd = ([gradlew_for(path), "clean"] if clean_build else [gradlew_for(path)]) + tasks
     result = subprocess.run(cmd, cwd=path)
     if result.returncode != 0:
         print(f"ERROR: {title} failed with exit code {result.returncode}")
