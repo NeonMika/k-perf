@@ -246,20 +246,15 @@ class IrExtension(
             "Duration"
         )
         val Duration_inWholeMilliseconds = Duration.getPropertyGetter("inWholeMilliseconds")!!
-        // CHANGE vs otel-plugin-proto: added.
-        // used per span to convert TimeMark's elapsedNow() Duration into a Long nanos value.
+        // CHANGE vs otel-plugin-proto: used per span to convert TimeMark's
+        // elapsedNow() Duration into a Long nanos value passed directly as
+        // the span's start/end timestamp.
         val Duration_inWholeNanoseconds = Duration.getPropertyGetter("inWholeNanoseconds")!!
 
         val Instant = getClass(
             "kotlinx.datetime",
             "Instant"
         )
-        // CHANGE vs otel-plugin-proto: replaces the Instant.minus(Instant) resolution
-        // We don't subtract two wall-clock Instants any more, we derive the anchor's nanos-since-epoch at module load and use Long arithmetic.
-        val Instant_toEpochMilliseconds = Instant.getFunction("toEpochMilliseconds") {
-            it.regularParams.isEmpty()
-        }
-        val Instant_nanosecondsOfSecond = Instant.getPropertyGetter("nanosecondsOfSecond")!!
 
         val Clock = getClass(
             "kotlinx.datetime",
@@ -268,10 +263,9 @@ class IrExtension(
         val System = Clock.getClass("System")
         val now = System.getFunction("now")
 
-        // CHANGE vs otel-plugin-proto:
-        // (TimeSource, TimeMark, DateTimeUnit, Long.plus / Long.times, Int.toLong) are new resolutions
-        // needed in
-        //   _anchorEpochNanos + _benchmarkMark.elapsedNow().inWholeNanoseconds.
+        // CHANGE vs otel-plugin-proto: TimeSource.Monotonic.markNow() captures
+        // a monotonic reference once at module load; per-span timestamps are
+        // just `_benchmarkMark.elapsedNow().inWholeNanoseconds`.
         val TimeSource = getClass("kotlin.time", "TimeSource")
         val TimeSource_markNow = TimeSource.getFunction("markNow")
         val TimeSource_Monotonic = TimeSource.getClass("Monotonic")
@@ -283,18 +277,6 @@ class IrExtension(
         val DateTimeUnitCompanion = DateTimeUnit.getClass("Companion")
         val DateTimeUnitCompanion_NANOSECOND = DateTimeUnitCompanion.getPropertyGetter("NANOSECOND")
             ?: throw Exception("kotlinx.datetime.DateTimeUnit.Companion.NANOSECOND not found")
-
-        val Long_class = getClass("kotlin", "Long")
-        val Long_plus = Long_class.getFunction("plus") {
-            it.regularParams.size == 1 && it.regularParams[0].type == long
-        }
-        val Long_times = Long_class.getFunction("times") {
-            it.regularParams.size == 1 && it.regularParams[0].type == long
-        }
-        val Int_class = getClass("kotlin", "Int")
-        val Int_toLong = Int_class.getFunction("toLong") {
-            it.regularParams.isEmpty()
-        }
 
         val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
         val Exporter_constructor = Exporter.getConstructor()
@@ -548,52 +530,22 @@ class IrExtension(
             }
         }
 
-        // CHANGE vs otel-plugin-proto: three new top-level static fields
-        // (_anchor, _anchorEpochNanos, _benchmarkMark)
-        // needed to replace Clock.System.now()
-
-        // region timesource fields
-
-        // val anchor = Clock.System.now()
-        val anchor = buildField(
-            name = "_anchor",
-            type = Instant.type(),
-            static = true,
-        ) {
-            initializer = expression {
-                call(now) {
-                    dispatchReceiver = irGetObject(System)
-                }
-            }
-        }
-
-        // val anchorEpochNanos = anchor.toEpochMilliseconds() * 1_000_000L
-        //                          + anchor.nanosecondsOfSecond.toLong()
-        val anchorEpochNanos = buildField(
-            name = "_anchorEpochNanos",
-            type = long,
-            static = true,
-        ) {
-            initializer = expression {
-                call(Long_plus) {
-                    // (anchor.toEpochMilliseconds() * 1_000_000L)
-                    dispatchReceiver = call(Long_times) {
-                        dispatchReceiver = call(Instant_toEpochMilliseconds) {
-                            dispatchReceiver = irGetField(null, anchor)
-                        }
-                        argument(0, irLong(1_000_000L))
-                    }
-                    // + anchor.nanosecondsOfSecond.toLong()
-                    argument(0, call(Int_toLong) {
-                        dispatchReceiver = call(Instant_nanosecondsOfSecond) {
-                            dispatchReceiver = irGetField(null, anchor)
-                        }
-                    })
-                }
-            }
-        }
-
-        // val benchmarkMark = TimeSource.Monotonic.markNow()
+        // CHANGE vs otel-plugin-proto: one top-level static field, _benchmarkMark.
+        //
+        // No wall-clock anchor at all. Per span we pass
+        //   _benchmarkMark.elapsedNow().inWholeNanoseconds
+        // directly as the (Long, NANOSECOND) timestamp to setStartTimestamp /
+        // Span.end. OTLP interprets that Long as "nanoseconds since Unix epoch",
+        // so all spans are timestamped relative to Unix epoch + program-start
+        // (i.e. they show up around 1970-01-01 in Jaeger's UI). DURATIONS stay
+        // exact (end - start is anchor-translation-invariant); only the absolute
+        // placement on the timeline is wrong, which doesn't matter for our
+        // benchmark — we measure via Main.kt's inWholeNanoseconds prints, not
+        // via Jaeger.
+        //
+        // This is the literal implementation of the supervisor's suggestion
+        // "ONE markNow at the top of the program + elapsedNow at the start
+        // and end of each method".
         val benchmarkMark = buildField(
             name = "_benchmarkMark",
             type = TimeMark.type(),
@@ -605,7 +557,6 @@ class IrExtension(
                 }
             }
         }
-        // endregion
 
         firstFile.addChildren(fields)
         // endregion
@@ -640,24 +591,22 @@ class IrExtension(
                     argument(0, irGet(context))
                 }
 
-                // CHANGE vs otel-plugin-proto:
-                // proto variant used setStartTimestamp(Clock.System.now()) here,
-                // we now use the start timestamp from the cached anchor +
-                // a monotonic offset, passing it to the (Long, DateTimeUnit) overload
+                // CHANGE vs otel-plugin-proto: pass elapsed-since-module-load
+                // nanoseconds directly as the start timestamp. No anchor add.
+                // OTLP treats this Long as nanoseconds-since-Unix-epoch, so
+                // spans land near 1970-01-01 in Jaeger's UI; durations remain
+                // exact.
                 //
                 // spanBuilder.setStartTimestamp(
-                //     _anchorEpochNanos + _benchmarkMark.elapsedNow().inWholeNanoseconds,
+                //     _benchmarkMark.elapsedNow().inWholeNanoseconds,
                 //     DateTimeUnit.NANOSECOND
                 // )
                 +call(SpanBuilder_setStartTimestamp) {
                     dispatchReceiver = irGet(spanBuilder)
-                    argument(0, call(Long_plus) {
-                        dispatchReceiver = irGetField(null, anchorEpochNanos)
-                        argument(0, call(Duration_inWholeNanoseconds) {
-                            dispatchReceiver = call(TimeMark_elapsedNow) {
-                                dispatchReceiver = irGetField(null, benchmarkMark)
-                            }
-                        })
+                    argument(0, call(Duration_inWholeNanoseconds) {
+                        dispatchReceiver = call(TimeMark_elapsedNow) {
+                            dispatchReceiver = irGetField(null, benchmarkMark)
+                        }
                     })
                     argument(1, call(DateTimeUnitCompanion_NANOSECOND) {
                         dispatchReceiver = irGetObject(DateTimeUnitCompanion)
@@ -701,22 +650,19 @@ class IrExtension(
                     dispatchReceiver = irGet(regularParams[1])
                 }
 
-                // CHANGE vs otel-plugin-proto:
-                // same swap as in _startSpan
+                // CHANGE vs otel-plugin-proto: same as in _startSpan — pass
+                // elapsed-since-module-load nanos directly as the end timestamp.
                 //
                 // span.end(
-                //     _anchorEpochNanos + _benchmarkMark.elapsedNow().inWholeNanoseconds,
+                //     _benchmarkMark.elapsedNow().inWholeNanoseconds,
                 //     DateTimeUnit.NANOSECOND
                 // )
                 +call(Span_end) {
                     dispatchReceiver = irGet(regularParams[0])
-                    argument(0, call(Long_plus) {
-                        dispatchReceiver = irGetField(null, anchorEpochNanos)
-                        argument(0, call(Duration_inWholeNanoseconds) {
-                            dispatchReceiver = call(TimeMark_elapsedNow) {
-                                dispatchReceiver = irGetField(null, benchmarkMark)
-                            }
-                        })
+                    argument(0, call(Duration_inWholeNanoseconds) {
+                        dispatchReceiver = call(TimeMark_elapsedNow) {
+                            dispatchReceiver = irGetField(null, benchmarkMark)
+                        }
                     })
                     argument(1, call(DateTimeUnitCompanion_NANOSECOND) {
                         dispatchReceiver = irGetObject(DateTimeUnitCompanion)
@@ -730,6 +676,19 @@ class IrExtension(
 
         fun IrFunction.modify() {
             body {
+                // Capture a wall-clock Instant at main entry ONLY for the debug
+                // await call (which logs "elapsed since start" via util-proto's
+                // await(exporter, start: Instant) overload). Not used per-span;
+                // doesn't enter the hot path.
+                var start: IrVariable? = null
+                if (isMain() && debug) {
+                    start = irTemporary(
+                        call(now) {
+                            dispatchReceiver = irGetObject(System)
+                        }
+                    )
+                }
+
                 // val context = Context.current()
                 val context = irTemporary(
                     call(ContextCompanion_current) {
@@ -812,15 +771,13 @@ class IrExtension(
                             }
 
                             if (debug) {
-                                // CHANGE vs otel-plugin-proto:
-                                //   proto variant passed the local start Instant
-                                //   that was captured at main entry
-                                //   we dont capture that and pass the cached _anchor field instead so
-                                //   util-proto await(exporter, start: Instant) stays unchanged
-                                // await(exporter, _anchor)
+                                // await(exporter, start) — start is the local
+                                // Clock.System.now() captured at main entry, only
+                                // used here for util-proto's elapsed-since-start
+                                // log line. Not in the per-span hot path.
                                 +call(await_debug) {
                                     argument(0, irGetField(null, exporter))
-                                    argument(1, irGetField(null, anchor))
+                                    argument(1, irGet(start!!))
                                 }
                             } else {
                                 // await(exporter)
