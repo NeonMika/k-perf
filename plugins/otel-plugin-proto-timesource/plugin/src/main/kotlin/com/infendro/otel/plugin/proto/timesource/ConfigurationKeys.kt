@@ -9,4 +9,5 @@ object ConfigurationKeys {
     val KEY_SERVICE: CompilerConfigurationKey<String> = CompilerConfigurationKey.create("service")
     val KEY_MAX_QUEUE_SIZE: CompilerConfigurationKey<Int> = CompilerConfigurationKey.create("maxQueueSize")
     val KEY_MAX_EXPORT_BATCH_SIZE: CompilerConfigurationKey<Int> = CompilerConfigurationKey.create("maxExportBatchSize")
+    val KEY_INSTRUMENT_PROPERTY_ACCESSORS: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("instrumentPropertyAccessors")
 }

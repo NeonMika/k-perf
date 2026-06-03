@@ -43,6 +43,8 @@ class KPerfExtension(
 
   val STRINGBUILDER_MODE = false
 
+  // Compile-time debug log. Lines are appended via printText() during IR
+  // transformation, NOT at runtime in the instrumented program.
   val debugFile = File("./DEBUG.txt")
 
   init {
@@ -107,8 +109,27 @@ class KPerfExtension(
 
   @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-    val timeMarkClass: IrClassSymbol =
-      pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeMark"))!!
+
+    //1. IR-building helpers
+    //
+    // Unlike the otel-plugin family this file does NOT define a DSL
+    // (buildField {}, call() etc.). All IR construction below uses the raw
+    // pluginContext.irFactory and irCall(...) APIs.
+
+    val firstFile = moduleFragment.files[0]
+
+    // 2. Symbol resolution
+    // 2.1 Kotlin stdlib (println, StringBuilder, toString)
+
+    val printlnFunc =
+      pluginContext.referenceFunctions(
+        CallableId(FqName("kotlin.io"), Name.identifier("println"))
+      )
+        .single {
+          it.owner.parameters.run {
+            size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType
+          }
+        }
 
     val stringBuilderClassId = ClassId.fromString("kotlin/text/StringBuilder")
     // In JVM, StringBuilder is a type alias (see
@@ -142,15 +163,25 @@ class KPerfExtension(
                 pluginContext.irBuiltIns.stringType.makeNullable()
       }
 
-    val printlnFunc =
-      pluginContext.referenceFunctions(
-        CallableId(FqName("kotlin.io"), Name.identifier("println"))
-      )
-        .single {
-          it.owner.parameters.run {
-            size == 1 && get(0).type == pluginContext.irBuiltIns.anyNType
-          }
-        }
+    val toStringFunc =
+      pluginContext
+        .referenceFunctions(CallableId(FqName("kotlin"), Name.identifier("toString")))
+        .single()
+
+    // 2.2 kotlin.time — MEASUREMENT clock source
+    //
+    // _enter_method captures TimeSource.Monotonic.markNow().
+    // _exit_method computes startTime.elapsedNow().inWholeMicroseconds.
+    // The microseconds value is the number written into the trace file
+    // and is what supervisor / paper numbers ultimately come from.
+
+    val timeMarkClass: IrClassSymbol =
+      pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeMark"))!!
+
+    // 2.3 kotlinx.io — trace + symbols file sinks
+    //
+    // The output trace file is the runtime artifact this plugin produces.
+    // Every instrumented function entry/exit appends to it.
 
     val rawSinkClass = pluginContext.referenceClass(ClassId.fromString("kotlinx/io/RawSink"))!!
 
@@ -207,14 +238,29 @@ class KPerfExtension(
         )
         .single()
     debugFile.appendText("2")
-    val toStringFunc =
-      pluginContext
-        .referenceFunctions(CallableId(FqName("kotlin"), Name.identifier("toString")))
-        .single()
+
     debugFile.appendText("3")
 
-    val firstFile = moduleFragment.files[0]
+    // 2.4 kotlin.random — used to pick a per-process trace filename suffix
 
+    val randomDefaultObjectClass =
+      pluginContext.referenceClass(ClassId.fromString("kotlin/random/Random.Default"))!!
+    val nextIntFunc =
+      pluginContext.referenceFunctions(
+        CallableId(
+          FqName("kotlin.random"),
+          FqName("Random.Default"),
+          Name.identifier("nextInt")
+        )
+      )
+        .single { it.owner.hasShape(true, regularParameters = 0) }
+
+    // 3. Static fields
+    //
+    // All injected into firstFile. Initializers run once at module load.
+
+    // IR ↓
+    //   private val _stringBuilder = StringBuilder()
     val stringBuilder: IrField =
       pluginContext.irFactory
         .buildField {
@@ -238,18 +284,8 @@ class KPerfExtension(
     firstFile.declarations.add(stringBuilder)
     stringBuilder.parent = firstFile
 
-    val randomDefaultObjectClass =
-      pluginContext.referenceClass(ClassId.fromString("kotlin/random/Random.Default"))!!
-    val nextIntFunc =
-      pluginContext.referenceFunctions(
-        CallableId(
-          FqName("kotlin.random"),
-          FqName("Random.Default"),
-          Name.identifier("nextInt")
-        )
-      )
-        .single { it.owner.hasShape(true, regularParameters = 0) }
-
+    // IR ↓
+    //   private val _randNumber = Random.Default.nextInt()
     val randomNumber =
       pluginContext.irFactory
         .buildField {
@@ -272,6 +308,8 @@ class KPerfExtension(
     firstFile.declarations.add(randomNumber)
     randomNumber.parent = firstFile
 
+    // IR ↓
+    //   private val _bufferedTraceFileName = "./trace_<platform>_${_randNumber}.txt"
     val bufferedTraceFileName =
       pluginContext.irFactory
         .buildField {
@@ -301,6 +339,9 @@ class KPerfExtension(
     firstFile.declarations.add(bufferedTraceFileName)
     bufferedTraceFileName.parent = firstFile
 
+    // IR ↓
+    //   private val _bufferedTraceFileSink: RawSink =
+    //       SystemFileSystem.sink(Path(_bufferedTraceFileName)).buffered()
     val bufferedTraceFileSink =
       pluginContext.irFactory
         .buildField {
@@ -339,6 +380,8 @@ class KPerfExtension(
       +irCall(flushFunc).apply { dispatchReceiver = irGetField(null, bufferedTraceFileSink) }
     }
 
+    // IR ↓
+    //   private val _bufferedSymbolsFileName = "./symbols_<platform>_${_randNumber}.txt"
     val bufferedSymbolsFileName =
       pluginContext.irFactory
         .buildField {
@@ -368,6 +411,9 @@ class KPerfExtension(
     firstFile.declarations.add(bufferedSymbolsFileName)
     bufferedSymbolsFileName.parent = firstFile
 
+    // IR ↓
+    //   private val _bufferedSymbolsFileSink: RawSink =
+    //       SystemFileSystem.sink(Path(_bufferedSymbolsFileName)).buffered()
     val bufferedSymbolsFileSink =
       pluginContext.irFactory
         .buildField {
@@ -402,6 +448,13 @@ class KPerfExtension(
     firstFile.declarations.add(bufferedSymbolsFileSink)
     bufferedSymbolsFileSink.parent = firstFile
 
+    // 4. Method-ID collection pass
+    //
+    // Walk the module once and assign every function a sequential integer.
+    // The integer goes into the trace file (`>;<id>`); the symbols file
+    // maps id → fully-qualified name. Two passes are needed because the
+    // instrumentation pass below references the IDs.
+
     val methodMap = mutableMapOf<String, IrFunction>()
     val methodIdMap = mutableMapOf<String, Int>()
     var currMethodId = 0
@@ -420,11 +473,20 @@ class KPerfExtension(
       )
     }
 
+    // 5. Helper functions: _enter_method / _exit_method / _exit_main
+    //
+    // These three functions are added to firstFile and called by every
+    // instrumented user function (via the try/finally wrap in section 6).
+
+    // IR ↓
+    //   fun _enter_method(methodId: Int): TimeMark {
+    //       _bufferedTraceFileSink.writeString(">;$methodId\n")
+    //       // if (flushEarly) _bufferedTraceFileSink.flush()
+    //       return TimeSource.Monotonic.markNow()                  // ← MEASUREMENT (per-method clock anchor)
+    //   }
     fun buildEnterFunction(): IrFunction {
       val timeSourceMonotonicClass: IrClassSymbol =
         pluginContext.referenceClass(ClassId.fromString("kotlin/time/TimeSource.Monotonic"))!!
-
-      /* val funMarkNowViaClass = classMonotonic.functions.find { it.owner.name.asString() == "markNow" }!! */
 
       val funMarkNow =
         pluginContext
@@ -437,8 +499,6 @@ class KPerfExtension(
           )
           .single()
 
-      // assertion: funMarkNowViaClass == funMarkNow
-
       return pluginContext.irFactory
         .buildFun {
           name = Name.identifier("_enter_method")
@@ -446,10 +506,6 @@ class KPerfExtension(
         }
         .apply {
           addValueParameter {
-            /*
-            name = Name.identifier("method")
-            type = pluginContext.irBuiltIns.stringType
-            */
             name = Name.identifier("methodId")
             type = pluginContext.irBuiltIns.intType
           }
@@ -458,6 +514,7 @@ class KPerfExtension(
             DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset)
               .irBlockBody {
                 if (STRINGBUILDER_MODE) {
+                  // _stringBuilder.append(">;").append(methodId).append("\n")
                   +irCall(stringBuilderAppendStringFunc).apply {
                     arguments[0] = irGetField(null, stringBuilder)
                     arguments[1] = irString(">;")
@@ -471,6 +528,7 @@ class KPerfExtension(
                     arguments[1] = irString("\n")
                   }
                 } else {
+                  // _bufferedTraceFileSink.writeString(">;${methodId}\n")
                   +irCall(writeStringFunc).apply {
                     arguments[0] = irGetField(null, bufferedTraceFileSink)
                     arguments[1] =
@@ -484,6 +542,7 @@ class KPerfExtension(
                     flushTraceFile()
                   }
                 }
+                // return TimeSource.Monotonic.markNow()   ← MEASUREMENT
                 +irReturn(
                   irCall(funMarkNow).also { call ->
                     call.dispatchReceiver =
@@ -498,6 +557,11 @@ class KPerfExtension(
     firstFile.declarations.add(enterFunc)
     enterFunc.parent = firstFile
 
+    // IR ↓
+    //   fun _exit_method(startTime: TimeMark) {
+    //       val elapsedMicros = startTime.elapsedNow().inWholeMicroseconds   // ← MEASUREMENT
+    //       _bufferedTraceFileSink.writeString("<;$elapsedMicros\n")
+    //   }
     fun buildGeneralExitFunction(): IrFunction {
       val funElapsedNow =
         pluginContext
@@ -519,16 +583,12 @@ class KPerfExtension(
           addValueParameter {
             name = Name.identifier("startTime")
             type = timeMarkClass.defaultType
-          } /*
-                addValueParameter {
-                    name = Name.identifier("result")
-                    type = pluginContext.irBuiltIns.anyNType
-                } */
+          }
 
           body =
             DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset)
               .irBlockBody {
-                // Duration
+                // val elapsedDuration = startTime.elapsedNow()   ← MEASUREMENT
                 val elapsedDuration =
                   irTemporary(
                     irCall(funElapsedNow).apply {
@@ -540,6 +600,7 @@ class KPerfExtension(
                     it.name.asString() == "inWholeMicroseconds"
                   }
 
+                // val elapsedMicros = elapsedDuration.inWholeMicroseconds
                 val elapsedMicros =
                   irTemporary(
                     irCall(elapsedMicrosProp.getter!!).apply {
@@ -548,6 +609,7 @@ class KPerfExtension(
                   )
 
                 if (STRINGBUILDER_MODE) {
+                  // _stringBuilder.append("<;").append(elapsedMicros).append("\n")
                   +irCall(stringBuilderAppendStringFunc).apply {
                     arguments[0] = irGetField(null, stringBuilder)
                     arguments[1] = irString("<;")
@@ -561,6 +623,7 @@ class KPerfExtension(
                     arguments[1] = irString("\n")
                   }
                 } else {
+                  // _bufferedTraceFileSink.writeString("<;${elapsedMicros}\n")
                   +irCall(writeStringFunc).apply {
                     arguments[0] = irGetField(null, bufferedTraceFileSink)
                     arguments[1] =
@@ -579,6 +642,17 @@ class KPerfExtension(
     firstFile.declarations.add(exitFunc)
     exitFunc.parent = firstFile
 
+    // IR ↓
+    //   fun _exit_main(startTime: TimeMark) {
+    //       _bufferedTraceFileSink.flush()
+    //       _exit_method(startTime)                                   // writes the main-frame exit line
+    //       // STRINGBUILDER_MODE only: dump _stringBuilder into trace sink
+    //       _bufferedSymbolsFileSink.writeString("{ \"0\":\"main\", ... }")
+    //       _bufferedSymbolsFileSink.flush()
+    //       _bufferedTraceFileSink.flush()
+    //       println(_bufferedTraceFileName)
+    //       println(_bufferedSymbolsFileName)
+    //   }
     fun buildMainExitFunction(): IrSimpleFunction {
       fun IrBlockBodyBuilder.writeAndFlushSymbolsFile() {
         +irCall(writeStringFunc).apply {
@@ -612,20 +686,19 @@ class KPerfExtension(
           addValueParameter {
             name = Name.identifier("startTime")
             type = timeMarkClass.defaultType
-          } /*
-                addValueParameter {
-                    name = Name.identifier("result")
-                    type = pluginContext.irBuiltIns.anyNType
-                } */
+          }
 
           body =
             DeclarationIrBuilder(pluginContext, symbol, startOffset, endOffset)
               .irBlockBody {
                 flushTraceFile()
 
+                // _exit_method(startTime) — writes the "<;<elapsed>" line for
+                // main() itself (MEASUREMENT of the whole program duration).
                 +irCall(exitFunc).apply { arguments[0] = irGet(parameters[0]) }
 
                 if (STRINGBUILDER_MODE) {
+                  // _bufferedTraceFileSink.writeString(_stringBuilder.toString())
                   +irCall(writeStringFunc).apply {
                     arguments[0] = irGetField(null, bufferedTraceFileSink)
                     arguments[1] =
@@ -648,8 +721,21 @@ class KPerfExtension(
     firstFile.declarations.add(exitMainFunc)
     exitMainFunc.parent = firstFile
 
+    // 6. modify(): edit function body
+    //
+    //   IR ↓
+    //     fun <user fn>(...) {
+    //         val startTime = _enter_method(<id>)                    // ← MEASUREMENT begins
+    //         try {
+    //             <original body>
+    //         } finally {
+    //             if (fn == "main") _exit_main(startTime)             // ← MEASUREMENT ends + flush
+    //             else              _exit_method(startTime)           // ← MEASUREMENT ends
+    //         }
+    //     }
     fun buildBodyWithMeasureCode(func: IrFunction): IrBody {
       return DeclarationIrBuilder(pluginContext, func.symbol).irBlockBody {
+        // val startTime = _enter_method(<method id literal>)
         // no +needed on irTemporary as it is automatically added to the builder
         val startTime =
           irTemporary(
@@ -666,6 +752,8 @@ class KPerfExtension(
             for (statement in func.body?.statements ?: listOf()) +statement
           }
 
+        // try { <original body> } finally { _exit_method(startTime) }
+        // (or _exit_main for main)
         +irTry(
           tryBlock.type,
           tryBlock,
@@ -677,10 +765,14 @@ class KPerfExtension(
       }
     }
 
+    // 7. Method walk
+    //
+    // Walk every function in every file; if shouldInstrument() accepts it,
+    // replace its body with the try/finally-wrapped version from
+    // buildBodyWithMeasureCode().
+
     // IrElementVisitor / IrElementVisitorVoid
     // IrElementTransformer / IrElementTransformerVoid / IrElementTransformerVoidWithContext
-    // IrElementTransformerVoidWithContext().visitfile(file, null)
-
     moduleFragment.files.forEach { file ->
       file.transform(
         object : IrElementTransformerVoidWithContext() {
@@ -697,11 +789,6 @@ class KPerfExtension(
         },
         null
       )
-      // This spams the compiler output, just enable when needed for debugging
-      // printText("--- Transformation completed ---")
-      // printText("--- File: ${file.name} ---")
-      // printText("--------------------------------")
-      // printText(file.dump())
     }
   }
 }

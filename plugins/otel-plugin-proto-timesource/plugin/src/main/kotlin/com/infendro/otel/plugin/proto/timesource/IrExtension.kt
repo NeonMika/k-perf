@@ -42,6 +42,7 @@ class IrExtension(
     val service: String?,
     val maxQueueSize: Int = 2048,
     val maxExportBatchSize: Int = Int.MAX_VALUE,
+    val instrumentPropertyAccessors: Boolean = false,
 ) : IrGenerationExtension {
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(
@@ -52,7 +53,8 @@ class IrExtension(
 
         val firstFile = moduleFragment.files[0]
 
-        // region helpers
+        //1. IR-building helpers
+
         val unit = irBuiltIns.unitType
         val any = irBuiltIns.anyType
         val int = irBuiltIns.intType
@@ -216,9 +218,10 @@ class IrExtension(
         }
 
         fun IrFunction.isMain() = name.toString() == "main"
-        // endregion
 
-        // region
+        // 2. Symbol resolution
+        // 2.1 Kotlin stdlib (println, StringBuilder, Duration, TimeSource, TimeMark)
+
         val println = getFunction("kotlin.io", "println") {
             it.regularParams.size == 1
                 && it.regularParams[0].type == any.makeNullable()
@@ -241,31 +244,15 @@ class IrExtension(
         }
         val StringBuilder_toString = StringBuilder.getFunction("toString")
 
-        val Duration = getClass(
-            "kotlin.time",
-            "Duration"
-        )
+        val Duration = getClass("kotlin.time", "Duration")
         val Duration_inWholeMilliseconds = Duration.getPropertyGetter("inWholeMilliseconds")!!
-        // CHANGE vs otel-plugin-proto: used per span to convert TimeMark's
-        // elapsedNow() Duration into a Long nanos value passed directly as
-        // the span's start/end timestamp.
+        // Per-span MEASUREMENT path: convert the TimeMark's elapsedNow() Duration
+        // into a Long nanos value passed as the span's start/end timestamp.
         val Duration_inWholeNanoseconds = Duration.getPropertyGetter("inWholeNanoseconds")!!
 
-        val Instant = getClass(
-            "kotlinx.datetime",
-            "Instant"
-        )
-
-        val Clock = getClass(
-            "kotlinx.datetime",
-            "Clock"
-        )
-        val System = Clock.getClass("System")
-        val now = System.getFunction("now")
-
-        // CHANGE vs otel-plugin-proto: TimeSource.Monotonic.markNow() captures
-        // a monotonic reference once at module load; per-span timestamps are
-        // just `_benchmarkMark.elapsedNow().inWholeNanoseconds`.
+        // TimeSource.Monotonic.markNow() captures a monotonic reference once at
+        // module load (stored in the _benchmarkMark field below). Per-span
+        // timestamps are `_benchmarkMark.elapsedNow().inWholeNanoseconds`.
         val TimeSource = getClass("kotlin.time", "TimeSource")
         val TimeSource_markNow = TimeSource.getFunction("markNow")
         val TimeSource_Monotonic = TimeSource.getClass("Monotonic")
@@ -273,13 +260,59 @@ class IrExtension(
         val TimeMark = getClass("kotlin.time", "TimeMark")
         val TimeMark_elapsedNow = TimeMark.getFunction("elapsedNow")
 
+        // 2.2 kotlinx.datetime — wall-clock source (used only by DEBUG main entry/exit)
+
+        val Instant = getClass("kotlinx.datetime", "Instant")
+
+        val Clock = getClass("kotlinx.datetime", "Clock")
+        val System = Clock.getClass("System")
+        val now = System.getFunction("now")
+
         val DateTimeUnit = getClass("kotlinx.datetime", "DateTimeUnit")
         val DateTimeUnitCompanion = DateTimeUnit.getClass("Companion")
         val DateTimeUnitCompanion_NANOSECOND = DateTimeUnitCompanion.getPropertyGetter("NANOSECOND")
             ?: throw Exception("kotlinx.datetime.DateTimeUnit.Companion.NANOSECOND not found")
 
-        val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
-        val Exporter_constructor = Exporter.getConstructor()
+        //2.3 OTel API surface (io.opentelemetry.kotlin.api.*)
+
+        val Tracer = getClass("io.opentelemetry.kotlin.api.trace", "Tracer")
+        val Tracer_spanBuilder = Tracer.getFunction("spanBuilder")
+
+        val TracerBuilder = getClass("io.opentelemetry.kotlin.api.trace", "TracerBuilder")
+        val TracerBuilder_build = TracerBuilder.getFunction("build")
+
+        val SpanBuilder = getClass("io.opentelemetry.kotlin.api.trace", "SpanBuilder")
+        val SpanBuilder_setParent = SpanBuilder.getFunction("setParent")
+        // Resolves the (Long epochOffset, DateTimeUnit unit) overload of
+        // setStartTimestamp (proto variant resolves the (Instant) overload).
+        val SpanBuilder_setStartTimestamp = SpanBuilder.getFunction("setStartTimestamp") {
+            it.regularParams.size == 2
+                && it.regularParams[0].type == long
+                && it.regularParams[1].type == DateTimeUnit.type()
+        }
+        val SpanBuilder_startSpan = SpanBuilder.getFunction("startSpan")
+
+        val Span = getClass("io.opentelemetry.kotlin.api.trace", "Span")
+        // Same (Long, DateTimeUnit) overload swap on Span.end.
+        val Span_end = Span.getFunction("end") {
+            it.regularParams.size == 2
+                && it.regularParams[0].type == long
+                && it.regularParams[1].type == DateTimeUnit.type()
+        }
+
+        val Context = getClass("io.opentelemetry.kotlin.context", "Context")
+        val ImplicitContextKeyed = getClass(
+            "io.opentelemetry.kotlin.context",
+            "ImplicitContextKeyed"
+        )
+        val Context_with = Context.getFunction("with") {
+            it.regularParams.size == 1 && it.regularParams[0].type == ImplicitContextKeyed.type()
+        }
+        val Context_makeCurrent = Context.getFunction("makeCurrent")
+        val ContextCompanion = Context.getClass("Companion")
+        val ContextCompanion_current = ContextCompanion.getFunction("current")
+
+        //2.4 OTel SDK (io.opentelemetry.kotlin.sdk.*)
 
         val Processor = getClass(
             "io.opentelemetry.kotlin.sdk.trace.export",
@@ -312,46 +345,10 @@ class IrExtension(
         val TracerProviderBuilder_addSpanProcessor = TracerProviderBuilder.getFunction("addSpanProcessor")
         val TracerProviderBuilder_build = TracerProviderBuilder.getFunction("build")
 
-        val TracerBuilder = getClass(
-            "io.opentelemetry.kotlin.api.trace",
-            "TracerBuilder"
-        )
-        val TracerBuilder_build = TracerBuilder.getFunction("build")
+        //2.5 exporter and utils (otlp-exporter-proto, package com.infendro.otlp, com.infendro.otel.util)
 
-        val Tracer = getClass("io.opentelemetry.kotlin.api.trace", "Tracer")
-        val Tracer_spanBuilder = Tracer.getFunction("spanBuilder")
-
-        val Context = getClass("io.opentelemetry.kotlin.context", "Context")
-        val ImplicitContextKeyed = getClass(
-            "io.opentelemetry.kotlin.context",
-            "ImplicitContextKeyed"
-        )
-        val Context_with = Context.getFunction("with") {
-            it.regularParams.size == 1 && it.regularParams[0].type == ImplicitContextKeyed.type()
-        }
-        val Context_makeCurrent = Context.getFunction("makeCurrent")
-        val ContextCompanion = Context.getClass("Companion")
-        val ContextCompanion_current = ContextCompanion.getFunction("current")
-
-        val SpanBuilder = getClass("io.opentelemetry.kotlin.api.trace", "SpanBuilder")
-        val SpanBuilder_setParent = SpanBuilder.getFunction("setParent")
-        // CHANGE vs otel-plugin-proto:
-        // resolves the(Long epochOffset, DateTimeUnit unit) overload of setStartTimestamp
-        // (proto variant resolved the (Instant) overload)
-        val SpanBuilder_setStartTimestamp = SpanBuilder.getFunction("setStartTimestamp") {
-            it.regularParams.size == 2
-                && it.regularParams[0].type == long
-                && it.regularParams[1].type == DateTimeUnit.type()
-        }
-        val SpanBuilder_startSpan = SpanBuilder.getFunction("startSpan")
-
-        val Span = getClass("io.opentelemetry.kotlin.api.trace", "Span")
-        // CHANGE vs otel-plugin-proto: same overload swap on Span.end.
-        val Span_end = Span.getFunction("end") {
-            it.regularParams.size == 2
-                && it.regularParams[0].type == long
-                && it.regularParams[1].type == DateTimeUnit.type()
-        }
+        val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
+        val Exporter_constructor = Exporter.getConstructor()
 
         val await = getFunction("com.infendro.otel.util", "await") {
             it.regularParams.size == 1
@@ -363,11 +360,16 @@ class IrExtension(
                 && it.regularParams[1].type == Instant.type()
         }
         val env = getFunction("com.infendro.otel.util", "env")
-        // endregion
 
-        // region fields
+        // 3. Static fields
+
+        // IR ↓
+        //   // If Gradle property `host` was provided:
+        //   private val _host = "<host>"
+        //   // Else:
+        //   private val _hostEnv = env("OTLP_HOST")
+        //   private val _host = if (_hostEnv != null) _hostEnv else "localhost:4318"
         val host = if (host != null) {
-            // val host = <host>
             buildField(
                 name = "_host",
                 type = string,
@@ -378,7 +380,6 @@ class IrExtension(
                 }
             }
         } else {
-            // val hostEnv = env("OTLP_HOST")
             val hostEnv = buildField(
                 name = "_hostEnv",
                 type = string,
@@ -391,7 +392,6 @@ class IrExtension(
                 }
             }
 
-            // val host = if(hostEnv != null) hostEnv else "localhost:4318"
             buildField(
                 name = "_host",
                 type = string,
@@ -411,8 +411,13 @@ class IrExtension(
             }
         }
 
+        // IR ↓
+        //   // If Gradle property `service` was provided:
+        //   private val _service = "<service>"
+        //   // Else:
+        //   private val _serviceEnv = env("OTLP_SERVICE")
+        //   private val _service = if (_serviceEnv != null) _serviceEnv else ""
         val service = if (service != null) {
-            // val service = <service>
             buildField(
                 name = "_service",
                 type = string,
@@ -423,7 +428,6 @@ class IrExtension(
                 }
             }
         } else {
-            // val serviceEnv = env("OTLP_SERVICE")
             val serviceEnv = buildField(
                 name = "_serviceEnv",
                 type = string,
@@ -436,7 +440,6 @@ class IrExtension(
                 }
             }
 
-            // val service = if(serviceEnv != null) serviceEnv else ""
             buildField(
                 name = "_service",
                 type = string,
@@ -456,7 +459,8 @@ class IrExtension(
             }
         }
 
-        // val exporter = OtlpExporter(host, service)
+        // IR ↓
+        //   private val _exporter = OtlpExporter(_host, _service)
         val exporter = buildField(
             name = "_exporter",
             type = Exporter.type(),
@@ -470,11 +474,12 @@ class IrExtension(
             }
         }
 
-        // val processor = BatchSpanProcessor
-        //     .builder(exporter)
-        //     .setMaxQueueSize(Int.MAX_VALUE)
-        //     .setMaxExportBatchSize(2048)
-        //     .build()
+        // IR ↓
+        //   private val _processor = BatchSpanProcessor
+        //       .builder(_exporter)
+        //       .setMaxQueueSize(<maxQueueSize>)
+        //       .setMaxExportBatchSize(<maxExportBatchSize>)
+        //       .build()
         val processor = buildField(
             name = "_processor",
             type = Processor.type(),
@@ -496,7 +501,10 @@ class IrExtension(
             }
         }
 
-        // val provider = SdkTracerProvider.builder().addSpanProcessor(processor).build()
+        // IR ↓
+        //   private val _provider = SdkTracerProvider.builder()
+        //       .addSpanProcessor(_processor)
+        //       .build()
         val provider = buildField(
             name = "_provider",
             type = TracerProvider.type(),
@@ -514,7 +522,8 @@ class IrExtension(
             }
         }
 
-        // val tracer = provider.tracerBuilder("").build()
+        // IR ↓
+        //   private val _tracer = _provider.tracerBuilder("").build()
         val tracer = buildField(
             name = "_tracer",
             type = Tracer.type(),
@@ -530,22 +539,15 @@ class IrExtension(
             }
         }
 
-        // CHANGE vs otel-plugin-proto: one top-level static field, _benchmarkMark.
+        // IR ↓
+        //   private val _benchmarkMark: TimeMark = TimeSource.Monotonic.markNow()
         //
-        // No wall-clock anchor at all. Per span we pass
-        //   _benchmarkMark.elapsedNow().inWholeNanoseconds
-        // directly as the (Long, NANOSECOND) timestamp to setStartTimestamp /
-        // Span.end. OTLP interprets that Long as "nanoseconds since Unix epoch",
-        // so all spans are timestamped relative to Unix epoch + program-start
-        // (i.e. they show up around 1970-01-01 in Jaeger's UI). DURATIONS stay
-        // exact (end - start is anchor-translation-invariant); only the absolute
-        // placement on the timeline is wrong, which doesn't matter for our
-        // benchmark — we measure via Main.kt's inWholeNanoseconds prints, not
-        // via Jaeger.
-        //
-        // This is the literal implementation of the supervisor's suggestion
-        // "ONE markNow at the top of the program + elapsedNow at the start
-        // and end of each method".
+        // ONE markNow() at module load. Every per-span timestamp is
+        //   _benchmarkMark.elapsedNow().inWholeNanoseconds.
+        // OTLP interprets that Long as "nanoseconds since Unix epoch", so spans
+        // show up around 1970-01-01 in Jaeger's UI; DURATIONS stay exact, which
+        // is the only thing the benchmark cares about. Per-span MEASUREMENT
+        // calls are in _startSpan / _endSpan below.
         val benchmarkMark = buildField(
             name = "_benchmarkMark",
             type = TimeMark.type(),
@@ -559,9 +561,21 @@ class IrExtension(
         }
 
         firstFile.addChildren(fields)
-        // endregion
 
-        // region functions
+        // 4. Helper functions: _startSpan / _endSpan
+
+        // IR ↓
+        //   fun _startSpan(name: String, context: Context): Span {
+        //       val spanBuilder = _tracer.spanBuilder(name)
+        //       spanBuilder.setParent(context)
+        //       spanBuilder.setStartTimestamp(                            // ← MEASUREMENT
+        //           _benchmarkMark.elapsedNow().inWholeNanoseconds,
+        //           DateTimeUnit.NANOSECOND
+        //       )
+        //       val span = spanBuilder.startSpan()
+        //       context.with(span).makeCurrent()
+        //       return span
+        //   }
         val startSpan = buildFunction("_startSpan") {
             parameter {
                 name = Name.identifier("name")
@@ -577,7 +591,7 @@ class IrExtension(
                 val name = regularParams[0]
                 val context = regularParams[1]
 
-                // val spanBuilder = tracer.spanBuilder(name)
+                // val spanBuilder = _tracer.spanBuilder(name)
                 val spanBuilder = irTemporary(
                     call(Tracer_spanBuilder) {
                         dispatchReceiver = irGetField(null, tracer)
@@ -591,16 +605,10 @@ class IrExtension(
                     argument(0, irGet(context))
                 }
 
-                // CHANGE vs otel-plugin-proto: pass elapsed-since-module-load
-                // nanoseconds directly as the start timestamp. No anchor add.
-                // OTLP treats this Long as nanoseconds-since-Unix-epoch, so
-                // spans land near 1970-01-01 in Jaeger's UI; durations remain
-                // exact.
-                //
                 // spanBuilder.setStartTimestamp(
                 //     _benchmarkMark.elapsedNow().inWholeNanoseconds,
                 //     DateTimeUnit.NANOSECOND
-                // )
+                // )                                                       ← MEASUREMENT
                 +call(SpanBuilder_setStartTimestamp) {
                     dispatchReceiver = irGet(spanBuilder)
                     argument(0, call(Duration_inWholeNanoseconds) {
@@ -633,6 +641,14 @@ class IrExtension(
             }
         }
 
+        // IR ↓
+        //   fun _endSpan(span: Span, context: Context) {
+        //       context.makeCurrent()
+        //       span.end(                                                 // ← MEASUREMENT
+        //           _benchmarkMark.elapsedNow().inWholeNanoseconds,
+        //           DateTimeUnit.NANOSECOND
+        //       )
+        //   }
         val endSpan = buildFunction("_endSpan") {
             parameter {
                 name = Name.identifier("span")
@@ -650,13 +666,10 @@ class IrExtension(
                     dispatchReceiver = irGet(regularParams[1])
                 }
 
-                // CHANGE vs otel-plugin-proto: same as in _startSpan — pass
-                // elapsed-since-module-load nanos directly as the end timestamp.
-                //
                 // span.end(
                 //     _benchmarkMark.elapsedNow().inWholeNanoseconds,
                 //     DateTimeUnit.NANOSECOND
-                // )
+                // )                                                       ← MEASUREMENT
                 +call(Span_end) {
                     dispatchReceiver = irGet(regularParams[0])
                     argument(0, call(Duration_inWholeNanoseconds) {
@@ -672,16 +685,35 @@ class IrExtension(
         }
 
         firstFile.addChildren(functions)
-        // endregion
+
+        // 5. modify(): edit function body
+        //
+        //   IR ↓
+        //     fun <user fn>(...) {
+        //         // [DEBUG only, main + debug=true] val start = Clock.System.now()
+        //         val context = Context.current()
+        //         val span    = _startSpan(<user fn>, context)
+        //         try {
+        //             <original body>
+        //         } finally {
+        //             _endSpan(span, context)
+        //             // [main only:]
+        //             //   [DEBUG only:] val ms = _benchmarkMark.elapsedNow().inWholeMilliseconds
+        //             //                 println("Execution finished - $ms ms elapsed")
+        //             _processor.shutdown()
+        //             // [DEBUG branch:] await(_exporter, start)   // prints flush duration
+        //             // [non-debug:]    await(_exporter)
+        //         }
+        //     }
 
         fun IrFunction.modify() {
             body {
                 // Capture a wall-clock Instant at main entry ONLY for the debug
-                // await call (which logs "elapsed since start" via util-proto's
-                // await(exporter, start: Instant) overload). Not used per-span;
-                // doesn't enter the hot path.
+                // await call (util-proto's await(exporter, start: Instant) logs
+                // "elapsed since start"). Not used per-span; not in the hot path.
                 var start: IrVariable? = null
                 if (isMain() && debug) {
+                    // val start = Clock.System.now()      ← DEBUG (main wall-clock anchor)
                     start = irTemporary(
                         call(now) {
                             dispatchReceiver = irGetObject(System)
@@ -695,6 +727,7 @@ class IrExtension(
                         dispatchReceiver = irGetObject(ContextCompanion)
                     }
                 )
+
                 // val span = _startSpan(<function name>, context)
                 val span = irTemporary(
                     call(startSpan) {
@@ -703,12 +736,14 @@ class IrExtension(
                     }
                 )
 
+
                 val tryBlock: IrExpression = irBlock(
                     resultType = returnType
                 ) {
                     for (statement in body!!.statements) +statement
                 }
 
+                // try { <original body> } finally { <below> }
                 +irTry(
                     tryBlock.type,
                     tryBlock,
@@ -722,15 +757,7 @@ class IrExtension(
 
                         if (isMain()) {
                             if (debug) {
-                                // CHANGE vs otel-plugin-proto:
-                                //   proto variant used start = Clock.System.now()
-                                //   and end = Clock.System.now()
-                                //   at main exit, and computed (end - start).inWholeMilliseconds
-                                //   via Instant.minus(Instant). We drop both wall-clock
-                                //   calls and the subtraction and use one elapsedNow()
-                                //   on the cached _benchmarkMark.
-                                //
-                                // val ms = _benchmarkMark.elapsedNow().inWholeMilliseconds
+                                // val ms = _benchmarkMark.elapsedNow().inWholeMilliseconds   ← DEBUG
                                 val ms = irTemporary(
                                     call(Duration_inWholeMilliseconds) {
                                         dispatchReceiver = call(TimeMark_elapsedNow) {
@@ -739,7 +766,7 @@ class IrExtension(
                                     }
                                 )
 
-                                // println("Execution finished - $ms ms elapsed")
+                                // println("Execution finished - $ms ms elapsed")   ← DEBUG
                                 val builder = irTemporary(
                                     call(StringBuilder_constructor)
                                 )
@@ -765,22 +792,20 @@ class IrExtension(
                                 }
                             }
 
-                            // processor.shutdown()
+                            // _processor.shutdown() <- flushes spanProcessor
                             +call(Processor_shutdown) {
                                 dispatchReceiver = irGetField(null, processor)
                             }
 
                             if (debug) {
-                                // await(exporter, start) — start is the local
-                                // Clock.System.now() captured at main entry, only
-                                // used here for util-proto's elapsed-since-start
-                                // log line. Not in the per-span hot path.
+                                // await(_exporter, start)   ← DEBUG (prints "Flush finished - X ms")
                                 +call(await_debug) {
                                     argument(0, irGetField(null, exporter))
                                     argument(1, irGet(start!!))
                                 }
                             } else {
-                                // await(exporter)
+                                // await(_exporter)
+                                // Block until all gRPC exports complete
                                 +call(await) {
                                     argument(0, irGetField(null, exporter))
                                 }
@@ -791,7 +816,7 @@ class IrExtension(
             }
         }
 
-        // region modify functions
+        // 6. Method walk
         moduleFragment.files.forEach { file ->
             file.transform(
                 object : IrTransformer<Any?>() {
@@ -809,8 +834,7 @@ class IrExtension(
                                 body != null &&                    // has a body
                                 name != "<init>" &&                // is not a constructor
                                 name != "<anonymous>" &&           // is not an anonymous function
-                                !declaration.isGetter &&
-                                !declaration.isSetter &&
+                                (instrumentPropertyAccessors || (!declaration.isGetter && !declaration.isSetter)) &&
                                 origin !in invalidOrigins
                         }
 
@@ -826,6 +850,5 @@ class IrExtension(
                 println(file.dump())
             }
         }
-        // endregion
     }
 }

@@ -59,21 +59,47 @@ Each JSON file contains:
 
 ## Comparison Benchmark (`kperf-otel-comparison.ps1`)
 
-A separate script in this folder, `kperf-otel-comparison.ps1`, benchmarks three lightweight CPU workloads (`fibonacci(25)` + bubble sort) against three different instrumentation strategies on three platforms — 9 cells in total. The strategies are:
+A separate script in this folder, `kperf-otel-comparison.ps1`, benchmarks a deterministic CPU workload (`fibonacci(20) + bubbleSort(15 cells)`, one workload call per step) under six variants across three platforms (JVM / JS / Native) — 18 rows in total. The variants are:
 
-- **k-perf** — the project's local timing plugin (sync trace flush)
-- **otel** — OpenTelemetry spans exported via HTTP/JSON to an OTLP collector
-- **otel-proto** — OpenTelemetry spans exported via gRPC/protobuf to the same collector
+- **baseline** — no plugin applied (reference for overhead delta)
+- **k-perf** — local file-sink timing plugin (sync trace flush)
+- **otel** — OpenTelemetry spans exported via HTTP/JSON to Jaeger
+- **otel-proto** — OpenTelemetry spans via gRPC/protobuf
+- **otel-proto-anchored** — same as otel-proto but defers timestamping to the SDK's AnchoredClock (no explicit `setStartTimestamp` call)
+- **otel-proto-timesource** — same as otel-proto but feeds `setStartTimestamp(Long, NANOSECOND)` from a single module-load `TimeSource.Monotonic.markNow()` mark
+
+### Parameters
+
+| Param | Default | Meaning |
+|---|---:|---|
+| `-StepCount` | `100` | total step indices per measured run |
+| `-WarmupCount` | `20` | first N **step indices** of each measured run that are discarded from per-step statistics (replaces the previous opaque "first step ≤ 2× tail-median" steady-state detector) |
+| `-RunCount` | `10` | number of measured runs per variant per platform |
+| `-CleanBuild` | `$true` | whether to `gradle clean` before building |
+
+With the defaults each variant runs 10 × 100 = 1,000 steps total; the per-method statistics use the last 10 × 80 = 800 measured steps (steps 20–99 of each run).
 
 Run it with:
 
 ```powershell
 cd benchmarking
-.\kperf-otel-comparison.ps1                          # defaults: 5 warmups, 20 runs, clean build
-.\kperf-otel-comparison.ps1 -WarmupCount 1 -RunCount 3 -CleanBuild $false   # quick smoke test
+.\kperf-otel-comparison.ps1                                              # defaults
+.\kperf-otel-comparison.ps1 -RunCount 3 -StepCount 10 -CleanBuild $false   # quick smoke test
 ```
 
-Results land under `measurements/comparison_run_<timestamp>/` as `results.json` + `results.md`. Any iteration whose stdout fails the timing-line regex is dumped under `measurements/comparison_run_<timestamp>/failures/<exe>-<warmup|run>-<NN>.txt` so the cause (node not found, container hang, runtime crash, wall-clock timeout) is one read away.
+### `methods_per_step` denominator
+
+The `Per-method (ns)` and `Overhead/method (ns)` columns in `results.md` divide step time by `methods_per_step`. This denominator is computed from a closed-form formula:
+
+```
+methods_per_step = fib_call_count(20) + 2
+                 = (2 × Fibonacci(21) − 1) + 2
+                 = 21,891 + 2 = 21,893
+```
+
+(The `+ 2` is the single `bubbleSort` call and the `workload` call itself.) The script also captures the empirical `lines / 2 / StepCount` from the k-perf trace as a sanity check; if the two diverge by more than 1 %, a warning is printed and both numbers appear in `results.md`.
+
+Results land under `measurements/comparison_run_<timestamp>/` as `results.json` + `results.md` + `per_step_medians.csv`. Any iteration whose stdout fails the timing-line regex is dumped under `measurements/comparison_run_<timestamp>/failures/<exe>-run-<NN>.txt` so the cause (node not found, container hang, runtime crash, wall-clock timeout) is one read away.
 
 ### Prerequisites
 
@@ -97,9 +123,9 @@ The PAT only needs `read:packages`; no other scopes. A preflight check at the to
 
 ### Reading the output
 
-`results.md` shows iteration count per row. A healthy run has `Iterations = <RunCount>` for all 9 rows. If any row shows fewer (or 0), check the matching files in `failures/` to see what each affected iteration printed.
+`results.md` shows iteration count per row. A healthy run has `Iterations = <RunCount>` for all 18 rows. If any row shows fewer (or 0), check the matching files in `failures/` to see what each affected iteration printed.
 
-The `Mean (ms)` column for `otel` / `otel-proto` rows includes the time spent flushing spans to the collector (suffixed `(Included async flush)` in the live console output); the `k-perf` rows do not, which makes the absolute numbers across instrumentation strategies non-comparable in a strict sense — they answer "how long does this binary take to do its work *and* clean up after itself?", not "what is the per-call overhead?".
+The `Total mean (ms)` column for `otel` / `otel-proto*` rows includes the time spent flushing spans to Jaeger at process exit (the `await()` helper blocks on the exporter); the `baseline` and `k-perf` rows do not, which makes the absolute totals across variants slightly non-comparable. The `Per-method (ns)` and `Overhead/method (ns)` columns are computed from the per-step time (which excludes the exit flush), so they ARE comparable across variants.
 
 ## Running the Benchmarks
 

@@ -32,6 +32,10 @@ val otelProtoUseSimpleProcessor = providers.gradleProperty("otelProtoUseSimplePr
     .map { it.toBoolean() }
     .getOrElse(false)
 
+val otelProtoInstrumentPropertyAccessors = providers.gradleProperty("otelProtoInstrumentPropertyAccessors")
+    .map { it.toBoolean() }
+    .getOrElse(false)
+
 otelProto {
     host = "localhost:4317"
     service = "comparison-otel-proto"
@@ -39,6 +43,7 @@ otelProto {
     maxQueueSize = otelProtoMaxQueueSize
     maxExportBatchSize = otelProtoMaxExportBatchSize
     useSimpleSpanProcessor = otelProtoUseSimpleProcessor
+    instrumentPropertyAccessors = otelProtoInstrumentPropertyAccessors
 }
 
 kotlin {

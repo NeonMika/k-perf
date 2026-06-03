@@ -15,6 +15,7 @@ class Extension() {
     var service: String? = null
     var maxQueueSize: Int = 2048
     var maxExportBatchSize: Int = Int.MAX_VALUE
+    var instrumentPropertyAccessors: Boolean = false
 }
 
 class Plugin : KotlinCompilerPluginSupportPlugin {
@@ -56,6 +57,7 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
                 if (extension.service != null) add(SubpluginOption("service", extension.service!!))
                 add(SubpluginOption("maxQueueSize", extension.maxQueueSize.toString()))
                 add(SubpluginOption("maxExportBatchSize", extension.maxExportBatchSize.toString()))
+                add(SubpluginOption("instrumentPropertyAccessors", extension.instrumentPropertyAccessors.toString()))
             }
         }
     }

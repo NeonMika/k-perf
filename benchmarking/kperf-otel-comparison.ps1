@@ -1,8 +1,12 @@
 ﻿param(
   [bool]$CleanBuild = $true,
-  [int]$WarmupCount = 0,
-  [int]$RunCount = 20,
-  [int]$StepCount = 150
+  # WarmupCount: number of *step indices* discarded from the start of each
+  # measured run. Replaces the old 2× tail-median steady-state detector
+  # (which was opaque and circular). With StepCount=100 and WarmupCount=20,
+  # 80 measured steps remain per run.
+  [int]$WarmupCount = 20,
+  [int]$RunCount = 10,
+  [int]$StepCount = 100
 )
 
 $ErrorActionPreference = "Stop"
@@ -265,7 +269,7 @@ $executables = @(
 
 Write-Host "=========================================="
 Write-Host "Running Measurements"
-Write-Host "Warmups: $WarmupCount | Runs: $RunCount | StepCount: $StepCount | Run timeout: ${RunTimeoutSeconds}s"
+Write-Host "Warmup steps/run: $WarmupCount | Runs: $RunCount | StepCount: $StepCount | Run timeout: ${RunTimeoutSeconds}s"
 Write-Host "=========================================="
 
 $allResults = @()
@@ -277,9 +281,38 @@ $resultsDir = ".\measurements\comparison_run_$timestamp"
 $failuresDir = Join-Path $resultsDir "failures"
 $tracesDir   = Join-Path $resultsDir "traces"
 
-# methods_per_step keyed by platform name ("JVM"/"JS"/"Native"). Filled in on the
-# first k-perf measurement iteration for each platform; used later for overhead.
-$methodsPerStep = @{}
+# methods_per_step keyed by platform name ("JVM"/"JS"/"Native"). Primary
+# source is the static formula below (workload is deterministic + all
+# variants now exclude property accessors uniformly, so a closed-form
+# computation is exact). The k-perf trace capture remains as a runtime
+# sanity check — if it diverges from the formula by >1% a warning is
+# emitted further down.
+#
+# Workload (in each comparison-*/src/commonMain/kotlin/Main.kt):
+#   workload() = fibonacci(20) + bubbleSort(15-element array)
+#   per workload() invocation = per step:
+#       fib_call_count(20) + 1 (bubbleSort) + 1 (workload itself)
+#       = 21891 + 2 = 21893
+#
+# fib_call_count(n) = 2*F(n+1) - 1 where F is the Fibonacci sequence.
+$WorkloadFibDepth = 20    # hard-coded in each Main.kt's workload()
+
+function Get-FibCallCount {
+  param([int]$N)
+  if ($N -le 1) { return 1L }
+  # iterative Fibonacci so this helper itself is O(N) rather than recursive
+  $a = 1L; $b = 1L
+  for ($i = 2; $i -le ($N + 1); $i++) { $tmp = $a + $b; $a = $b; $b = $tmp }
+  return 2L * $a - 1L
+}
+
+$staticMethodsPerStep = (Get-FibCallCount -N $WorkloadFibDepth) + 2L
+$methodsPerStep = @{ 'JVM' = $staticMethodsPerStep; 'JS' = $staticMethodsPerStep; 'Native' = $staticMethodsPerStep }
+Write-Host ("methods/step (from formula: fibDepth={0}): {1:N0}" -f $WorkloadFibDepth, $staticMethodsPerStep) -ForegroundColor Cyan
+
+# k-perf trace-based methods/step, captured during the first k-perf run for
+# each platform. Used purely as a sanity check vs $staticMethodsPerStep.
+$methodsPerStepFromTrace = @{}
 $tracePreserved = @{}
 
 function Invoke-Docker {
@@ -360,9 +393,15 @@ function Invoke-PostRunCleanup {
       $lineCount = $lineCount - 1
     }
     if ($StepCount -gt 0) {
-      $mps = [Math]::Floor($lineCount / 2 / $StepCount)
-      $methodsPerStep[$vp.Platform] = $mps
-      Write-Host "  Preserved trace $safeName.txt ($lineCount lines) → methods/step = $mps for platform $($vp.Platform)" -ForegroundColor Cyan
+      $mpsFromTrace = [Math]::Floor($lineCount / 2 / $StepCount)
+      $methodsPerStepFromTrace[$vp.Platform] = $mpsFromTrace
+      $formulaVal = $methodsPerStep[$vp.Platform]
+      $deltaPct = if ($formulaVal -gt 0) { 100.0 * [Math]::Abs($mpsFromTrace - $formulaVal) / $formulaVal } else { 0.0 }
+      $colour = if ($deltaPct -gt 1.0) { 'Yellow' } else { 'Cyan' }
+      Write-Host ("  Preserved trace $safeName.txt ($lineCount lines) -> methods/step from trace = {0:N0}; formula = {1:N0}; delta = {2:N2}%" -f $mpsFromTrace, $formulaVal, $deltaPct) -ForegroundColor $colour
+      if ($deltaPct -gt 1.0) {
+        Write-Host ("  WARN: k-perf trace methods/step ({0}) diverges from formula ({1}) by {2:N2}% on $($vp.Platform). Investigate before trusting the overhead numbers." -f $mpsFromTrace, $formulaVal, $deltaPct) -ForegroundColor Yellow
+      }
     }
     $tracePreserved[$ExeName] = $true
 
@@ -423,22 +462,10 @@ foreach ($exe in $executables) {
   Write-Host "--- Benchmarking: $($exe.Name) ---"
   $invocation = "$($exe.Command) $StepCount"
 
-  # Warmup
-  Write-Host "Warmup iterations ($WarmupCount):"
-  for ($i = 0; $i -lt $WarmupCount; $i++) {
-    $output = Invoke-WithTimeout -Command $invocation -TimeoutSeconds $RunTimeoutSeconds
-    $outputStr = $output -join "`n"
-    Invoke-PostRunCleanup -ExeName $exe.Name -IsMeasurement $false
-
-    $parsed = Get-ElapsedFromOutput -OutputStr $outputStr
-    if ($null -ne $parsed.TotalNanos) {
-      Write-Host ("  Warmup {0}: total {1:N3} ms ({2} steps)" -f ($i+1), ($parsed.TotalNanos / 1000000.0), $parsed.StepNanos.Count)
-    }
-    else {
-      Write-Host "  Warmup $($i+1): Failed to parse time"
-      Save-FailureOutput -Phase "warmup" -ExeName $exe.Name -Iteration ($i + 1) -RawOutput $outputStr
-    }
-  }
+  # No discarded warmup runs — $WarmupCount is now applied per-run as a
+  # step-index cutoff (the first $WarmupCount step indices of every measured
+  # run are excluded from per-step statistics in Get-PerStepMedians/Mean
+  # below).
 
   # Actual measurements
   $totalNanosList = @()
@@ -466,10 +493,13 @@ foreach ($exe in $executables) {
     }
   }
 
-  # Flatten per-step times across all runs to compute a per-step mean/median.
+  # Flatten per-step times across all runs, EXCLUDING the first $WarmupCount
+  # step indices in each run (warmup steps per-run).
   $flatStepNanos = @()
   foreach ($runSteps in $perRunStepNanos) {
-    foreach ($s in $runSteps) { $flatStepNanos += [double]$s }
+    for ($s = $WarmupCount; $s -lt $runSteps.Count; $s++) {
+      $flatStepNanos += [double]$runSteps[$s]
+    }
   }
 
   $totalStats = Get-BenchmarkStatistics -Values $totalNanosList
@@ -504,12 +534,11 @@ if (-Not (Test-Path $resultsDir)) {
   New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null
 }
 
-# --- Per-step median curve + steady-state detection -----------------------
+# --- Per-step median curve ------------------------------------------------
 # For each (variant, platform), compute the per-step median across runs
-# (one median per step index, shape: StepCount). Then auto-detect a
-# "steady-state start" — the first step index whose median falls within
-# K × (tail-median) of the tail. Used to compute steady-state overhead so
-# the cold-start prefix (very expensive on JVM) doesn't dominate.
+# (one median per step index, shape: StepCount). Then average the medians
+# from index $WarmupCount to end as the headline "Step mean" — replaces
+# the old opaque "first step ≤ 2× tail-median" steady-state detector.
 
 function Get-PerStepMedians {
   param([object[]]$PerRunStepValues)
@@ -534,37 +563,6 @@ function Get-PerStepMedians {
   return ,$medians
 }
 
-# Returns the first step index where the per-step median falls within
-# $ThresholdMultiplier × tail-median, where tail-median is the median of
-# step medians in the last 50% of step indices. With sawtooth (otel-*)
-# this picks a relatively late index since many tail samples are spikes;
-# that's intentional — the "steady mean" is then averaged over a mix of
-# spike and quiet samples, which approximates real steady-state cost.
-function Get-SteadyStateStart {
-  param(
-    [object[]]$Medians,
-    [double]$ThresholdMultiplier = 2.0
-  )
-  $n = $Medians.Count
-  if ($n -lt 8) { return 0 }
-
-  $tailStart = [Math]::Floor($n / 2)
-  $tail = @()
-  for ($i = $tailStart; $i -lt $n; $i++) {
-    if ($null -ne $Medians[$i]) { $tail += [double]$Medians[$i] }
-  }
-  if ($tail.Count -eq 0) { return 0 }
-  $tailSorted = @($tail | Sort-Object)
-  $tailMedian = [double]$tailSorted[[Math]::Floor($tailSorted.Count / 2)]
-  if ($tailMedian -le 0) { return 0 }
-
-  $limit = $ThresholdMultiplier * $tailMedian
-  for ($i = 0; $i -lt $n; $i++) {
-    if ($null -ne $Medians[$i] -and [double]$Medians[$i] -le $limit) { return $i }
-  }
-  return $tailStart
-}
-
 # Mean of $Values[$Start..end] (inclusive), ignoring nulls.
 function Get-MeanFromIndex {
   param([object[]]$Values, [int]$Start)
@@ -576,61 +574,33 @@ function Get-MeanFromIndex {
   return $acc / $n
 }
 
-# Percentile of $Values[$Start..end] (inclusive), ignoring nulls.
-# $Percentile is in [0,1]; uses linear interpolation between the two
-# closest order statistics (same convention as numpy.percentile default).
-# Used to compute a lower-envelope (P10) "clean per-method cost" that
-# is robust against batch-flush spikes in otel-* rows.
-function Get-PercentileFromIndex {
-  param([object[]]$Values, [int]$Start, [double]$Percentile)
-  $samples = New-Object 'System.Collections.Generic.List[double]'
-  for ($i = $Start; $i -lt $Values.Count; $i++) {
-    if ($null -ne $Values[$i]) { [void]$samples.Add([double]$Values[$i]) }
-  }
-  if ($samples.Count -eq 0) { return $null }
-  $sorted = $samples | Sort-Object
-  $n = $sorted.Count
-  if ($n -eq 1) { return [double]$sorted[0] }
-  $rank = ($n - 1) * $Percentile
-  $lo = [Math]::Floor($rank)
-  $hi = [Math]::Ceiling($rank)
-  if ($lo -eq $hi) { return [double]$sorted[[int]$lo] }
-  $frac = $rank - $lo
-  return [double]$sorted[[int]$lo] * (1.0 - $frac) + [double]$sorted[[int]$hi] * $frac
-}
-
-# Build a per-(variant,platform) summary: medians + steady-state start +
-# steady-state mean step time. Store on $allResults for downstream use.
-# All values in nanoseconds; convert at display time.
+# Build a per-(variant,platform) summary: per-step medians + mean step time
+# computed over steps $WarmupCount..end. All values in ns; convert at
+# display time.
 foreach ($res in $allResults) {
   $medians = Get-PerStepMedians -PerRunStepValues $res.PerRunStepNanos
-  $steady  = Get-SteadyStateStart -Medians $medians -ThresholdMultiplier 2.0
-  $steadyMean     = Get-MeanFromIndex      -Values $medians -Start $steady
-  $steadyEnvelope = Get-PercentileFromIndex -Values $medians -Start $steady -Percentile 0.10
   $res['PerStepMedianNanos'] = $medians
-  $res['SteadyStateStart']   = $steady
-  $res['SteadyStepNanos']    = $steadyMean
-  $res['EnvelopeStepNanos']  = $steadyEnvelope
+  # Override the previously-flat StepMeanNanos (which already excludes
+  # warmup step indices, see the flat slice above) with the
+  # WarmupCount..end mean of the per-step median curve. Aligns with what
+  # the Per-step median CSV emits as the "measured" region.
+  $res['StepMeanNanos'] = Get-MeanFromIndex -Values $medians -Start $WarmupCount
 }
 
-# --- Overhead calculation --------------------------------------------------
-# Compute two flavours of overhead (both in ns/method):
-#   1) Full-run flat:  uses StepMeanNanos / baseline.StepMeanNanos (all samples)
-#   2) Steady-state:   uses SteadyStepNanos (per-step median, averaged over
-#                      the auto-detected steady region) for both terms.
-# Steady-state is the one to quote when reporting "the cost of one
-# instrumented method call at warm steady state".
-# Formula:  overhead_ns_per_method = (instr_ns - base_ns) / methods_per_step
+# --- Per-method calculation -----------------------------------------------
+# Two columns per row (both in ns/method):
+#   1) PerMethodTotal = StepMeanNanos / methodsPerStep
+#      Reproduces the naïve "average step time over total method calls"
+#      whiteboard math. Includes the workload's own cost.
+#   2) OverheadPerMethod = (StepMeanNanos − baseline.StepMeanNanos) / methodsPerStep
+#      Delta vs the uninstrumented baseline on the same platform. This
+#      isolates "what the plugin added".
 
-$baselineFullByPlatform     = @{}
-$baselineSteadyByPlatform   = @{}
-$baselineEnvelopeByPlatform = @{}
+$baselineStepByPlatform = @{}
 foreach ($res in $allResults) {
   $vp = Get-VariantAndPlatform -ExeName $res.Executable
   if ($vp.Variant -eq 'baseline') {
-    if ($null -ne $res.StepMeanNanos)     { $baselineFullByPlatform[$vp.Platform]     = $res.StepMeanNanos }
-    if ($null -ne $res.SteadyStepNanos)   { $baselineSteadyByPlatform[$vp.Platform]   = $res.SteadyStepNanos }
-    if ($null -ne $res.EnvelopeStepNanos) { $baselineEnvelopeByPlatform[$vp.Platform] = $res.EnvelopeStepNanos }
+    if ($null -ne $res.StepMeanNanos) { $baselineStepByPlatform[$vp.Platform] = $res.StepMeanNanos }
   }
 }
 
@@ -639,57 +609,44 @@ foreach ($res in $allResults) {
   $vp = Get-VariantAndPlatform -ExeName $res.Executable
   if ($vp.Variant -eq 'baseline') { continue }
 
-  $mps          = $methodsPerStep[$vp.Platform]
-  $stepMean     = $res.StepMeanNanos
-  $stepSteady   = $res.SteadyStepNanos
-  $stepEnvelope = $res.EnvelopeStepNanos
-  $baselineFull     = $baselineFullByPlatform[$vp.Platform]
-  $baselineSteady   = $baselineSteadyByPlatform[$vp.Platform]
-  $baselineEnvelope = $baselineEnvelopeByPlatform[$vp.Platform]
+  $mps         = $methodsPerStep[$vp.Platform]
+  $stepMean    = $res.StepMeanNanos
+  $baselineRef = $baselineStepByPlatform[$vp.Platform]
 
-  $ohFull = $null
-  if ($null -ne $baselineFull -and $null -ne $stepMean -and $null -ne $mps -and $mps -gt 0) {
-    $ohFull = ($stepMean - $baselineFull) / $mps
+  $perMethodTotal = $null
+  if ($null -ne $stepMean -and $null -ne $mps -and $mps -gt 0) {
+    $perMethodTotal = $stepMean / $mps
   }
-  $ohSteady = $null
-  if ($null -ne $baselineSteady -and $null -ne $stepSteady -and $null -ne $mps -and $mps -gt 0) {
-    $ohSteady = ($stepSteady - $baselineSteady) / $mps
-  }
-  $ohEnvelope = $null
-  if ($null -ne $baselineEnvelope -and $null -ne $stepEnvelope -and $null -ne $mps -and $mps -gt 0) {
-    $ohEnvelope = ($stepEnvelope - $baselineEnvelope) / $mps
+  $overheadPerMethod = $null
+  if ($null -ne $baselineRef -and $null -ne $stepMean -and $null -ne $mps -and $mps -gt 0) {
+    $overheadPerMethod = ($stepMean - $baselineRef) / $mps
   }
 
   $overheadRows += [ordered]@{
-    Variant                    = $vp.Variant
-    Platform                   = $vp.Platform
-    StepMeanNanos              = $stepMean
-    BaselineStepNanos          = $baselineFull
-    SteadyStepNanos            = $stepSteady
-    BaselineSteadyStepNanos    = $baselineSteady
-    EnvelopeStepNanos          = $stepEnvelope
-    BaselineEnvelopeStepNanos  = $baselineEnvelope
-    SteadyStateStart           = $res.SteadyStateStart
-    MethodsPerStep             = $mps
-    OverheadNsFullRun          = $ohFull
-    OverheadNsSteadyState      = $ohSteady
-    OverheadNsEnvelope         = $ohEnvelope
+    Variant              = $vp.Variant
+    Platform             = $vp.Platform
+    StepMeanNanos        = $stepMean
+    BaselineStepNanos    = $baselineRef
+    MethodsPerStep       = $mps
+    PerMethodTotalNs     = $perMethodTotal
+    OverheadPerMethodNs  = $overheadPerMethod
   }
 }
 
 # --- Emit per-step median CSV ---------------------------------------------
 # One row per (variant, platform, step). Use this in Excel/Python to plot
-# the JIT warmup curve. Values in nanoseconds (divide by 1000 for µs).
+# the per-step curve. Values in nanoseconds (divide by 1000 for µs).
+# `is_warmup` flags the first WarmupCount step indices for clarity.
 $csvPath = Join-Path $resultsDir "per_step_medians.csv"
-$csvLines = @("variant,platform,step,median_ns,steady_state_start")
+$csvLines = @("variant,platform,step,median_ns,is_warmup")
 foreach ($res in $allResults) {
   $vp = Get-VariantAndPlatform -ExeName $res.Executable
   $medians = $res.PerStepMedianNanos
-  $steady  = $res.SteadyStateStart
   if ($null -eq $medians -or $medians.Count -eq 0) { continue }
   for ($i = 0; $i -lt $medians.Count; $i++) {
     $m = if ($null -ne $medians[$i]) { "{0:F0}" -f [double]$medians[$i] } else { "" }
-    $csvLines += "$($vp.Variant),$($vp.Platform),$i,$m,$steady"
+    $isWarmup = if ($i -lt $WarmupCount) { 1 } else { 0 }
+    $csvLines += "$($vp.Variant),$($vp.Platform),$i,$m,$isWarmup"
   }
 }
 $csvLines | Out-File -FilePath $csvPath -Encoding utf8
@@ -712,9 +669,10 @@ $markdown = @"
 # Benchmark Results ($timestamp)
 
 ## Parameters
-- **Warmup Iterations:** $WarmupCount
+- **Warmup steps/run (discarded from stats):** $WarmupCount
 - **Run Iterations:** $RunCount
 - **Step Count (workload calls per process):** $StepCount
+- **Measured steps per run:** $($StepCount - $WarmupCount)
 - **Clean Build:** $CleanBuild
 - **Run timeout (s):** $RunTimeoutSeconds
 
@@ -729,15 +687,18 @@ $markdown = @"
 - **Device:** $($machineInfo.DeviceManufacturer) - $($machineInfo.DeviceModel)
 - **Git Branch:** $($machineInfo.GitBranch)
 
-## Methods per step (k-perf trace, lines/2/StepCount)
+## Methods per step
 
-| Platform | methods_per_step |
-|---|---:|
+Closed-form: ``fib_call_count(fibDepth) + 2`` with ``fibDepth=$WorkloadFibDepth`` (i.e. ``2 * Fibonacci(fibDepth+1) - 1`` recursive calls plus 1 for ``bubbleSort`` plus 1 for ``workload`` itself). The k-perf trace column is empirical (``lines / 2 / StepCount``) and serves as a sanity check.
+
+| Platform | methods_per_step (formula, used) | methods_per_step (k-perf trace, check) |
+|---|---:|---:|
 "@
 
 foreach ($plat in @('JVM','JS','Native')) {
-  $val = if ($methodsPerStep.ContainsKey($plat)) { $methodsPerStep[$plat] } else { 'N/A' }
-  $markdown += "`n| $plat | $val |"
+  $formulaVal = if ($methodsPerStep.ContainsKey($plat)) { "$($methodsPerStep[$plat])" } else { 'N/A' }
+  $traceVal   = if ($methodsPerStepFromTrace.ContainsKey($plat)) { "$($methodsPerStepFromTrace[$plat])" } else { 'N/A' }
+  $markdown += "`n| $plat | $formulaVal | $traceVal |"
 }
 
 $markdown += @"
@@ -745,9 +706,9 @@ $markdown += @"
 
 ## Execution Summary
 
-Total = wall-clock per process. Step = mean across RunCount × StepCount samples.
+``Mean step (µs)`` = mean of per-step medians from step index $WarmupCount to $($StepCount - 1) across $RunCount measured runs (first $WarmupCount step indices of each run discarded as warmup).
 
-| Executable | Iterations | Total mean (ms) | Total median (ms) | Step mean (µs) | Step median (µs) | Step stddev (µs) |
+| Executable | Iterations | Total mean (ms) | Total median (ms) | Mean step (µs) | Step median (µs) | Step stddev (µs) |
 |------------|-----------:|----------------:|------------------:|---------------:|-----------------:|-----------------:|
 "@
 
@@ -764,40 +725,33 @@ foreach ($res in $allResults) {
 $markdown += @"
 
 
-## Overhead per instrumented method
+## Per-method timings
 
-``overhead_ns/method = (step_ns_instrumented − step_ns_baseline) / methods_per_step``
-
-- **Full**: mean over all steps. Cold-JVM-biased.
-- **Steady**: mean from ``SS-start`` onward (first step ≤ 2× tail-median). Quote this.
-- **Envelope (P10)**: 10th percentile of steady-region per-step medians. Sawtooth-aware lower bound.
-
-methods/step from preserved k-perf trace (``traces/``); otel-* underestimate by ~0.5 % (skipped ``repeat { }`` lambda body).
-
-| Variant | Platform | SS-start | Step mean (µs) | Baseline mean (µs) | Steady (µs) | Baseline steady (µs) | Envelope P10 (µs) | Baseline envelope (µs) | Methods/step | Overhead full (ns) | Overhead steady (ns) | Overhead envelope (ns) |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Variant | Platform | Mean step (µs) | Methods/step | Per-method (ns) = step / methods | Overhead/method (ns) = Δ vs baseline |
+|---|---|---:|---:|---:|---:|
 "@
 
 foreach ($row in $overheadRows) {
-  $ss           = if ($null -ne $row.SteadyStateStart)           { "$($row.SteadyStateStart)" }                                else { "N/A" }
-  $stepMean     = if ($null -ne $row.StepMeanNanos)              { "{0:N2}" -f ($row.StepMeanNanos / 1000.0) }                  else { "N/A" }
-  $baseMean     = if ($null -ne $row.BaselineStepNanos)          { "{0:N2}" -f ($row.BaselineStepNanos / 1000.0) }              else { "N/A" }
-  $stepSteady   = if ($null -ne $row.SteadyStepNanos)            { "{0:N2}" -f ($row.SteadyStepNanos / 1000.0) }                else { "N/A" }
-  $baseSteady   = if ($null -ne $row.BaselineSteadyStepNanos)    { "{0:N2}" -f ($row.BaselineSteadyStepNanos / 1000.0) }        else { "N/A" }
-  $stepEnv      = if ($null -ne $row.EnvelopeStepNanos)          { "{0:N2}" -f ($row.EnvelopeStepNanos / 1000.0) }              else { "N/A" }
-  $baseEnv      = if ($null -ne $row.BaselineEnvelopeStepNanos)  { "{0:N2}" -f ($row.BaselineEnvelopeStepNanos / 1000.0) }      else { "N/A" }
-  $mps          = if ($null -ne $row.MethodsPerStep)             { "$($row.MethodsPerStep)" }                                    else { "N/A" }
-  $ohFull       = if ($null -ne $row.OverheadNsFullRun)          { "{0:N1}" -f $row.OverheadNsFullRun }                         else { "N/A" }
-  $ohSteady     = if ($null -ne $row.OverheadNsSteadyState)      { "{0:N1}" -f $row.OverheadNsSteadyState }                     else { "N/A" }
-  $ohEnvelope   = if ($null -ne $row.OverheadNsEnvelope)         { "{0:N1}" -f $row.OverheadNsEnvelope }                        else { "N/A" }
-  $markdown += "`n| $($row.Variant) | $($row.Platform) | $ss | $stepMean | $baseMean | $stepSteady | $baseSteady | $stepEnv | $baseEnv | $mps | $ohFull | $ohSteady | $ohEnvelope |"
+  $stepMean       = if ($null -ne $row.StepMeanNanos)       { "{0:N2}" -f ($row.StepMeanNanos / 1000.0) }   else { "N/A" }
+  $mps            = if ($null -ne $row.MethodsPerStep)      { "$($row.MethodsPerStep)" }                    else { "N/A" }
+  $perMethodTotal = if ($null -ne $row.PerMethodTotalNs)    { "{0:N1}" -f $row.PerMethodTotalNs }           else { "N/A" }
+  $overhead       = if ($null -ne $row.OverheadPerMethodNs) { "{0:N1}" -f $row.OverheadPerMethodNs }        else { "N/A" }
+  $markdown += "`n| $($row.Variant) | $($row.Platform) | $stepMean | $mps | $perMethodTotal | $overhead |"
 }
 
 # --- Per-step curve table: median µs at selected step indices --------------
-# Picks indices that span the cold→warm transition. Edit the array if you
-# want different resolution.
-$curveStepIndices = @(0, 1, 2, 5, 10, 25, 50, 75, 100, 125, ($StepCount - 1))
-$curveStepIndices = @($curveStepIndices | Where-Object { $_ -lt $StepCount } | Sort-Object -Unique)
+# Picks indices that span the warmup region (≤ WarmupCount) and the
+# measured region (≥ WarmupCount). Edit the array if you want different
+# resolution.
+$curveStepIndices = @(
+  0, 1, 2, 5, 10,
+  $WarmupCount,
+  ($WarmupCount + 5),
+  ($WarmupCount + 10),
+  ([Math]::Floor(($WarmupCount + $StepCount) / 2)),
+  ($StepCount - 1)
+)
+$curveStepIndices = @($curveStepIndices | Where-Object { $_ -ge 0 -and $_ -lt $StepCount } | Sort-Object -Unique)
 $curveHeaderCells = $curveStepIndices | ForEach-Object { "s$_" }
 $curveDivider = ($curveStepIndices | ForEach-Object { "---:" }) -join ' | '
 
@@ -831,7 +785,7 @@ foreach ($res in $allResults) {
 
 $markdown += @"
 
-> Curve shape: JVM C1≈step 1-2, C2≈step 55. JS V8 tiered. Native AOT (flat). otel-* drift + sawtooth = dcxp BSP/persistent-list interaction.
+> Curve shape: JVM C1≈step 1-2, C2 hits later. JS V8 tiered. Native AOT (flat). otel-* drift + sawtooth = dcxp BSP/persistent-list interaction. Step indices < $WarmupCount are discarded from the per-method statistics above.
 "@
 
 $markdown | Out-File $mdFile -Encoding utf8

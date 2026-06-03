@@ -28,12 +28,17 @@ val otelProtoTsMaxExportBatchSize = providers.gradleProperty("otelProtoTsMaxExpo
     .map { it.toInt() }
     .getOrElse(Int.MAX_VALUE)
 
+val otelProtoTsInstrumentPropertyAccessors = providers.gradleProperty("otelProtoTsInstrumentPropertyAccessors")
+    .map { it.toBoolean() }
+    .getOrElse(false)
+
 otelProtoTimesource {
     host = "localhost:4317"
     service = "comparison-otel-proto-timesource"
     debug = true
     maxQueueSize = otelProtoTsMaxQueueSize
     maxExportBatchSize = otelProtoTsMaxExportBatchSize
+    instrumentPropertyAccessors = otelProtoTsInstrumentPropertyAccessors
 }
 
 kotlin {

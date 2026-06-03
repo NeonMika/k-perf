@@ -13,6 +13,7 @@ class Extension() {
     var debug: Boolean = false
     var host: String? = null
     var service: String? = null
+    var instrumentPropertyAccessors: Boolean = false
 }
 
 class Plugin : KotlinCompilerPluginSupportPlugin {
@@ -52,6 +53,7 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
                 add(SubpluginOption("debug", extension.debug.toString()))
                 if (extension.host != null) add(SubpluginOption("host", extension.host!!))
                 if (extension.service != null) add(SubpluginOption("service", extension.service!!))
+                add(SubpluginOption("instrumentPropertyAccessors", extension.instrumentPropertyAccessors.toString()))
             }
         }
     }

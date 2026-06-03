@@ -16,6 +16,7 @@ class Extension() {
     var maxQueueSize: Int = 2048
     var maxExportBatchSize: Int = Int.MAX_VALUE
     var useSimpleSpanProcessor: Boolean = false
+    var instrumentPropertyAccessors: Boolean = false
 }
 
 class Plugin : KotlinCompilerPluginSupportPlugin {
@@ -58,6 +59,7 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
                 add(SubpluginOption("maxQueueSize", extension.maxQueueSize.toString()))
                 add(SubpluginOption("maxExportBatchSize", extension.maxExportBatchSize.toString()))
                 add(SubpluginOption("useSimpleSpanProcessor", extension.useSimpleSpanProcessor.toString()))
+                add(SubpluginOption("instrumentPropertyAccessors", extension.instrumentPropertyAccessors.toString()))
             }
         }
     }

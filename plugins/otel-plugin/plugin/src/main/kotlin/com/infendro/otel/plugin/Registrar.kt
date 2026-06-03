@@ -4,6 +4,7 @@ import com.infendro.otel.plugin.ConfigurationKeys.KEY_DEBUG
 import com.infendro.otel.plugin.ConfigurationKeys.KEY_ENABLED
 import com.infendro.otel.plugin.ConfigurationKeys.KEY_HOST
 import com.infendro.otel.plugin.ConfigurationKeys.KEY_SERVICE
+import com.infendro.otel.plugin.ConfigurationKeys.KEY_INSTRUMENT_PROPERTY_ACCESSORS
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
@@ -20,10 +21,11 @@ class Registrar : CompilerPluginRegistrar() {
         val debug = configuration[KEY_DEBUG] ?: false
         val host = configuration[KEY_HOST]
         val service = configuration[KEY_SERVICE]
+        val instrumentPropertyAccessors = configuration[KEY_INSTRUMENT_PROPERTY_ACCESSORS] ?: false
 
         if (!enabled) return
 
-        val extension = IrExtension(debug, host, service)
+        val extension = IrExtension(debug, host, service, instrumentPropertyAccessors)
         IrGenerationExtension.registerExtension(extension)
     }
 }

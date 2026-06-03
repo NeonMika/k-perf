@@ -20,10 +20,15 @@ repositories {
     mavenCentral()
 }
 
+val otelInstrumentPropertyAccessors = providers.gradleProperty("otelInstrumentPropertyAccessors")
+    .map { it.toBoolean() }
+    .getOrElse(false)
+
 otel {
     host = "localhost:4318"
     service = "comparison-otel"
     debug = true
+    instrumentPropertyAccessors = otelInstrumentPropertyAccessors
 }
 
 kotlin {

@@ -1,5 +1,5 @@
 package com.infendro.otel.plugin.proto.anchored
-// Variant of otel-plugin-proto that delegates span timestamps to the SDKs internal AnchoredClock (no explicit setStartTimestamp / Span.end timestamp).
+
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
@@ -43,6 +43,7 @@ class IrExtension(
     val maxQueueSize: Int = 2048,
     val maxExportBatchSize: Int = Int.MAX_VALUE,
     val useSimpleSpanProcessor: Boolean = false,
+    val instrumentPropertyAccessors: Boolean = false,
 ) : IrGenerationExtension {
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(
@@ -53,7 +54,8 @@ class IrExtension(
 
         val firstFile = moduleFragment.files[0]
 
-        // region helpers
+        //1. IR-building helpers
+
         val unit = irBuiltIns.unitType
         val any = irBuiltIns.anyType
         val int = irBuiltIns.intType
@@ -217,9 +219,10 @@ class IrExtension(
         }
 
         fun IrFunction.isMain() = name.toString() == "main"
-        // endregion
 
-        // region
+        // 2. Symbol resolution
+        // 2.1 Kotlin stdlib (println, StringBuilder, Duration)
+
         val println = getFunction("kotlin.io", "println") {
             it.regularParams.size == 1
                 && it.regularParams[0].type == any.makeNullable()
@@ -242,30 +245,55 @@ class IrExtension(
         }
         val StringBuilder_toString = StringBuilder.getFunction("toString")
 
-        val Duration = getClass(
-            "kotlin.time",
-            "Duration"
-        )
+        val Duration = getClass("kotlin.time", "Duration")
         val Duration_inWholeMilliseconds = Duration.getPropertyGetter("inWholeMilliseconds")!!
 
-        val Instant = getClass(
-            "kotlinx.datetime",
-            "Instant"
-        )
+        // 2.2 kotlinx.datetime — wall-clock source
+
+        val Instant = getClass("kotlinx.datetime", "Instant")
         val Instant_minus = Instant.getFunction("minus") {
             it.regularParams.size == 1
                 && it.regularParams[0].type == Instant.type()
         }
 
-        val Clock = getClass(
-            "kotlinx.datetime",
-            "Clock"
-        )
+        val Clock = getClass("kotlinx.datetime", "Clock")
         val System = Clock.getClass("System")
         val now = System.getFunction("now")
 
-        val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
-        val Exporter_constructor = Exporter.getConstructor()
+        //2.3 OTel API surface (io.opentelemetry.kotlin.api.*)
+
+        val Tracer = getClass("io.opentelemetry.kotlin.api.trace", "Tracer")
+        val Tracer_spanBuilder = Tracer.getFunction("spanBuilder")
+
+        val TracerBuilder = getClass("io.opentelemetry.kotlin.api.trace", "TracerBuilder")
+        val TracerBuilder_build = TracerBuilder.getFunction("build")
+
+        val SpanBuilder = getClass("io.opentelemetry.kotlin.api.trace", "SpanBuilder")
+        val SpanBuilder_setParent = SpanBuilder.getFunction("setParent")
+        // NOTE: no setStartTimestamp lookup. We omit that call so the SDK's
+        // internal AnchoredClock fills the start timestamp in at startSpan().
+        val SpanBuilder_startSpan = SpanBuilder.getFunction("startSpan")
+
+        val Span = getClass("io.opentelemetry.kotlin.api.trace", "Span")
+        // Resolves the no-arg end() overload. The SDK's internal AnchoredClock
+        // produces the end timestamp using the anchor it built at startSpan().
+        val Span_end = Span.getFunction("end") {
+            it.regularParams.isEmpty()
+        }
+
+        val Context = getClass("io.opentelemetry.kotlin.context", "Context")
+        val ImplicitContextKeyed = getClass(
+            "io.opentelemetry.kotlin.context",
+            "ImplicitContextKeyed"
+        )
+        val Context_with = Context.getFunction("with") {
+            it.regularParams.size == 1 && it.regularParams[0].type == ImplicitContextKeyed.type()
+        }
+        val Context_makeCurrent = Context.getFunction("makeCurrent")
+        val ContextCompanion = Context.getClass("Companion")
+        val ContextCompanion_current = ContextCompanion.getFunction("current")
+
+        //2.4 OTel SDK (io.opentelemetry.kotlin.sdk.*)
 
         val SpanProcessor = getClass(
             "io.opentelemetry.kotlin.sdk.trace",
@@ -310,40 +338,10 @@ class IrExtension(
         val TracerProviderBuilder_addSpanProcessor = TracerProviderBuilder.getFunction("addSpanProcessor")
         val TracerProviderBuilder_build = TracerProviderBuilder.getFunction("build")
 
-        val TracerBuilder = getClass(
-            "io.opentelemetry.kotlin.api.trace",
-            "TracerBuilder"
-        )
-        val TracerBuilder_build = TracerBuilder.getFunction("build")
+        //2.5 exporter and utils (otlp-exporter-proto, package com.infendro.otlp, com.infendro.otel.util)
 
-        val Tracer = getClass("io.opentelemetry.kotlin.api.trace", "Tracer")
-        val Tracer_spanBuilder = Tracer.getFunction("spanBuilder")
-
-        val Context = getClass("io.opentelemetry.kotlin.context", "Context")
-        val ImplicitContextKeyed = getClass(
-            "io.opentelemetry.kotlin.context",
-            "ImplicitContextKeyed"
-        )
-        val Context_with = Context.getFunction("with") {
-            it.regularParams.size == 1 && it.regularParams[0].type == ImplicitContextKeyed.type()
-        }
-        val Context_makeCurrent = Context.getFunction("makeCurrent")
-        val ContextCompanion = Context.getClass("Companion")
-        val ContextCompanion_current = ContextCompanion.getFunction("current")
-
-        val SpanBuilder = getClass("io.opentelemetry.kotlin.api.trace", "SpanBuilder")
-        val SpanBuilder_setParent = SpanBuilder.getFunction("setParent")
-        val SpanBuilder_startSpan = SpanBuilder.getFunction("startSpan")
-
-        val Span = getClass("io.opentelemetry.kotlin.api.trace", "Span")
-        // CHANGE vs otel-plugin-proto: resolves the no-arg `end()` overload.
-        // Proto resolves end(Instant); we omit the timestamp so the SDK's
-        // internal AnchoredClock (built at SdkTracerProvider construction)
-        // produces it. Same mechanism the hand-built timesource plugin
-        // constructs by hand -- delegated to the SDK in this variant.
-        val Span_end = Span.getFunction("end") {
-            it.regularParams.isEmpty()
-        }
+        val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
+        val Exporter_constructor = Exporter.getConstructor()
 
         val await = getFunction("com.infendro.otel.util", "await") {
             it.regularParams.size == 1
@@ -355,11 +353,16 @@ class IrExtension(
                 && it.regularParams[1].type == Instant.type()
         }
         val env = getFunction("com.infendro.otel.util", "env")
-        // endregion
 
-        // region fields
+        // 3. Static fields
+
+        // IR ↓
+        //   // If Gradle property `host` was provided:
+        //   private val _host = "<host>"
+        //   // Else:
+        //   private val _hostEnv = env("OTLP_HOST")
+        //   private val _host = if (_hostEnv != null) _hostEnv else "localhost:4318"
         val host = if (host != null) {
-            // val host = <host>
             buildField(
                 name = "_host",
                 type = string,
@@ -370,7 +373,6 @@ class IrExtension(
                 }
             }
         } else {
-            // val hostEnv = env("OTLP_HOST")
             val hostEnv = buildField(
                 name = "_hostEnv",
                 type = string,
@@ -383,7 +385,6 @@ class IrExtension(
                 }
             }
 
-            // val host = if(hostEnv != null) hostEnv else "localhost:4318"
             buildField(
                 name = "_host",
                 type = string,
@@ -403,8 +404,13 @@ class IrExtension(
             }
         }
 
+        // IR ↓
+        //   // If Gradle property `service` was provided:
+        //   private val _service = "<service>"
+        //   // Else:
+        //   private val _serviceEnv = env("OTLP_SERVICE")
+        //   private val _service = if (_serviceEnv != null) _serviceEnv else ""
         val service = if (service != null) {
-            // val service = <service>
             buildField(
                 name = "_service",
                 type = string,
@@ -415,7 +421,6 @@ class IrExtension(
                 }
             }
         } else {
-            // val serviceEnv = env("OTLP_SERVICE")
             val serviceEnv = buildField(
                 name = "_serviceEnv",
                 type = string,
@@ -428,7 +433,6 @@ class IrExtension(
                 }
             }
 
-            // val service = if(serviceEnv != null) serviceEnv else ""
             buildField(
                 name = "_service",
                 type = string,
@@ -448,7 +452,8 @@ class IrExtension(
             }
         }
 
-        // val exporter = OtlpExporter(host, service)
+        // IR ↓
+        //   private val _exporter = OtlpExporter(_host, _service)
         val exporter = buildField(
             name = "_exporter",
             type = Exporter.type(),
@@ -462,16 +467,19 @@ class IrExtension(
             }
         }
 
-        // When useSimpleSpanProcessor:
-        //   val processor: SpanProcessor = SimpleSpanProcessor.create(exporter)
-        // Otherwise:
-        //   val processor: SpanProcessor = BatchSpanProcessor
-        //     .builder(exporter)
-        //     .setMaxQueueSize(<maxQueueSize>)
-        //     .setMaxExportBatchSize(<maxExportBatchSize>)
-        //     .build()
-        // Field is typed as the SpanProcessor interface so the same field can
-        // hold either implementation; shutdown is resolved on the interface.
+        // IR ↓
+        //   // useSimpleSpanProcessor=true (sync export, no batching — for A/B testing only):
+        //   private val _processor: SpanProcessor = SimpleSpanProcessor.create(_exporter)
+        //
+        //   // useSimpleSpanProcessor=false (default — async batched export):
+        //   private val _processor: SpanProcessor = BatchSpanProcessor
+        //       .builder(_exporter)
+        //       .setMaxQueueSize(<maxQueueSize>)
+        //       .setMaxExportBatchSize(<maxExportBatchSize>)
+        //       .build()
+        //
+        // Field is typed as SpanProcessor (the interface) so the same code can
+        // hold either implementation; shutdown() is resolved on the interface.
         val processor = buildField(
             name = "_processor",
             type = SpanProcessor.type(),
@@ -502,7 +510,10 @@ class IrExtension(
             }
         }
 
-        // val provider = SdkTracerProvider.builder().addSpanProcessor(processor).build()
+        // IR ↓
+        //   private val _provider = SdkTracerProvider.builder()
+        //       .addSpanProcessor(_processor)
+        //       .build()
         val provider = buildField(
             name = "_provider",
             type = TracerProvider.type(),
@@ -520,7 +531,14 @@ class IrExtension(
             }
         }
 
-        // val tracer = provider.tracerBuilder("").build()
+        // IR ↓
+        //   private val _tracer = _provider.tracerBuilder("").build()
+        //
+        // When TracerProvider is built above, the SDK constructs an internal
+        // AnchoredClock that samples wall-clock once and stores a paired
+        // monotonic reading. Every span this tracer creates later will use
+        // (anchor_wall + monotonic_delta) for its timestamps — that is the
+        // implicit MEASUREMENT path for this variant.
         val tracer = buildField(
             name = "_tracer",
             type = Tracer.type(),
@@ -537,9 +555,18 @@ class IrExtension(
         }
 
         firstFile.addChildren(fields)
-        // endregion
 
-        // region functions
+        // 4. Helper functions: _startSpan / _endSpan
+
+        // IR ↓
+        //   fun _startSpan(name: String, context: Context): Span {
+        //       val spanBuilder = _tracer.spanBuilder(name)
+        //       spanBuilder.setParent(context)
+        //       // NO setStartTimestamp call. SDK uses its AnchoredClock.   // ← MEASUREMENT (implicit, in SDK)
+        //       val span = spanBuilder.startSpan()
+        //       context.with(span).makeCurrent()
+        //       return span
+        //   }
         val startSpan = buildFunction("_startSpan") {
             parameter {
                 name = Name.identifier("name")
@@ -555,7 +582,7 @@ class IrExtension(
                 val name = regularParams[0]
                 val context = regularParams[1]
 
-                // val spanBuilder = tracer.spanBuilder(name)
+                // val spanBuilder = _tracer.spanBuilder(name)
                 val spanBuilder = irTemporary(
                     call(Tracer_spanBuilder) {
                         dispatchReceiver = irGetField(null, tracer)
@@ -569,11 +596,10 @@ class IrExtension(
                     argument(0, irGet(context))
                 }
 
-                // CHANGE vs otel-plugin-proto: setStartTimestamp call omitted.
-                // The SDK's internal AnchoredClock fills in the start timestamp
-                // at startSpan() time using its anchor + monotonic offset.
+                // (no setStartTimestamp call — SDK's AnchoredClock fills it in
+                //  during startSpan() below)
 
-                // val span = spanBuilder.startSpan()
+                // val span = spanBuilder.startSpan()   ← MEASUREMENT (SDK samples AnchoredClock for start_time)
                 val span = irTemporary(
                     call(SpanBuilder_startSpan) {
                         dispatchReceiver = irGet(spanBuilder)
@@ -593,6 +619,11 @@ class IrExtension(
             }
         }
 
+        // IR ↓
+        //   fun _endSpan(span: Span, context: Context) {
+        //       context.makeCurrent()
+        //       span.end()                                              // ← MEASUREMENT (SDK samples AnchoredClock for end_time)
+        //   }
         val endSpan = buildFunction("_endSpan") {
             parameter {
                 name = Name.identifier("span")
@@ -610,9 +641,9 @@ class IrExtension(
                     dispatchReceiver = irGet(regularParams[1])
                 }
 
-                // CHANGE vs otel-plugin-proto: no-arg span.end() — SDK's
-                // internal AnchoredClock produces the end timestamp using
-                // the same anchor it set up for startSpan().
+                // span.end()   ← MEASUREMENT
+                // No timestamp argument — SDK reads its AnchoredClock.now()
+                // internally and uses that as end_time_unix_nano.
                 +call(Span_end) {
                     dispatchReceiver = irGet(regularParams[0])
                 }
@@ -620,13 +651,32 @@ class IrExtension(
         }
 
         firstFile.addChildren(functions)
-        // endregion
+
+        // 5. modify(): edit function body
+        //
+        //   IR ↓
+        //     fun <user fn>(...) {
+        //         // [DEBUG only, main + debug=true] val start = Clock.System.now()
+        //         val context = Context.current()
+        //         val span    = _startSpan(<user fn>, context)
+        //         try {
+        //             <original body>
+        //         } finally {
+        //             _endSpan(span, context)
+        //             // [main only:]
+        //             //   [DEBUG only:] println("Execution finished - <ms> ms elapsed")
+        //             //                 (computed from start ... Clock.System.now())
+        //             _processor.shutdown()
+        //             // [DEBUG branch:] await(_exporter, start)   // prints flush duration
+        //             // [non-debug:]    await(_exporter)
+        //         }
+        //     }
 
         fun IrFunction.modify() {
             body {
                 var start: IrVariable? = null
                 if (isMain() && debug) {
-                    // val start = Clock.System.now()
+                    // val start = Clock.System.now()      ← DEBUG (main wall-clock anchor)
                     start = irTemporary(
                         call(now) {
                             dispatchReceiver = irGetObject(System)
@@ -640,6 +690,7 @@ class IrExtension(
                         dispatchReceiver = irGetObject(ContextCompanion)
                     }
                 )
+
                 // val span = _startSpan(<function name>, context)
                 val span = irTemporary(
                     call(startSpan) {
@@ -648,12 +699,14 @@ class IrExtension(
                     }
                 )
 
+
                 val tryBlock: IrExpression = irBlock(
                     resultType = returnType
                 ) {
                     for (statement in body!!.statements) +statement
                 }
 
+                // try { <original body> } finally { <below> }
                 +irTry(
                     tryBlock.type,
                     tryBlock,
@@ -667,14 +720,14 @@ class IrExtension(
 
                         if (isMain()) {
                             if (debug) {
-                                // val end = Clock.System.now()
+                                // val end = Clock.System.now()        ← DEBUG
                                 val end = irTemporary(
                                     call(now) {
                                         dispatchReceiver = irGetObject(System)
                                     }
                                 )
 
-                                // val ms = (end - start).inWholeMilliseconds
+                                // val ms = (end - start).inWholeMilliseconds   ← DEBUG
                                 val duration = irTemporary(
                                     call(Instant_minus) {
                                         dispatchReceiver = irGet(end)
@@ -687,7 +740,7 @@ class IrExtension(
                                     }
                                 )
 
-                                // println("Execution finished - $ms ms elapsed")
+                                // println("Execution finished - $ms ms elapsed")   ← DEBUG
                                 val builder = irTemporary(
                                     call(StringBuilder_constructor)
                                 )
@@ -713,19 +766,20 @@ class IrExtension(
                                 }
                             }
 
-                            // processor.shutdown()
+                            // _processor.shutdown() <- flushes spanProcessor
                             +call(SpanProcessor_shutdown) {
                                 dispatchReceiver = irGetField(null, processor)
                             }
 
                             if (debug) {
-                                // await(exporter, start)
+                                // await(_exporter, start)   ← DEBUG (prints "Flush finished - X ms")
                                 +call(await_debug) {
                                     argument(0, irGetField(null, exporter))
                                     argument(1, irGet(start!!))
                                 }
                             } else {
-                                // await(exporter)
+                                // await(_exporter)
+                                // Block until all gRPC exports complete
                                 +call(await) {
                                     argument(0, irGetField(null, exporter))
                                 }
@@ -736,7 +790,7 @@ class IrExtension(
             }
         }
 
-        // region modify functions
+        // 6. Method walk
         moduleFragment.files.forEach { file ->
             file.transform(
                 object : IrTransformer<Any?>() {
@@ -754,8 +808,7 @@ class IrExtension(
                                 body != null &&                    // has a body
                                 name != "<init>" &&                // is not a constructor
                                 name != "<anonymous>" &&           // is not an anonymous function
-                                !declaration.isGetter &&
-                                !declaration.isSetter &&
+                                (instrumentPropertyAccessors || (!declaration.isGetter && !declaration.isSetter)) &&
                                 origin !in invalidOrigins
                         }
 
@@ -771,6 +824,5 @@ class IrExtension(
                 println(file.dump())
             }
         }
-        // endregion
     }
 }

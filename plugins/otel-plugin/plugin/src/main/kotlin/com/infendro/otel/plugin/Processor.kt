@@ -4,6 +4,7 @@ import com.infendro.otel.plugin.ConfigurationKeys.KEY_DEBUG
 import com.infendro.otel.plugin.ConfigurationKeys.KEY_ENABLED
 import com.infendro.otel.plugin.ConfigurationKeys.KEY_HOST
 import com.infendro.otel.plugin.ConfigurationKeys.KEY_SERVICE
+import com.infendro.otel.plugin.ConfigurationKeys.KEY_INSTRUMENT_PROPERTY_ACCESSORS
 import org.jetbrains.kotlin.compiler.plugin.*
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -36,6 +37,12 @@ class Processor : CommandLineProcessor {
             "<string>",
             "the service name used when exporting",
             required = false
+        ),
+        CliOption(
+            "instrumentPropertyAccessors",
+            "<true|false>",
+            "also instrument property getters/setters (default false: getters/setters skipped to match k-perf semantics)",
+            required = false
         )
     )
 
@@ -49,6 +56,7 @@ class Processor : CommandLineProcessor {
             "debug" -> configuration.put(KEY_DEBUG, value.toBoolean())
             "host" -> configuration.put(KEY_HOST, value)
             "service" -> configuration.put(KEY_SERVICE, value)
+            "instrumentPropertyAccessors" -> configuration.put(KEY_INSTRUMENT_PROPERTY_ACCESSORS, value.toBoolean())
             else -> throw CliOptionProcessingException("unknown option: ${option.optionName}")
         }
     }
