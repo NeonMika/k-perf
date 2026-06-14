@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 20,
+    "StepCount": 500,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,16 +14,19 @@
       true
     ],
     "FlushEarly": [
+      true,
       false
     ],
     "InstrumentPropertyAccessors": [
+      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*"
+      ".*",
+      "step"
     ]
   },
   "machineInfo": {
@@ -34,11 +37,11 @@
     "CPU": "AMD EPYC 7763 64-Core Processor",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
-    "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.93,
+    "TotalRAMGB": 15.61,
+    "AvailableRAMGB": 13.69,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 85,
-    "SystemUptimeHours": 0.04,
+    "SystemUptimeHours": 0.07,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
     "RunningProcessCount": 162,
@@ -50,13 +53,13 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "329e5a37cd76eca48e331bbcd432ac9a0b22f9ea",
+    "GitCommitHash": "8e076505846e5ad3f3805268211aed4751d36ea2",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-06-14 02:34:07"
+    "CollectionTimestamp": "2026-06-14 04:20:58"
   },
-  "buildTimeMs": 3830.9883,
+  "buildTimeMs": 2708.095,
   "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-  "repetitions": 3,
+  "repetitions": 50,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
