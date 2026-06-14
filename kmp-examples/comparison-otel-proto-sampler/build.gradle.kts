@@ -1,0 +1,103 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
+plugins {
+    kotlin("multiplatform") version "2.3.10"
+    id("com.infendro.otel-proto-sampler") version "1.0.1"
+}
+
+group = "com.infendro.otel.measure"
+version = "1.0.0"
+
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/dcxp/opentelemetry-kotlin")
+        credentials {
+            username = project.property("GITHUB_USERNAME") as String
+            password = project.property("GITHUB_PASSWORD") as String
+        }
+    }
+    mavenLocal()
+    mavenCentral()
+}
+
+val otelProtoSamplerMaxQueueSize = providers.gradleProperty("otelProtoSamplerMaxQueueSize")
+    .map { it.toInt() }
+    .getOrElse(2048)
+
+val otelProtoSamplerMaxExportBatchSize = providers.gradleProperty("otelProtoSamplerMaxExportBatchSize")
+    .map { it.toInt() }
+    .getOrElse(512)
+
+val otelProtoSamplerUseSimpleProcessor = providers.gradleProperty("otelProtoSamplerUseSimpleProcessor")
+    .map { it.toBoolean() }
+    .getOrElse(false)
+
+val otelProtoSamplerInstrumentPropertyAccessors = providers.gradleProperty("otelProtoSamplerInstrumentPropertyAccessors")
+    .map { it.toBoolean() }
+    .getOrElse(false)
+
+otelProtoSampler {
+    host = "localhost:4317"
+    service = "comparison-otel-proto-sampler"
+    debug = true
+    maxQueueSize = otelProtoSamplerMaxQueueSize
+    maxExportBatchSize = otelProtoSamplerMaxExportBatchSize
+    useSimpleSpanProcessor = otelProtoSamplerUseSimpleProcessor
+    instrumentPropertyAccessors = otelProtoSamplerInstrumentPropertyAccessors
+}
+
+kotlin {
+    jvm {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        mainRun {
+            mainClass.set("MainKt")
+        }
+        compilations.all {
+            tasks.withType<Jar> {
+                doFirst {
+                    manifest {
+                        attributes(
+                            "Main-Class" to "MainKt",
+                            "Class-Path" to runtimeDependencyFiles.files.joinToString(" ") { it.name })
+                    }
+                }
+                doLast {
+                    copy {
+                        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+                        from("build/libs")
+                        from(runtimeDependencyFiles.files)
+                        into("build/lib")
+                    }
+                }
+            }
+        }
+    }
+    @OptIn(org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalMainFunctionArgumentsDsl::class)
+    js {
+        nodejs {
+            passProcessArgvToMainFunction()
+        }
+        useCommonJs()
+        binaries.executable()
+    }
+    linuxX64 {
+        binaries.executable {
+            entryPoint = "main"
+            baseName = "main"
+        }
+    }
+    mingwX64 {
+        binaries.executable {
+            entryPoint = "main"
+            baseName = "main"
+        }
+    }
+
+    sourceSets {
+        val jsMain by getting {
+            dependencies {
+                implementation(npm("@js-joda/core", "3.2.0"))
+            }
+        }
+    }
+}

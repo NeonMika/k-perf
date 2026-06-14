@@ -306,7 +306,7 @@ class IrExtension(
             "BatchSpanProcessorBuilder"
         )
         val ProcessorBuilder_setMaxQueueSize = ProcessorBuilder.getFunction("setMaxQueueSize")
-        val ProcessorBuilder_setMaxExportBatchSize = ProcessorBuilder.getFunction("setMaxQueueSize")
+        val ProcessorBuilder_setMaxExportBatchSize = ProcessorBuilder.getFunction("setMaxExportBatchSize")
         val ProcessorBuilder_build = ProcessorBuilder.getFunction("build")
 
         val TracerProvider = getClass(
@@ -457,7 +457,6 @@ class IrExtension(
         //   private val _processor = BatchSpanProcessor
         //       .builder(_exporter)
         //       .setMaxQueueSize(2048)
-        //       .setMaxExportBatchSize(Int.MAX_VALUE)
         //       .build()
         val processor = buildField(
             name = "_processor",
@@ -467,7 +466,7 @@ class IrExtension(
             initializer = expression {
                 call(ProcessorBuilder_build) {
                     dispatchReceiver = call(ProcessorBuilder_setMaxExportBatchSize) {
-                        argument(0, irInt(Int.MAX_VALUE))
+                        argument(0, irInt(512))
                         dispatchReceiver = call(ProcessorBuilder_setMaxQueueSize) {
                             argument(0, irInt(2048))
                             dispatchReceiver = call(ProcessorCompanion_builder) {

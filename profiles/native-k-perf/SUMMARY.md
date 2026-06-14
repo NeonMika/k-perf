@@ -1,16 +1,12 @@
 ﻿# Profile -- k-perf (native)
 
-> WARNING: capture failed in this run; analyzing the previously captured profile instead.
-> Profile file was last written at **2026-05-20 20:33:24** -- not from the most recent `run-all-profiles.ps1` invocation.
-> Common cause on Windows 11: Smart App Control blocks unsigned `samply.exe`.
-
 **Variant:** `k-perf`  
 **Platform:** native  
-**SUMMARY rendered:** 2026-05-20 20:40:37  
+**SUMMARY rendered:** 2026-06-13 17:36:06  
 **Profile file last captured:** 2026-05-20 20:33:24  
 **Profile file:** [k-perf.perfView.xml.zip](k-perf.perfView.xml.zip)  
-**Wall time (capture run):** n/a (capture skipped or failed)  
-**Workload-reported time:** unknown (no marker line in stdout)  
+**Wall time (capture run):** 0 ms (incl. profiler overhead)  
+**Workload-reported time:** 1172 ms  
 
 ---
 

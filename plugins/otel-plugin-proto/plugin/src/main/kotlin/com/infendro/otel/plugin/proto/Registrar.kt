@@ -25,7 +25,7 @@ class Registrar : CompilerPluginRegistrar() {
         val host = configuration[KEY_HOST]
         val service = configuration[KEY_SERVICE]
         val maxQueueSize = configuration[KEY_MAX_QUEUE_SIZE] ?: 2048
-        val maxExportBatchSize = configuration[KEY_MAX_EXPORT_BATCH_SIZE] ?: Int.MAX_VALUE
+        val maxExportBatchSize = configuration[KEY_MAX_EXPORT_BATCH_SIZE] ?: 512
         val useSimpleSpanProcessor = configuration[KEY_USE_SIMPLE_SPAN_PROCESSOR] ?: false
         val instrumentPropertyAccessors = configuration[KEY_INSTRUMENT_PROPERTY_ACCESSORS] ?: false
 

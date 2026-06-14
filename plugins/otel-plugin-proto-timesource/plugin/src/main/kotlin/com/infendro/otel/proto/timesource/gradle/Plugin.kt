@@ -14,7 +14,7 @@ class Extension() {
     var host: String? = null
     var service: String? = null
     var maxQueueSize: Int = 2048
-    var maxExportBatchSize: Int = Int.MAX_VALUE
+    var maxExportBatchSize: Int = 512
     var instrumentPropertyAccessors: Boolean = false
 }
 
@@ -39,8 +39,8 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
         sourceSets.getByName("commonMain").dependencies {
             implementation("io.opentelemetry.kotlin.api:all:1.0.570")
             implementation("io.opentelemetry.kotlin.sdk:sdk-trace:1.0.570")
-            implementation("com.infendro.otel:otlp-exporter-proto:1.0.0")
-            implementation("com.infendro.otel:util-proto:1.0.0")
+            implementation("com.infendro.otel:otlp-exporter-proto:1.0.1")
+            implementation("com.infendro.otel:util-proto:1.0.1")
         }
     }
 
@@ -67,6 +67,6 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
         groupId = "com.infendro.otel",
         artifactId = "plugin-proto-timesource",
-        version = "1.0.0"
+        version = "1.0.1"
     )
 }

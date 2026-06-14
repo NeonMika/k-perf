@@ -2292,3 +2292,168 @@ Done Resolving all symbols for modules with inclusive times > 10
    at PerfViewExtensibility.Extensions.ExecuteUserCommand(String command, String[] args)
    at PerfView.CommandProcessor.ExecuteCommand(CommandLineArgs parsedArgs)]
 [DONE 20:33:24 FAIL: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-k-perf\k-perf.export.log UserCommand SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]
+PerfView logging started at 13/06/2026 17:36:01
+[EXECUTING: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-k-perf\k-perf.export.log UserCommand SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]
+[Running User Command: SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]
+[Decompressing profiles\native-k-perf\k-perf.etl.zip]
+Generating output file C:\Users\loren\AppData\Local\Temp\PerfView\k-perf.etl_9617f3d.etl
+WARNING NO _NT_SYMBOL_PATH set ...
+Putting symbols in C:\Users\loren\AppData\Local\Temp\SymbolCache
+Extracting PDB System.ni.pdb\bab1c747a49a8b036c463f419b08ae9a1\System.ni.pdb
+Extracting PDB mscorlib.ni.pdb\50abde036072b0b49b01ecf91d35cf891\mscorlib.ni.pdb
+Zipped size = 15,266 MB Unzipped = 18,448 MB
+Finished decompression, took 0 sec
+Creating ETLX file C:\Users\loren\AppData\Local\Temp\PerfView\k-perf.etl_9617f3d_f60eddad.etlx from C:\Users\loren\AppData\Local\Temp\PerfView\k-perf.etl_9617f3d.etl
+[Opening a log file of size 18 MB.]
+WARNING: Time:     166,2998 PID: 23216: Stack refers to event with time 13,1847 MSec that could not be found
+WARNING: Time:     323,8546 PID: 23216: CLR Stack trying to be given to same event twice (can happen with lost events)
+WARNING: Time:     479,7510 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     534,4256 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     566,8756 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     605,7854 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     606,0418 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:     907,1780 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1704,1757 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1711,1128 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1723,4460 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1724,8903 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1726,0140 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1727,1268 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1727,3582 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1738,2828 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1749,2587 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1753,4311 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1774,2742 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1811,4295 PID:   -1: Found a user stack definition without any uses
+[ELAPSED  2 seconds.     READ    131.072 events.     TIMESTAMP   1.849ms.     WRITTEN    21MB.     ]
+WARNING: Time:    1889,6570 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1913,9059 PID:   -1: Found a user stack definition without any uses
+[ELAPSED  2 seconds.     READ    262.144 events.     TIMESTAMP   1.971ms.     WRITTEN    33MB.     ]
+WARNING: Time:    1975,4226 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,0307 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,0453 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,0455 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,0476 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,0786 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,0793 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,0820 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1102 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1146 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1163 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1333 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1469 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1479 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1500 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1520 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1574 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1595 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1644 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1706 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1763 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1906 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1920 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1928 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,1955 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,2174 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,2197 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,2230 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,2231 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,2381 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,2382 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,2401 PID:   -1: Found a user stack definition without any uses
+WARNING: Time:    1991,2416 PID:   -1: Found a user stack definition without any uses
+[ELAPSED  3 seconds.     READ    393.216 events.     TIMESTAMP   2.805ms.     WRITTEN    34MB.     ]
+WARNING: Warning: 42 undefined kernel stacks at the end of the trace.
+There were 742 address that did not resolve to a module or method in process PerfView (23216)
+There were 3176 address that did not resolve to a module or method in process Idle (0)
+There were 12 address that did not resolve to a module or method in process  (-1)
+There were 11 address that did not resolve to a module or method in process csrss (1108)
+There were 30 address that did not resolve to a module or method in process services (1216)
+There were 9 address that did not resolve to a module or method in process lsass (1268)
+There were 29 address that did not resolve to a module or method in process svchost (1576)
+There were 171 address that did not resolve to a module or method in process dwm (1744)
+There were 130 address that did not resolve to a module or method in process svchost (1820)
+There were 11 address that did not resolve to a module or method in process svchost (1848)
+There were 50 address that did not resolve to a module or method in process svchost (2376)
+There were 145 address that did not resolve to a module or method in process svchost (2864)
+There were 101 address that did not resolve to a module or method in process idea64 (17424)
+There were 10 address that did not resolve to a module or method in process ETDService (2420)
+There were 23 address that did not resolve to a module or method in process svchost (2552)
+There were 59 address that did not resolve to a module or method in process svchost (3696)
+There were 11 address that did not resolve to a module or method in process svchost (3920)
+There were 137 address that did not resolve to a module or method in process Discord (8676)
+There were 21 address that did not resolve to a module or method in process CxAudioSvc (4960)
+There were 19 address that did not resolve to a module or method in process IntelAudioService (5032)
+There were 19 address that did not resolve to a module or method in process OneApp.IGCC.WinService (5052)
+There were 23 address that did not resolve to a module or method in process svchost (5100)
+There were 22 address that did not resolve to a module or method in process ThunderboltService (4820)
+There were 61 address that did not resolve to a module or method in process explorer (9520)
+There were 328 address that did not resolve to a module or method in process MsMpEng (5392)
+There were 36 address that did not resolve to a module or method in process chrome (8800)
+There were 78 address that did not resolve to a module or method in process svchost (7796)
+There were 19 address that did not resolve to a module or method in process msrdc (11392)
+There were 91 address that did not resolve to a module or method in process NisSrv (8380)
+There were 6 address that did not resolve to a module or method in process sihost (3388)
+There were 25 address that did not resolve to a module or method in process taskhostw (2300)
+There were 78 address that did not resolve to a module or method in process logioptionsplus_agent (22900)
+There were 20 address that did not resolve to a module or method in process svchost (13532)
+There were 6 address that did not resolve to a module or method in process msedgewebview2 (13784)
+There were 13 address that did not resolve to a module or method in process com.docker.backend (2728)
+There were 18 address that did not resolve to a module or method in process Docker Desktop (17228)
+There were 9 address that did not resolve to a module or method in process Docker Desktop (18464)
+There were 8 address that did not resolve to a module or method in process Docker Desktop (18540)
+There were 13 address that did not resolve to a module or method in process aesm_service (14064)
+There were 80 address that did not resolve to a module or method in process svchost (20376)
+There were 27 address that did not resolve to a module or method in process chrome (3776)
+There were 7 address that did not resolve to a module or method in process chrome (20140)
+There were 145 address that did not resolve to a module or method in process WhatsApp.Root (25908)
+There were 61 address that did not resolve to a module or method in process Discord (21816)
+There were 25 address that did not resolve to a module or method in process svchost (26332)
+There were 208 address that did not resolve to a module or method in process msedgewebview2 (4948)
+There were 65 address that did not resolve to a module or method in process MicrosoftSecurityApp (28244)
+There were 16 address that did not resolve to a module or method in process chrome (6284)
+There were 10 address that did not resolve to a module or method in process chrome (21776)
+There were 59 address that did not resolve to a module or method in process powershell (6392)
+There were 10 address that did not resolve to a module or method in process cef_server (24804)
+There were 19 address that did not resolve to a module or method in process powershell (3988)
+There were 18 address that did not resolve to a module or method in process cowork-svc (19352)
+There were 89 address that did not resolve to a module or method in process claude (10960)
+There were 8 address that did not resolve to a module or method in process OfficeClickToRun (32088)
+There were 15 address that did not resolve to a module or method in process claude (20468)
+There were 58 address that did not resolve to a module or method in process claude (9536)
+There were 6 address that did not resolve to a module or method in process claude (26208)
+There were 60 address that did not resolve to a module or method in process powershell (14504)
+There were 4 address that did not resolve to a module or method in process logioptionsplus_updater (6472)
+There were 21 address that did not resolve to a module or method in process eclipse (14772)
+There were 84 address that did not resolve to a module or method in process powershell (31816)
+There were 5 address that did not resolve to a module or method in process msedgewebview2 (22588)
+There were 5 address that did not resolve to a module or method in process cef_server (23136)
+There were 12 address that did not resolve to a module or method in process claude (27684)
+There were 29 address that did not resolve to a module or method in process claude (19188)
+There were 18 address that did not resolve to a module or method in process OneDrive.Sync.Service (33056)
+There were 17 address that did not resolve to a module or method in process claude (27288)
+There were 6 address that did not resolve to a module or method in process claude (22396)
+There were 17 address that did not resolve to a module or method in process SearchIndexer (22580)
+There were 8 address that did not resolve to a module or method in process chrome (25112)
+There were 9 address that did not resolve to a module or method in process cef_server (14544)
+There were 38 address that did not resolve to a module or method in process audiodg (31080)
+There were 8 address that did not resolve to a module or method in process conhost (10572)
+There were 607 address that did not resolve to a module or method in process comparison-k-perf-flushEarly-true (33652)
+There were 305 address that did not resolve to a module or method in process conhost (11772)
+458 distinct processes.
+Totals
+   192.845 events.
+     4.214 events with stack traces.
+     2.889 events with code addresses in them.
+   122.258 total code address instances. (stacks or other)
+     8.080 unique code addresses. 
+    41.765 unique stacks.
+       118 unique managed methods parsed.
+    54.993 dynamic methods.
+[Conversion complete 192.845 events.  Conversion took 3 sec.]
+A total of 8079 symbolic addresses were looked up.
+Addresses outside any module: 156 out of 8079 (1,9%)
+Done with symbolic lookup.
+ETL Size 18,448 MB ETLX Size 55,998 MB
+[Error: Could not find process named comparison-k-perf-flushEarly-false]
+[DONE 17:36:05 FAIL: PerfView /AcceptEULA /NoGui /LogFile=profiles\native-k-perf\k-perf.export.log UserCommand SaveCPUStacks profiles\native-k-perf\k-perf.etl.zip comparison-k-perf-flushEarly-false]

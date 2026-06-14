@@ -12,7 +12,7 @@
 #   .\profiles\run-all-profiles.ps1 -TopN 50                  # bigger top-N tables
 
 param(
-  [string[]]$Variants  = @('k-perf','otel','otel-proto','otel-proto-timesource','otel-proto-anchored'),
+  [string[]]$Variants  = @('k-perf','otel','otel-proto','otel-proto-sampler','otel-proto-timesource','otel-proto-anchored','otel-proto-fastbatch'),
   [string[]]$Platforms = @('jvm','js','native'),
   [int]$TopN           = 30,
   [switch]$SkipCapture,                       # render markdown from already-captured profiles
@@ -90,6 +90,14 @@ $variantSpec = @{
     JsDir   = 'js-otel-proto'
     NeedsCollector = $true
   }
+  'otel-proto-sampler' = @{
+    Display = 'otel-proto-sampler (Protobuf/gRPC + alwaysOn sampler)'
+    Jar     = 'kmp-examples\comparison-otel-proto-sampler\build\lib\comparison-otel-proto-sampler-jvm-1.0.0.jar'
+    Js      = 'kmp-examples\comparison-otel-proto-sampler\build\js\packages\comparison-otel-proto-sampler\kotlin\comparison-otel-proto-sampler.js'
+    Exe     = 'kmp-examples\comparison-otel-proto-sampler\build\bin\mingwX64\releaseExecutable\main.exe'
+    JsDir   = 'js-otel-proto-sampler'
+    NeedsCollector = $true
+  }
   'otel-proto-timesource' = @{
     Display = 'otel-proto-timesource (Protobuf/gRPC + monotonic clock)'
     Jar     = 'kmp-examples\comparison-otel-proto-timesource\build\lib\comparison-otel-proto-timesource-jvm-1.0.0.jar'
@@ -104,6 +112,14 @@ $variantSpec = @{
     Js      = 'kmp-examples\comparison-otel-proto-anchored\build\js\packages\comparison-otel-proto-anchored\kotlin\comparison-otel-proto-anchored.js'
     Exe     = 'kmp-examples\comparison-otel-proto-anchored\build\bin\mingwX64\releaseExecutable\main.exe'
     JsDir   = 'js-otel-proto-anchored'
+    NeedsCollector = $true
+  }
+  'otel-proto-fastbatch' = @{
+    Display = 'otel-proto-fastbatch (Protobuf/gRPC + O(1) BatchSpanProcessor drain)'
+    Jar     = 'kmp-examples\comparison-otel-proto-fastbatch\build\lib\comparison-otel-proto-fastbatch-jvm-1.0.0.jar'
+    Js      = 'kmp-examples\comparison-otel-proto-fastbatch\build\js\packages\comparison-otel-proto-fastbatch\kotlin\comparison-otel-proto-fastbatch.js'
+    Exe     = 'kmp-examples\comparison-otel-proto-fastbatch\build\bin\mingwX64\releaseExecutable\main.exe'
+    JsDir   = 'js-otel-proto-fastbatch'
     NeedsCollector = $true
   }
 }
@@ -189,11 +205,11 @@ function Capture-Js {
   param([hashtable]$Spec, [string]$ProfileDir, [string]$ProfileName)
   if (-not (Test-Path $Spec.Js)) { throw "js bundle missing: $($Spec.Js) -- build the variant first" }
   if (-not (Test-Path $ProfileDir)) { New-Item -ItemType Directory -Path $ProfileDir -Force | Out-Null }
-  for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & node $Spec.Js $StepCount 2>&1 } }
+  for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & node '--max-old-space-size=12288' $Spec.Js $StepCount 2>&1 } }
   $sw = [Diagnostics.Stopwatch]::StartNew()
   # Absolute paths -- Node mangles relative paths under --cpu-prof (see profiles/REPORT.md section 8).
   $absDir = (Resolve-Path $ProfileDir).Path
-  $out = Invoke-Native { & node '--cpu-prof' "--cpu-prof-dir=$absDir" "--cpu-prof-name=$ProfileName" $Spec.Js $StepCount 2>&1 }
+  $out = Invoke-Native { & node '--max-old-space-size=12288' '--cpu-prof' "--cpu-prof-dir=$absDir" "--cpu-prof-name=$ProfileName" $Spec.Js $StepCount 2>&1 }
   $sw.Stop()
   return @{ Wall = $sw.ElapsedMilliseconds; Workload = (Parse-WorkloadMs ($out -join "`n")); Stdout = $out }
 }

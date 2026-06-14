@@ -41,7 +41,7 @@ class IrExtension(
     val host: String?,
     val service: String?,
     val maxQueueSize: Int = 2048,
-    val maxExportBatchSize: Int = Int.MAX_VALUE,
+    val maxExportBatchSize: Int = 512,
     val instrumentPropertyAccessors: Boolean = false,
 ) : IrGenerationExtension {
     @OptIn(UnsafeDuringIrConstructionAPI::class)

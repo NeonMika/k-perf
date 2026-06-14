@@ -16,6 +16,17 @@ class OtlpExporter(
     private val scope = CoroutineScope(Dispatchers.Default)
     private val jobs: MutableList<Job> = mutableListOf()
 
+    var totalSpansExported: Long = 0L
+        private set
+    var totalExportBatches: Long = 0L
+        private set
+    var failedExportBatches: Long = 0L
+        private set
+    var failedExportSpans: Long = 0L
+        private set
+    var firstExportError: String? = null
+        private set
+
     init {
         val (h, p) = parseHostPort(host, defaultPort = 4317)
         channel = Channel.Builder.forAddress(h, p).usePlaintext().build()
@@ -29,13 +40,18 @@ class OtlpExporter(
     override fun export(
         spans: Collection<SpanData>
     ): CompletableResultCode {
-        val request = spans.toExportRequest(service)
+        totalSpansExported += spans.size.toLong()
+        totalExportBatches += 1L
         val job = scope.launch {
             try {
+                val request = spans.toExportRequest(service)
                 stub.export(request = request)
-            } catch (_: Exception) {
-                // Match existing exporter semantics: fire-and-forget; OtlpExporter
-                // returns ofSuccess eagerly regardless of RPC outcome.
+            } catch (e: Exception) {
+                failedExportBatches += 1L
+                failedExportSpans += spans.size.toLong()
+                if (firstExportError == null) {
+                    firstExportError = "${e::class.simpleName}: ${e.message}"
+                }
             }
         }
         jobs.add(job)

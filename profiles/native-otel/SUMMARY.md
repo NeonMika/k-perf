@@ -1,16 +1,12 @@
 ﻿# Profile -- otel (JSON/HTTP) (native)
 
-> WARNING: capture failed in this run; analyzing the previously captured profile instead.
-> Profile file was last written at **2026-05-20 20:33:51** -- not from the most recent `run-all-profiles.ps1` invocation.
-> Common cause on Windows 11: Smart App Control blocks unsigned `samply.exe`.
-
 **Variant:** `otel`  
 **Platform:** native  
-**SUMMARY rendered:** 2026-05-20 20:42:17  
-**Profile file last captured:** 2026-05-20 20:33:51  
+**SUMMARY rendered:** 2026-06-13 17:36:11  
+**Profile file last captured:** 2026-06-13 17:36:10  
 **Profile file:** [otel.perfView.xml.zip](otel.perfView.xml.zip)  
-**Wall time (capture run):** n/a (capture skipped or failed)  
-**Workload-reported time:** unknown (no marker line in stdout)  
+**Wall time (capture run):** 0 ms (incl. profiler overhead)  
+**Workload-reported time:** 7787 ms  
 
 ---
 
@@ -18,64 +14,92 @@
 
 ```
 Profile: otel.perfView.xml.zip
-Frames: 41, Stacks: 1013, Samples: 39, recorded weight: 0.05 s
+Frames: 54, Stacks: 4715, Samples: 11838, recorded weight: 6.67 s
 
 === Top 30 by SELF time ===
   self ms | total ms |   hits | function
-     32  |       38  |     21  | c:\windows\system32\ntoskrnl!?
-      9  |       53  |      6  | c:\windows\system32\ntdll!?
-      5  |       29  |      6  | ...ject\kmp-examples\comparison-otel\build\bin\mingwx64\releaseexecutable\main!?
-      2  |        8  |      1  | c:\windows\system32\drivers\fltmgr.sys!?
-      2  |        2  |      1  | c:\windows\system32\drivers\tcpip.sys!?
-      1  |       14  |      1  | c:\windows\system32\webio!?
-      1  |        4  |      1  | c:\windows\system32\drivers\fileinfo.sys!?
-      1  |        1  |      1  | c:\windows\system32\drivers\wd\wdfilter.sys!?
-      1  |        5  |      1  | c:\windows\system32\drivers\appid.sys!?
+   5499  |     6604  |   9710  | ...ject\kmp-examples\comparison-otel\build\bin\mingwx64\releaseexecutable\main!?
+    346  |      430  |    569  | c:\windows\system32\ntoskrnl!?
+    275  |     6557  |    505  | c:\windows\system32\ntdll!?
+    258  |     6532  |    476  | c:\windows\system32\kernel32!?
+    158  |     2887  |    277  | c:\windows\system32\msvcrt!?
+     49  |      121  |    111  | c:\windows\system32\drivers\tcpip.sys!?
+     18  |      370  |     47  | c:\windows\system32\winhttp!?
+     18  |       28  |     36  | c:\windows\system32\drivers\netio.sys!?
+     17  |      202  |     33  | c:\windows\system32\webio!?
+     10  |      130  |     25  | c:\windows\system32\drivers\afd.sys!?
+      5  |       73  |     13  | c:\windows\system32\kernelbase!?
+      5  |        5  |      9  | c:\windows\system32\ucrtbase!?
+      2  |      144  |      6  | c:\windows\system32\mswsock!?
+      2  |      148  |      4  | c:\windows\system32\ws2_32!?
+      2  |        3  |      2  | c:\windows\system32\drivers\winhvr.sys!?
+      2  |        2  |      2  | c:\windows\system32\drivers\intelppm.sys!?
+      1  |        2  |      2  | c:\windows\system32\drivers\ndu.sys!?
+      1  |        2  |      3  | c:\windows\system32\drivers\fltmgr.sys!?
+      0  |        0  |      3  | c:\windows\system32\combase!?
+      0  |       78  |      2  | ?!?
+      0  |        1  |      1  | c:\windows\system32\drivers\fwpkclnt.sys!?
+      0  |        2  |      1  | c:\windows\system32\drivers\ndis.sys!?
+      0  |        0  |      1  | ...driverstore\filerepository\iigd_dch.inf_amd64_8b3356e9a80c7a42\igdkmd64.sys!?
 
 === Top 30 by TOTAL (inclusive) time ===
   self ms | total ms |   hits | function
-      0  |       54  |      0  | Process64 main (20896) Args: 
-      9  |       53  |      6  | c:\windows\system32\ntdll!?
-      0  |       44  |      0  | ?!?
-     32  |       38  |     21  | c:\windows\system32\ntoskrnl!?
-      0  |       36  |      0  | c:\windows\system32\kernel32!?
-      5  |       29  |      6  | ...ject\kmp-examples\comparison-otel\build\bin\mingwx64\releaseexecutable\main!?
-      0  |       26  |      0  | Thread (25104) CPU=20ms (Startup Thread)
-      0  |       17  |      0  | c:\windows\system32\winhttp!?
-      1  |       14  |      1  | c:\windows\system32\webio!?
-      0  |       14  |      0  | c:\windows\system32\msvcrt!?
-      0  |       14  |      0  | Thread (27348) CPU=13ms
-      0  |       12  |      0  | Thread (2208) CPU=7ms
-      0  |       10  |      0  | c:\windows\system32\kernelbase!?
-      2  |        8  |      1  | c:\windows\system32\drivers\fltmgr.sys!?
-      1  |        5  |      1  | c:\windows\system32\drivers\appid.sys!?
-      0  |        5  |      0  | c:\windows\system32\ws2_32!?
-      0  |        4  |      0  | c:\windows\system32\mswsock!?
-      1  |        4  |      1  | c:\windows\system32\drivers\fileinfo.sys!?
-      0  |        3  |      0  | c:\windows\system32\drivers\condrv.sys!?
-      0  |        3  |      0  | c:\windows\system32\iphlpapi!?
-      0  |        2  |      0  | Thread (4228) CPU=2ms
-      0  |        2  |      0  | c:\windows\system32\drivers\wof.sys!?
-      2  |        2  |      1  | c:\windows\system32\drivers\tcpip.sys!?
-      0  |        2  |      0  | c:\windows\system32\drivers\afd.sys!?
-      0  |        1  |      0  | c:\windows\system32\dnsapi!?
-      1  |        1  |      1  | c:\windows\system32\drivers\wd\wdfilter.sys!?
-      0  |        1  |      0  | c:\windows\system32\combase!?
-      0  |        1  |      0  | c:\windows\system32\drivers\partmgr.sys!?
-      0  |        1  |      0  | c:\windows\system32\drivers\volmgr.sys!?
-      0  |        1  |      0  | c:\windows\system32\drivers\fvevol.sys!?
+      0  |     6671  |      0  | Process64 main (33196) Args: 
+   5499  |     6604  |   9710  | ...ject\kmp-examples\comparison-otel\build\bin\mingwx64\releaseexecutable\main!?
+    275  |     6557  |    505  | c:\windows\system32\ntdll!?
+    258  |     6532  |    476  | c:\windows\system32\kernel32!?
+      0  |     3592  |      0  | Thread (9464) CPU=5907ms (Startup Thread)
+    158  |     2887  |    277  | c:\windows\system32\msvcrt!?
+      0  |      867  |      0  | Thread (32840) CPU=1111ms
+    346  |      430  |    569  | c:\windows\system32\ntoskrnl!?
+      0  |      388  |      0  | Thread (4644) CPU=837ms
+      0  |      380  |      0  | Thread (1896) CPU=789ms
+      0  |      372  |      0  | Thread (27988) CPU=797ms
+     18  |      370  |     47  | c:\windows\system32\winhttp!?
+      0  |      366  |      0  | Thread (25052) CPU=822ms
+      0  |      337  |      0  | Thread (26664) CPU=740ms
+     17  |      202  |     33  | c:\windows\system32\webio!?
+      2  |      148  |      4  | c:\windows\system32\ws2_32!?
+      2  |      144  |      6  | c:\windows\system32\mswsock!?
+     10  |      130  |     25  | c:\windows\system32\drivers\afd.sys!?
+      0  |      129  |      0  | Thread (31872) CPU=265ms
+     49  |      121  |    111  | c:\windows\system32\drivers\tcpip.sys!?
+      0  |      114  |      0  | BROKEN
+      0  |       86  |      0  | Thread (32772) CPU=210ms
+      0  |       79  |      0  | Thread (33380) CPU=183ms
+      0  |       78  |      2  | ?!?
+      5  |       73  |     13  | c:\windows\system32\kernelbase!?
+      0  |       65  |      0  | Thread (12640) CPU=154ms
+     18  |       28  |     36  | c:\windows\system32\drivers\netio.sys!?
+      0  |       24  |      0  | c:\windows\system32\fwpuclnt!?
+      0  |        8  |      0  | Thread (31716) CPU=21ms
+      5  |        5  |      9  | c:\windows\system32\ucrtbase!?
 
 === Self-time attributed by MODULE / loaded binary ===
   self ms |    %  |   hits | module
-     32  |  59.4%  |     21  | ntoskrnl
-      9  |  17.3%  |      6  | ntdll
-      5  |   9.0%  |      6  | main
-      2  |   3.4%  |      1  | fltmgr
-      2  |   2.8%  |      1  | tcpip
-      1  |   2.4%  |      1  | webio
-      1  |   2.3%  |      1  | fileinfo
-      1  |   1.9%  |      1  | wdfilter
-      1  |   1.7%  |      1  | appid
+   5499  |  82.4%  |   9710  | main
+    346  |   5.2%  |    569  | ntoskrnl
+    275  |   4.1%  |    505  | ntdll
+    258  |   3.9%  |    476  | kernel32
+    158  |   2.4%  |    277  | msvcrt
+     49  |   0.7%  |    111  | tcpip
+     18  |   0.3%  |     47  | winhttp
+     18  |   0.3%  |     36  | netio
+     17  |   0.2%  |     33  | webio
+     10  |   0.1%  |     25  | afd
+      5  |   0.1%  |     13  | kernelbase
+      5  |   0.1%  |      9  | ucrtbase
+      2  |   0.0%  |      6  | mswsock
+      2  |   0.0%  |      4  | ws2_32
+      2  |   0.0%  |      2  | winhvr
+      2  |   0.0%  |      2  | intelppm
+      1  |   0.0%  |      2  | ndu
+      1  |   0.0%  |      3  | fltmgr
+      0  |   0.0%  |      3  | combase
+      0  |   0.0%  |      2  | (unresolved)
+      0  |   0.0%  |      1  | fwpkclnt
+      0  |   0.0%  |      1  | ndis
+      0  |   0.0%  |      1  | igdkmd64
 ```
 
 ## Targeted suspect searches
@@ -86,7 +110,7 @@ Regex: `now|markNow|elapsed|nanoTime|hrtime|currentTimeMillis|Instant`
 
 ```
 Pattern /now|markNow|elapsed|nanoTime|hrtime|currentTimeMillis|Instant/
-Matched 0 of 39 samples
+Matched 0 of 11838 samples
 Aggregate: self=0 ms (on top), total=0 ms (anywhere in stack)
 
 === Top 5 CALLERS ===
@@ -101,7 +125,7 @@ Regex: `AbstractPersistentList|AbstractList\.indexOf|recyclableRemoveAll|protoOf
 
 ```
 Pattern /AbstractPersistentList|AbstractList\.indexOf|recyclableRemoveAll|protoOf\.c2|protoOf\.e2/
-Matched 0 of 39 samples
+Matched 0 of 11838 samples
 Aggregate: self=0 ms (on top), total=0 ms (anywhere in stack)
 
 === Top 5 CALLERS ===
@@ -116,7 +140,7 @@ Regex: `^subtract$|^divide$|^multiply$|^bitwiseAnd$|^lessThan$|^equalsLong$`
 
 ```
 Pattern /^subtract$|^divide$|^multiply$|^bitwiseAnd$|^lessThan$|^equalsLong$/
-Matched 0 of 39 samples
+Matched 0 of 11838 samples
 Aggregate: self=0 ms (on top), total=0 ms (anywhere in stack)
 
 === Top 5 CALLERS ===
@@ -131,7 +155,7 @@ Regex: `Span\.<init>|SdkSpanBuilder|RecordEventsReadableSpan|BatchSpanProcessor`
 
 ```
 Pattern /Span\.<init>|SdkSpanBuilder|RecordEventsReadableSpan|BatchSpanProcessor/
-Matched 0 of 39 samples
+Matched 0 of 11838 samples
 Aggregate: self=0 ms (on top), total=0 ms (anywhere in stack)
 
 === Top 5 CALLERS ===

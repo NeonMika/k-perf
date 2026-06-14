@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
     kotlin("multiplatform") version "2.3.10"
-    id("com.infendro.otel") version "1.0.0"
+    id("com.infendro.otel") version "1.0.1"
 }
 
 group = "com.infendro.otel.measure"

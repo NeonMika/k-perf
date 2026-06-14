@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
     kotlin("multiplatform") version "2.3.10"
-    id("com.infendro.otel-proto-anchored") version "1.0.0"
+    id("com.infendro.otel-proto-anchored") version "1.0.1"
 }
 
 group = "com.infendro.otel.measure"
@@ -26,7 +26,7 @@ val otelProtoAnchoredMaxQueueSize = providers.gradleProperty("otelProtoAnchoredM
 
 val otelProtoAnchoredMaxExportBatchSize = providers.gradleProperty("otelProtoAnchoredMaxExportBatchSize")
     .map { it.toInt() }
-    .getOrElse(Int.MAX_VALUE)
+    .getOrElse(512)
 
 val otelProtoAnchoredInstrumentPropertyAccessors = providers.gradleProperty("otelProtoAnchoredInstrumentPropertyAccessors")
     .map { it.toBoolean() }

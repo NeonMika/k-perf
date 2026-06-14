@@ -37,8 +37,8 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
         sourceSets.getByName("commonMain").dependencies {
             implementation("io.opentelemetry.kotlin.api:all:1.0.570")
             implementation("io.opentelemetry.kotlin.sdk:sdk-trace:1.0.570")
-            implementation("com.infendro.otel:otlp-exporter:1.0.0")
-            implementation("com.infendro.otel:util:1.0.0")
+            implementation("com.infendro.otel:otlp-exporter:1.0.1")
+            implementation("com.infendro.otel:util:1.0.1")
         }
     }
 
@@ -63,6 +63,6 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
         groupId = "com.infendro.otel",
         artifactId = "plugin",
-        version = "1.0.0"
+        version = "1.0.1"
     )
 }

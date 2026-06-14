@@ -6,10 +6,22 @@
   # 80 measured steps remain per run.
   [int]$WarmupCount = 20,
   [int]$RunCount = 10,
-  [int]$StepCount = 100
+  [int]$StepCount = 100,
+  [string[]]$Variants = @('baseline','k-perf','otel','otel-proto','otel-proto-sampler','otel-proto-timesource','otel-proto-anchored','otel-proto-fastbatch')
 )
 
 $ErrorActionPreference = "Stop"
+
+$KnownVariants = @('baseline','k-perf','otel','otel-proto','otel-proto-sampler','otel-proto-timesource','otel-proto-anchored','otel-proto-fastbatch')
+foreach ($v in $Variants) {
+  if ($KnownVariants -notcontains $v) {
+    throw "Unknown variant '$v'. Allowed: $($KnownVariants -join ', ')"
+  }
+}
+if ($Variants -notcontains 'baseline') {
+  Write-Host "WARNING: 'baseline' is not selected - per-platform Overhead/method columns will be empty." -ForegroundColor Yellow
+}
+$AnyProtoVariant = @($Variants | Where-Object { $_ -like 'otel-proto*' }).Count -gt 0
 
 $ScriptRoot = $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($ScriptRoot)) { $ScriptRoot = '.' }
@@ -144,7 +156,8 @@ function Invoke-GradleBuild {
     [string]$Title,
     [string]$Path,
     [string[]]$Tasks,
-    [bool]$SkipClean = $false
+    [bool]$SkipClean = $false,
+    [switch]$RefreshDeps
   )
 
   Write-Host ""
@@ -158,11 +171,14 @@ function Invoke-GradleBuild {
   $prevEap = $ErrorActionPreference
   $ErrorActionPreference = 'Continue'
   try {
+    $gradleArgs = @()
+    if ($RefreshDeps) { $gradleArgs += '--refresh-dependencies' }
+    $gradleArgs += $Tasks
     if ($CleanBuild -and -not $SkipClean) {
-      & .\gradlew clean @Tasks
+      & .\gradlew clean @gradleArgs
     }
     else {
-      & .\gradlew @Tasks
+      & .\gradlew @gradleArgs
     }
 
     if ($LASTEXITCODE -ne 0) {
@@ -194,82 +210,130 @@ Write-Host "=========================================="
 Write-Host "Compiling Required Plugins and Dependencies"
 Write-Host "=========================================="
 
-Invoke-GradleBuild -Title "KIRHelperKit" -Path ".\KIRHelperKit" -Tasks @("publishToMavenLocal")
-Invoke-GradleBuild -Title "k-perf plugin" -Path ".\plugins\k-perf" -Tasks @("publishToMavenLocal")
+if ($Variants -contains 'k-perf') {
+  Invoke-GradleBuild -Title "KIRHelperKit" -Path ".\KIRHelperKit" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "k-perf plugin" -Path ".\plugins\k-perf" -Tasks @("publishToMavenLocal")
+}
 
-Invoke-GradleBuild -Title "OTel OTLP Exporter" -Path ".\otlp-exporter" -Tasks @("publishToMavenLocal")
-Invoke-GradleBuild -Title "OTel Plugin Util" -Path ".\plugins\otel-plugin\util" -Tasks @("publishToMavenLocal")
-Invoke-GradleBuild -Title "OTel Plugin" -Path ".\plugins\otel-plugin\plugin" -Tasks @("publishToMavenLocal")
+if ($Variants -contains 'otel') {
+  Invoke-GradleBuild -Title "OTel OTLP Exporter" -Path ".\otlp-exporter" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Plugin Util" -Path ".\plugins\otel-plugin\util" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Plugin" -Path ".\plugins\otel-plugin\plugin" -Tasks @("publishToMavenLocal")
+}
 
-Invoke-GradleBuild -Title "OTel OTLP Exporter (proto)" -Path ".\otlp-exporter-proto" -Tasks @("publishToMavenLocal")
-Invoke-GradleBuild -Title "OTel Plugin Util (proto)" -Path ".\plugins\otel-plugin-proto\util" -Tasks @("publishToMavenLocal")
-Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")
-
-Invoke-GradleBuild -Title "OTel Plugin (proto-timesource)" -Path ".\plugins\otel-plugin-proto-timesource\plugin" -Tasks @("publishToMavenLocal")
-Invoke-GradleBuild -Title "OTel Plugin (proto-anchored)" -Path ".\plugins\otel-plugin-proto-anchored\plugin" -Tasks @("publishToMavenLocal")
+if ($AnyProtoVariant) {
+  Invoke-GradleBuild -Title "OTel OTLP Exporter (proto)" -Path ".\otlp-exporter-proto" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Plugin Util (proto)" -Path ".\plugins\otel-plugin-proto\util" -Tasks @("publishToMavenLocal")
+}
+if ($Variants -contains 'otel-proto') {
+  Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")
+}
+if ($Variants -contains 'otel-proto-timesource') {
+  Invoke-GradleBuild -Title "OTel Plugin (proto-timesource)" -Path ".\plugins\otel-plugin-proto-timesource\plugin" -Tasks @("publishToMavenLocal")
+}
+if ($Variants -contains 'otel-proto-anchored') {
+  Invoke-GradleBuild -Title "OTel Plugin (proto-anchored)" -Path ".\plugins\otel-plugin-proto-anchored\plugin" -Tasks @("publishToMavenLocal")
+}
+if ($Variants -contains 'otel-proto-sampler') {
+  Invoke-GradleBuild -Title "OTel Plugin (proto-sampler)" -Path ".\plugins\otel-plugin-proto-sampler\plugin" -Tasks @("publishToMavenLocal")
+}
+if ($Variants -contains 'otel-proto-fastbatch') {
+  Invoke-GradleBuild -Title "OTel Plugin (proto-fastbatch)" -Path ".\plugins\otel-plugin-proto-fastbatch\plugin" -Tasks @("publishToMavenLocal")
+}
 
 Write-Host "=========================================="
 Write-Host "Compiling Comparison Projects"
 Write-Host "=========================================="
 
-Invoke-GradleBuild -Title "Comparison Project (baseline)" -Path ".\kmp-examples\comparison-baseline" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
-Invoke-GradleBuild -Title "Comparison Project (k-perf)" -Path ".\kmp-examples\comparison-k-perf" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
-Invoke-GradleBuild -Title "Comparison Project (otel)" -Path ".\kmp-examples\comparison-otel" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
-Invoke-GradleBuild -Title "Comparison Project (otel-proto)" -Path ".\kmp-examples\comparison-otel-proto" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
-Invoke-GradleBuild -Title "Comparison Project (otel-proto-timesource)" -Path ".\kmp-examples\comparison-otel-proto-timesource" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
-Invoke-GradleBuild -Title "Comparison Project (otel-proto-anchored)" -Path ".\kmp-examples\comparison-otel-proto-anchored" -Tasks @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64") -SkipClean $true
+$comparisonBuilds = @(
+  @{ Variant = 'baseline';              Title = "Comparison Project (baseline)";              Path = ".\kmp-examples\comparison-baseline";              RefreshDeps = $false },
+  @{ Variant = 'k-perf';                Title = "Comparison Project (k-perf)";                Path = ".\kmp-examples\comparison-k-perf";                RefreshDeps = $false },
+  @{ Variant = 'otel';                  Title = "Comparison Project (otel)";                  Path = ".\kmp-examples\comparison-otel";                  RefreshDeps = $true },
+  @{ Variant = 'otel-proto';            Title = "Comparison Project (otel-proto)";            Path = ".\kmp-examples\comparison-otel-proto";            RefreshDeps = $true },
+  @{ Variant = 'otel-proto-sampler';    Title = "Comparison Project (otel-proto-sampler)";    Path = ".\kmp-examples\comparison-otel-proto-sampler";    RefreshDeps = $true },
+  @{ Variant = 'otel-proto-timesource'; Title = "Comparison Project (otel-proto-timesource)"; Path = ".\kmp-examples\comparison-otel-proto-timesource"; RefreshDeps = $true },
+  @{ Variant = 'otel-proto-anchored';   Title = "Comparison Project (otel-proto-anchored)";   Path = ".\kmp-examples\comparison-otel-proto-anchored";   RefreshDeps = $true },
+  @{ Variant = 'otel-proto-fastbatch';  Title = "Comparison Project (otel-proto-fastbatch)";  Path = ".\kmp-examples\comparison-otel-proto-fastbatch";  RefreshDeps = $true }
+)
+$comparisonTasks = @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64")
+foreach ($b in $comparisonBuilds) {
+  if ($Variants -notcontains $b.Variant) { continue }
+  if ($b.RefreshDeps) {
+    Invoke-GradleBuild -Title $b.Title -Path $b.Path -Tasks $comparisonTasks -SkipClean $true -RefreshDeps
+  } else {
+    Invoke-GradleBuild -Title $b.Title -Path $b.Path -Tasks $comparisonTasks -SkipClean $true
+  }
+}
 
 
 # Path resolving for execution. StepCount is appended at run time as the
 # positional argv[0] each Main.kt reads.
 $baselineJvm    = "java -jar .\kmp-examples\comparison-baseline\build\lib\comparison-baseline-jvm-0.1.0.jar"
-$baselineJs     = "node .\kmp-examples\comparison-baseline\build\js\packages\comparison-baseline\kotlin\comparison-baseline.js"
+$baselineJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-baseline\build\js\packages\comparison-baseline\kotlin\comparison-baseline.js"
 $baselineNative = ".\kmp-examples\comparison-baseline\build\bin\mingwX64\releaseExecutable\comparison-baseline.exe"
 
 $kperfJvm    = "java -jar .\kmp-examples\comparison-k-perf\build\lib\comparison-k-perf-jvm-0.1.0-flushEarly-false.jar"
-$kperfJs     = "node .\kmp-examples\comparison-k-perf\build\js\packages\comparison-k-perf-flushEarly-false\kotlin\comparison-k-perf-flushEarly-false.js"
+$kperfJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-k-perf\build\js\packages\comparison-k-perf-flushEarly-false\kotlin\comparison-k-perf-flushEarly-false.js"
 $kperfNative = ".\kmp-examples\comparison-k-perf\build\bin\mingwX64\releaseExecutable\comparison-k-perf-flushEarly-false.exe"
 
 $otelJvm    = "java -jar .\kmp-examples\comparison-otel\build\lib\comparison-otel-jvm-1.0.0.jar"
-$otelJs     = "node .\kmp-examples\comparison-otel\build\js\packages\comparison-otel\kotlin\comparison-otel.js"
+$otelJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel\build\js\packages\comparison-otel\kotlin\comparison-otel.js"
 $otelNative = ".\kmp-examples\comparison-otel\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $otelProtoJvm    = "java -jar .\kmp-examples\comparison-otel-proto\build\lib\comparison-otel-proto-jvm-1.0.0.jar"
-$otelProtoJs     = "node .\kmp-examples\comparison-otel-proto\build\js\packages\comparison-otel-proto\kotlin\comparison-otel-proto.js"
+$otelProtoJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto\build\js\packages\comparison-otel-proto\kotlin\comparison-otel-proto.js"
 $otelProtoNative = ".\kmp-examples\comparison-otel-proto\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $otelProtoTsJvm    = "java -jar .\kmp-examples\comparison-otel-proto-timesource\build\lib\comparison-otel-proto-timesource-jvm-1.0.0.jar"
-$otelProtoTsJs     = "node .\kmp-examples\comparison-otel-proto-timesource\build\js\packages\comparison-otel-proto-timesource\kotlin\comparison-otel-proto-timesource.js"
+$otelProtoTsJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-timesource\build\js\packages\comparison-otel-proto-timesource\kotlin\comparison-otel-proto-timesource.js"
 $otelProtoTsNative = ".\kmp-examples\comparison-otel-proto-timesource\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $otelProtoAnchoredJvm    = "java -jar .\kmp-examples\comparison-otel-proto-anchored\build\lib\comparison-otel-proto-anchored-jvm-1.0.0.jar"
-$otelProtoAnchoredJs     = "node .\kmp-examples\comparison-otel-proto-anchored\build\js\packages\comparison-otel-proto-anchored\kotlin\comparison-otel-proto-anchored.js"
+$otelProtoAnchoredJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-anchored\build\js\packages\comparison-otel-proto-anchored\kotlin\comparison-otel-proto-anchored.js"
 $otelProtoAnchoredNative = ".\kmp-examples\comparison-otel-proto-anchored\build\bin\mingwX64\releaseExecutable\main.exe"
+
+$otelProtoSamplerJvm    = "java -jar .\kmp-examples\comparison-otel-proto-sampler\build\lib\comparison-otel-proto-sampler-jvm-1.0.0.jar"
+$otelProtoSamplerJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-sampler\build\js\packages\comparison-otel-proto-sampler\kotlin\comparison-otel-proto-sampler.js"
+$otelProtoSamplerNative = ".\kmp-examples\comparison-otel-proto-sampler\build\bin\mingwX64\releaseExecutable\main.exe"
+
+$otelProtoFastbatchJvm    = "java -jar .\kmp-examples\comparison-otel-proto-fastbatch\build\lib\comparison-otel-proto-fastbatch-jvm-1.0.0.jar"
+$otelProtoFastbatchJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-fastbatch\build\js\packages\comparison-otel-proto-fastbatch\kotlin\comparison-otel-proto-fastbatch.js"
+$otelProtoFastbatchNative = ".\kmp-examples\comparison-otel-proto-fastbatch\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $executables = @(
   @{ Name = "baseline JVM";                       Command = $baselineJvm },
   @{ Name = "k-perf JVM";                         Command = $kperfJvm },
   @{ Name = "otel JVM";                           Command = $otelJvm },
   @{ Name = "otel-proto JVM";                     Command = $otelProtoJvm },
+  @{ Name = "otel-proto-sampler JVM";             Command = $otelProtoSamplerJvm },
   @{ Name = "otel-proto-timesource JVM";          Command = $otelProtoTsJvm },
   @{ Name = "otel-proto-anchored JVM";            Command = $otelProtoAnchoredJvm },
+  @{ Name = "otel-proto-fastbatch JVM";           Command = $otelProtoFastbatchJvm },
   @{ Name = "baseline JS (Node)";                 Command = $baselineJs },
   @{ Name = "k-perf JS (Node)";                   Command = $kperfJs },
   @{ Name = "otel JS (Node)";                     Command = $otelJs },
   @{ Name = "otel-proto JS (Node)";               Command = $otelProtoJs },
+  @{ Name = "otel-proto-sampler JS (Node)";       Command = $otelProtoSamplerJs },
   @{ Name = "otel-proto-timesource JS (Node)";    Command = $otelProtoTsJs },
   @{ Name = "otel-proto-anchored JS (Node)";      Command = $otelProtoAnchoredJs },
+  @{ Name = "otel-proto-fastbatch JS (Node)";     Command = $otelProtoFastbatchJs },
   @{ Name = "baseline Native (Win)";              Command = $baselineNative },
   @{ Name = "k-perf Native (Win)";                Command = $kperfNative },
   @{ Name = "otel Native (Win)";                  Command = $otelNative },
   @{ Name = "otel-proto Native (Win)";            Command = $otelProtoNative },
+  @{ Name = "otel-proto-sampler Native (Win)";    Command = $otelProtoSamplerNative },
   @{ Name = "otel-proto-timesource Native (Win)"; Command = $otelProtoTsNative },
-  @{ Name = "otel-proto-anchored Native (Win)";   Command = $otelProtoAnchoredNative }
+  @{ Name = "otel-proto-anchored Native (Win)";   Command = $otelProtoAnchoredNative },
+  @{ Name = "otel-proto-fastbatch Native (Win)";  Command = $otelProtoFastbatchNative }
 )
+$executables = @($executables | Where-Object {
+  $Variants -contains (Get-VariantAndPlatform -ExeName $_.Name).Variant
+})
 
 Write-Host "=========================================="
 Write-Host "Running Measurements"
 Write-Host "Warmup steps/run: $WarmupCount | Runs: $RunCount | StepCount: $StepCount | Run timeout: ${RunTimeoutSeconds}s"
+Write-Host "Variants: $($Variants -join ', ')"
 Write-Host "=========================================="
 
 $allResults = @()
@@ -333,13 +397,82 @@ function Invoke-Docker {
 }
 
 
-# Clean up any stale containers from previous runs. Jaeger (all-in-one) is the
-# only container used now — it accepts OTLP/gRPC on :4317 and OTLP/HTTP on
-# :4318 directly (since Jaeger 1.49), so the previous otel-collector hop is
-# redundant. Jaeger is started/stopped per-variant below so baseline and
-# k-perf rows don't see background CPU from an idle Jaeger container.
-Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector', 'jaeger')
-Write-Host "Jaeger UI will boot on demand at http://localhost:16686 once an otel-* variant runs." -ForegroundColor Cyan
+Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector', 'jaeger', 'envoy')
+
+function Start-Jaeger {
+  Write-Host "--- Booting Jaeger + Envoy gRPC-Web proxy (in-memory storage capped at 400 traces) ---" -ForegroundColor Cyan
+
+  Invoke-Docker -DockerArgs @('rm', '-f', 'jaeger', 'envoy')
+
+  Invoke-Docker -DockerArgs @('network', 'create', 'otel-net')
+
+  Invoke-Docker -DockerArgs @(
+    'run', '-d', '--name', 'jaeger',
+    '--network', 'otel-net',
+    '--memory=12g',
+    '-e', 'COLLECTOR_OTLP_ENABLED=true',
+    '-e', 'COLLECTOR_QUEUE_SIZE=5000000',
+    '-e', 'COLLECTOR_NUM_WORKERS=100',
+    '-e', 'MEMORY_MAX_TRACES=100',
+    '-p', '16686:16686', '-p', '14269:14269',
+    'jaegertracing/all-in-one:1.65.0'
+  )
+  $jaegerRunExit = $LASTEXITCODE
+  if ($jaegerRunExit -ne 0) {
+    Write-Host "docker run (jaeger) failed. Last container logs (if any):" -ForegroundColor Yellow
+    Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'jaeger') -CaptureOutput | ForEach-Object { Write-Host "  $_" }
+    Write-Host "All jaeger-named containers (running or stopped):" -ForegroundColor Yellow
+    Invoke-Docker -DockerArgs @('ps', '-a', '--filter', 'name=jaeger') -CaptureOutput | ForEach-Object { Write-Host "  $_" }
+    throw "Failed to start jaeger container (docker run exited $jaegerRunExit). Check that ports 16686/14269 are free, Docker Desktop is healthy, and no zombie jaeger container exists."
+  }
+
+  $deadline = (Get-Date).AddSeconds(30)
+  $ready = $false
+  while ((Get-Date) -lt $deadline) {
+    $probe = Test-NetConnection -ComputerName '127.0.0.1' -Port 14269 -WarningAction SilentlyContinue -InformationLevel Quiet
+    if ($probe) { $ready = $true; break }
+    Start-Sleep -Milliseconds 500
+  }
+  if (-not $ready) {
+    Write-Host "jaeger logs:" -ForegroundColor Yellow
+    Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'jaeger') -CaptureOutput | ForEach-Object { Write-Host $_ }
+    throw "jaeger did not start listening on :14269 within 30s."
+  }
+
+  $envoyConfig = Join-Path $ScriptRoot 'envoy-grpc-web.yaml'
+  if (-not (Test-Path $envoyConfig)) {
+    throw "Envoy config not found at $envoyConfig — it should live next to kperf-otel-comparison.ps1."
+  }
+  Invoke-Docker -DockerArgs @(
+    'run', '-d', '--name', 'envoy',
+    '--network', 'otel-net',
+    '--memory=2g',
+    '-p', '4317:4317', '-p', '4318:4318',
+    '-v', "${envoyConfig}:/etc/envoy/envoy.yaml:ro",
+    'envoyproxy/envoy:v1.31.0'
+  )
+  $envoyRunExit = $LASTEXITCODE
+  if ($envoyRunExit -ne 0) {
+    Write-Host "docker run (envoy) failed. Last container logs (if any):" -ForegroundColor Yellow
+    Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'envoy') -CaptureOutput | ForEach-Object { Write-Host "  $_" }
+    throw "Failed to start envoy container (docker run exited $envoyRunExit). Check that ports 4317/4318 are free."
+  }
+
+  $deadline = (Get-Date).AddSeconds(30)
+  $ready = $false
+  while ((Get-Date) -lt $deadline) {
+    $probe4317 = Test-NetConnection -ComputerName '127.0.0.1' -Port 4317 -WarningAction SilentlyContinue -InformationLevel Quiet
+    $probe4318 = Test-NetConnection -ComputerName '127.0.0.1' -Port 4318 -WarningAction SilentlyContinue -InformationLevel Quiet
+    if ($probe4317 -and $probe4318) { $ready = $true; break }
+    Start-Sleep -Milliseconds 500
+  }
+  if (-not $ready) {
+    Write-Host "envoy logs:" -ForegroundColor Yellow
+    Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'envoy') -CaptureOutput | ForEach-Object { Write-Host $_ }
+    throw "envoy did not start listening on :4317 and :4318 within 30s."
+  }
+  Write-Host "Backend ready: Envoy gRPC[-Web] on :4317 -> jaeger:4317 | Envoy OTLP/HTTP on :4318 -> jaeger:4318 | UI http://localhost:16686 | metrics :14269." -ForegroundColor Cyan
+}
 
 # Parse `### Elapsed time: <ns>` (total) and `!!! Elapsed time <i>: <ns>` (per-step).
 # Main.kt emits nanoseconds via `Duration.inWholeNanoseconds` — this picks up the
@@ -359,7 +492,65 @@ function Get-ElapsedFromOutput {
     $stepNanos += [double]$m.Groups[2].Value
   }
 
-  return @{ TotalNanos = $totalNanos; StepNanos = $stepNanos }
+  $expSpans = $null; $expBatches = $null; $expFailures = $null; $expFailedSpans = $null; $firstError = $null
+  $m = [regex]::Match($OutputStr, '(?m)^### exported_spans:\s*(\d+)\s*$')
+  if ($m.Success) { $expSpans = [long]$m.Groups[1].Value }
+  $m = [regex]::Match($OutputStr, '(?m)^### export_batches:\s*(\d+)\s*$')
+  if ($m.Success) { $expBatches = [long]$m.Groups[1].Value }
+  $m = [regex]::Match($OutputStr, '(?m)^### export_failures:\s*(\d+)\s*$')
+  if ($m.Success) { $expFailures = [long]$m.Groups[1].Value }
+  $m = [regex]::Match($OutputStr, '(?m)^### export_failed_spans:\s*(\d+)\s*$')
+  if ($m.Success) { $expFailedSpans = [long]$m.Groups[1].Value }
+  $m = [regex]::Match($OutputStr, '(?m)^### first_export_error:\s*(.+)$')
+  if ($m.Success) { $firstError = $m.Groups[1].Value.Trim() }
+
+  return @{
+    TotalNanos       = $totalNanos
+    StepNanos        = $stepNanos
+    ExportedSpans    = $expSpans
+    ExportBatches    = $expBatches
+    ExportFailures   = $expFailures
+    ExportFailedSpans = $expFailedSpans
+    FirstExportError = $firstError
+  }
+}
+
+function Get-JaegerMetricsText {
+  for ($attempt = 1; $attempt -le 3; $attempt++) {
+    try {
+      return (Invoke-WebRequest -Uri 'http://localhost:14269/metrics' -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop).Content
+    } catch {
+      if ($attempt -lt 3) { Start-Sleep -Seconds 2 }
+    }
+  }
+  return $null
+}
+
+function Get-JaegerDeliveryCounters {
+  param([string]$ServiceName)
+  $text = Get-JaegerMetricsText
+  if ($null -eq $text) { return $null }
+  $svc = [regex]::Escape($ServiceName)
+
+  $received = 0L
+  $rxRecv = '(?m)^jaeger_collector_spans_received_total\{[^}]*svc="' + $svc + '"[^}]*\}\s+(\S+)\s*$'
+  foreach ($m in [regex]::Matches($text, $rxRecv)) { $received += [long][double]$m.Groups[1].Value }
+
+  $saved = 0L
+  $rxSaved = '(?m)^jaeger_collector_spans_saved_by_svc_total\{(?=[^}]*result="ok")(?=[^}]*svc="' + $svc + '")[^}]*\}\s+(\S+)\s*$'
+  foreach ($m in [regex]::Matches($text, $rxSaved)) { $saved += [long][double]$m.Groups[1].Value }
+
+  $dropped = 0L
+  $rxDrop = '(?m)^jaeger_collector_spans_dropped_total\{[^}]*\}\s+(\S+)\s*$'
+  foreach ($m in [regex]::Matches($text, $rxDrop)) { $dropped += [long][double]$m.Groups[1].Value }
+
+  return @{ Received = $received; Saved = $saved; Dropped = $dropped }
+}
+
+function Get-ServiceNameForVariant {
+  param([string]$Variant)
+  if ($Variant -eq 'baseline' -or $Variant -eq 'k-perf') { return $null }
+  return "comparison-$Variant"
 }
 
 # k-perf writes `trace_<platform>_<random>.txt` and `symbols_<platform>_<random>.txt`
@@ -417,46 +608,27 @@ function Invoke-PostRunCleanup {
   $symbolFiles | ForEach-Object { Remove-Item -Force -ErrorAction SilentlyContinue $_.FullName }
 }
 
-foreach ($exe in $executables) {
+$nonOtelExecutables = $executables | Where-Object { $_.Name -notmatch 'otel' }
+$otelExecutables    = $executables | Where-Object { $_.Name -match 'otel' }
+
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "PHASE 1 of 2: non-OTel variants ($($nonOtelExecutables.Count) rows). Jaeger NOT running."
+Write-Host "=========================================="
+
+$otelPhaseBannerShown = $false
+foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
   Write-Host ""
 
-  # Boot or stop the Jaeger backend depending on whether this executable
-  # exports traces. Jaeger all-in-one accepts OTLP natively on :4317 (gRPC)
-  # and :4318 (HTTP), so the apps talk to it directly with no OTel Collector
-  # hop in between. Stopped between non-otel rows so background CPU from an
-  # idle Jaeger container doesn't bias baseline / k-perf measurements.
-  if ($exe.Name -match "otel") {
-    Write-Host "--- Booting Jaeger (OTLP backend + UI) via Docker ---"
-    Invoke-Docker -DockerArgs @('start', 'jaeger')
-    if ($LASTEXITCODE -ne 0) {
-      Invoke-Docker -DockerArgs @('rm', '-f', 'jaeger')
-      Invoke-Docker -DockerArgs @(
-        'run', '-d', '--name', 'jaeger',
-        '-p', '4317:4317', '-p', '4318:4318', '-p', '16686:16686',
-        'jaegertracing/all-in-one:1.65.0',
-        '--collector.otlp.enabled=true'
-      )
-      if ($LASTEXITCODE -ne 0) {
-        throw "Failed to start jaeger container (docker run exited $LASTEXITCODE). Check that ports 4317/4318/16686 are free and Docker Desktop is healthy."
-      }
+  if ($exe.Name -match 'otel') {
+    if (-not $otelPhaseBannerShown) {
+      Write-Host ""
+      Write-Host "=========================================="
+      Write-Host "PHASE 2 of 2: OTel variants ($($otelExecutables.Count) rows). Restarting Jaeger per variant."
+      Write-Host "=========================================="
+      $otelPhaseBannerShown = $true
     }
-
-    $deadline = (Get-Date).AddSeconds(30)
-    $ready = $false
-    while ((Get-Date) -lt $deadline) {
-      $probe = Test-NetConnection -ComputerName '127.0.0.1' -Port 4317 -WarningAction SilentlyContinue -InformationLevel Quiet
-      if ($probe) { $ready = $true; break }
-      Start-Sleep -Milliseconds 500
-    }
-    if (-not $ready) {
-      Write-Host "jaeger logs:" -ForegroundColor Yellow
-      Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'jaeger') -CaptureOutput | ForEach-Object { Write-Host $_ }
-      throw "jaeger did not start listening on :4317 within 30s."
-    }
-  }
-  else {
-    Write-Host "--- Stopping Jaeger to prevent CPU interference for baseline / k-perf metrics ---"
-    Invoke-Docker -DockerArgs @('stop', 'jaeger')
+    Start-Jaeger
   }
 
   Write-Host "--- Benchmarking: $($exe.Name) ---"
@@ -467,9 +639,21 @@ foreach ($exe in $executables) {
   # run are excluded from per-step statistics in Get-PerStepMedians/Mean
   # below).
 
+  $vpForJaeger = Get-VariantAndPlatform -ExeName $exe.Name
+  $svcForJaeger = Get-ServiceNameForVariant -Variant $vpForJaeger.Variant
+  $jaegerCountersAtStart = $null
+  if ($exe.Name -match 'otel' -and $null -ne $svcForJaeger) {
+    $jaegerCountersAtStart = Get-JaegerDeliveryCounters -ServiceName $svcForJaeger
+  }
+
   # Actual measurements
   $totalNanosList = @()
   $perRunStepNanos = @()
+  $exportedSpansList = @()
+  $exportBatchesList = @()
+  $exportFailuresList = @()
+  $exportFailedSpansList = @()
+  $firstExportError = $null
   Write-Host "Measurement iterations ($RunCount):"
   for ($i = 0; $i -lt $RunCount; $i++) {
     $output = Invoke-WithTimeout -Command $invocation -TimeoutSeconds $RunTimeoutSeconds
@@ -483,13 +667,54 @@ foreach ($exe in $executables) {
     $parsed = Get-ElapsedFromOutput -OutputStr $outputStr
     if ($null -ne $parsed.TotalNanos) {
       $totalMs = $parsed.TotalNanos / 1000000.0
-      Write-Host ("  Run {0}: total {1:N3} ms ({2} steps)" -f ($i+1), $totalMs, $parsed.StepNanos.Count) -ForegroundColor Green
+      $extra = ''
+      if ($null -ne $parsed.ExportedSpans) {
+        $extra = "  exported={0:N0} batches={1:N0}" -f $parsed.ExportedSpans, $parsed.ExportBatches
+        if ($null -ne $parsed.ExportFailures -and $parsed.ExportFailures -gt 0) {
+          $extra += "  FAILED_BATCHES={0:N0}" -f $parsed.ExportFailures
+          if ($null -ne $parsed.ExportFailedSpans) {
+            $extra += " (~{0:N0} spans)" -f $parsed.ExportFailedSpans
+          }
+        }
+      }
+      Write-Host ("  Run {0}: total {1:N3} ms ({2} steps){3}" -f ($i+1), $totalMs, $parsed.StepNanos.Count, $extra) -ForegroundColor Green
+      if ($null -ne $parsed.FirstExportError -and $null -eq $firstExportError) {
+        $firstExportError = $parsed.FirstExportError
+        Write-Host "  FIRST EXPORT ERROR: $firstExportError" -ForegroundColor Yellow
+      }
       $totalNanosList += [double]$parsed.TotalNanos
       $perRunStepNanos += , @($parsed.StepNanos)
+      if ($null -ne $parsed.ExportedSpans)  { $exportedSpansList  += [long]$parsed.ExportedSpans }
+      if ($null -ne $parsed.ExportBatches)  { $exportBatchesList  += [long]$parsed.ExportBatches }
+      if ($null -ne $parsed.ExportFailures) { $exportFailuresList += [long]$parsed.ExportFailures }
+      if ($null -ne $parsed.ExportFailedSpans) { $exportFailedSpansList += [long]$parsed.ExportFailedSpans }
     }
     else {
       Write-Host "  Run $($i+1): Failed to parse time" -ForegroundColor Red
       Save-FailureOutput -Phase "run" -ExeName $exe.Name -Iteration ($i + 1) -RawOutput $outputStr
+    }
+  }
+
+  $jaegerSpansReceivedDelta = $null
+  $jaegerSpansSavedDelta = $null
+  $jaegerSpansDroppedDelta = $null
+  $jaegerBackendDied = $false
+  if ($exe.Name -match 'otel' -and $null -ne $svcForJaeger) {
+    Start-Sleep -Seconds 5
+    $jaegerState = (Invoke-Docker -DockerArgs @('inspect', 'jaeger', '--format', '{{.State.OOMKilled}};{{.State.ExitCode}};{{.State.Status}}') -CaptureOutput) -join ''
+    if ($jaegerState -match 'true' -or $jaegerState -match ';137;' -or $jaegerState -match ';exited') {
+      $jaegerBackendDied = $true
+      Write-Host "  BACKEND DIED during this variant (jaeger state: $jaegerState) — delivery counters and timings are INVALID." -ForegroundColor Red
+    }
+    $countersAtEnd = Get-JaegerDeliveryCounters -ServiceName $svcForJaeger
+    if ($null -eq $countersAtEnd) {
+      $jaegerBackendDied = $true
+      Write-Host "  Jaeger /metrics unreachable at end-of-variant snapshot — marking row INVALID." -ForegroundColor Red
+    }
+    if ($null -ne $countersAtEnd -and $null -ne $jaegerCountersAtStart) {
+      $jaegerSpansReceivedDelta = $countersAtEnd.Received - $jaegerCountersAtStart.Received
+      $jaegerSpansSavedDelta    = $countersAtEnd.Saved    - $jaegerCountersAtStart.Saved
+      $jaegerSpansDroppedDelta  = $countersAtEnd.Dropped  - $jaegerCountersAtStart.Dropped
     }
   }
 
@@ -505,21 +730,35 @@ foreach ($exe in $executables) {
   $totalStats = Get-BenchmarkStatistics -Values $totalNanosList
   $stepStats  = Get-BenchmarkStatistics -Values $flatStepNanos
 
+  $exportedSpansSum  = ($exportedSpansList  | Measure-Object -Sum).Sum
+  $exportBatchesSum  = ($exportBatchesList  | Measure-Object -Sum).Sum
+  $exportFailuresSum = ($exportFailuresList | Measure-Object -Sum).Sum
+  $exportFailedSpansSum = if ($exportFailedSpansList.Count -gt 0) { ($exportFailedSpansList | Measure-Object -Sum).Sum } else { $null }
+
   $allResults += [ordered]@{
-    Executable       = $exe.Name
-    Count            = $totalStats.count
-    TotalMeanNanos   = $totalStats.mean
-    TotalMedianNanos = $totalStats.median
-    TotalStdDevNanos = $totalStats.stddev
-    TotalMinNanos    = $totalStats.min
-    TotalMaxNanos    = $totalStats.max
-    StepMeanNanos    = $stepStats.mean
-    StepMedianNanos  = $stepStats.median
-    StepStdDevNanos  = $stepStats.stddev
-    StepMinNanos     = $stepStats.min
-    StepMaxNanos     = $stepStats.max
-    TotalsNanos      = $totalNanosList
-    PerRunStepNanos  = $perRunStepNanos
+    Executable                = $exe.Name
+    Count                     = $totalStats.count
+    TotalMeanNanos            = $totalStats.mean
+    TotalMedianNanos          = $totalStats.median
+    TotalStdDevNanos          = $totalStats.stddev
+    TotalMinNanos             = $totalStats.min
+    TotalMaxNanos             = $totalStats.max
+    StepMeanNanos             = $stepStats.mean
+    StepMedianNanos           = $stepStats.median
+    StepStdDevNanos           = $stepStats.stddev
+    StepMinNanos              = $stepStats.min
+    StepMaxNanos              = $stepStats.max
+    TotalsNanos               = $totalNanosList
+    PerRunStepNanos           = $perRunStepNanos
+    ExportedSpansSum          = $exportedSpansSum
+    ExportBatchesSum          = $exportBatchesSum
+    ExportFailuresSum         = $exportFailuresSum
+    ExportFailedSpansSum      = $exportFailedSpansSum
+    FirstExportError          = $firstExportError
+    JaegerSpansReceivedDelta  = $jaegerSpansReceivedDelta
+    JaegerSpansSavedDelta     = $jaegerSpansSavedDelta
+    JaegerSpansDroppedDelta   = $jaegerSpansDroppedDelta
+    JaegerBackendDied         = $jaegerBackendDied
   }
 }
 
@@ -675,6 +914,7 @@ $markdown = @"
 - **Measured steps per run:** $($StepCount - $WarmupCount)
 - **Clean Build:** $CleanBuild
 - **Run timeout (s):** $RunTimeoutSeconds
+- **Variants:** $($Variants -join ', ')
 
 ## System Information
 - **OS:** $($machineInfo.OS) $($machineInfo.OSArchitecture)
@@ -739,6 +979,76 @@ foreach ($row in $overheadRows) {
   $markdown += "`n| $($row.Variant) | $($row.Platform) | $stepMean | $mps | $perMethodTotal | $overhead |"
 }
 
+$expectedTotal = $methodsPerStep['JVM']  # all platforms share the formula value
+$markdown += @"
+
+
+
+Expected = ``methods/step × StepCount × RunCount`` = $expectedTotal × $StepCount × $RunCount = $($expectedTotal * $StepCount * $RunCount). Jaeger columns are per-variant deltas. **Delivered % = Stored (saved_ok) / Expected** (ground truth). Status: OK · LOSS · DUP · INVALID (Jaeger died — row untrustworthy) · OK (false-fail: N) (delivered, client threw on response read). `~` = client-side fallback when Jaeger metrics missing.
+
+| Variant | Platform | Expected | Exported (attempted) | Failed (client) | Wire recv (Δ) | Stored saved_ok (Δ) | Dropped (Δ) | Delivered (%) | Dup | Status |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|:--|
+"@
+
+$exportErrorNotes = @()
+foreach ($res in $allResults) {
+  $vp = Get-VariantAndPlatform -ExeName $res.Executable
+  if ($vp.Variant -eq 'baseline' -or $vp.Variant -eq 'k-perf') { continue }
+  $expected = [long]$expectedTotal * [long]$StepCount * [long]$res.Count
+  $expFmt = "{0:N0}" -f $expected
+
+  $exportedNum    = $res.ExportedSpansSum
+  $failedSpansNum = $res.ExportFailedSpansSum
+  $recvNum        = $res.JaegerSpansReceivedDelta
+  $savedNum       = $res.JaegerSpansSavedDelta
+  $dropNum        = $res.JaegerSpansDroppedDelta
+  $died           = [bool]$res.JaegerBackendDied
+
+  $exportedFmt = if ($null -ne $exportedNum)    { "{0:N0}" -f $exportedNum }    else { 'N/A' }
+  $failedFmt   = if ($null -ne $failedSpansNum) { "{0:N0}" -f $failedSpansNum } else { 'N/A' }
+  $recvFmt     = if ($null -ne $recvNum)        { "{0:N0}" -f $recvNum }        else { 'N/A' }
+  $savedFmt    = if ($null -ne $savedNum)       { "{0:N0}" -f $savedNum }       else { 'N/A' }
+  $dropFmt     = if ($null -ne $dropNum)        { "{0:N0}" -f $dropNum }        else { 'N/A' }
+
+  $deliveredPct = $null; $pctMark = ''
+  if ($null -ne $savedNum -and $expected -gt 0) {
+    $deliveredPct = 100.0 * $savedNum / $expected
+  } elseif ($null -ne $exportedNum -and $expected -gt 0) {
+    $failedForCalc = if ($null -ne $failedSpansNum) { [double]$failedSpansNum } else { 0.0 }
+    $clientDelivered = [double]$exportedNum - $failedForCalc
+    $deliveredPct = 100.0 * $clientDelivered / $expected
+    $pctMark = '~'
+  }
+  $deliveredFmt = if ($null -ne $deliveredPct) { ("{0:N2}" -f $deliveredPct) + $pctMark } else { 'N/A' }
+
+  $dupFmt = '—'
+  if ($null -ne $recvNum -and $null -ne $exportedNum -and $exportedNum -gt 0 -and $recvNum -gt ($exportedNum * 1.01)) {
+    $dupFmt = "{0:N2}x" -f ($recvNum / [double]$exportedNum)
+  }
+
+  $status = '—'
+  if ($died) {
+    $status = 'INVALID (backend died)'
+  } elseif ($dupFmt -ne '—') {
+    $status = 'DUP'
+  } elseif ($null -ne $deliveredPct -and $deliveredPct -lt 99.0) {
+    $status = 'LOSS'
+  } elseif ($null -ne $savedNum -and $expected -gt 0 -and $savedNum -ge ($expected * 0.995) -and $null -ne $failedSpansNum -and $failedSpansNum -gt 0) {
+    $status = "OK (false-fail: {0:N0})" -f $failedSpansNum
+  } elseif ($null -ne $deliveredPct) {
+    $status = 'OK'
+  }
+
+  $markdown += "`n| $($vp.Variant) | $($vp.Platform) | $expFmt | $exportedFmt | $failedFmt | $recvFmt | $savedFmt | $dropFmt | $deliveredFmt | $dupFmt | $status |"
+  if ($null -ne $res.FirstExportError) {
+    $exportErrorNotes += "- **$($vp.Variant) $($vp.Platform)** first export error: ``$($res.FirstExportError)``"
+  }
+}
+
+if ($exportErrorNotes.Count -gt 0) {
+  $markdown += "`n`nFirst swallowed export error per row (if any):`n" + ($exportErrorNotes -join "`n")
+}
+
 # --- Per-step curve table: median µs at selected step indices --------------
 # Picks indices that span the warmup region (≤ WarmupCount) and the
 # measured region (≥ WarmupCount). Edit the array if you want different
@@ -796,4 +1106,19 @@ Write-Host "  results.md            (summary tables + per-step curve)"
 Write-Host "  per_step_medians.csv  (long-form per-step medians for plotting)"
 Write-Host "  traces/               (k-perf trace per platform, one preserved per variant)"
 Write-Host "Benchmark evaluation finished."
+
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "Jaeger is still running at http://localhost:16686" -ForegroundColor Green
+Write-Host "  - Every OTel variant produced StepCount x RunCount = $($StepCount * $RunCount) traces" -ForegroundColor Green
+Write-Host "    (one per step thanks to Main.kt's per-step Context.root() reset)" -ForegroundColor Green
+Write-Host "  - Each trace ~= 'methods/step' spans, fully renderable in the UI" -ForegroundColor Green
+Write-Host "  - Storage is in-memory, capped at the most recent 400 traces" -ForegroundColor Green
+Write-Host "  - Verify zero drops at: http://localhost:14269/metrics" -ForegroundColor Green
+Write-Host "    (jaeger_collector_spans_dropped_total should be 0)" -ForegroundColor Green
+Write-Host "  - gRPC traffic flows through the Envoy gRPC-Web proxy on :4317" -ForegroundColor Green
+Write-Host "    (required for the Kotlin/JS gRPC-Web client to reach Jaeger)" -ForegroundColor Green
+Write-Host "  - Shut everything down with: docker stop jaeger envoy" -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
+
 Pop-Location

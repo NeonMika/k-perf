@@ -8,6 +8,8 @@ import io.opentelemetry.kotlin.sdk.common.CompletableResultCode
 import io.opentelemetry.kotlin.sdk.trace.data.SpanData
 import io.opentelemetry.kotlin.sdk.trace.export.SpanExporter
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 class OtlpExporter(
     val host: String,
@@ -15,14 +17,27 @@ class OtlpExporter(
 ) : SpanExporter {
     private val client = HttpClient {
         install(HttpTimeout) {
-            requestTimeoutMillis = 5_000
-            connectTimeoutMillis = 2_000
-            socketTimeoutMillis = 5_000
+            requestTimeoutMillis = 600_000
+            connectTimeoutMillis = 10_000
+            socketTimeoutMillis = 600_000
         }
         expectSuccess = false
     }
     private val scope = CoroutineScope(Dispatchers.Default)
     private val jobs: MutableList<Job> = mutableListOf()
+
+    private val sendGate = Semaphore(permits = 64)
+
+    var totalSpansExported: Long = 0L
+        private set
+    var totalExportBatches: Long = 0L
+        private set
+    var failedExportBatches: Long = 0L
+        private set
+    var failedExportSpans: Long = 0L
+        private set
+    var firstExportError: String? = null
+        private set
 
     suspend fun await() {
         jobs.joinAll()
@@ -31,15 +46,23 @@ class OtlpExporter(
     override fun export(
         spans: Collection<SpanData>
     ): CompletableResultCode {
+        totalSpansExported += spans.size.toLong()
+        totalExportBatches += 1L
         val job = scope.launch {
             try {
                 val payload = spans.serialize(service)
-                client.post("http://$host/v1/traces") {
-                    contentType(ContentType.Application.Json)
-                    setBody(payload)
+                sendGate.withPermit {
+                    client.post("http://$host/v1/traces") {
+                        contentType(ContentType.Application.Json)
+                        setBody(payload)
+                    }
                 }
-            } catch (_: Exception) {
-                // Match otel-proto semantics: ofSuccess returned eagerly regardless of RPC outcome.
+            } catch (e: Exception) {
+                failedExportBatches += 1L
+                failedExportSpans += spans.size.toLong()
+                if (firstExportError == null) {
+                    firstExportError = "${e::class.simpleName}: ${e.message}"
+                }
             }
         }
         jobs.add(job)
