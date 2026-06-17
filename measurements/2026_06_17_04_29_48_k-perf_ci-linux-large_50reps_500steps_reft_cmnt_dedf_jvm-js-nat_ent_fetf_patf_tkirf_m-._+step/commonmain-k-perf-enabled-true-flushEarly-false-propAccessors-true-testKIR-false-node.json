@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 20,
+    "StepCount": 500,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,16 +14,19 @@
       true
     ],
     "FlushEarly": [
+      true,
       false
     ],
     "InstrumentPropertyAccessors": [
+      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*"
+      ".*",
+      "step"
     ]
   },
   "machineInfo": {
@@ -31,32 +34,32 @@
     "DeviceModel": "Virtual Machine",
     "OS": "Ubuntu 24.04.4 LTS",
     "OSArchitecture": "x86_64",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 13.84,
+    "AvailableRAMGB": 13.89,
     "DiskSizeGB": 145,
-    "SystemDriveFreeSpaceGB": 85,
-    "SystemUptimeHours": 0.03,
+    "SystemDriveFreeSpaceGB": 84,
+    "SystemUptimeHours": 0.04,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 160,
+    "RunningProcessCount": 162,
     "IsVirtualMachine": true,
-    "PowerShellVersion": "7.6.2",
+    "PowerShellVersion": "7.4.16",
     "JavaVersion": "21.0.11",
     "JavaDistribution": "\"21.0.11\"",
     "NodeVersion": "v22.22.3",
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "44601e5d9167c56343ae6b790ccb5b87a86846da",
+    "GitCommitHash": "695b09fb3a02bd1c2ca5cf1f1c22f56fe001a801",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-06-17 02:38:38"
+    "CollectionTimestamp": "2026-06-17 04:22:06"
   },
-  "buildTimeMs": 4693.2165,
-  "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-  "repetitions": 3,
+  "buildTimeMs": 4618.9878,
+  "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-node",
+  "repetitions": 50,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
