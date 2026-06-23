@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 20,
+    "StepCount": 500,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,16 +14,19 @@
       true
     ],
     "FlushEarly": [
+      true,
       false
     ],
     "InstrumentPropertyAccessors": [
+      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*"
+      ".*",
+      "step"
     ]
   },
   "machineInfo": {
@@ -31,17 +34,17 @@
     "DeviceModel": "Virtual Machine",
     "OS": "Ubuntu 24.04.4 LTS",
     "OSArchitecture": "x86_64",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 13.98,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 85,
     "SystemUptimeHours": 0.05,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 161,
+    "RunningProcessCount": 160,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.6.2",
     "JavaVersion": "21.0.11",
@@ -50,13 +53,13 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "7bea52f2ebe89191726103618fd385fd25e43025",
+    "GitCommitHash": "e1f5ef9d33795e02c4589d61fad9635fe15c1bfd",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-06-23 02:07:08"
+    "CollectionTimestamp": "2026-06-23 03:49:49"
   },
-  "buildTimeMs": 3466.1108,
-  "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-  "repetitions": 3,
+  "buildTimeMs": 3961.9145,
+  "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-node",
+  "repetitions": 50,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
