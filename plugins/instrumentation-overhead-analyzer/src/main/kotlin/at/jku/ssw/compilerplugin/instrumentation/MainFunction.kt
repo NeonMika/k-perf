@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 fun modifyMainFunction(function: IrFunction) {
   when (IoaContext.instrumentationKind) {
     IoaKind.FileLazyFlush -> modifyMainFunctionFileLazyFlush(function)
+    IoaKind.PocTryFinallyIncrementInt -> modifyMainFunctionPrintSutPocSut(function)
     else -> {}
   }
 
@@ -23,6 +24,20 @@ fun modifyMainFunction(function: IrFunction) {
 fun modifyMainFunctionFileLazyFlush(function: IrFunction) = modifyFunctionBeforeEachReturnOrAtEnd(function) {
   +irCall(IoaContext.sinkFlushFunction).apply {
     dispatchReceiver = IoaContext.sutFields[0]
+  }
+}
+
+@OptIn(UnsafeDuringIrConstructionAPI::class)
+fun modifyMainFunctionPrintSutPocSut(function: IrFunction) = modifyFunctionBeforeEachReturnOrAtEnd(function) {
+  +irCall(IoaContext.printlnFunction).apply {
+    arguments[0] = irConcat().apply {
+      addArgument(irString("Sut fields after execution: "))
+      pocSutFields.forEach {
+        val functionName = it.name.asString().removePrefix("__ioa_sut_").split("$").drop(1).joinToString("$")
+        addArgument(irString("\n - $functionName = "))
+        addArgument(irCall(it.getter!!).apply { dispatchReceiver = null })
+      }
+    }
   }
 }
 

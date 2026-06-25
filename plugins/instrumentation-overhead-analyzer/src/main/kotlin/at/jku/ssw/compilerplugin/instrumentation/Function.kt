@@ -5,6 +5,7 @@ package at.jku.ssw.compilerplugin.instrumentation
 import at.jku.ssw.shared.IoaKind
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 
@@ -253,11 +254,13 @@ fun modifyFunctionAddUniqueToSet(function: IrFunction) = modifyFunctionAtBeginni
   }
 }
 
+val pocSutFields = mutableListOf<IrProperty>()
 fun modifyFunctionPocTryFinallyIncrementInt(function: IrFunction) = with(IoaContext.pluginContext) {
   val sutField = createPropertyOfType(
     irBuiltIns.intType,
-    suffix = functionCounter++.toString()
+    suffix = (functionCounter++.toString()) + "$" + function.name.asString().replace("[^a-zA-Z0-9]".toRegex(), "_")
   )
+  pocSutFields += sutField
 
   setFunctionBody(function) {
     +irTry(
