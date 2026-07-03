@@ -2,10 +2,12 @@
 
 Usage::
 
-    python ioa.py <folder> [options]
+    python ioa.py <folder> [<folder> ...] [options]
 
 Arguments:
-    folder   Path to a measurement folder containing per-executable JSON files.
+    folder   One or more measurement folders containing per-executable JSON files.
+             For multiple folders, all targets are taken from the first folder and
+             only native targets are taken from each consecutive folder.
 
 Options:
     --transformation NAME   Transformation to apply to cell values (default: runtime).
@@ -14,10 +16,16 @@ Options:
                             exclusive with --steps-skip).
     --steps-skip N          Skip the first N steps of each run (mutually exclusive
                             with --steps-until).
+    --ignore-kinds KIND ... Exclude listed kinds from output rows.
+    --only-kind KIND ...    Include only listed kinds in output rows.
+    --function-overhead-yellow-threshold-us N
+                            Yellow threshold for function_overhead colouring (default: 0.0005 µs).
+    --function-overhead-red-threshold-us N
+                            Red threshold for function_overhead colouring (default: 0.001 µs).
 
 Output::
 
-    {folder}/latex-{transformation}-{steps|full}.tex
+    {first_folder}/latex-{transformation}-{steps|full}.tex
 
 Example::
 
@@ -39,7 +47,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterable
 
 
 # ---------------------------------------------------------------------------
@@ -66,11 +74,12 @@ _KIND_LABELS: dict[str, str] = {
     "randomvalue":                              "Random Value",
     "standardout":                              "Standard Out",
     "appendtostringbuilder":                    "Append To StringBuilder",
-    "fileeagerflush":                           "File (eager flush)",
-    "filelazyflush":                            "File (lazy flush)",
+    "fileeagerflush":                           "File (Eager Flush)",
+    "filelazyflush":                            "File (Lazy Flush)",
     "addtolist":                                "Add To List",
     "addduplicatestoset":                       "Add Duplicates To Set",
     "adduniquetoset":                           "Add Unique To Set",
+    "poctryfinallyincrementint":                "Prove of Concept: Try-Finally with Integer Increment",
 }
 
 _TARGET_LABELS: dict[str, str] = {
@@ -140,16 +149,16 @@ def _parse_executable(name: str) -> dict | None:
         commonmain-plain-{target}
         commonmain-ioa-kind-{kind}-{target}
 
-    Targets: jar, node, or <os>-exe (e.g. linux-exe, win-exe, mac-exe).
+    Targets: jar, node, native/exe, or <os>-exe (e.g. linux-exe, win-exe, mac-exe).
     Returns None for unrecognised names.
     """
-    _TARGET_RE = r"(jar|node|[a-z]+-exe)$"
+    _TARGET_RE = r"(jar|node|native|[a-z]+-exe|exe)$"
 
     m = re.fullmatch(r"commonmain-plain-" + _TARGET_RE, name)
     if m:
         return {"kind": "plain", "target": m.group(1), "is_reference": True}
 
-    m = re.fullmatch(r"commonmain-ioa-kind-(.+)-" + _TARGET_RE, name)
+    m = re.fullmatch(r"commonmain-ioa-kind-(.+?)-" + _TARGET_RE, name)
     if m:
         return {"kind": m.group(1), "target": m.group(2), "is_reference": False}
 
@@ -189,6 +198,36 @@ def load_entries(folder: Path) -> list[dict]:
         })
 
     return entries
+
+
+def _is_native_target(target: str) -> bool:
+    """Return True when a target is native-like (everything except jar/node)."""
+    return target not in {"jar", "node"}
+
+
+def load_entries_from_folders(folders: list[Path]) -> list[dict]:
+    """Load and merge entries across folders.
+
+    Selection policy:
+    - First folder: keep all targets (jar, node, native*)
+    - Consecutive folders: keep only native* targets
+    - Duplicate (kind, target) keys are kept from the first occurrence
+    """
+    merged: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+
+    for idx, folder in enumerate(folders):
+        folder_entries = load_entries(folder)
+        for entry in folder_entries:
+            if idx > 0 and not _is_native_target(entry["target"]):
+                continue
+            key = (entry["kind"], entry["target"])
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(entry)
+
+    return merged
 
 
 def compute_value(
@@ -242,6 +281,9 @@ step_count   : number of steps contributing to the value
 is_baseline  : True when this row is the plain/reference baseline itself
 color_or_none: xcolor name (e.g. "yellow!50", "red!30") or None for no highlight
 """
+
+DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US = 0.0005
+DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US = 0.001
 
 
 def _fmt_us(us: float, target: str | None = None) -> str:
@@ -300,12 +342,19 @@ def _transform_function_runtime(
 
 
 def _transform_function_overhead(
-    baseline: float, value: float, is_step_avg: bool, step_count: int, is_baseline: bool
+    baseline: float,
+    value: float,
+    is_step_avg: bool,
+    step_count: int,
+    is_baseline: bool,
+    *,
+    yellow_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US,
+    red_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US,
 ) -> tuple[str, str | None]:
     """Show per-function overhead vs plain baseline.
 
     For the baseline row itself the plain function runtime is shown (no colour).
-    Coloured yellow if overhead >= 2 µs, red if >= 10 µs.
+    Coloured yellow/red based on configurable thresholds.
     """
     if is_baseline:
         ft = _func_time_us(value, is_step_avg, step_count)
@@ -318,9 +367,9 @@ def _transform_function_overhead(
     sign = "+" if overhead >= 0 else ""
     text = sign + _fmt_us(overhead, "ns")
 
-    if overhead >= 0.01:
+    if overhead >= red_threshold_us:
         color = "red!30"
-    elif overhead >= 0.002:
+    elif overhead >= yellow_threshold_us:
         color: str | None = "yellow!30"
     else:
         color = None
@@ -358,6 +407,25 @@ def _latex_escape(text: str) -> str:
     return text
 
 
+def _latex_name_cell(latex_text: str, align: str = "r") -> str:
+    """Wrap a name cell so labels can use LaTeX line breaks (\\\\) easily."""
+    align = "l" if align == "l" else "r"
+    return r"\begin{tabular}[c]{@{}" + align + r"@{}}" + latex_text + r"\end{tabular}"
+
+
+def _parse_kind_list(values: Iterable[str] | None) -> set[str]:
+    """Parse kind tokens from repeated args and/or comma-separated chunks."""
+    if values is None:
+        return set()
+    parsed: set[str] = set()
+    for value in values:
+        for token in value.split(","):
+            token = token.strip().lower()
+            if token:
+                parsed.add(token)
+    return parsed
+
+
 # ---------------------------------------------------------------------------
 # LaTeX table generation
 # ---------------------------------------------------------------------------
@@ -374,6 +442,8 @@ def generate_latex_table(
     steps_until: int | None,
     steps_skip: int | None,
     transform: TransformFn,
+    ignore_kinds: set[str],
+    only_kinds: set[str],
 ) -> str:
     """Return a LaTeX ``tabular`` snippet for the overhead table.
 
@@ -390,13 +460,24 @@ def generate_latex_table(
         (e["kind"], e["target"]): e for e in entries
     }
 
+    def include_kind(kind: str) -> bool:
+        kind_norm = kind.lower()
+        if only_kinds:
+            return kind_norm in only_kinds
+        if ignore_kinds:
+            return kind_norm not in ignore_kinds
+        return True
+
     # Ordered targets
     all_targets = sorted({e["target"] for e in entries}, key=_target_sort_key)
 
     # Ordered kinds (excluding plain — plain gets its own header row)
-    all_kinds_set = {e["kind"] for e in entries if not e["is_reference"]}
+    all_kinds_set = {
+        e["kind"] for e in entries if not e["is_reference"] and include_kind(e["kind"])
+    }
     ordered_kinds = [k for k in KIND_ORDER if k in all_kinds_set]
     ordered_kinds += sorted(k for k in all_kinds_set if k not in KIND_ORDER)
+    show_plain = include_kind("plain")
 
     # Fixed-width centered columns for target data; all equal width so headers align.
     col_spec = "l" + "r" * len(all_targets)
@@ -407,31 +488,33 @@ def generate_latex_table(
     lines.append(r"\toprule")
 
     # Column header — target labels are centered by the column type
-    header_parts = ["\\textbf{Kind}"] + [
-        "\\textbf{" + _latex_escape(target_label(t)) + "}" for t in all_targets
+    header_parts = [r"\textbf{" + _latex_name_cell("Instrumentation Operation", align="l") + r"}"] + [
+        r"\textbf{" + _latex_name_cell(_latex_escape(target_label(t)), align="r") + r"}" for t in all_targets
     ]
     lines.append(" & ".join(header_parts) + r" \\")
     lines.append(r"\midrule")
 
     # Plain reference row — passed through the transform with is_baseline=True
-    plain_cells = [r"\textit{Plain (reference)}"]
-    for t in all_targets:
-        plain_entry = entry_map.get(("plain", t))
-        if plain_entry:
-            val, sc, is_step = compute_value(plain_entry, steps_until, steps_skip)
-            text, color = transform(val, val, is_step, sc, True)
-            cell = (r"\cellcolor{" + color + r"}" + text) if color else text
-            plain_cells.append(cell)
-        else:
-            plain_cells.append("--")
-    lines.append(" & ".join(plain_cells) + r" \\")
-    lines.append(r"\midrule")
+    if show_plain:
+        plain_cells = [_latex_name_cell(r"\textit{Plain (reference)}", align="l")]
+        for t in all_targets:
+            plain_entry = entry_map.get(("plain", t))
+            if plain_entry:
+                val, sc, is_step = compute_value(plain_entry, steps_until, steps_skip)
+                text, color = transform(val, val, is_step, sc, True)
+                cell = (r"\cellcolor{" + color + r"}" + text) if color else text
+                plain_cells.append(cell)
+            else:
+                plain_cells.append("--")
+        lines.append(" & ".join(plain_cells) + r" \\")
+        if ordered_kinds:
+            lines.append(r"\midrule")
 
     # One row per kind
     for kind in ordered_kinds:
         # kind_label() returns strings from a controlled dict that already
         # contain valid LaTeX markup (e.g. $\mu$), so no escaping here.
-        row_cells = [kind_label(kind)]
+        row_cells = [_latex_name_cell(kind_label(kind), align="l")]
         for t in all_targets:
             kind_entry  = entry_map.get((kind, t))
             plain_entry = entry_map.get(("plain", t))
@@ -469,7 +552,14 @@ def main() -> None:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("folder", help="Measurement folder containing per-executable JSON files")
+    parser.add_argument(
+        "folders",
+        nargs="+",
+        help=(
+            "Measurement folders containing per-executable JSON files. "
+            "First folder provides all targets; consecutive folders provide native targets only."
+        ),
+    )
     parser.add_argument(
         "--transformation",
         choices=list(TRANSFORMATIONS),
@@ -490,21 +580,98 @@ def main() -> None:
         type=int,
         help="Skip the first N steps of each run",
     )
+    kind_filter_group = parser.add_mutually_exclusive_group()
+    kind_filter_group.add_argument(
+        "--ignore-kinds",
+        nargs="+",
+        metavar="KIND",
+        help=(
+            "Kinds to exclude from output rows. "
+            "Accepts space-separated kinds and/or comma-separated chunks."
+        ),
+    )
+    kind_filter_group.add_argument(
+        "--only-kind",
+        nargs="+",
+        metavar="KIND",
+        help=(
+            "Kinds to include in output rows. "
+            "Accepts space-separated kinds and/or comma-separated chunks."
+        ),
+    )
+    parser.add_argument(
+        "--function-overhead-yellow-threshold-us",
+        type=float,
+        default=DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US,
+        metavar="N",
+        help=(
+            "Yellow threshold (in µs) for --transformation function_overhead "
+            f"(default: {DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US})."
+        ),
+    )
+    parser.add_argument(
+        "--function-overhead-red-threshold-us",
+        type=float,
+        default=DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US,
+        metavar="N",
+        help=(
+            "Red threshold (in µs) for --transformation function_overhead "
+            f"(default: {DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US})."
+        ),
+    )
 
     args = parser.parse_args()
 
-    folder = Path(args.folder)
-    if not folder.is_dir():
-        print(f"Error: {folder} is not a directory", file=sys.stderr)
+    if args.function_overhead_yellow_threshold_us < 0 or args.function_overhead_red_threshold_us < 0:
+        print("Error: function_overhead thresholds must be >= 0", file=sys.stderr)
+        sys.exit(1)
+    if args.function_overhead_red_threshold_us < args.function_overhead_yellow_threshold_us:
+        print("Error: red threshold must be >= yellow threshold", file=sys.stderr)
         sys.exit(1)
 
-    entries = load_entries(folder)
+    folders = [Path(folder_arg) for folder_arg in args.folders]
+    for folder in folders:
+        if not folder.is_dir():
+            print(f"Error: {folder} is not a directory", file=sys.stderr)
+            sys.exit(1)
+
+    entries = load_entries_from_folders(folders)
     if not entries:
-        print(f"No recognised JSON files found in {folder}", file=sys.stderr)
+        joined = ", ".join(str(folder) for folder in folders)
+        print(f"No recognised JSON files found in: {joined}", file=sys.stderr)
         sys.exit(1)
 
     transform_fn = TRANSFORMATIONS[args.transformation]
-    latex = generate_latex_table(entries, args.steps_until, args.steps_skip, transform_fn)
+    if args.transformation == "function_overhead":
+        yellow_threshold_us = args.function_overhead_yellow_threshold_us
+        red_threshold_us = args.function_overhead_red_threshold_us
+
+        def transform_fn(
+            baseline: float,
+            value: float,
+            is_step_avg: bool,
+            step_count: int,
+            is_baseline: bool,
+        ) -> tuple[str, str | None]:
+            return _transform_function_overhead(
+                baseline,
+                value,
+                is_step_avg,
+                step_count,
+                is_baseline,
+                yellow_threshold_us=yellow_threshold_us,
+                red_threshold_us=red_threshold_us,
+            )
+    ignore_kinds = _parse_kind_list(args.ignore_kinds)
+    only_kinds = _parse_kind_list(args.only_kind)
+    latex = generate_latex_table(
+        entries,
+        args.steps_until,
+        args.steps_skip,
+        transform_fn,
+        ignore_kinds,
+        only_kinds,
+    )
 
     steps_suffix = "full"
     if args.steps_until is not None:
@@ -512,7 +679,7 @@ def main() -> None:
     elif args.steps_skip is not None:
         steps_suffix = f"steps"
 
-    out_path = folder / f"latex-{args.transformation}-{steps_suffix}.tex"
+    out_path = folders[0] / f"latex-{args.transformation}-{steps_suffix}.tex"
     out_path.write_text(latex, encoding="utf-8")
     print(f"Saved: {out_path}")
 
