@@ -1,0 +1,162 @@
+{
+    "parameters": {
+        "CILabel": "ci-windows-small",
+        "RepetitionCount": 3,
+        "CleanBuild": false,
+        "StepCount": 20,
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ]
+    },
+    "machineInfo": {
+        "DeviceManufacturer": "Microsoft Corporation",
+        "DeviceModel": "Virtual Machine",
+        "OS": "Microsoft Windows Server 2025 Datacenter 10.0.26100",
+        "OSArchitecture": "64-bit",
+        "WindowsBuildNumber": "26100",
+        "AvailableRAMGB": 12.89,
+        "SystemUptimeHours": "Not available",
+        "CPU": "AMD EPYC 7763 64-Core Processor",
+        "CPUCores": 2,
+        "CPULogicalProcessors": 4,
+        "CPUMaxClockSpeedMHz": 2445,
+        "TotalRAMGB": 15.99,
+        "RAMModuleCount": 2,
+        "RAMManufacturer": "Microsoft Corporation",
+        "RAMPartNumber": "None",
+        "RAMModuleCapacitiesGB": "1.0 + 15.0",
+        "DiskModel": "Microsoft Virtual Disk",
+        "DiskSizeGB": 150.0,
+        "DiskMediaType": "Fixed hard disk media",
+        "DiskInterfaceType": "SCSI",
+        "SystemDriveFreeSpaceGB": 33.88,
+        "PowerPlan": "High performance",
+        "RunningProcessCount": 147,
+        "IsVirtualMachine": true,
+        "HyperVEnabled": false,
+        "SecureBootEnabled": false,
+        "WindowsDefenderEnabled": true,
+        "WindowsDefenderRealTimeProtection": false,
+        "TimeZone": "UTC",
+        "Username": "runneradmin",
+        "BIOSVersion": "Hyper-V UEFI Release v4.1",
+        "BIOSManufacturer": "Microsoft Corporation",
+        "PythonVersion": "3.12.10",
+        "JavaVersion": "21.0.11",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v22.23.1",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0",
+        "GitCommitHash": "ab84730b9940127575f438ec91f560822c63ddff",
+        "GitBranch": "BSC_IOA",
+        "CollectionTimestamp": "2026-07-05 18:44:10"
+    },
+    "buildTimeMs": 9968.999999999995,
+    "executable": "commonmain-plain-jar",
+    "repetitions": 3,
+    "timeUnit": "microseconds",
+    "times": [
+        62822.0,
+        60455.0,
+        62765.0
+    ],
+    "stepTimes": [
+        [
+            15686.0,
+            1325.0,
+            661.0,
+            536.0,
+            639.0,
+            614.0,
+            579.0,
+            755.0,
+            573.0,
+            1119.0,
+            801.0,
+            790.0,
+            788.0,
+            776.0,
+            760.0,
+            804.0,
+            767.0,
+            797.0,
+            769.0,
+            673.0
+        ],
+        [
+            13764.0,
+            1336.0,
+            700.0,
+            535.0,
+            1099.0,
+            1031.0,
+            835.0,
+            790.0,
+            570.0,
+            633.0,
+            615.0,
+            469.0,
+            467.0,
+            461.0,
+            462.0,
+            452.0,
+            459.0,
+            434.0,
+            826.0,
+            776.0
+        ],
+        [
+            15222.0,
+            1400.0,
+            559.0,
+            936.0,
+            1046.0,
+            655.0,
+            989.0,
+            1079.0,
+            1036.0,
+            770.0,
+            780.0,
+            877.0,
+            765.0,
+            805.0,
+            766.0,
+            792.0,
+            746.0,
+            730.0,
+            699.0,
+            593.0
+        ]
+    ],
+    "statistics": {
+        "count": 3,
+        "mean": 62014.0,
+        "median": 62765.0,
+        "stddev": 1350.434374562496,
+        "min": 60455.0,
+        "max": 62822.0,
+        "ci95": {
+            "lower": 58661.403306390705,
+            "upper": 65366.596693609295
+        }
+    },
+    "status": "ok"
+}
