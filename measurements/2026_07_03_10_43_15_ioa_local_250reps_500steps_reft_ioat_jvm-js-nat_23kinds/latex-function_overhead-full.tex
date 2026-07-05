@@ -1,0 +1,12 @@
+% Requires: \usepackage{booktabs}, \usepackage[table]{xcolor}, \usepackage{array}, \usepackage{multirow}
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+\multirow{2}{*}{\textbf{\shortstack[l]{Instrumentation\\Operation}}} & \multicolumn{3}{c}{\textbf{macOS}} & \multicolumn{3}{c}{\textbf{Linux}} & \multicolumn{3}{c}{\textbf{Windows}} \\
+ & \multicolumn{1}{c}{\textbf{JVM}} & \multicolumn{1}{c}{\textbf{JS}} & \multicolumn{1}{c}{\textbf{Native}} & \multicolumn{1}{c}{\textbf{JVM}} & \multicolumn{1}{c}{\textbf{JS}} & \multicolumn{1}{c}{\textbf{Native}} & \multicolumn{1}{c}{\textbf{JVM}} & \multicolumn{1}{c}{\textbf{JS}} & \multicolumn{1}{c}{\textbf{Native}} \\
+\cmidrule(lr){2-4}
+\cmidrule(lr){5-7}
+\cmidrule(lr){8-10}
+\midrule
+Prove of Concept & \cellcolor{yellow!30}+0.48\,ns & \cellcolor{red!30}+3.91\,ns & +0.04\,ns & \cellcolor{yellow!30}+0.88\,ns & -1.76\,ns & \cellcolor{red!30}+1.04\,ns & -9.95\,ns & \cellcolor{red!30}+4.69\,ns & -2.84\,ns \\
+\bottomrule
+\end{tabular}

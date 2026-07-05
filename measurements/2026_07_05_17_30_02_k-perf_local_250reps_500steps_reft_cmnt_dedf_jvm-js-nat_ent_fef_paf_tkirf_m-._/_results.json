@@ -1,0 +1,344 @@
+[
+    {
+        "mean": 52328.156,
+        "median": 52400.0,
+        "stddev": 578.2508207610633,
+        "min": 50197.0,
+        "max": 54564.0,
+        "ci95_lower": 52256.47528562331,
+        "ci95_upper": 52399.836714376695,
+        "executable": "commonmain-plain-jar",
+        "buildTimeMs": 2234.902374999365,
+        "RepetitionCount": 250,
+        "CleanBuild": true,
+        "StepCount": 500,
+        "CILabel": "local",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-07-05 17:29:09",
+        "GitCommitHash": "c66d2866aa4b14b68e666cf59f16e0267321aa45",
+        "GitBranch": "BSC_IOA",
+        "IsVirtualMachine": false,
+        "OS": "macOS 26.5",
+        "OSArchitecture": "arm64",
+        "TimeZone": "Europe/Vienna",
+        "Username": "lian",
+        "CPU": "Apple M4 Max",
+        "CPUCores": 14,
+        "CPULogicalProcessors": 14,
+        "TotalRAMGB": 36.0,
+        "DiskSizeGB": 926,
+        "SystemDriveFreeSpaceGB": 671,
+        "RunningProcessCount": 695,
+        "PythonVersion": "3.12.12",
+        "JavaVersion": "21.0.8",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v24.11.1",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 55951.764,
+        "median": 55872.0,
+        "stddev": 1183.2577605982833,
+        "min": 54549.0,
+        "max": 71818.0,
+        "ci95_lower": 55805.08584836362,
+        "ci95_upper": 56098.44215163639,
+        "executable": "commonmain-plain-node",
+        "buildTimeMs": 2498.1834169993817,
+        "RepetitionCount": 250,
+        "CleanBuild": true,
+        "StepCount": 500,
+        "CILabel": "local",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-07-05 17:29:09",
+        "GitCommitHash": "c66d2866aa4b14b68e666cf59f16e0267321aa45",
+        "GitBranch": "BSC_IOA",
+        "IsVirtualMachine": false,
+        "OS": "macOS 26.5",
+        "OSArchitecture": "arm64",
+        "TimeZone": "Europe/Vienna",
+        "Username": "lian",
+        "CPU": "Apple M4 Max",
+        "CPUCores": 14,
+        "CPULogicalProcessors": 14,
+        "TotalRAMGB": 36.0,
+        "DiskSizeGB": 926,
+        "SystemDriveFreeSpaceGB": 671,
+        "RunningProcessCount": 695,
+        "PythonVersion": "3.12.12",
+        "JavaVersion": "21.0.8",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v24.11.1",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 79526.552,
+        "median": 78492.5,
+        "stddev": 3479.9233776266697,
+        "min": 76682.0,
+        "max": 103586.0,
+        "ci95_lower": 79095.17622891827,
+        "ci95_upper": 79957.92777108173,
+        "executable": "commonmain-plain-mac-exe",
+        "buildTimeMs": 11937.591332999546,
+        "RepetitionCount": 250,
+        "CleanBuild": true,
+        "StepCount": 500,
+        "CILabel": "local",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-07-05 17:29:09",
+        "GitCommitHash": "c66d2866aa4b14b68e666cf59f16e0267321aa45",
+        "GitBranch": "BSC_IOA",
+        "IsVirtualMachine": false,
+        "OS": "macOS 26.5",
+        "OSArchitecture": "arm64",
+        "TimeZone": "Europe/Vienna",
+        "Username": "lian",
+        "CPU": "Apple M4 Max",
+        "CPUCores": 14,
+        "CPULogicalProcessors": 14,
+        "TotalRAMGB": 36.0,
+        "DiskSizeGB": 926,
+        "SystemDriveFreeSpaceGB": 671,
+        "RunningProcessCount": 695,
+        "PythonVersion": "3.12.12",
+        "JavaVersion": "21.0.8",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v24.11.1",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 145438.836,
+        "median": 145000.5,
+        "stddev": 2486.051715801293,
+        "min": 140895.0,
+        "max": 154917.0,
+        "ci95_lower": 145130.66183652627,
+        "ci95_upper": 145747.01016347375,
+        "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-jar",
+        "buildTimeMs": 1693.7095419998514,
+        "RepetitionCount": 250,
+        "CleanBuild": true,
+        "StepCount": 500,
+        "CILabel": "local",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-07-05 17:29:09",
+        "GitCommitHash": "c66d2866aa4b14b68e666cf59f16e0267321aa45",
+        "GitBranch": "BSC_IOA",
+        "IsVirtualMachine": false,
+        "OS": "macOS 26.5",
+        "OSArchitecture": "arm64",
+        "TimeZone": "Europe/Vienna",
+        "Username": "lian",
+        "CPU": "Apple M4 Max",
+        "CPUCores": 14,
+        "CPULogicalProcessors": 14,
+        "TotalRAMGB": 36.0,
+        "DiskSizeGB": 926,
+        "SystemDriveFreeSpaceGB": 671,
+        "RunningProcessCount": 695,
+        "PythonVersion": "3.12.12",
+        "JavaVersion": "21.0.8",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v24.11.1",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 1397107.636,
+        "median": 1396250.0,
+        "stddev": 14748.884706030865,
+        "min": 1348259.0,
+        "max": 1466091.0,
+        "ci95_lower": 1395279.3453101635,
+        "ci95_upper": 1398935.9266898364,
+        "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
+        "buildTimeMs": 1337.0633750000707,
+        "RepetitionCount": 250,
+        "CleanBuild": true,
+        "StepCount": 500,
+        "CILabel": "local",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-07-05 17:29:09",
+        "GitCommitHash": "c66d2866aa4b14b68e666cf59f16e0267321aa45",
+        "GitBranch": "BSC_IOA",
+        "IsVirtualMachine": false,
+        "OS": "macOS 26.5",
+        "OSArchitecture": "arm64",
+        "TimeZone": "Europe/Vienna",
+        "Username": "lian",
+        "CPU": "Apple M4 Max",
+        "CPUCores": 14,
+        "CPULogicalProcessors": 14,
+        "TotalRAMGB": 36.0,
+        "DiskSizeGB": 926,
+        "SystemDriveFreeSpaceGB": 671,
+        "RunningProcessCount": 695,
+        "PythonVersion": "3.12.12",
+        "JavaVersion": "21.0.8",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v24.11.1",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 787828.156,
+        "median": 784980.0,
+        "stddev": 15928.96423733701,
+        "min": 767265.0,
+        "max": 924983.0,
+        "ci95_lower": 785853.5811359118,
+        "ci95_upper": 789802.7308640882,
+        "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-mac-exe",
+        "buildTimeMs": 17133.744957999625,
+        "RepetitionCount": 250,
+        "CleanBuild": true,
+        "StepCount": 500,
+        "CILabel": "local",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-07-05 17:29:09",
+        "GitCommitHash": "c66d2866aa4b14b68e666cf59f16e0267321aa45",
+        "GitBranch": "BSC_IOA",
+        "IsVirtualMachine": false,
+        "OS": "macOS 26.5",
+        "OSArchitecture": "arm64",
+        "TimeZone": "Europe/Vienna",
+        "Username": "lian",
+        "CPU": "Apple M4 Max",
+        "CPUCores": 14,
+        "CPULogicalProcessors": 14,
+        "TotalRAMGB": 36.0,
+        "DiskSizeGB": 926,
+        "SystemDriveFreeSpaceGB": 671,
+        "RunningProcessCount": 695,
+        "PythonVersion": "3.12.12",
+        "JavaVersion": "21.0.8",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v24.11.1",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    }
+]
