@@ -6,8 +6,7 @@ Usage::
 
 Arguments:
     folder   One or more measurement folders containing per-executable JSON files.
-             For multiple folders, all targets are taken from the first folder and
-             only native targets are taken from each consecutive folder.
+             Every specified folder contributes JVM, JS, and Native outputs.
 
 Options:
     --transformation NAME   Transformation to apply to cell values (default: runtime).
@@ -19,9 +18,10 @@ Options:
     --ignore-kinds KIND ... Exclude listed kinds from output rows.
     --only-kind KIND ...    Include only listed kinds in output rows.
     --function-overhead-yellow-threshold-us N
-                            Yellow threshold for function_overhead colouring (default: 0.0005 µs).
+                            Yellow threshold for function_overhead colouring (default: 0.005 µs = 5 ns).
     --function-overhead-red-threshold-us N
-                            Red threshold for function_overhead colouring (default: 0.001 µs).
+                            Red threshold for function_overhead colouring (default: 0.015 µs = 15 ns).
+    --ignore-for-paper      Apply paper ignore-kind preset.
 
 Output::
 
@@ -58,7 +58,7 @@ _KIND_LABELS: dict[str, str] = {
     "plain":                                    "Plain (reference)",
     "ioa":                                      "IOA",
     "none":                                     "None",
-    "tryfinally":                               "Try / Finally",
+    "tryfinally":                               "Try Finally",
     "timeclock":                                "Time -- Clock",
     "timemonotonicfunction":                    "Time -- Monotonic Function",
     "timemonotonicfunctioninwholemilliseconds": "Time -- Monotonic Function (ms)",
@@ -73,13 +73,13 @@ _KIND_LABELS: dict[str, str] = {
     "incrementatomicintcounter":                "Increment Atomic Int Counter",
     "randomvalue":                              "Random Value",
     "standardout":                              "Standard Out",
-    "appendtostringbuilder":                    "Append To StringBuilder",
+    "appendtostringbuilder":                    "Append to String Builder",
     "fileeagerflush":                           "File (Eager Flush)",
     "filelazyflush":                            "File (Lazy Flush)",
-    "addtolist":                                "Add To List",
-    "addduplicatestoset":                       "Add Duplicates To Set",
-    "adduniquetoset":                           "Add Unique To Set",
-    "poctryfinallyincrementint":                "Prove of Concept: Try-Finally with Integer Increment",
+    "addtolist":                                "Add to List",
+    "addduplicatestoset":                       "Add Duplicates to Set",
+    "adduniquetoset":                           "Add Unique to Set",
+    "poctryfinallyincrementint":                "Proof of Concept",
 }
 
 _TARGET_LABELS: dict[str, str] = {
@@ -114,10 +114,6 @@ KIND_ORDER: list[str] = [
     "fileeagerflush", "filelazyflush",
     "addtolist", "addduplicatestoset", "adduniquetoset",
 ]
-
-# Canonical target order: JVM → JS → Native variants
-TARGET_ORDER: list[str] = ["jar", "node", "linux-exe", "win-exe", "windows-exe", "mac-exe", "macos-exe", "exe", "native"]
-
 
 def kind_label(kind: str) -> str:
     """Return a human-readable display name for an IOA kind token."""
@@ -200,34 +196,86 @@ def load_entries(folder: Path) -> list[dict]:
     return entries
 
 
-def _is_native_target(target: str) -> bool:
-    """Return True when a target is native-like (everything except jar/node)."""
-    return target not in {"jar", "node"}
+def _target_group(target: str) -> str:
+    """Map concrete executable target names to JVM/JS/Native column groups."""
+    if target == "jar":
+        return "jvm"
+    if target == "node":
+        return "js"
+    return "native"
 
 
-def load_entries_from_folders(folders: list[Path]) -> list[dict]:
-    """Load and merge entries across folders.
+def _native_target_specificity(target: str) -> int:
+    """Prefer OS-specific native targets over generic native/exe targets."""
+    if target in {"linux-exe", "win-exe", "windows-exe", "mac-exe", "macos-exe"}:
+        return 2
+    if target in {"native", "exe"}:
+        return 1
+    return 0
 
-    Selection policy:
-    - First folder: keep all targets (jar, node, native*)
-    - Consecutive folders: keep only native* targets
-    - Duplicate (kind, target) keys are kept from the first occurrence
+
+def _detect_measurement_os(folder: Path, entries: list[dict]) -> str:
+    """Infer an OS label for a measurement folder."""
+    targets = {e["target"] for e in entries}
+    if {"win-exe", "windows-exe"} & targets:
+        return "Windows"
+    if "linux-exe" in targets:
+        return "Linux"
+    if {"mac-exe", "macos-exe"} & targets:
+        return "macOS"
+
+    name = folder.name.lower()
+    if "windows" in name or re.search(r"\bwin\b", name):
+        return "Windows"
+    if "linux" in name:
+        return "Linux"
+    if "macos" in name or re.search(r"\bmac\b", name):
+        return "macOS"
+    return "Unknown"
+
+
+def load_entries_for_measurements(folders: list[Path]) -> tuple[list[dict], list[dict]]:
+    """Load entries grouped by measurement folder.
+
+    Returns:
+        measurements: [{id, os_label, folder}]
+        entries:      [{..., measurement_id, target_group}]
     """
-    merged: list[dict] = []
-    seen: set[tuple[str, str]] = set()
+    measurements: list[dict] = []
+    all_entries: list[dict] = []
 
     for idx, folder in enumerate(folders):
         folder_entries = load_entries(folder)
-        for entry in folder_entries:
-            if idx > 0 and not _is_native_target(entry["target"]):
-                continue
-            key = (entry["kind"], entry["target"])
-            if key in seen:
-                continue
-            seen.add(key)
-            merged.append(entry)
+        measurement_id = f"m{idx}"
+        measurements.append({
+            "id": measurement_id,
+            "os_label": _detect_measurement_os(folder, folder_entries),
+            "folder": folder,
+        })
 
-    return merged
+        # Collapse per-folder duplicates into JVM/JS/Native groups.
+        selected: dict[tuple[str, str], dict] = {}
+        for entry in folder_entries:
+            group = _target_group(entry["target"])
+            key = (entry["kind"], group)
+            candidate = {
+                **entry,
+                "measurement_id": measurement_id,
+                "target_group": group,
+            }
+
+            existing = selected.get(key)
+            if existing is None:
+                selected[key] = candidate
+                continue
+
+            # For native duplicates, prefer OS-specific entries.
+            if group == "native" and _native_target_specificity(entry["target"]) > _native_target_specificity(existing["target"]):
+                selected[key] = candidate
+
+        all_entries.extend(selected.values())
+
+    return measurements, all_entries
 
 
 def compute_value(
@@ -282,12 +330,25 @@ is_baseline  : True when this row is the plain/reference baseline itself
 color_or_none: xcolor name (e.g. "yellow!50", "red!30") or None for no highlight
 """
 
-DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US = 0.0005
-DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US = 0.001
+DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US = 0.005
+DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US = 0.015
 
+IGNORE_KINDS_FOR_PAPER = {
+    "timemonotonicfunctioninwholemicroseconds",
+    "timemonotonicfunctioninwholenanoseconds",
+    "timemonotonicglobalinwholemilliseconds",
+    "timemonotonicglobalinwholemicroseconds",
+    "timemonotonicglobalinwholenanoseconds",
+    "timemonotonicglobalreducedobjects",
+    "poctryfinallyincrementint",
+}
 
 def _fmt_us(us: float, target: str | None = None) -> str:
-    """Format a µs value as a compact string suitable for LaTeX cells."""
+    """Format a µs value as a compact string suitable for LaTeX cells.
+
+    Without an explicit target unit, this chooses the largest fitting unit
+    (s/ms/µs/ns), so 1000 ns is rendered as 1 µs.
+    """
     ms = us / 1000.0
     s = ms / 1000.0
     ns = us * 1000.0
@@ -310,14 +371,14 @@ def _fmt_us(us: float, target: str | None = None) -> str:
 def _func_call_count(is_step_avg: bool, step_count: int) -> int:
     """Number of traced function calls for the given measurement mode.
 
-    Per step: 4001 calls (one step of the game-of-life trace).
-    Overall:  4001 * step_count + 14 extra top-level calls.
+    For step-filtered mode (`--steps-skip`/`--steps-until`), the input value is
+    already a per-step mean, so use only 4001 calls.
+    For full-run mode, use total traced calls: 4001 * step_count + 14.
     """
-    calls = 4001 * step_count
-    if not is_step_avg:
-        calls += 14
+    if is_step_avg:
+        return 4001
 
-    return calls
+    return 4001 * step_count + 14
 
 
 def _func_time_us(value_us: float, is_step_avg: bool, step_count: int) -> float:
@@ -338,7 +399,7 @@ def _transform_function_runtime(
 ) -> tuple[str, str | None]:
     """Show per-function-call time (runtime / number of traced calls); no colouring."""
     ft = _func_time_us(value, is_step_avg, step_count)
-    return _fmt_us(ft, "ns"), None
+    return _fmt_us(ft), None
 
 
 def _transform_function_overhead(
@@ -354,18 +415,19 @@ def _transform_function_overhead(
     """Show per-function overhead vs plain baseline.
 
     For the baseline row itself the plain function runtime is shown (no colour).
-    Coloured yellow/red based on configurable thresholds.
+    Coloured yellow/red based on configurable thresholds. Values are formatted
+    with automatic unit selection (ns/µs/ms/s).
     """
     if is_baseline:
         ft = _func_time_us(value, is_step_avg, step_count)
-        return _fmt_us(ft, "ns"), None
+        return _fmt_us(ft), None
 
     baseline_ft = _func_time_us(baseline, is_step_avg, step_count)
     value_ft    = _func_time_us(value,    is_step_avg, step_count)
     overhead    = value_ft - baseline_ft
 
     sign = "+" if overhead >= 0 else ""
-    text = sign + _fmt_us(overhead, "ns")
+    text = sign + _fmt_us(abs(overhead))
 
     if overhead >= red_threshold_us:
         color = "red!30"
@@ -407,12 +469,6 @@ def _latex_escape(text: str) -> str:
     return text
 
 
-def _latex_name_cell(latex_text: str, align: str = "r") -> str:
-    """Wrap a name cell so labels can use LaTeX line breaks (\\\\) easily."""
-    align = "l" if align == "l" else "r"
-    return r"\begin{tabular}[c]{@{}" + align + r"@{}}" + latex_text + r"\end{tabular}"
-
-
 def _parse_kind_list(values: Iterable[str] | None) -> set[str]:
     """Parse kind tokens from repeated args and/or comma-separated chunks."""
     if values is None:
@@ -426,18 +482,35 @@ def _parse_kind_list(values: Iterable[str] | None) -> set[str]:
     return parsed
 
 
+STATIC_OPERATION_LABELS: dict[str, str] = {
+    "timemonotonicfunction": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function\end{tabular}",
+    "timemonotonicfunctioninwholemilliseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function (ms)\end{tabular}",
+    "timemonotonicfunctioninwholemicroseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function ($\mu$s)\end{tabular}",
+    "timemonotonicfunctioninwholenanoseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function (ns)\end{tabular}",
+    "timemonotonicglobal": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global\end{tabular}",
+    "timemonotonicglobalinwholemilliseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (ms)\end{tabular}",
+    "timemonotonicglobalinwholemicroseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global ($\mu$s)\end{tabular}",
+    "timemonotonicglobalinwholenanoseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (ns)\end{tabular}",
+    "timemonotonicglobalreducedobjects": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (reduced obj.)\end{tabular}",
+    "incrementatomicintcounter": r"\begin{tabular}[c]{@{}l@{}}Increment Atomic\\Int Counter\end{tabular}",
+    "appendtostringbuilder": r"\begin{tabular}[c]{@{}l@{}}Append to\\String Builder\end{tabular}",
+}
+
+
+def _operation_label_cell(kind: str) -> str:
+    """Return statically configured operation labels with fixed line breaks."""
+    kind_norm = kind.lower()
+    if kind_norm in STATIC_OPERATION_LABELS:
+        return STATIC_OPERATION_LABELS[kind_norm]
+    return kind_label(kind)
+
+
 # ---------------------------------------------------------------------------
 # LaTeX table generation
 # ---------------------------------------------------------------------------
 
-def _target_sort_key(target: str) -> int:
-    try:
-        return TARGET_ORDER.index(target)
-    except ValueError:
-        return len(TARGET_ORDER)
-
-
 def generate_latex_table(
+    measurements: list[dict],
     entries: list[dict],
     steps_until: int | None,
     steps_skip: int | None,
@@ -448,16 +521,16 @@ def generate_latex_table(
     """Return a LaTeX ``tabular`` snippet for the overhead table.
 
     Rows  = IOA kinds (in canonical order, plain reference first)
-    Cols  = targets (JVM → JS → Native variants)
+    Cols  = for each measurement: JVM, JS, Native
 
     Requires in the enclosing document::
 
         \\usepackage{booktabs}
         \\usepackage[table]{xcolor}
     """
-    # Build (kind, target) -> entry lookup
-    entry_map: dict[tuple[str, str], dict] = {
-        (e["kind"], e["target"]): e for e in entries
+    # Build (measurement, kind, target_group) -> entry lookup
+    entry_map: dict[tuple[str, str, str], dict] = {
+        (e["measurement_id"], e["kind"], e["target_group"]): e for e in entries
     }
 
     def include_kind(kind: str) -> bool:
@@ -468,8 +541,12 @@ def generate_latex_table(
             return kind_norm not in ignore_kinds
         return True
 
-    # Ordered targets
-    all_targets = sorted({e["target"] for e in entries}, key=_target_sort_key)
+    target_groups = ["jvm", "js", "native"]
+    target_group_labels = {
+        "jvm": "JVM",
+        "js": "JS",
+        "native": "Native",
+    }
 
     # Ordered kinds (excluding plain — plain gets its own header row)
     all_kinds_set = {
@@ -479,62 +556,76 @@ def generate_latex_table(
     ordered_kinds += sorted(k for k in all_kinds_set if k not in KIND_ORDER)
     show_plain = include_kind("plain")
 
-    # Fixed-width centered columns for target data; all equal width so headers align.
-    col_spec = "l" + "r" * len(all_targets)
+    col_spec = "l" + "r" * (len(measurements) * len(target_groups))
 
     lines: list[str] = []
-    lines.append(r"% Requires: \usepackage{booktabs}, \usepackage[table]{xcolor}, \usepackage{array}")
+    lines.append(r"% Requires: \usepackage{booktabs}, \usepackage[table]{xcolor}, \usepackage{array}, \usepackage{multirow}")
     lines.append(r"\begin{tabular}{" + col_spec + r"}")
     lines.append(r"\toprule")
 
-    # Column header — target labels are centered by the column type
-    header_parts = [r"\textbf{" + _latex_name_cell("Instrumentation Operation", align="l") + r"}"] + [
-        r"\textbf{" + _latex_name_cell(_latex_escape(target_label(t)), align="r") + r"}" for t in all_targets
+    # Header row 1: OS per measurement (spanning JVM/JS/Native)
+    header_os = [r"\multirow{2}{*}{\textbf{\shortstack[l]{Instrumentation\\Operation}}}"] + [
+        r"\multicolumn{3}{c}{\textbf{" + _latex_escape(m["os_label"]) + r"}}"
+        for m in measurements
     ]
-    lines.append(" & ".join(header_parts) + r" \\")
+    lines.append(" & ".join(header_os) + r" \\")
+
+    # Header row 2: centered target names per measurement
+    header_targets = [""]
+    for _ in measurements:
+        header_targets.extend(
+            r"\multicolumn{1}{c}{\textbf{" + target_group_labels[group] + r"}}"
+            for group in target_groups
+        )
+    lines.append(" & ".join(header_targets) + r" \\")
+
+    for measurement_idx in range(len(measurements)):
+        start = 2 + measurement_idx * len(target_groups)
+        end = start + len(target_groups) - 1
+        lines.append(rf"\cmidrule(lr){{{start}-{end}}}")
     lines.append(r"\midrule")
 
     # Plain reference row — passed through the transform with is_baseline=True
     if show_plain:
-        plain_cells = [_latex_name_cell(r"\textit{Plain (reference)}", align="l")]
-        for t in all_targets:
-            plain_entry = entry_map.get(("plain", t))
-            if plain_entry:
-                val, sc, is_step = compute_value(plain_entry, steps_until, steps_skip)
-                text, color = transform(val, val, is_step, sc, True)
-                cell = (r"\cellcolor{" + color + r"}" + text) if color else text
-                plain_cells.append(cell)
-            else:
-                plain_cells.append("--")
+        plain_cells = [r"\textit{Plain (reference)}"]
+        for measurement in measurements:
+            for group in target_groups:
+                plain_entry = entry_map.get((measurement["id"], "plain", group))
+                if plain_entry:
+                    val, sc, is_step = compute_value(plain_entry, steps_until, steps_skip)
+                    text, color = transform(val, val, is_step, sc, True)
+                    cell = (r"\cellcolor{" + color + r"}" + text) if color else text
+                    plain_cells.append(cell)
+                else:
+                    plain_cells.append("--")
         lines.append(" & ".join(plain_cells) + r" \\")
         if ordered_kinds:
             lines.append(r"\midrule")
 
     # One row per kind
     for kind in ordered_kinds:
-        # kind_label() returns strings from a controlled dict that already
-        # contain valid LaTeX markup (e.g. $\mu$), so no escaping here.
-        row_cells = [_latex_name_cell(kind_label(kind), align="l")]
-        for t in all_targets:
-            kind_entry  = entry_map.get((kind, t))
-            plain_entry = entry_map.get(("plain", t))
+        row_cells = [_operation_label_cell(kind)]
+        for measurement in measurements:
+            for group in target_groups:
+                kind_entry = entry_map.get((measurement["id"], kind, group))
+                plain_entry = entry_map.get((measurement["id"], "plain", group))
 
-            if kind_entry is None:
-                row_cells.append("--")
-                continue
+                if kind_entry is None:
+                    row_cells.append("--")
+                    continue
 
-            kind_val, step_count, is_step = compute_value(kind_entry, steps_until, steps_skip)
-            baseline_val = kind_val  # fallback: no colouring
-            if plain_entry is not None:
-                baseline_val, _, _ = compute_value(plain_entry, steps_until, steps_skip)
+                kind_val, step_count, is_step = compute_value(kind_entry, steps_until, steps_skip)
+                baseline_val = kind_val  # fallback: no colouring
+                if plain_entry is not None:
+                    baseline_val, _, _ = compute_value(plain_entry, steps_until, steps_skip)
 
-            text, color = transform(baseline_val, kind_val, is_step, step_count, False)
+                text, color = transform(baseline_val, kind_val, is_step, step_count, False)
 
-            if color:
-                cell = r"\cellcolor{" + color + r"}" + text
-            else:
-                cell = text
-            row_cells.append(cell)
+                if color:
+                    cell = r"\cellcolor{" + color + r"}" + text
+                else:
+                    cell = text
+                row_cells.append(cell)
 
         lines.append(" & ".join(row_cells) + r" \\")
 
@@ -557,7 +648,7 @@ def main() -> None:
         nargs="+",
         help=(
             "Measurement folders containing per-executable JSON files. "
-            "First folder provides all targets; consecutive folders provide native targets only."
+            "Each folder contributes its own JVM, JS, and Native outputs."
         ),
     )
     parser.add_argument(
@@ -600,9 +691,14 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--ignore-for-paper",
+        action="store_true",
+        help="Apply preset ignore list for paper tables.",
+    )
+    parser.add_argument(
         "--function-overhead-yellow-threshold-us",
         type=float,
-        default=DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US,
+        default=None,
         metavar="N",
         help=(
             "Yellow threshold (in µs) for --transformation function_overhead "
@@ -612,20 +708,26 @@ def main() -> None:
     parser.add_argument(
         "--function-overhead-red-threshold-us",
         type=float,
-        default=DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US,
+        default=None,
         metavar="N",
         help=(
             "Red threshold (in µs) for --transformation function_overhead "
             f"(default: {DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US})."
         ),
     )
-
     args = parser.parse_args()
 
-    if args.function_overhead_yellow_threshold_us < 0 or args.function_overhead_red_threshold_us < 0:
+    yellow_threshold_us = DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US
+    red_threshold_us = DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US
+    if args.function_overhead_yellow_threshold_us is not None:
+        yellow_threshold_us = args.function_overhead_yellow_threshold_us
+    if args.function_overhead_red_threshold_us is not None:
+        red_threshold_us = args.function_overhead_red_threshold_us
+
+    if yellow_threshold_us < 0 or red_threshold_us < 0:
         print("Error: function_overhead thresholds must be >= 0", file=sys.stderr)
         sys.exit(1)
-    if args.function_overhead_red_threshold_us < args.function_overhead_yellow_threshold_us:
+    if red_threshold_us < yellow_threshold_us:
         print("Error: red threshold must be >= yellow threshold", file=sys.stderr)
         sys.exit(1)
 
@@ -635,7 +737,7 @@ def main() -> None:
             print(f"Error: {folder} is not a directory", file=sys.stderr)
             sys.exit(1)
 
-    entries = load_entries_from_folders(folders)
+    measurements, entries = load_entries_for_measurements(folders)
     if not entries:
         joined = ", ".join(str(folder) for folder in folders)
         print(f"No recognised JSON files found in: {joined}", file=sys.stderr)
@@ -643,9 +745,6 @@ def main() -> None:
 
     transform_fn = TRANSFORMATIONS[args.transformation]
     if args.transformation == "function_overhead":
-        yellow_threshold_us = args.function_overhead_yellow_threshold_us
-        red_threshold_us = args.function_overhead_red_threshold_us
-
         def transform_fn(
             baseline: float,
             value: float,
@@ -663,8 +762,11 @@ def main() -> None:
                 red_threshold_us=red_threshold_us,
             )
     ignore_kinds = _parse_kind_list(args.ignore_kinds)
+    if args.ignore_for_paper:
+        ignore_kinds.update(IGNORE_KINDS_FOR_PAPER)
     only_kinds = _parse_kind_list(args.only_kind)
     latex = generate_latex_table(
+        measurements,
         entries,
         args.steps_until,
         args.steps_skip,

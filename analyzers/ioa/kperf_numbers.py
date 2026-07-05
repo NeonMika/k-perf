@@ -188,10 +188,11 @@ def compute_value(entry: dict, steps_until: int | None, steps_skip: int | None) 
 
 
 def _func_call_count(is_step_avg: bool, step_count: int) -> int:
-    calls = 4001 * step_count
-    if not is_step_avg:
-        calls += 14
-    return calls
+    if is_step_avg:
+        # In filtered-step mode, `value_us` is already a per-step mean.
+        return 4001
+
+    return 4001 * step_count + 14
 
 
 def _func_time_us(value_us: float, is_step_avg: bool, step_count: int) -> float:
