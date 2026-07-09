@@ -145,7 +145,7 @@ k-perf/
 │   └── game-of-life-kmp-dedicatedmain-k-perf/# k-perf instrumented (DedicatedMain)
 ├── 📊 analyzers/
 │   └── call_graph_visualizer/                # Python script → DOT/Graphviz call graphs
-├── 📈 benchmarking/                          # PowerShell benchmark runners + shared utils
+├── 📈 benchmarking/                          # Python benchmark runners + shared utils
 │   ├── game-of-life-kmp-k-perf/             # k-perf overhead benchmark suite
 │   └── game-of-life-kmp-commonmain-ioa/     # IOA overhead benchmark suite
 ├── 📂 measurements/                          # Stored benchmark results (JSON + CSV)
@@ -377,7 +377,15 @@ A Jupyter Notebook version (`graph-visualizer.ipynb`) is also available for inte
 
 ## 📈 Benchmarking
 
-The `benchmarking/` folder contains two PowerShell benchmark suites. Both use shared infrastructure in `benchmarking/utils.ps1` (statistics) and `benchmarking/build.ps1` (Gradle helpers).
+The `benchmarking/` folder contains two Python benchmark suites. Both use shared infrastructure in `benchmarking/`:
+
+| Module | Purpose |
+|---|---|
+| `benchmark_types.py` | Enums and dataclasses (`KPerfConfig`, `IoaConfig`, `BenchmarkExecutable`, …) |
+| `gradle_utils.py` | Gradle task discovery, timed task execution, KMP build orchestration |
+| `statistics_utils.py` | Statistical analysis (mean, median, stddev, CI95), machine-info collection, CSV/JSON export |
+| `build.py` | Granular build functions for all projects; `invoke_get_executables` / `invoke_get_ioa_executables` |
+| `run.py` | `invoke_benchmark_suite()` — the core measurement loop |
 
 Results land in `measurements/<timestamp>_<suite-name>/` as JSON files with full statistics: mean, median, stddev, min, max, and 95% confidence intervals (t-distribution).
 
@@ -385,52 +393,72 @@ Results land in `measurements/<timestamp>_<suite-name>/` as JSON files with full
 
 Measures the overhead of the k-perf plugin across platforms and configurations.
 
-```powershell
-cd benchmarking\game-of-life-kmp-k-perf
+```bash
+cd benchmarking/game-of-life-kmp-k-perf
 
-# Default run (50 repetitions, 10 steps, all platforms)
-.\run.ps1
+# Default run (3 repetitions, 20 steps, all platforms, clean build)
+python benchmark.py
 
 # JVM only, skip rebuild, 100 reps
-.\run.ps1 -Filters @("jar") -RepetitionCount 100 -CleanBuild $false
+python benchmark.py --jvm true --js false --native false --repetition-count 100 --clean-build false
 
 # Compare flushEarly strategies on CommonMain JVM
-.\run.ps1 -Filters @("common", "flushEarlyTrue", "jar")
-.\run.ps1 -Filters @("common", "flushEarlyFalse", "jar") -CleanBuild $false
+python benchmark.py --common true --dedicated false --jvm true --js false --native false --flush-early true,false
 ```
 
-**Available filters** (AND logic — all tags must match):
+**Key parameters:**
 
-| Category | Tags |
-|---|---|
-| Architecture | `common`, `dedicated` |
-| Strategy | `flushEarlyTrue`, `flushEarlyFalse` |
-| Platform | `jar` (JVM), `js` (Node.js), `native` (Windows .exe) |
+| Parameter | Default | Description |
+|---|---|---|
+| `--repetition-count` | `3` | Runs per executable |
+| `--step-count` | `20` | Game of Life steps per run |
+| `--clean-build` | `true` | Rebuild from scratch before running |
+| `--reference` | `true` | Include uninstrumented reference executables |
+| `--common` / `--dedicated` | `true` / `false` | Select game type variants |
+| `--jvm` / `--js` / `--native` | `true` | Select target platforms |
+| `--enabled` | `true` | Comma-separated bool list for k-perf `enabled` flag |
+| `--flush-early` | `false` | Comma-separated bool list for k-perf `flushEarly` flag |
+| `--instrument-property-accessors` | `false` | Comma-separated bool list |
+| `--test-kir` | `false` | Comma-separated bool list |
+| `--methods` | `.*` | Comma-separated regex patterns for method filtering |
+| `--ci-label` | `local` | Label embedded in result directory names |
+
+Run `python benchmark.py --help` for full documentation.
 
 ### Suite 2 — Instrumentation Overhead Analyzer
 
 > ⚠️ **Work in progress:** The IOA plugin is currently a stub — it does not yet inject synthetic overhead. This suite benchmarks the plugin's compile-time and runtime cost as a baseline, but results do not yet reflect real instrumentation overhead.
 
-Measures the raw overhead introduced by the IOA plugin.
+Measures the raw overhead introduced by the IOA plugin across all `IoaKind` variants. Available kinds are read dynamically from `plugins/instrumentation-overhead-analyzer/src/main/kotlin/at/jku/ssw/shared/IoaKind.kt`.
 
-```powershell
-cd benchmarking\game-of-life-kmp-commonmain-ioa
+```bash
+cd benchmarking/game-of-life-kmp-commonmain-ioa
 
-# Default run (50 repetitions, 10 steps, all platforms)
-.\run.ps1
+# Default run (3 repetitions, 20 steps, all platforms, all IoaKinds, clean build)
+python benchmark.py
 
-# JVM only, 100 reps
-.\run.ps1 -Filters @("jar") -RepetitionCount 100
+# JVM only, 100 reps, specific kinds
+python benchmark.py --jvm true --js false --native false --repetition-count 100 \
+    --ioa-kinds None,StringBuilderAppend
+
+# Skip rebuild on a second run
+python benchmark.py --clean-build false
 ```
 
-### Common Parameters
+**Key parameters:**
 
 | Parameter | Default | Description |
 |---|---|---|
-| `-RepetitionCount` | `50` | Runs per executable |
-| `-StepCount` | `10` | Game of Life steps per run (higher = more stable measurements) |
-| `-CleanBuild` | `$true` | Rebuild from scratch before running |
-| `-Filters` | *(all)* | Array of tags; only executables matching all tags are benchmarked |
+| `--repetition-count` | `3` | Runs per executable |
+| `--step-count` | `20` | Game of Life steps per run |
+| `--clean-build` | `true` | Rebuild from scratch before running |
+| `--reference` | `true` | Include uninstrumented reference executables |
+| `--ioa` | `true` | Include IOA-instrumented executables |
+| `--jvm` / `--js` / `--native` | `true` | Select target platforms |
+| `--ioa-kinds` | *(all)* | Comma-separated `IoaKind` enum values to benchmark |
+| `--ci-label` | `local` | Label embedded in result directory names |
+
+Run `python benchmark.py --help` for full documentation.
 
 ### Example Result File
 

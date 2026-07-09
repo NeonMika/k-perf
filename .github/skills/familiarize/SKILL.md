@@ -91,7 +91,7 @@ Based on the sub-project and file type, add the relevant architectural frame:
 | `plugins/k-perf` | `KPerfExtension : IrGenerationExtension` is the entry point; uses `IrElementTransformerVoidWithContext` to wrap eligible functions with `_enter_method`/`_exit_method` calls; synthetic fields/functions are attached to `moduleFragment.files[0]`; tests use kctfork for in-process compilation |
 | `plugins/instrumentation-overhead-analyzer` | `InstrumentationOverheadAnalyzerExtension`; same structural pattern as k-perf plugin; measures the overhead of instrumentation itself |
 | `kmp-examples/<variant>` | KMP Gradle project; consumes k-perf from mavenLocal; two architectures: `CommonMain` (single `fun main()` in `commonMain/`) and `DedicatedMain` (per-platform `main()` in each source set); `kotlinx-io-core` is injected by the plugin — do not add it to dependencies manually |
-| `benchmarking/<suite>` | PowerShell scripts (`run.ps1`); not Gradle; parse `### Elapsed time:` from stdout; per-run output: per-executable `.json`, `_results.csv`, `_results.json`, call graph `.png` (k-perf suite only) |
+| `benchmarking/<suite>` | Python scripts (`benchmark.py`); not Gradle; parse `### Elapsed time:` from stdout; per-run output: per-executable `.json`, `_results.csv`, `_results.json`, call graph `.png` (k-perf suite only) |
 | `analyzers/<tool>` | Standalone tools; no Gradle build; `call_graph_visualizer/graph-visualizer.py` reads `trace_*.txt` + `symbols_*.txt`; `measurements_plotter/index.html` reads `_results.json` |
 
 

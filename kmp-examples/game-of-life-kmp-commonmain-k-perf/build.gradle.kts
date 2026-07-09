@@ -158,7 +158,7 @@ tasks.configureEach {
   if (name == "jsNodeProductionExecutableCompileSync" || name == "jsProductionExecutableCompileSync") {
     doLast {
       copy {
-        from("build/js/packages/${project.name}/kotlin/${project.name}.js")
+        from(fileTree("build/js/packages/${project.name}/kotlin") { include("*.js") })
         into(layout.projectDirectory.dir("dist"))
       }
     }
