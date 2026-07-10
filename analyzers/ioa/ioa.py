@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -330,8 +331,8 @@ is_baseline  : True when this row is the plain/reference baseline itself
 color_or_none: xcolor name (e.g. "yellow!50", "red!30") or None for no highlight
 """
 
-DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US = 0.005
-DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US = 0.015
+DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US = 0.0075
+DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US = 0.03
 
 IGNORE_KINDS_FOR_PAPER = {
     "timemonotonicfunctioninwholemicroseconds",
@@ -349,23 +350,32 @@ def _fmt_us(us: float, target: str | None = None) -> str:
     Without an explicit target unit, this chooses the largest fitting unit
     (s/ms/µs/ns), so 1000 ns is rendered as 1 µs.
     """
+    def fmt_sig3(value: float) -> str:
+        abs_value = abs(value)
+        if abs_value == 0:
+            return "0"
+        digits_before_decimal = 1 if abs_value < 1 else int(math.floor(math.log10(abs_value))) + 1
+        decimals = max(0, 3 - digits_before_decimal)
+        return f"{value:.{decimals}f}"
+
     ms = us / 1000.0
     s = ms / 1000.0
     ns = us * 1000.0
 
     if (s >= 1 and target is None) or target == "s":
-        return f"{s:.2f}\\,s"
+        return f"{fmt_sig3(s)}\\,s"
 
     if (ms >= 1 and target is None) or target == "ms":
-        return f"{ms:.2f}\\,ms"
+        return f"{fmt_sig3(ms)}\\,ms"
 
     if (us >= 1 and target is None) or target == "µs":
-        return f"{us:.2f}\\,$\\mu$s"
+        return f"{fmt_sig3(us)}\\,$\\mu$s"
 
-    if (ns >= 1 and target is None) or target == "ns":
-        return f"{ns:.2f}\\,ns"
+    # For values below 1 µs in auto mode, render in ns to avoid 0.00 µs.
+    if target == "ns" or target is None:
+        return f"{fmt_sig3(ns)}\\,ns"
 
-    return f"{us:.2f}\\,µs"
+    return f"{fmt_sig3(us)}\\,$\\mu$s"
 
 
 def _func_call_count(is_step_avg: bool, step_count: int) -> int:
@@ -426,8 +436,12 @@ def _transform_function_overhead(
     value_ft    = _func_time_us(value,    is_step_avg, step_count)
     overhead    = value_ft - baseline_ft
 
-    sign = "+" if overhead >= 0 else ""
-    text = sign + _fmt_us(abs(overhead))
+    if overhead > 0:
+        text = "+" + _fmt_us(overhead)
+    elif overhead < 0:
+        text = "-" + _fmt_us(abs(overhead))
+    else:
+        text = _fmt_us(0.0, "ns")
 
     if overhead >= red_threshold_us:
         color = "red!30"
