@@ -249,15 +249,13 @@ For all substantial tasks:
 
 1. **Use sequential thinking** — ALWAYS invoke the `sequential-thinking` tool to explore the problem space with strong branching and alternative analysis. Cover as many aspects, edge cases, and approaches as possible before committing to an implementation strategy. Use branching to explore competing solutions.
 
-2. **Use Serena for code analysis** — When refactoring, analyzing, or making changes to the codebase, intensively use the Serena tooling (`get_symbols_overview`, `find_symbol`, `search_for_pattern`, etc.) to understand code structure, find all usages, and perform safe refactorings. Serena analysis prevents missed dependencies and inconsistencies.
+2. **Document the approach** — Write a clear problem statement, proposed approach, and list of files to change. If using the `[[PLAN]]` mode, save a structured plan to the session workspace.
 
-3. **Document the approach** — Write a clear problem statement, proposed approach, and list of files to change. If using the `[[PLAN]]` mode, save a structured plan to the session workspace.
+3. **Implement with confidence** — With analysis complete, proceed to implementation. Refer back to your analysis while implementing. If you discover new information, update your internal notes and explain the change.
 
-4. **Implement with confidence** — With sequential thinking and Serena analysis complete, proceed to implementation. Refer back to your analysis while implementing. If you discover new information, update your internal notes and explain the change.
+4. **Test and verify** — Run existing tests or perform manual verification as appropriate for the change type.
 
-5. **Test and verify** — Run existing tests or perform manual verification as appropriate for the change type.
-
-6. **Commit** — Create a clear, descriptive git commit when work is complete.
+5. **Commit** — Create a clear, descriptive git commit when work is complete.
 
 ### Git workflow
 
@@ -286,8 +284,6 @@ The `README.md` contains a `## 🚦 CI Status` section with GitHub Actions statu
 ### MCP Server Usage
 
 Use sequential-thinking MCP for all planning, design, and analysis tasks to explore multiple approaches, edge cases, or solution strategies. This includes architectural decisions, refactoring strategies, handling of complex logic, and any situation where multiple alternatives exist. Sequential thinking ensures a thorough exploration of the problem space before committing to an implementation path.
-
-Use Serena MCP for all code analysis tasks (finding symbols, usages, references, etc.) instead of manual code reading or guesswork. This ensures accuracy and prevents missed dependencies or edge cases.
 
 Use Context7 MCP or ref-context to fetch current documentation whenever the user asks about a library, framework, SDK, API, CLI tool, or cloud service -- even well-known ones like React, Next.js, Prisma, Express, Tailwind, Django, or Spring Boot. This includes API syntax, configuration, version migration, library-specific debugging, setup instructions, and CLI tool usage. Use even when you think you know the answer -- your training data may not reflect recent changes. Prefer this over web search for library docs.
 
