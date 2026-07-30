@@ -30,4 +30,7 @@ enum class IoaKind {
   AddToList,
   AddDuplicatesToSet,
   AddUniqueToSet,
+
+  PocTryFinallyIncrementInt,
+
 }

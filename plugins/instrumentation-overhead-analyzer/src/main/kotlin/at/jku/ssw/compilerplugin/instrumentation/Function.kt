@@ -5,6 +5,7 @@ package at.jku.ssw.compilerplugin.instrumentation
 import at.jku.ssw.shared.IoaKind
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 
@@ -36,6 +37,8 @@ fun modifyFunction(function: IrFunction) =
     IoaKind.AddToList -> modifyFunctionAddToList(function)
     IoaKind.AddDuplicatesToSet -> modifyFunctionAddDuplicatesToSet(function)
     IoaKind.AddUniqueToSet -> modifyFunctionAddUniqueToSet(function)
+
+    IoaKind.PocTryFinallyIncrementInt -> modifyFunctionPocTryFinallyIncrementInt(function)
     else -> {}
   }
 
@@ -226,18 +229,18 @@ fun modifyFunctionFileLazyFlush(function: IrFunction) = modifyFunctionAtBeginnin
   }
 }
 
-var methodCounter = 0
+var functionCounter = 0
 fun modifyFunctionAddToList(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.mutableListAddFunction).apply {
     dispatchReceiver = IoaContext.sutFields[0]
-    arguments[1] = irInt(methodCounter++)
+    arguments[1] = irInt(functionCounter++)
   }
 }
 
 fun modifyFunctionAddDuplicatesToSet(function: IrFunction) = modifyFunctionAtBeginning(function) {
   +irCall(IoaContext.mutableSetAddFunction).apply {
     dispatchReceiver = IoaContext.sutFields[0]
-    arguments[1] = irInt(methodCounter++)
+    arguments[1] = irInt(functionCounter++)
   }
 }
 
@@ -248,5 +251,32 @@ fun modifyFunctionAddUniqueToSet(function: IrFunction) = modifyFunctionAtBeginni
   }
   IoaContext.sutFields[1] = irCall(IoaContext.intIncrementFunction).apply {
     dispatchReceiver = IoaContext.sutFields[1]
+  }
+}
+
+val pocSutFields = mutableListOf<IrProperty>()
+fun modifyFunctionPocTryFinallyIncrementInt(function: IrFunction) = with(IoaContext.pluginContext) {
+  val sutField = createPropertyOfType(
+    irBuiltIns.intType,
+    suffix = (functionCounter++.toString()) + "$" + function.name.asString().replace("[^a-zA-Z0-9]".toRegex(), "_")
+  )
+  pocSutFields += sutField
+
+  setFunctionBody(function) {
+    +irTry(
+      function.returnType,
+      irBlock(resultType = function.returnType) {
+        addAllStatements(function)
+      },
+      listOf(),
+      irBlock {
+        +irCall(sutField.setter!!).apply {
+          dispatchReceiver = null
+          arguments[0] = irCall(IoaContext.intIncrementFunction).apply {
+            dispatchReceiver = irCall(sutField.getter!!).apply { dispatchReceiver = null }
+          }
+        }
+      }
+    )
   }
 }

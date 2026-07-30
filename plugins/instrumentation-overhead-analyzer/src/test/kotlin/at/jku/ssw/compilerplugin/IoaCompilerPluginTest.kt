@@ -161,6 +161,9 @@ class IoaCompilerPluginTest {
   @Test
   fun `test add unique to set kind`() = testKind(IoaKind.AddUniqueToSet)
 
+  @Test
+  fun `test poc try finally increment int kind`() = testKind(IoaKind.PocTryFinallyIncrementInt)
+
   fun compile(
     sourceFiles: List<SourceFile>,
     compilerPluginRegistrar: CompilerPluginRegistrar = IoaComponentRegistrar(),
@@ -195,6 +198,6 @@ class IoaCompilerPluginTest {
 private fun JvmCompilationResult.main(packageName: String = "") {
   val className = if (packageName.isNotEmpty()) "$packageName.MainKt" else "MainKt"
   val kClazz = classLoader.loadClass(className)
-  val main = kClazz.declaredMethods.single { it.name.endsWith("main") && it.parameterCount == 0 }
+  val main = kClazz.declaredMethods.single { it.name.split(".").last() == "main" && it.parameterCount == 0 }
   main.invoke(null)
 }

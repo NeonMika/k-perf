@@ -64,10 +64,32 @@ class IoaGenerationExtension(val kind: IoaKind, val instrumentPropertyAccessors:
 
           modifyFunction(declaration)
 
-          // If this is the main function, we also want to modify it, e.g., to print out the SUT before or after the main function is executed.
-          if (declaration.name.asString() == "main") {
-            modifyMainFunction(declaration)
+          return super.visitFunctionNew(declaration)
+        }
+      }, null)
+
+      appendToDebugFile("# ---${file.name} MODIFIED ---")
+      appendToDebugFile(file.dump())
+    }
+
+    moduleFragment.files.forEach { file ->
+      appendToDebugFile("# ---${file.name} for main---")
+      file.transform(object : IrElementTransformerVoidWithContext() {
+        override fun visitFunctionNew(declaration: IrFunction): IrStatement {
+          if (declaration.body == null || // Do not instrument empty functions.
+            declaration.origin == ADAPTER_FOR_CALLABLE_REFERENCE || // Do not instrument function references using :: operator
+            (!instrumentPropertyAccessors && declaration.origin == DEFAULT_PROPERTY_ACCESSOR) || // Do not instrument property accessors if disabled.
+            declaration.fqNameWhenAvailable?.asString()?.contains("__ioa_sut") != false || // Do not instrument functions that are part of the ioa sut fields.
+            declaration.fqNameWhenAvailable?.asString()?.contains("<init>") != false || // Do not instrument constructors.
+            declaration.fqNameWhenAvailable?.asString()?.contains("<anonymous>") != false || // Do not instrument anonymous functions.
+            declaration.fqNameWhenAvailable?.asString()?.contains("main") != true // Do not instrument non main function.
+          ) {
+            // do not further transform this method, e.g., its statements are not transformed
+            return declaration
           }
+
+          // If this is the main function, we want to modify it
+          modifyMainFunction(declaration)
 
           return super.visitFunctionNew(declaration)
         }
@@ -76,5 +98,6 @@ class IoaGenerationExtension(val kind: IoaKind, val instrumentPropertyAccessors:
       appendToDebugFile("# ---${file.name} MODIFIED ---")
       appendToDebugFile(file.dump())
     }
+
   }
 }

@@ -9,7 +9,15 @@ import time
 from pathlib import Path
 from typing import Optional
 
-GRADLEW_CMD = "gradlew.bat" if sys.platform.startswith("win") else "./gradlew"
+def gradlew_for(cwd: Path) -> str:
+    """Return the absolute path to the gradlew wrapper in `cwd`.
+
+    Windows subprocess.run does not search cwd for executables, so a bare
+    'gradlew.bat' fails with FileNotFoundError. Absolute path always works.
+    """
+    if sys.platform.startswith("win"):
+        return str(cwd / "gradlew.bat")
+    return "./gradlew"
 
 _JVM_CANDIDATES = ["jvmJar", "compileKotlinJvm"]
 _JS_CANDIDATES = [
@@ -62,7 +70,7 @@ def invoke_gradle_task_if_present(
     print(f"Task: {task_name}")
     print("==========================================")
 
-    result = subprocess.run([GRADLEW_CMD, task_name], cwd=cwd)
+    result = subprocess.run([gradlew_for(cwd), task_name], cwd=cwd)
     if result.returncode != 0:
         raise RuntimeError(f"{title} failed with exit code {result.returncode}")
 
@@ -89,7 +97,7 @@ def invoke_gradle_task_if_present_timed(
     print("==========================================")
 
     task_start = time.monotonic()
-    result = subprocess.run([GRADLEW_CMD] + gradle_args + [task_name], cwd=cwd)
+    result = subprocess.run([gradlew_for(cwd)] + gradle_args + [task_name], cwd=cwd)
     task_end = time.monotonic()
 
     if result.returncode != 0:
@@ -106,7 +114,7 @@ def invoke_gradle_clean(path: Path, name: str) -> None:
     print(f"## Cleaning {name}")
     print("==========================================")
 
-    result = subprocess.run([GRADLEW_CMD, "clean"], cwd=path)
+    result = subprocess.run([gradlew_for(path), "clean"], cwd=path)
     if result.returncode != 0:
         print(f"ERROR: {name} clean failed!")
         sys.exit(1)
@@ -120,14 +128,14 @@ def invoke_kmp_build(title: str, path: Path, clean_build: bool = True) -> None:
     print("==========================================")
 
     if clean_build:
-        result = subprocess.run([GRADLEW_CMD, "clean"], cwd=path)
+        result = subprocess.run([gradlew_for(path), "clean"], cwd=path)
         if result.returncode != 0:
             raise RuntimeError(
                 f"{title} clean failed with exit code {result.returncode}"
             )
 
     task_list_result = subprocess.run(
-        [GRADLEW_CMD, "-q", "tasks", "--all"],
+        [gradlew_for(path), "-q", "tasks", "--all"],
         cwd=path,
         capture_output=True,
         text=True,
@@ -165,7 +173,7 @@ def invoke_kmp_build_with_timings(
     timings: dict[str, float] = {}
 
     task_list_result = subprocess.run(
-        [GRADLEW_CMD, "-q", "tasks", "--all"],
+        [gradlew_for(path), "-q", "tasks", "--all"],
         cwd=path,
         capture_output=True,
         text=True,
