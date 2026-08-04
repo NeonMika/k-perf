@@ -1,0 +1,163 @@
+{
+  "parameters": {
+    "CILabel": "ci-windows-small",
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "Reference": true,
+    "Common": true,
+    "Dedicated": false,
+    "JVM": true,
+    "JS": true,
+    "Native": true,
+    "Enabled": [
+      true
+    ],
+    "FlushEarly": [
+      false
+    ],
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ],
+    "Methods": [
+      ".*"
+    ]
+  },
+  "machineInfo": {
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "OS": "Microsoft Windows Server 2025 Datacenter 10.0.26100",
+    "OSArchitecture": "64-bit",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "CPUMaxClockSpeedMHz": 2596,
+    "TotalRAMGB": 15.99,
+    "RAMModuleCount": 2,
+    "RAMManufacturer": "Microsoft Corporation",
+    "RAMPartNumber": "None",
+    "RAMModuleCapacitiesGB": "1 + 15",
+    "DiskModel": "Virtual_Disk NVME Premium",
+    "DiskSizeGB": 150.0,
+    "DiskMediaType": "Fixed hard disk media",
+    "DiskInterfaceType": "SCSI",
+    "SystemDriveFreeSpaceGB": 27.21,
+    "AvailableRAMGB": 12.17,
+    "PowerPlan": "High performance",
+    "SystemUptimeHours": 0.12,
+    "WindowsBuildNumber": "26100",
+    "TimeZone": "UTC",
+    "Username": "runneradmin",
+    "BIOSVersion": "Hyper-V UEFI Release v4.1",
+    "BIOSManufacturer": "Microsoft Corporation",
+    "IsVirtualMachine": true,
+    "HyperVEnabled": true,
+    "SecureBootEnabled": false,
+    "RunningProcessCount": 139,
+    "WindowsDefenderEnabled": true,
+    "WindowsDefenderRealTimeProtection": false,
+    "PowerShellVersion": "7.6.4",
+    "JavaVersion": "21.0.11",
+    "JavaDistribution": "\"21.0.11\"",
+    "NodeVersion": "v22.23.1",
+    "PythonVersion": "Python 3.12.10",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0",
+    "GitCommitHash": "9b84f73435bdcb0da56041a4ef04f83690bfe806",
+    "GitBranch": "main",
+    "CollectionTimestamp": "2026-08-04 02:23:33"
+  },
+  "buildTimeMs": 39811.768,
+  "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-win-exe",
+  "repetitions": 3,
+  "timeUnit": "microseconds",
+  "times": [
+    100711.0,
+    86228.0,
+    79011.0
+  ],
+  "stepTimes": [
+    [
+      5582.0,
+      5742.0,
+      5723.0,
+      5660.0,
+      5865.0,
+      5601.0,
+      3681.0,
+      4859.0,
+      2681.0,
+      5713.0,
+      5054.0,
+      4966.0,
+      5211.0,
+      4962.0,
+      4941.0,
+      5200.0,
+      4954.0,
+      4961.0,
+      4214.0,
+      3791.0
+    ],
+    [
+      4153.0,
+      4237.0,
+      4406.0,
+      4201.0,
+      4448.0,
+      4326.0,
+      4177.0,
+      3718.0,
+      5347.0,
+      5413.0,
+      5217.0,
+      5267.0,
+      4950.0,
+      3618.0,
+      3572.0,
+      3724.0,
+      3561.0,
+      3464.0,
+      3726.0,
+      3513.0
+    ],
+    [
+      6056.0,
+      5588.0,
+      8578.0,
+      4872.0,
+      5977.0,
+      5095.0,
+      3235.0,
+      3276.0,
+      2573.0,
+      3416.0,
+      2654.0,
+      3200.0,
+      2972.0,
+      3434.0,
+      2595.0,
+      3398.0,
+      2623.0,
+      2590.0,
+      2923.0,
+      2577.0
+    ]
+  ],
+  "statistics": {
+    "count": 3,
+    "mean": 88650.0,
+    "median": 100711.0,
+    "stddev": 11050.885168166395,
+    "min": 79011.0,
+    "max": 100711.0,
+    "ci95": {
+      "lower": 61215.0044355146,
+      "upper": 116084.9955644854
+    }
+  },
+  "status": "ok"
+}
