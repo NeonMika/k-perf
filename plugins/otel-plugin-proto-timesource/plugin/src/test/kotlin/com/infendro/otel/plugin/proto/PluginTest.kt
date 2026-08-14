@@ -7,6 +7,8 @@ import com.tschuchort.compiletesting.SourceFile
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import com.infendro.otel.plugin.proto.timesource.Processor
+import com.infendro.otel.plugin.proto.timesource.Registrar
 
 // copied tests from kperf
 

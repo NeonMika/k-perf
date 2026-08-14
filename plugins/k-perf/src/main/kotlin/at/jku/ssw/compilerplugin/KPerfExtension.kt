@@ -110,6 +110,13 @@ class KPerfExtension(
   @OptIn(UnsafeDuringIrConstructionAPI::class, ExperimentalTime::class)
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
 
+    if (moduleFragment.files.isEmpty()) {
+      printText("SKIP module ${moduleFragment.name}: no files to instrument")
+      return
+    }
+
+    try {
+
     //1. IR-building helpers
     //
     // Unlike the otel-plugin family this file does NOT define a DSL
@@ -789,6 +796,10 @@ class KPerfExtension(
         },
         null
       )
+    }
+
+    } catch (t: Throwable) {
+      printText("SKIP module ${moduleFragment.name}: instrumentation skipped (${t.message})")
     }
   }
 }

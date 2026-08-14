@@ -47,8 +47,10 @@ class IrExtension(
         moduleFragment: IrModuleFragment,
         pluginContext: IrPluginContext
     ) = with(pluginContext) {
+        try {
         val platform = platform!!.single()
 
+        if (moduleFragment.files.isEmpty()) return@with
         val firstFile = moduleFragment.files[0]
 
 
@@ -740,6 +742,10 @@ class IrExtension(
                 println("---${file.name}---")
                 println(file.dump())
             }
+        }
+
+        } catch (t: Throwable) {
+            println("[otel] instrumentation skipped: ${t.message}")
         }
     }
 }
