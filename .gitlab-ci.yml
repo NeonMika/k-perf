@@ -1,0 +1,234 @@
+# GitLab CI pipeline for the k-perf / OTel comparison benchmark
+# (benchmarking/kperf-otel-comparison.ps1) on the SSW Linux benchmark runners.
+#
+# The job is MANUAL: benchmarks are expensive (a full run takes hours), so
+# nothing runs on push. Trigger it via CI/CD -> Pipelines -> Run pipeline (or
+# the play button on the job) — this mirrors the workflow_dispatch-only policy
+# of the GitHub Actions benchmark workflows.
+#
+# Runner prerequisites (once per machine, cannot be installed from CI):
+#   - ASDF installed for the gitlab-runner user (same as the other SSW projects)
+#   - Docker engine running, gitlab-runner user in the `docker` group
+#     (the benchmark boots Jaeger + Envoy containers; Jaeger is capped at 12 GB,
+#     so the machine needs ~16 GB+ RAM)
+#   - x86_64 host (the comparison projects target linuxX64 only)
+#
+# Required CI/CD variables (Settings -> CI/CD -> Variables, masked):
+#   GITHUB_USERNAME  GitHub account for the dcxp/opentelemetry-kotlin package repo
+#   GITHUB_PASSWORD  GitHub PAT with read:packages scope
+#
+# Optional variables to override per pipeline run (Run pipeline form):
+#   RUN_COUNT / STEP_COUNT / WARMUP_COUNT  benchmark parameters (defaults below)
+#   BENCH_VARIANTS  comma-separated subset, e.g. "baseline,k-perf,otel-proto"
+#                   (empty = all eight variants)
+
+stages:
+  - benchmark
+
+.benchmark-template:
+  stage: benchmark
+  when: manual
+  # A full default run (8 variants x 3 platforms, RunCount=10, StepCount=100)
+  # plus clean builds and the Kotlin/Native toolchain bootstrap takes hours.
+  # The runner's own maximum timeout must be >= this value.
+  timeout: 8h
+  interruptible: false
+
+  variables:
+    # Pin exact versions to keep benchmark executions reproducible.
+    JAVA_VERSION: "temurin-21.0.5+11.0.LTS"   # repo is tested with JDK 21
+    NODEJS_VERSION: "24.18.0"
+    PWSH_VERSION: "7.5.2"
+
+    # Benchmark parameters (defaults = the canonical full run).
+    RUN_COUNT: "10"
+    STEP_COUNT: "100"
+    WARMUP_COUNT: "20"
+    BENCH_VARIANTS: ""
+
+    # The locally patched dcxp SDK consumed by the otel-proto-fastbatch variant.
+    # benchmarking/fastbatch-sdk.patch is applied onto this upstream commit and
+    # published to the runner's mavenLocal (once; later jobs reuse it).
+    FASTBATCH_SDK_REPO: "https://github.com/dcxp/opentelemetry-kotlin.git"
+    FASTBATCH_SDK_BASE_COMMIT: "9c3186e26bd3ac78b650163be2c8f569096aaeec"
+    FASTBATCH_SDK_VERSION: "1.0.570-fastbatch"
+
+  before_script:
+    - |
+      set -euo pipefail
+
+      # Retained from the SSW runner's original configuration.
+      chmod -R 777 .
+
+      # ----------------------------------------------------------------------
+      # Configure ASDF (Java + Node.js)
+      # ----------------------------------------------------------------------
+      export ASDF_DATA_DIR="${ASDF_DATA_DIR:-$HOME/.asdf}"
+      export PATH="$ASDF_DATA_DIR/bin:$ASDF_DATA_DIR/shims:$PATH"
+      command -v asdf
+      asdf --version
+
+      ensure_asdf_plugin() {
+        local plugin_name="$1"
+        local plugin_url="$2"
+        if asdf plugin list | grep -Fxq "$plugin_name"; then
+          echo "ASDF plugin '$plugin_name' is already installed."
+        else
+          asdf plugin add "$plugin_name" "$plugin_url"
+        fi
+      }
+
+      install_asdf_version() {
+        local plugin_name="$1"
+        local version="$2"
+        if ! asdf install "$plugin_name" "$version"; then
+          asdf plugin update "$plugin_name"
+          asdf install "$plugin_name" "$version"
+        fi
+      }
+
+      ensure_asdf_plugin java   "https://github.com/halcyon/asdf-java.git"
+      ensure_asdf_plugin nodejs "https://github.com/asdf-vm/asdf-nodejs.git"
+
+      install_asdf_version java   "$JAVA_VERSION"
+      install_asdf_version nodejs "$NODEJS_VERSION"
+
+      export ASDF_JAVA_VERSION="$JAVA_VERSION"
+      export ASDF_NODEJS_VERSION="$NODEJS_VERSION"
+
+      JAVA_BIN="$(asdf which java)"
+      export JAVA_HOME="$(cd "$(dirname "$JAVA_BIN")/.." && pwd -P)"
+      export PATH="$JAVA_HOME/bin:$PATH"
+
+      # ----------------------------------------------------------------------
+      # Install PowerShell 7 (job-local; no asdf plugin, no root required)
+      # ----------------------------------------------------------------------
+      export PWSH_ROOT="$CI_PROJECT_DIR/.ci-tools/$CI_JOB_ID/pwsh"
+      mkdir -p "$PWSH_ROOT"
+      curl -fsSL -o "$PWSH_ROOT.tar.gz" \
+        "https://github.com/PowerShell/PowerShell/releases/download/v${PWSH_VERSION}/powershell-${PWSH_VERSION}-linux-x64.tar.gz"
+      tar -xzf "$PWSH_ROOT.tar.gz" -C "$PWSH_ROOT"
+      rm -f "$PWSH_ROOT.tar.gz"
+      chmod +x "$PWSH_ROOT/pwsh"
+      export PATH="$PWSH_ROOT:$PATH"
+
+      # pwsh needs libicu; if the machine lacks a compatible version, fall back
+      # to invariant globalization (formatting-only difference, fine here).
+      if ! pwsh -NoProfile -Command 'exit 0' 2>/dev/null; then
+        export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+      fi
+      pwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+
+      # ----------------------------------------------------------------------
+      # Gradle credentials for the dcxp GitHub Packages repo
+      # ----------------------------------------------------------------------
+      # GRADLE_USER_HOME stays at the runner default (~/.gradle) so wrapper
+      # distributions, the dependency cache, ~/.konan and ~/.m2 are reused
+      # across benchmark runs. Only the two credential keys are ensured; an
+      # existing gradle.properties is appended to, never overwritten.
+      : "${GITHUB_USERNAME:?Define GITHUB_USERNAME as a masked GitLab CI/CD variable}"
+      : "${GITHUB_PASSWORD:?Define GITHUB_PASSWORD as a masked GitLab CI/CD variable (PAT with read:packages)}"
+      mkdir -p "$HOME/.gradle"
+      touch "$HOME/.gradle/gradle.properties"
+      grep -q '^GITHUB_USERNAME=' "$HOME/.gradle/gradle.properties" || \
+        echo "GITHUB_USERNAME=$GITHUB_USERNAME" >> "$HOME/.gradle/gradle.properties"
+      grep -q '^GITHUB_PASSWORD=' "$HOME/.gradle/gradle.properties" || \
+        echo "GITHUB_PASSWORD=$GITHUB_PASSWORD" >> "$HOME/.gradle/gradle.properties"
+
+      # ----------------------------------------------------------------------
+      # Preflight diagnostics
+      # ----------------------------------------------------------------------
+      echo
+      if [ -r /etc/os-release ]; then . /etc/os-release; echo "OS=${PRETTY_NAME:-unknown}"; fi
+      echo "Kernel=$(uname -r) Arch=$(uname -m)"
+      echo "JAVA_HOME=$JAVA_HOME"
+      java -version
+      node --version
+      pwsh --version
+      docker info --format 'Docker server={{.ServerVersion}}'
+
+  script:
+    - |
+      set -euo pipefail
+
+      # Re-export everything before_script set up (same shell in practice for
+      # the shell executor, but keep the job robust if that ever changes).
+      export ASDF_DATA_DIR="${ASDF_DATA_DIR:-$HOME/.asdf}"
+      export PATH="$ASDF_DATA_DIR/bin:$ASDF_DATA_DIR/shims:$PATH"
+      export ASDF_JAVA_VERSION="$JAVA_VERSION"
+      export ASDF_NODEJS_VERSION="$NODEJS_VERSION"
+      JAVA_BIN="$(asdf which java)"
+      export JAVA_HOME="$(cd "$(dirname "$JAVA_BIN")/.." && pwd -P)"
+      export PATH="$JAVA_HOME/bin:$PATH"
+      export PATH="$CI_PROJECT_DIR/.ci-tools/$CI_JOB_ID/pwsh:$PATH"
+      if ! pwsh -NoProfile -Command 'exit 0' 2>/dev/null; then
+        export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+      fi
+
+      # ----------------------------------------------------------------------
+      # Publish the patched fastbatch SDK to mavenLocal (first run only)
+      # ----------------------------------------------------------------------
+      SDK_MARKER="$HOME/.m2/repository/io/opentelemetry/kotlin/sdk/sdk-trace-linuxx64/$FASTBATCH_SDK_VERSION"
+      if [ -d "$SDK_MARKER" ]; then
+        echo "fastbatch SDK $FASTBATCH_SDK_VERSION already in mavenLocal — skipping publish."
+      else
+        FORK_DIR="$CI_PROJECT_DIR/.ci-tools/$CI_JOB_ID/opentelemetry-kotlin-fork"
+        git clone "$FASTBATCH_SDK_REPO" "$FORK_DIR" | tee "$CI_PROJECT_DIR/sdk_publish_output.txt"
+        cd "$FORK_DIR"
+        git checkout "$FASTBATCH_SDK_BASE_COMMIT"
+        git apply "$CI_PROJECT_DIR/benchmarking/fastbatch-sdk.patch"
+        # gradle.properties in the patch sets idea.active=true + compileNative=true,
+        # which restricts native targets to the host -> linuxX64 klibs here.
+        PACKAGE_VERSION="$FASTBATCH_SDK_VERSION" sh ./gradlew --no-daemon publishToMavenLocal \
+          | tee -a "$CI_PROJECT_DIR/sdk_publish_output.txt"
+        cd "$CI_PROJECT_DIR"
+      fi
+
+      # ----------------------------------------------------------------------
+      # Run the comparison benchmark
+      # ----------------------------------------------------------------------
+      PWSH_CMD="& ./benchmarking/kperf-otel-comparison.ps1 -RunCount $RUN_COUNT -StepCount $STEP_COUNT -WarmupCount $WARMUP_COUNT"
+      if [ -n "$BENCH_VARIANTS" ]; then
+        PWSH_CMD="$PWSH_CMD -Variants ('$BENCH_VARIANTS' -split ',')"
+      fi
+      echo "Running: pwsh -NoProfile -Command \"$PWSH_CMD\""
+      pwsh -NoProfile -Command "$PWSH_CMD" | tee "$CI_PROJECT_DIR/benchmark_output.txt"
+
+      # ----------------------------------------------------------------------
+      # Collect the new measurement directory as the artifact
+      # ----------------------------------------------------------------------
+      # measurements/ also holds committed historical runs, so copy only the
+      # run this job produced (untracked in git) into ci-results/.
+      mkdir -p ci-results
+      git ls-files --others --exclude-standard --directory measurements/ | while read -r newdir; do
+        cp -r "$newdir" ci-results/
+      done
+      ls -la ci-results/
+
+  after_script:
+    - |
+      # The benchmark intentionally leaves Jaeger + Envoy running for interactive
+      # trace inspection; on a shared runner they must not linger.
+      docker rm -f jaeger envoy 2>/dev/null || true
+      # after_script runs in a separate shell, so reconstruct the job-local path.
+      rm -rf "$CI_PROJECT_DIR/.ci-tools/$CI_JOB_ID"
+
+  artifacts:
+    paths:
+      - ci-results/
+      - benchmark_output.txt
+      - sdk_publish_output.txt
+    # Preserve logs and partial results even when the job fails.
+    when: always
+    expire_in: never
+
+# Execute on the Ophelia runner (x86_64).
+benchmark-ophelia:
+  extends: .benchmark-template
+  tags: [ssw-ophelia]
+
+# Cassius is aarch64 — the comparison projects only declare linuxX64, so the
+# Native rows (and the Kotlin/Native toolchain) are unavailable there.
+#benchmark-cassius:
+#  extends: .benchmark-template
+#  tags: [ssw-cassius]

@@ -12,6 +12,10 @@
 
 $ErrorActionPreference = "Stop"
 
+# $IsWindows/$IsLinux only exist on PowerShell Core 6+; Desktop edition 5.1 is
+# always Windows. On Linux/macOS this script requires PowerShell 7 (pwsh).
+$IsWindowsHost = ($PSVersionTable.PSEdition -eq 'Desktop') -or $IsWindows
+
 $KnownVariants = @('baseline','k-perf','otel','otel-proto','otel-proto-sampler','otel-proto-timesource','otel-proto-anchored','otel-proto-fastbatch')
 foreach ($v in $Variants) {
   if ($KnownVariants -notcontains $v) {
@@ -30,16 +34,19 @@ if ([string]::IsNullOrWhiteSpace($ScriptRoot)) { $ScriptRoot = '.' }
 # (or its parent terminal) was started — e.g. node — are visible to the
 # Invoke-WithTimeout cmd.exe child processes. Without this, a long-lived shell
 # inherits a stale PATH and JS variants silently fail with "'node' is not
-# recognized" even though node is installed.
-$machinePath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
-$userPath    = [Environment]::GetEnvironmentVariable("PATH", "User")
-$pathEntries = (@($machinePath, $userPath, $env:PATH) -join ';') -split ';' |
-               Where-Object { $_ -and (Test-Path $_) } |
-               Select-Object -Unique
-$env:PATH    = $pathEntries -join ';'
+# recognized" even though node is installed. (Windows-only: the Machine/User
+# PATH registry scopes don't exist elsewhere.)
+if ($IsWindowsHost) {
+  $machinePath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+  $userPath    = [Environment]::GetEnvironmentVariable("PATH", "User")
+  $pathEntries = (@($machinePath, $userPath, $env:PATH) -join ';') -split ';' |
+                 Where-Object { $_ -and (Test-Path $_) } |
+                 Select-Object -Unique
+  $env:PATH    = $pathEntries -join ';'
+}
 
-. "$ScriptRoot\types.ps1"
-. "$ScriptRoot\statistics_utils.ps1"
+. "$ScriptRoot/types.ps1"
+. "$ScriptRoot/statistics_utils.ps1"
 
 # Verify external prerequisites the script can't install itself.
 function Test-Prerequisites {
@@ -51,8 +58,8 @@ function Test-Prerequisites {
     foreach ($tool in @(
         @{ Name = 'java';   Hint = 'Install JDK 17+ (e.g. Temurin) and ensure java is on PATH.' },
         @{ Name = 'node';   Hint = 'Install Node.js LTS and ensure node is on PATH.' },
-        @{ Name = 'git';    Hint = 'Install Git for Windows and ensure git is on PATH.' },
-        @{ Name = 'docker'; Hint = 'Install Docker Desktop and ensure docker is on PATH.' }
+        @{ Name = 'git';    Hint = 'Install git and ensure it is on PATH.' },
+        @{ Name = 'docker'; Hint = 'Install Docker (Docker Desktop on Windows, docker engine on Linux) and ensure docker is on PATH.' }
       )) {
       if (-not (Get-Command $tool.Name -ErrorAction SilentlyContinue)) {
         $missing += "  [missing] $($tool.Name): $($tool.Hint)"
@@ -62,7 +69,7 @@ function Test-Prerequisites {
     if (Get-Command docker -ErrorAction SilentlyContinue) {
       docker info --format '{{.ServerVersion}}' *> $null
       if ($LASTEXITCODE -ne 0) {
-        $missing += "  [stopped] docker daemon: Start Docker Desktop and wait for it to finish initializing."
+        $missing += "  [stopped] docker daemon: Start Docker (Desktop on Windows / 'sudo systemctl start docker' on Linux) and wait for it to finish initializing."
       }
     }
   }
@@ -70,7 +77,9 @@ function Test-Prerequisites {
     $ErrorActionPreference = $prevEap
   }
 
-  $gradleProps = Join-Path $env:USERPROFILE ".gradle\gradle.properties"
+  $homeDir = if ($IsWindowsHost) { $env:USERPROFILE } else { $HOME }
+  $gradleUserHome = if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { [IO.Path]::Combine($homeDir, ".gradle") }
+  $gradleProps = [IO.Path]::Combine($gradleUserHome, "gradle.properties")
   if (-not (Test-Path $gradleProps)) {
     $missing += "  [missing] ${gradleProps}: Create it with GITHUB_USERNAME=<user> and GITHUB_PASSWORD=<PAT with read:packages scope>."
   }
@@ -96,13 +105,14 @@ function Test-Prerequisites {
 
 Test-Prerequisites
 
-Push-Location "$ScriptRoot\.."
+Push-Location "$ScriptRoot/.."
 
 # Per-step wall-clock budget scales with StepCount so long otel-JS runs at high
 # StepCount don't blow the timeout. Floor at 60s for tiny smoke runs.
 $RunTimeoutSeconds = [Math]::Max(60, 5 * $StepCount)
 
-# Runs $Command via cmd.exe with a wall-clock timeout. See original commentary.
+# Runs $Command via the platform shell (cmd.exe / /bin/sh) with a wall-clock
+# timeout. See original commentary.
 function Invoke-WithTimeout {
   param(
     [string]$Command,
@@ -110,8 +120,17 @@ function Invoke-WithTimeout {
   )
 
   $psi = New-Object System.Diagnostics.ProcessStartInfo
-  $psi.FileName = "cmd.exe"
-  $psi.Arguments = "/c $Command 2>&1"
+  if ($IsWindowsHost) {
+    $psi.FileName = "cmd.exe"
+    $psi.Arguments = "/c $Command 2>&1"
+  }
+  else {
+    # ArgumentList avoids quote-escaping; only available on PowerShell 7 /
+    # .NET Core, which is guaranteed on non-Windows hosts.
+    $psi.FileName = "/bin/sh"
+    $psi.ArgumentList.Add("-c")
+    $psi.ArgumentList.Add("$Command 2>&1")
+  }
   $psi.RedirectStandardOutput = $true
   $psi.UseShellExecute = $false
   $psi.CreateNoWindow = $true
@@ -124,7 +143,13 @@ function Invoke-WithTimeout {
     $prevEap = $ErrorActionPreference
     $ErrorActionPreference = 'SilentlyContinue'
     try {
-      & cmd.exe /c "taskkill /T /F /PID $($proc.Id) >nul 2>&1"
+      if ($IsWindowsHost) {
+        & cmd.exe /c "taskkill /T /F /PID $($proc.Id) >nul 2>&1"
+      }
+      else {
+        # Process.Kill(true) kills the whole tree on .NET Core 3.0+.
+        $proc.Kill($true)
+      }
     } catch {}
     $ErrorActionPreference = $prevEap
     try { $proc.WaitForExit(2000) | Out-Null } catch {}
@@ -160,6 +185,10 @@ function Invoke-GradleBuild {
     [switch]$RefreshDeps
   )
 
+  # Callers pass Windows-notation relative paths; PowerShell on Linux does not
+  # treat backslash as a separator, so normalize before Push-Location.
+  if (-not $IsWindowsHost) { $Path = $Path -replace '\\', '/' }
+
   Write-Host ""
   Write-Host "=========================================="
   Write-Host "Building: $Title"
@@ -172,13 +201,15 @@ function Invoke-GradleBuild {
   $ErrorActionPreference = 'Continue'
   try {
     $gradleArgs = @()
+    if ($CleanBuild -and -not $SkipClean) { $gradleArgs += 'clean' }
     if ($RefreshDeps) { $gradleArgs += '--refresh-dependencies' }
     $gradleArgs += $Tasks
-    if ($CleanBuild -and -not $SkipClean) {
-      & .\gradlew clean @gradleArgs
+    if ($IsWindowsHost) {
+      & .\gradlew @gradleArgs
     }
     else {
-      & .\gradlew @gradleArgs
+      # Run via sh so a missing executable bit on gradlew doesn't matter.
+      & sh ./gradlew @gradleArgs
     }
 
     if ($LASTEXITCODE -ne 0) {
@@ -193,16 +224,30 @@ function Invoke-GradleBuild {
   Write-Host "$Title built successfully."
 }
 
+# Host-dependent pieces of the Kotlin/Native build: Gradle link task, artifact
+# directory, binary extension, and the display label used in row names.
+$NativeLinkTask = if ($IsWindowsHost) { 'linkReleaseExecutableMingwX64' } else { 'linkReleaseExecutableLinuxX64' }
+$NativeLabel    = if ($IsWindowsHost) { 'Native (Win)' } else { 'Native (Linux)' }
+
+# On non-Windows hosts, rewrite the Windows-notation command strings defined
+# below: backslash path separators -> forward slashes, mingwX64 artifact dir ->
+# linuxX64, and the .exe binary suffix -> .kexe. Identity on Windows.
+function ConvertTo-HostCommand {
+  param([string]$Command)
+  if ($IsWindowsHost) { return $Command }
+  return ((($Command -replace '\\', '/') -replace 'mingwX64', 'linuxX64') -replace '\.exe$', '.kexe')
+}
+
 # Extract (variant, platform) from an exe display name. Used for grouping the
 # overhead table and looking up per-platform method counts.
 function Get-VariantAndPlatform {
   param([string]$ExeName)
   $platform =
-    if     ($ExeName -match 'JVM$')             { 'JVM' }
-    elseif ($ExeName -match 'JS \(Node\)$')     { 'JS' }
-    elseif ($ExeName -match 'Native \(Win\)$')  { 'Native' }
-    else                                         { 'Unknown' }
-  $variant = $ExeName -replace ' (JVM|JS \(Node\)|Native \(Win\))$', ''
+    if     ($ExeName -match 'JVM$')                    { 'JVM' }
+    elseif ($ExeName -match 'JS \(Node\)$')            { 'JS' }
+    elseif ($ExeName -match 'Native \((Win|Linux)\)$') { 'Native' }
+    else                                                { 'Unknown' }
+  $variant = $ExeName -replace ' (JVM|JS \(Node\)|Native \((Win|Linux)\))$', ''
   return @{ Variant = $variant; Platform = $platform }
 }
 
@@ -255,7 +300,7 @@ $comparisonBuilds = @(
   @{ Variant = 'otel-proto-anchored';   Title = "Comparison Project (otel-proto-anchored)";   Path = ".\kmp-examples\comparison-otel-proto-anchored";   RefreshDeps = $true },
   @{ Variant = 'otel-proto-fastbatch';  Title = "Comparison Project (otel-proto-fastbatch)";  Path = ".\kmp-examples\comparison-otel-proto-fastbatch";  RefreshDeps = $true }
 )
-$comparisonTasks = @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", "linkReleaseExecutableMingwX64")
+$comparisonTasks = @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", $NativeLinkTask)
 foreach ($b in $comparisonBuilds) {
   if ($Variants -notcontains $b.Variant) { continue }
   if ($b.RefreshDeps) {
@@ -317,15 +362,18 @@ $executables = @(
   @{ Name = "otel-proto-timesource JS (Node)";    Command = $otelProtoTsJs },
   @{ Name = "otel-proto-anchored JS (Node)";      Command = $otelProtoAnchoredJs },
   @{ Name = "otel-proto-fastbatch JS (Node)";     Command = $otelProtoFastbatchJs },
-  @{ Name = "baseline Native (Win)";              Command = $baselineNative },
-  @{ Name = "k-perf Native (Win)";                Command = $kperfNative },
-  @{ Name = "otel Native (Win)";                  Command = $otelNative },
-  @{ Name = "otel-proto Native (Win)";            Command = $otelProtoNative },
-  @{ Name = "otel-proto-sampler Native (Win)";    Command = $otelProtoSamplerNative },
-  @{ Name = "otel-proto-timesource Native (Win)"; Command = $otelProtoTsNative },
-  @{ Name = "otel-proto-anchored Native (Win)";   Command = $otelProtoAnchoredNative },
-  @{ Name = "otel-proto-fastbatch Native (Win)";  Command = $otelProtoFastbatchNative }
+  @{ Name = "baseline $NativeLabel";              Command = $baselineNative },
+  @{ Name = "k-perf $NativeLabel";                Command = $kperfNative },
+  @{ Name = "otel $NativeLabel";                  Command = $otelNative },
+  @{ Name = "otel-proto $NativeLabel";            Command = $otelProtoNative },
+  @{ Name = "otel-proto-sampler $NativeLabel";    Command = $otelProtoSamplerNative },
+  @{ Name = "otel-proto-timesource $NativeLabel"; Command = $otelProtoTsNative },
+  @{ Name = "otel-proto-anchored $NativeLabel";   Command = $otelProtoAnchoredNative },
+  @{ Name = "otel-proto-fastbatch $NativeLabel";  Command = $otelProtoFastbatchNative }
 )
+$executables = @($executables | ForEach-Object {
+  @{ Name = $_.Name; Command = (ConvertTo-HostCommand -Command $_.Command) }
+})
 $executables = @($executables | Where-Object {
   $Variants -contains (Get-VariantAndPlatform -ExeName $_.Name).Variant
 })
@@ -341,7 +389,7 @@ $allResults = @()
 # Compute the results directory up-front so we can drop per-run debug dumps
 # under it the moment a run fails.
 $timestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
-$resultsDir = ".\measurements\comparison_run_$timestamp"
+$resultsDir = "./measurements/comparison_run_$timestamp"
 $failuresDir = Join-Path $resultsDir "failures"
 $tracesDir   = Join-Path $resultsDir "traces"
 
@@ -399,6 +447,23 @@ function Invoke-Docker {
 
 Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector', 'jaeger', 'envoy')
 
+# Portable TCP port probe. Replaces Test-NetConnection, which only exists on
+# Windows (NetTCPIP module) and has a slow failure path.
+function Test-TcpPort {
+  param([string]$TargetHost, [int]$Port, [int]$TimeoutMs = 1000)
+  $client = New-Object System.Net.Sockets.TcpClient
+  try {
+    $async = $client.BeginConnect($TargetHost, $Port, $null, $null)
+    if ($async.AsyncWaitHandle.WaitOne($TimeoutMs)) {
+      $client.EndConnect($async)
+      return $true
+    }
+    return $false
+  }
+  catch { return $false }
+  finally { $client.Close() }
+}
+
 function Start-Jaeger {
   Write-Host "--- Booting Jaeger + Envoy gRPC-Web proxy (in-memory storage capped at 400 traces) ---" -ForegroundColor Cyan
 
@@ -429,7 +494,7 @@ function Start-Jaeger {
   $deadline = (Get-Date).AddSeconds(30)
   $ready = $false
   while ((Get-Date) -lt $deadline) {
-    $probe = Test-NetConnection -ComputerName '127.0.0.1' -Port 14269 -WarningAction SilentlyContinue -InformationLevel Quiet
+    $probe = Test-TcpPort -TargetHost '127.0.0.1' -Port 14269
     if ($probe) { $ready = $true; break }
     Start-Sleep -Milliseconds 500
   }
@@ -461,8 +526,8 @@ function Start-Jaeger {
   $deadline = (Get-Date).AddSeconds(30)
   $ready = $false
   while ((Get-Date) -lt $deadline) {
-    $probe4317 = Test-NetConnection -ComputerName '127.0.0.1' -Port 4317 -WarningAction SilentlyContinue -InformationLevel Quiet
-    $probe4318 = Test-NetConnection -ComputerName '127.0.0.1' -Port 4318 -WarningAction SilentlyContinue -InformationLevel Quiet
+    $probe4317 = Test-TcpPort -TargetHost '127.0.0.1' -Port 4317
+    $probe4318 = Test-TcpPort -TargetHost '127.0.0.1' -Port 4318
     if ($probe4317 -and $probe4318) { $ready = $true; break }
     Start-Sleep -Milliseconds 500
   }
@@ -767,7 +832,7 @@ Write-Host "=========================================="
 Write-Host "Processing Results & System Info"
 Write-Host "=========================================="
 
-$machineInfo = Get-MachineInfo -GradleProjectPath ".\kmp-examples\comparison-k-perf"
+$machineInfo = Get-MachineInfo -GradleProjectPath "./kmp-examples/comparison-k-perf"
 
 if (-Not (Test-Path $resultsDir)) {
   New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null
@@ -898,8 +963,8 @@ $jsonOutput = [ordered]@{
   Overhead       = $overheadRows
 }
 
-$jsonFile = "$resultsDir\results.json"
-$mdFile = "$resultsDir\results.md"
+$jsonFile = "$resultsDir/results.json"
+$mdFile = "$resultsDir/results.md"
 
 $jsonOutput | ConvertTo-Json -Depth 10 | Out-File $jsonFile -Encoding utf8
 

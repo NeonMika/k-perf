@@ -1,0 +1,79 @@
+diff --git a/buildSrc/src/main/kotlin/common.gradle.kts b/buildSrc/src/main/kotlin/common.gradle.kts
+index 908da0c..f1a4f4b 100644
+--- a/buildSrc/src/main/kotlin/common.gradle.kts
++++ b/buildSrc/src/main/kotlin/common.gradle.kts
+@@ -10,6 +10,14 @@ if (System.getenv("PACKAGE_VERSION") != null) {
+ tasks {
+     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+         kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
++        // Emit Java 17 bytecode even when building on JDK 21: the atomicfu 0.22.0
++        // bytecode transformer's ASM cannot read Java 21 class files (major 65).
++        kotlinOptions.jvmTarget = "17"
++    }
++    withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
++        // Keep javac (from withJava()) aligned with the Kotlin jvmTarget=17 above.
++        sourceCompatibility = "17"
++        targetCompatibility = "17"
+     }
+     withType<AbstractArchiveTask> {
+         isPreserveFileTimestamps = false
+diff --git a/gradle.properties b/gradle.properties
+index 3f3e22c..f414ee6 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -13,3 +13,6 @@ kotlin.js.generate.executable.default=false
+ kotlin.mpp.stability.nowarn=true
+ kotlin.native.binary.memoryModel=experimental
+ compileNative=true
++# Restrict native targets to the host (mingwX64 on Windows) so the local
++# -fastbatch publish does not attempt Apple targets that cannot cross-compile here.
++systemProp.idea.active=true
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index c244788..1af9e09 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -1,7 +1,6 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionSha256Sum=03ec176d388f2aa99defcadc3ac6adf8dd2bce5145a129659537c0874dea5ad1
+-distributionUrl=https\://services.gradle.org/distributions/gradle-8.2.1-bin.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+ networkTimeout=10000
+ validateDistributionUrl=true
+ zipStoreBase=GRADLE_USER_HOME
+diff --git a/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt b/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt
+index 36cf753..b2e6ddc 100644
+--- a/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt
++++ b/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt
+@@ -202,9 +202,6 @@ internal constructor(
+         private fun addSpanDataToBatch(spanData: SpanData) {
+             batchInternal.update { it.add(spanData) }
+         }
+-        private fun removeSpanDataFromBatch(spanData: List<SpanData>) {
+-            batchInternal.update { it.removeAll(spanData) }
+-        }
+ 
+         private suspend fun flush() {
+             var spansToFlush: Int = queueCounter.value
+@@ -261,7 +258,11 @@ internal constructor(
+         }
+ 
+         private suspend fun exportCurrentBatch() {
+-            val currentBatch = batchInternal.value
++            // Take-and-clear the batch in O(1). The worker is the sole mutator of batchInternal
++            // and always exports the entire current batch, so atomically swapping in an empty
++            // list is equivalent to the previous export-then-removeAll(currentBatch), but avoids
++            // the O(batch^2) removeAll on the persistent vector (linear indexOf per element).
++            val currentBatch = batchInternal.getAndSet(persistentListOf())
+             if (currentBatch.isEmpty()) {
+                 return
+             }
+@@ -275,8 +276,6 @@ internal constructor(
+                 }
+             } catch (e: RuntimeException) {
+                 // logger.log(java.util.logging.Level.WARNING, "Exporter threw an Exception", e)
+-            } finally {
+-                removeSpanDataFromBatch(currentBatch)
+             }
+         }
+ 

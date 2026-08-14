@@ -121,6 +121,20 @@ GITHUB_PASSWORD=<a GitHub PAT with read:packages scope>
 
 The PAT only needs `read:packages`; no other scopes. A preflight check at the top of the script verifies all of the above and exits with a clear message if anything is missing — so a misconfigured fresh machine fails in seconds, not after a 20-minute build.
 
+### Running on Linux
+
+`kperf-otel-comparison.ps1` is cross-platform: on Linux it runs under **PowerShell 7** (`sudo apt install powershell` or equivalent, then `pwsh benchmarking/kperf-otel-comparison.ps1`). The script auto-selects the host-specific pieces — `linkReleaseExecutableLinuxX64` instead of `linkReleaseExecutableMingwX64`, `.kexe` binaries under `build/bin/linuxX64/`, `/bin/sh` instead of `cmd.exe` for the timed child processes, and `Native (Linux)` row labels (the `Platform` column in `results.md`/CSV stays `Native`, so cross-OS results line up).
+
+Linux-specific prerequisites beyond the table above:
+
+- **Docker engine** (no Docker Desktop needed); the daemon must be running and your user able to run `docker` without sudo (`docker` group).
+- **mavenLocal is per-machine.** The `otel-proto-fastbatch` variant forces the locally patched SDK `io.opentelemetry.kotlin.*:1.0.570-fastbatch`, which is **not** on GitHub Packages — it must be published from the `opentelemetry-kotlin-fork` checkout (lives next to this repo on the thesis machine) via `./gradlew publishToMavenLocal` **on the Linux machine**. The fork's build enables only the current OS's native target when `idea.active` is set (that is why the Windows mavenLocal has `-mingwx64` but no `-linuxx64` artifacts); publish it the same way on Linux to get the `-linuxx64` klibs. Without this, run the script with `-Variants` excluding `otel-proto-fastbatch`.
+- Clone the repo fresh on Linux (or use `core.autocrlf=input`) so the per-subproject `gradlew` shell scripts keep LF line endings; the script invokes them via `sh gradlew`, so a missing executable bit is fine but CRLF is not.
+
+The profile capture suite (`profiles/run-all-profiles.ps1`: JFR / PerfView) and the game-of-life `build.ps1`/`run.ps1` suite remain Windows-only.
+
+**GitLab CI:** `.gitlab-ci.yml` at the repo root runs this benchmark on the SSW Linux runners as a **manual** job (trigger via *Run pipeline*). It installs Java/Node via ASDF and pwsh from a tarball, publishes the patched fastbatch SDK to the runner's mavenLocal on first use (from `benchmarking/fastbatch-sdk.patch` applied onto upstream `dcxp/opentelemetry-kotlin@9c3186e`), runs the full benchmark, and uploads the new `measurements/comparison_run_*` directory as `ci-results/`. Requires masked CI/CD variables `GITHUB_USERNAME` / `GITHUB_PASSWORD` and a runner with Docker + x86_64.
+
 ### Reading the output
 
 `results.md` shows iteration count per row. A healthy run has `Iterations = <RunCount>` for all 18 rows. If any row shows fewer (or 0), check the matching files in `failures/` to see what each affected iteration printed.

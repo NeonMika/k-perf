@@ -1,4 +1,4 @@
-# Statistics, machine info, and CSV/JSON export utilities for benchmarking scripts
+﻿# Statistics, machine info, and CSV/JSON export utilities for benchmarking scripts
 
 function Get-BenchmarkStatistics {
   param(
@@ -399,11 +399,18 @@ function Get-MachineInfo {
     $ErrorActionPreference = $prevEap
   }
 
-  # Gradle + Kotlin Version (via the project's gradlew wrapper)
-  $gradlewName   = if ($IsWindows) { "gradlew.bat" } else { "gradlew" }
-  $gradleWrapper = Join-Path $GradleProjectPath $gradlewName
+  # Gradle + Kotlin Version (via the project's gradlew wrapper). Note: use the
+  # $isWinHost shim from above — bare $IsWindows does not exist on PS 5.1, which
+  # made this probe pick the sh wrapper on Windows and report "Not available".
   try {
-    $gradleOut = & $gradleWrapper --version 2>&1
+    if ($isWinHost) {
+      $gradleWrapper = Join-Path $GradleProjectPath "gradlew.bat"
+      $gradleOut = & $gradleWrapper --version 2>&1
+    }
+    else {
+      $gradleWrapper = Join-Path ($GradleProjectPath -replace '\\', '/') "gradlew"
+      $gradleOut = & sh $gradleWrapper --version 2>&1
+    }
     $gradleVersionLine = $gradleOut | Select-String "Gradle "
     if ($gradleVersionLine) { $machineInfo.GradleVersion = $gradleVersionLine.ToString().Trim() }
     $kotlinVersionLine = $gradleOut | Select-String "Kotlin:"
