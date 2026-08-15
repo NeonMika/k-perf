@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-large",
-    "RepetitionCount": 50,
+    "CILabel": "ci-linux-small",
+    "RepetitionCount": 3,
     "CleanBuild": false,
-    "StepCount": 500,
+    "StepCount": 20,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,19 +14,16 @@
       true
     ],
     "FlushEarly": [
-      true,
       false
     ],
     "InstrumentPropertyAccessors": [
-      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*",
-      "step"
+      ".*"
     ]
   },
   "machineInfo": {
@@ -37,29 +34,29 @@
     "CPU": "AMD EPYC 7763 64-Core Processor",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
-    "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 13.77,
+    "TotalRAMGB": 15.62,
+    "AvailableRAMGB": 13.57,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
+    "SystemUptimeHours": 0.04,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 160,
+    "RunningProcessCount": 159,
     "IsVirtualMachine": true,
-    "PowerShellVersion": "7.6.3",
-    "JavaVersion": "21.0.11",
-    "JavaDistribution": "\"21.0.11\"",
-    "NodeVersion": "v22.23.1",
+    "PowerShellVersion": "7.6.4",
+    "JavaVersion": "21.0.12",
+    "JavaDistribution": "\"21.0.12\"",
+    "NodeVersion": "v22.23.2",
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "0806afbf34ebe88745902be8190cd22b66825d9f",
+    "GitCommitHash": "e9441f15bf5395b31e143e98e118b77751d6457a",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-08-14 02:06:39"
+    "CollectionTimestamp": "2026-08-15 00:36:03"
   },
-  "buildTimeMs": 4039.3567,
+  "buildTimeMs": 3864.3391,
   "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-  "repetitions": 50,
+  "repetitions": 3,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
