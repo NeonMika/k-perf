@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-small",
-    "RepetitionCount": 3,
+    "CILabel": "ci-linux-large",
+    "RepetitionCount": 50,
     "CleanBuild": false,
-    "StepCount": 20,
+    "StepCount": 500,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,16 +14,19 @@
       true
     ],
     "FlushEarly": [
+      true,
       false
     ],
     "InstrumentPropertyAccessors": [
+      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*"
+      ".*",
+      "step"
     ]
   },
   "machineInfo": {
@@ -31,17 +34,17 @@
     "DeviceModel": "Virtual Machine",
     "OS": "Ubuntu 24.04.4 LTS",
     "OSArchitecture": "x86_64",
-    "CPU": "AMD EPYC 7763 64-Core Processor",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
-    "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.88,
+    "TotalRAMGB": 15.61,
+    "AvailableRAMGB": 13.95,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
+    "SystemUptimeHours": 0.09,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 162,
+    "RunningProcessCount": 158,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.6.4",
     "JavaVersion": "21.0.12",
@@ -50,13 +53,13 @@
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "3373227c2ca576d70b3622bb93054252ff198b8d",
+    "GitCommitHash": "b17289f790c3c95510bb7bd0bef9c2b9879443e4",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-08-16 00:37:15"
+    "CollectionTimestamp": "2026-08-16 01:25:50"
   },
-  "buildTimeMs": 4367.4149,
-  "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-  "repetitions": 3,
+  "buildTimeMs": 6268.1172,
+  "executable": "commonmain-plain-node",
+  "repetitions": 50,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
