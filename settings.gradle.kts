@@ -15,6 +15,7 @@ includeBuild("plugins/otel-plugin-proto-timesource/plugin") { name = "otel-plugi
 includeBuild("plugins/otel-plugin-proto-anchored/plugin") { name = "otel-plugin-proto-anchored" }
 includeBuild("plugins/otel-plugin-proto-sampler/plugin") { name = "otel-plugin-proto-sampler" }
 includeBuild("plugins/otel-plugin-proto-fastbatch/plugin") { name = "otel-plugin-proto-fastbatch" }
+includeBuild("plugins/otel-plugin-proto-combined/plugin") { name = "otel-plugin-proto-combined" }
 
 includeBuild("kmp-examples/game-of-life-kmp-commonmain") { name = "game-of-life-kmp-commonmain" }
 includeBuild("kmp-examples/game-of-life-kmp-commonmain-ioa") { name = "game-of-life-kmp-commonmain-ioa" }
@@ -30,3 +31,4 @@ includeBuild("kmp-examples/comparison-otel-proto-timesource") { name = "comparis
 includeBuild("kmp-examples/comparison-otel-proto-anchored") { name = "comparison-otel-proto-anchored" }
 includeBuild("kmp-examples/comparison-otel-proto-sampler") { name = "comparison-otel-proto-sampler" }
 includeBuild("kmp-examples/comparison-otel-proto-fastbatch") { name = "comparison-otel-proto-fastbatch" }
+includeBuild("kmp-examples/comparison-otel-proto-combined") { name = "comparison-otel-proto-combined" }

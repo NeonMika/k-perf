@@ -8,9 +8,10 @@
 #
 # Runner prerequisites (once per machine, cannot be installed from CI):
 #   - ASDF installed for the gitlab-runner user (same as the other SSW projects)
-#   - Docker engine running, gitlab-runner user in the `docker` group
-#     (the benchmark boots Jaeger + Envoy containers; Jaeger is capped at 12 GB,
-#     so the machine needs ~16 GB+ RAM)
+#   - A container runtime: either Docker (daemon running, gitlab-runner in the
+#     `docker` group) or rootless Podman (podman 4+; needs cgroups v2 for the
+#     container memory limits). The benchmark boots Jaeger + Envoy containers;
+#     Jaeger is capped at 12 GB, so the machine needs ~16 GB+ RAM.
 #   - x86_64 host (the comparison projects target linuxX64 only)
 #
 # Required CI/CD variables (Settings -> CI/CD -> Variables, masked):
@@ -145,7 +146,30 @@ stages:
       java -version
       node --version
       pwsh --version
-      docker info --format 'Docker server={{.ServerVersion}}'
+
+      # A container runtime (docker or podman) is only required when OTel
+      # variants run (empty BENCH_VARIANTS = all variants, which includes
+      # them). The benchmark script itself auto-detects docker vs podman.
+      if [ -z "$BENCH_VARIANTS" ] || [[ "$BENCH_VARIANTS" == *otel* ]]; then
+        if command -v docker >/dev/null 2>&1; then
+          CONTAINER_CLI=docker
+        elif command -v podman >/dev/null 2>&1; then
+          CONTAINER_CLI=podman
+        else
+          echo "ERROR: neither docker nor podman found for user $(whoami) on runner $(hostname)."
+          echo "The OTel variants boot Jaeger + Envoy containers. Ask the runner admin to install"
+          echo "either docker (sudo apt install docker.io; usermod -aG docker gitlab-runner;"
+          echo "systemctl enable --now docker; restart gitlab-runner) or rootless podman"
+          echo "(sudo apt install podman)."
+          echo "Until then, this pipeline can still run the container-free variants:"
+          echo "  Run pipeline with BENCH_VARIANTS=baseline"
+          exit 1
+        fi
+        "$CONTAINER_CLI" info >/dev/null
+        echo "Container runtime: $CONTAINER_CLI ($("$CONTAINER_CLI" --version))"
+      else
+        echo "No container runtime required for BENCH_VARIANTS=$BENCH_VARIANTS — skipping check."
+      fi
 
   script:
     - |
@@ -169,7 +193,10 @@ stages:
       # Publish the patched fastbatch SDK to mavenLocal (first run only)
       # ----------------------------------------------------------------------
       SDK_MARKER="$HOME/.m2/repository/io/opentelemetry/kotlin/sdk/sdk-trace-linuxx64/$FASTBATCH_SDK_VERSION"
-      if [ -d "$SDK_MARKER" ]; then
+      # Both the fastbatch and the combined variant consume the patched SDK.
+      if [ -n "$BENCH_VARIANTS" ] && [[ "$BENCH_VARIANTS" != *fastbatch* ]] && [[ "$BENCH_VARIANTS" != *combined* ]]; then
+        echo "Neither otel-proto-fastbatch nor otel-proto-combined selected — skipping patched-SDK publish."
+      elif [ -d "$SDK_MARKER" ]; then
         echo "fastbatch SDK $FASTBATCH_SDK_VERSION already in mavenLocal — skipping publish."
       else
         FORK_DIR="$CI_PROJECT_DIR/.ci-tools/$CI_JOB_ID/opentelemetry-kotlin-fork"
@@ -208,8 +235,13 @@ stages:
   after_script:
     - |
       # The benchmark intentionally leaves Jaeger + Envoy running for interactive
-      # trace inspection; on a shared runner they must not linger.
-      docker rm -f jaeger envoy 2>/dev/null || true
+      # trace inspection; on a shared runner they must not linger. Use whichever
+      # container runtime the machine has (mirrors the benchmark script).
+      if command -v docker >/dev/null 2>&1; then
+        docker rm -f jaeger envoy 2>/dev/null || true
+      elif command -v podman >/dev/null 2>&1; then
+        podman rm -f jaeger envoy 2>/dev/null || true
+      fi
       # after_script runs in a separate shell, so reconstruct the job-local path.
       rm -rf "$CI_PROJECT_DIR/.ci-tools/$CI_JOB_ID"
 
@@ -232,3 +264,10 @@ benchmark-ophelia:
 #benchmark-cassius:
 #  extends: .benchmark-template
 #  tags: [ssw-cassius]
+
+# Template for the Podman-only benchmark machine — fill in its runner tag and
+# uncomment. No other changes needed: both the pipeline preflight and the
+# benchmark script auto-detect docker vs podman.
+#benchmark-<machine>:
+#  extends: .benchmark-template
+#  tags: [ssw-<machine>]

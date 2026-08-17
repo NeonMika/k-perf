@@ -113,6 +113,7 @@ Invoke-Publish -Title "otel plugin (proto-timesource)"         -Path ".\plugins\
 Invoke-Publish -Title "otel plugin (proto-anchored)"           -Path ".\plugins\otel-plugin-proto-anchored\plugin"
 Invoke-Publish -Title "otel plugin (proto-sampler)"            -Path ".\plugins\otel-plugin-proto-sampler\plugin"
 Invoke-Publish -Title "otel plugin (proto-fastbatch)"          -Path ".\plugins\otel-plugin-proto-fastbatch\plugin"
+Invoke-Publish -Title "otel plugin (proto-combined)"           -Path ".\plugins\otel-plugin-proto-combined\plugin"
 
 Invoke-ExampleBuild -Title "game-of-life-kmp-commonmain"         -Path ".\kmp-examples\game-of-life-kmp-commonmain"
 Invoke-ExampleBuild -Title "game-of-life-kmp-commonmain-ioa"     -Path ".\kmp-examples\game-of-life-kmp-commonmain-ioa"
@@ -128,6 +129,7 @@ Invoke-ExampleBuild -Title "comparison-otel-proto-timesource"   -Path ".\kmp-exa
 Invoke-ExampleBuild -Title "comparison-otel-proto-anchored"     -Path ".\kmp-examples\comparison-otel-proto-anchored"
 Invoke-ExampleBuild -Title "comparison-otel-proto-sampler"      -Path ".\kmp-examples\comparison-otel-proto-sampler"
 Invoke-ExampleBuild -Title "comparison-otel-proto-fastbatch"    -Path ".\kmp-examples\comparison-otel-proto-fastbatch"
+Invoke-ExampleBuild -Title "comparison-otel-proto-combined"     -Path ".\kmp-examples\comparison-otel-proto-combined"
 
 Write-Host ""
 Write-Host "=========================================="

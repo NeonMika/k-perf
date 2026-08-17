@@ -7,7 +7,7 @@
   [int]$WarmupCount = 20,
   [int]$RunCount = 10,
   [int]$StepCount = 100,
-  [string[]]$Variants = @('baseline','k-perf','otel','otel-proto','otel-proto-sampler','otel-proto-timesource','otel-proto-anchored','otel-proto-fastbatch')
+  [string[]]$Variants = @('baseline','otel','otel-proto','otel-proto-sampler','otel-proto-timesource','otel-proto-anchored','otel-proto-fastbatch','otel-proto-combined')
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,7 +16,7 @@ $ErrorActionPreference = "Stop"
 # always Windows. On Linux/macOS this script requires PowerShell 7 (pwsh).
 $IsWindowsHost = ($PSVersionTable.PSEdition -eq 'Desktop') -or $IsWindows
 
-$KnownVariants = @('baseline','k-perf','otel','otel-proto','otel-proto-sampler','otel-proto-timesource','otel-proto-anchored','otel-proto-fastbatch')
+$KnownVariants = @('baseline','otel','otel-proto','otel-proto-sampler','otel-proto-timesource','otel-proto-anchored','otel-proto-fastbatch','otel-proto-combined')
 foreach ($v in $Variants) {
   if ($KnownVariants -notcontains $v) {
     throw "Unknown variant '$v'. Allowed: $($KnownVariants -join ', ')"
@@ -26,6 +26,17 @@ if ($Variants -notcontains 'baseline') {
   Write-Host "WARNING: 'baseline' is not selected - per-platform Overhead/method columns will be empty." -ForegroundColor Yellow
 }
 $AnyProtoVariant = @($Variants | Where-Object { $_ -like 'otel-proto*' }).Count -gt 0
+# A container runtime (Jaeger + Envoy) is only needed when at least one OTel
+# variant runs; baseline-only runs work without one.
+$AnyOtelVariant = @($Variants | Where-Object { $_ -like 'otel*' }).Count -gt 0
+
+# Container CLI: docker, or podman as a drop-in replacement — the two CLIs are
+# compatible for every subcommand this script uses (run/rm/network/logs/ps/
+# inspect). Image references below are fully qualified (docker.io/...) so
+# podman's interactive short-name registry prompt never triggers.
+$ContainerCli = if (Get-Command docker -ErrorAction SilentlyContinue) { 'docker' }
+                elseif (Get-Command podman -ErrorAction SilentlyContinue) { 'podman' }
+                else { $null }
 
 $ScriptRoot = $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($ScriptRoot)) { $ScriptRoot = '.' }
@@ -55,21 +66,28 @@ function Test-Prerequisites {
   $prevEap = $ErrorActionPreference
   $ErrorActionPreference = 'Continue'
   try {
-    foreach ($tool in @(
-        @{ Name = 'java';   Hint = 'Install JDK 17+ (e.g. Temurin) and ensure java is on PATH.' },
-        @{ Name = 'node';   Hint = 'Install Node.js LTS and ensure node is on PATH.' },
-        @{ Name = 'git';    Hint = 'Install git and ensure it is on PATH.' },
-        @{ Name = 'docker'; Hint = 'Install Docker (Docker Desktop on Windows, docker engine on Linux) and ensure docker is on PATH.' }
-      )) {
+    $tools = @(
+      @{ Name = 'java';   Hint = 'Install JDK 17+ (e.g. Temurin) and ensure java is on PATH.' },
+      @{ Name = 'node';   Hint = 'Install Node.js LTS and ensure node is on PATH.' },
+      @{ Name = 'git';    Hint = 'Install git and ensure it is on PATH.' }
+    )
+    foreach ($tool in $tools) {
       if (-not (Get-Command $tool.Name -ErrorAction SilentlyContinue)) {
         $missing += "  [missing] $($tool.Name): $($tool.Hint)"
       }
     }
 
-    if (Get-Command docker -ErrorAction SilentlyContinue) {
-      docker info --format '{{.ServerVersion}}' *> $null
-      if ($LASTEXITCODE -ne 0) {
-        $missing += "  [stopped] docker daemon: Start Docker (Desktop on Windows / 'sudo systemctl start docker' on Linux) and wait for it to finish initializing."
+    if ($AnyOtelVariant) {
+      if ($null -eq $ContainerCli) {
+        $missing += "  [missing] docker/podman: Install Docker (Desktop on Windows, engine on Linux) or Podman. Only required for OTel variants."
+      }
+      else {
+        # Plain `info` (no --format): the template fields differ between docker
+        # and podman; only the exit code matters here.
+        & $ContainerCli info *> $null
+        if ($LASTEXITCODE -ne 0) {
+          $missing += "  [stopped] $ContainerCli runtime: '$ContainerCli info' failed - start the Docker daemon, or check the (rootless) Podman setup."
+        }
       }
     }
   }
@@ -255,11 +273,6 @@ Write-Host "=========================================="
 Write-Host "Compiling Required Plugins and Dependencies"
 Write-Host "=========================================="
 
-if ($Variants -contains 'k-perf') {
-  Invoke-GradleBuild -Title "KIRHelperKit" -Path ".\KIRHelperKit" -Tasks @("publishToMavenLocal")
-  Invoke-GradleBuild -Title "k-perf plugin" -Path ".\plugins\k-perf" -Tasks @("publishToMavenLocal")
-}
-
 if ($Variants -contains 'otel') {
   Invoke-GradleBuild -Title "OTel OTLP Exporter" -Path ".\otlp-exporter" -Tasks @("publishToMavenLocal")
   Invoke-GradleBuild -Title "OTel Plugin Util" -Path ".\plugins\otel-plugin\util" -Tasks @("publishToMavenLocal")
@@ -273,17 +286,20 @@ if ($AnyProtoVariant) {
 if ($Variants -contains 'otel-proto') {
   Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")
 }
+if ($Variants -contains 'otel-proto-sampler') {
+  Invoke-GradleBuild -Title "OTel Plugin (proto-sampler)" -Path ".\plugins\otel-plugin-proto-sampler\plugin" -Tasks @("publishToMavenLocal")
+}
 if ($Variants -contains 'otel-proto-timesource') {
   Invoke-GradleBuild -Title "OTel Plugin (proto-timesource)" -Path ".\plugins\otel-plugin-proto-timesource\plugin" -Tasks @("publishToMavenLocal")
 }
 if ($Variants -contains 'otel-proto-anchored') {
   Invoke-GradleBuild -Title "OTel Plugin (proto-anchored)" -Path ".\plugins\otel-plugin-proto-anchored\plugin" -Tasks @("publishToMavenLocal")
 }
-if ($Variants -contains 'otel-proto-sampler') {
-  Invoke-GradleBuild -Title "OTel Plugin (proto-sampler)" -Path ".\plugins\otel-plugin-proto-sampler\plugin" -Tasks @("publishToMavenLocal")
-}
 if ($Variants -contains 'otel-proto-fastbatch') {
   Invoke-GradleBuild -Title "OTel Plugin (proto-fastbatch)" -Path ".\plugins\otel-plugin-proto-fastbatch\plugin" -Tasks @("publishToMavenLocal")
+}
+if ($Variants -contains 'otel-proto-combined') {
+  Invoke-GradleBuild -Title "OTel Plugin (proto-combined)" -Path ".\plugins\otel-plugin-proto-combined\plugin" -Tasks @("publishToMavenLocal")
 }
 
 Write-Host "=========================================="
@@ -292,13 +308,13 @@ Write-Host "=========================================="
 
 $comparisonBuilds = @(
   @{ Variant = 'baseline';              Title = "Comparison Project (baseline)";              Path = ".\kmp-examples\comparison-baseline";              RefreshDeps = $false },
-  @{ Variant = 'k-perf';                Title = "Comparison Project (k-perf)";                Path = ".\kmp-examples\comparison-k-perf";                RefreshDeps = $false },
   @{ Variant = 'otel';                  Title = "Comparison Project (otel)";                  Path = ".\kmp-examples\comparison-otel";                  RefreshDeps = $true },
   @{ Variant = 'otel-proto';            Title = "Comparison Project (otel-proto)";            Path = ".\kmp-examples\comparison-otel-proto";            RefreshDeps = $true },
   @{ Variant = 'otel-proto-sampler';    Title = "Comparison Project (otel-proto-sampler)";    Path = ".\kmp-examples\comparison-otel-proto-sampler";    RefreshDeps = $true },
   @{ Variant = 'otel-proto-timesource'; Title = "Comparison Project (otel-proto-timesource)"; Path = ".\kmp-examples\comparison-otel-proto-timesource"; RefreshDeps = $true },
   @{ Variant = 'otel-proto-anchored';   Title = "Comparison Project (otel-proto-anchored)";   Path = ".\kmp-examples\comparison-otel-proto-anchored";   RefreshDeps = $true },
-  @{ Variant = 'otel-proto-fastbatch';  Title = "Comparison Project (otel-proto-fastbatch)";  Path = ".\kmp-examples\comparison-otel-proto-fastbatch";  RefreshDeps = $true }
+  @{ Variant = 'otel-proto-fastbatch';  Title = "Comparison Project (otel-proto-fastbatch)";  Path = ".\kmp-examples\comparison-otel-proto-fastbatch";  RefreshDeps = $true },
+  @{ Variant = 'otel-proto-combined';   Title = "Comparison Project (otel-proto-combined)";   Path = ".\kmp-examples\comparison-otel-proto-combined";   RefreshDeps = $true }
 )
 $comparisonTasks = @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", $NativeLinkTask)
 foreach ($b in $comparisonBuilds) {
@@ -317,10 +333,6 @@ $baselineJvm    = "java -jar .\kmp-examples\comparison-baseline\build\lib\compar
 $baselineJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-baseline\build\js\packages\comparison-baseline\kotlin\comparison-baseline.js"
 $baselineNative = ".\kmp-examples\comparison-baseline\build\bin\mingwX64\releaseExecutable\comparison-baseline.exe"
 
-$kperfJvm    = "java -jar .\kmp-examples\comparison-k-perf\build\lib\comparison-k-perf-jvm-0.1.0-flushEarly-false.jar"
-$kperfJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-k-perf\build\js\packages\comparison-k-perf-flushEarly-false\kotlin\comparison-k-perf-flushEarly-false.js"
-$kperfNative = ".\kmp-examples\comparison-k-perf\build\bin\mingwX64\releaseExecutable\comparison-k-perf-flushEarly-false.exe"
-
 $otelJvm    = "java -jar .\kmp-examples\comparison-otel\build\lib\comparison-otel-jvm-1.0.0.jar"
 $otelJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel\build\js\packages\comparison-otel\kotlin\comparison-otel.js"
 $otelNative = ".\kmp-examples\comparison-otel\build\bin\mingwX64\releaseExecutable\main.exe"
@@ -328,6 +340,10 @@ $otelNative = ".\kmp-examples\comparison-otel\build\bin\mingwX64\releaseExecutab
 $otelProtoJvm    = "java -jar .\kmp-examples\comparison-otel-proto\build\lib\comparison-otel-proto-jvm-1.0.0.jar"
 $otelProtoJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto\build\js\packages\comparison-otel-proto\kotlin\comparison-otel-proto.js"
 $otelProtoNative = ".\kmp-examples\comparison-otel-proto\build\bin\mingwX64\releaseExecutable\main.exe"
+
+$otelProtoSamplerJvm    = "java -jar .\kmp-examples\comparison-otel-proto-sampler\build\lib\comparison-otel-proto-sampler-jvm-1.0.0.jar"
+$otelProtoSamplerJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-sampler\build\js\packages\comparison-otel-proto-sampler\kotlin\comparison-otel-proto-sampler.js"
+$otelProtoSamplerNative = ".\kmp-examples\comparison-otel-proto-sampler\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $otelProtoTsJvm    = "java -jar .\kmp-examples\comparison-otel-proto-timesource\build\lib\comparison-otel-proto-timesource-jvm-1.0.0.jar"
 $otelProtoTsJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-timesource\build\js\packages\comparison-otel-proto-timesource\kotlin\comparison-otel-proto-timesource.js"
@@ -337,39 +353,39 @@ $otelProtoAnchoredJvm    = "java -jar .\kmp-examples\comparison-otel-proto-ancho
 $otelProtoAnchoredJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-anchored\build\js\packages\comparison-otel-proto-anchored\kotlin\comparison-otel-proto-anchored.js"
 $otelProtoAnchoredNative = ".\kmp-examples\comparison-otel-proto-anchored\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoSamplerJvm    = "java -jar .\kmp-examples\comparison-otel-proto-sampler\build\lib\comparison-otel-proto-sampler-jvm-1.0.0.jar"
-$otelProtoSamplerJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-sampler\build\js\packages\comparison-otel-proto-sampler\kotlin\comparison-otel-proto-sampler.js"
-$otelProtoSamplerNative = ".\kmp-examples\comparison-otel-proto-sampler\build\bin\mingwX64\releaseExecutable\main.exe"
-
 $otelProtoFastbatchJvm    = "java -jar .\kmp-examples\comparison-otel-proto-fastbatch\build\lib\comparison-otel-proto-fastbatch-jvm-1.0.0.jar"
 $otelProtoFastbatchJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-fastbatch\build\js\packages\comparison-otel-proto-fastbatch\kotlin\comparison-otel-proto-fastbatch.js"
 $otelProtoFastbatchNative = ".\kmp-examples\comparison-otel-proto-fastbatch\build\bin\mingwX64\releaseExecutable\main.exe"
 
+$otelProtoCombinedJvm    = "java -jar .\kmp-examples\comparison-otel-proto-combined\build\lib\comparison-otel-proto-combined-jvm-1.0.0.jar"
+$otelProtoCombinedJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-combined\build\js\packages\comparison-otel-proto-combined\kotlin\comparison-otel-proto-combined.js"
+$otelProtoCombinedNative = ".\kmp-examples\comparison-otel-proto-combined\build\bin\mingwX64\releaseExecutable\main.exe"
+
 $executables = @(
   @{ Name = "baseline JVM";                       Command = $baselineJvm },
-  @{ Name = "k-perf JVM";                         Command = $kperfJvm },
   @{ Name = "otel JVM";                           Command = $otelJvm },
   @{ Name = "otel-proto JVM";                     Command = $otelProtoJvm },
   @{ Name = "otel-proto-sampler JVM";             Command = $otelProtoSamplerJvm },
   @{ Name = "otel-proto-timesource JVM";          Command = $otelProtoTsJvm },
   @{ Name = "otel-proto-anchored JVM";            Command = $otelProtoAnchoredJvm },
   @{ Name = "otel-proto-fastbatch JVM";           Command = $otelProtoFastbatchJvm },
+  @{ Name = "otel-proto-combined JVM";            Command = $otelProtoCombinedJvm },
   @{ Name = "baseline JS (Node)";                 Command = $baselineJs },
-  @{ Name = "k-perf JS (Node)";                   Command = $kperfJs },
   @{ Name = "otel JS (Node)";                     Command = $otelJs },
   @{ Name = "otel-proto JS (Node)";               Command = $otelProtoJs },
   @{ Name = "otel-proto-sampler JS (Node)";       Command = $otelProtoSamplerJs },
   @{ Name = "otel-proto-timesource JS (Node)";    Command = $otelProtoTsJs },
   @{ Name = "otel-proto-anchored JS (Node)";      Command = $otelProtoAnchoredJs },
   @{ Name = "otel-proto-fastbatch JS (Node)";     Command = $otelProtoFastbatchJs },
+  @{ Name = "otel-proto-combined JS (Node)";      Command = $otelProtoCombinedJs },
   @{ Name = "baseline $NativeLabel";              Command = $baselineNative },
-  @{ Name = "k-perf $NativeLabel";                Command = $kperfNative },
   @{ Name = "otel $NativeLabel";                  Command = $otelNative },
   @{ Name = "otel-proto $NativeLabel";            Command = $otelProtoNative },
   @{ Name = "otel-proto-sampler $NativeLabel";    Command = $otelProtoSamplerNative },
   @{ Name = "otel-proto-timesource $NativeLabel"; Command = $otelProtoTsNative },
   @{ Name = "otel-proto-anchored $NativeLabel";   Command = $otelProtoAnchoredNative },
-  @{ Name = "otel-proto-fastbatch $NativeLabel";  Command = $otelProtoFastbatchNative }
+  @{ Name = "otel-proto-fastbatch $NativeLabel";  Command = $otelProtoFastbatchNative },
+  @{ Name = "otel-proto-combined $NativeLabel";   Command = $otelProtoCombinedNative }
 )
 $executables = @($executables | ForEach-Object {
   @{ Name = $_.Name; Command = (ConvertTo-HostCommand -Command $_.Command) }
@@ -391,14 +407,12 @@ $allResults = @()
 $timestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
 $resultsDir = "./measurements/comparison_run_$timestamp"
 $failuresDir = Join-Path $resultsDir "failures"
-$tracesDir   = Join-Path $resultsDir "traces"
 
-# methods_per_step keyed by platform name ("JVM"/"JS"/"Native"). Primary
-# source is the static formula below (workload is deterministic + all
-# variants now exclude property accessors uniformly, so a closed-form
-# computation is exact). The k-perf trace capture remains as a runtime
-# sanity check — if it diverges from the formula by >1% a warning is
-# emitted further down.
+# methods_per_step keyed by platform name ("JVM"/"JS"/"Native"). Source is
+# the static formula below (workload is deterministic + all variants exclude
+# property accessors uniformly, so a closed-form computation is exact). It was
+# historically cross-checked against the k-perf trace before that variant was
+# removed from this benchmark.
 #
 # Workload (in each comparison-*/src/commonMain/kotlin/Main.kt):
 #   workload() = fibonacci(20) + bubbleSort(15-element array)
@@ -422,21 +436,16 @@ $staticMethodsPerStep = (Get-FibCallCount -N $WorkloadFibDepth) + 2L
 $methodsPerStep = @{ 'JVM' = $staticMethodsPerStep; 'JS' = $staticMethodsPerStep; 'Native' = $staticMethodsPerStep }
 Write-Host ("methods/step (from formula: fibDepth={0}): {1:N0}" -f $WorkloadFibDepth, $staticMethodsPerStep) -ForegroundColor Cyan
 
-# k-perf trace-based methods/step, captured during the first k-perf run for
-# each platform. Used purely as a sanity check vs $staticMethodsPerStep.
-$methodsPerStepFromTrace = @{}
-$tracePreserved = @{}
-
 function Invoke-Docker {
   param([string[]]$DockerArgs, [switch]$CaptureOutput)
   $prevEap = $ErrorActionPreference
   $ErrorActionPreference = 'Continue'
   try {
     if ($CaptureOutput) {
-      return (& docker @DockerArgs 2>&1)
+      return (& $ContainerCli @DockerArgs 2>&1)
     }
     else {
-      & docker @DockerArgs *> $null
+      & $ContainerCli @DockerArgs *> $null
     }
   }
   finally {
@@ -445,7 +454,9 @@ function Invoke-Docker {
 }
 
 
-Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector', 'jaeger', 'envoy')
+if ($AnyOtelVariant) {
+  Invoke-Docker -DockerArgs @('rm', '-f', 'otel-collector', 'jaeger', 'envoy')
+}
 
 # Portable TCP port probe. Replaces Test-NetConnection, which only exists on
 # Windows (NetTCPIP module) and has a slow failure path.
@@ -480,7 +491,7 @@ function Start-Jaeger {
     '-e', 'COLLECTOR_NUM_WORKERS=100',
     '-e', 'MEMORY_MAX_TRACES=100',
     '-p', '16686:16686', '-p', '14269:14269',
-    'jaegertracing/all-in-one:1.65.0'
+    'docker.io/jaegertracing/all-in-one:1.65.0'
   )
   $jaegerRunExit = $LASTEXITCODE
   if ($jaegerRunExit -ne 0) {
@@ -488,7 +499,7 @@ function Start-Jaeger {
     Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'jaeger') -CaptureOutput | ForEach-Object { Write-Host "  $_" }
     Write-Host "All jaeger-named containers (running or stopped):" -ForegroundColor Yellow
     Invoke-Docker -DockerArgs @('ps', '-a', '--filter', 'name=jaeger') -CaptureOutput | ForEach-Object { Write-Host "  $_" }
-    throw "Failed to start jaeger container (docker run exited $jaegerRunExit). Check that ports 16686/14269 are free, Docker Desktop is healthy, and no zombie jaeger container exists."
+    throw "Failed to start jaeger container ($ContainerCli run exited $jaegerRunExit). Check that ports 16686/14269 are free, the container runtime is healthy, and no zombie jaeger container exists."
   }
 
   $deadline = (Get-Date).AddSeconds(30)
@@ -514,13 +525,13 @@ function Start-Jaeger {
     '--memory=2g',
     '-p', '4317:4317', '-p', '4318:4318',
     '-v', "${envoyConfig}:/etc/envoy/envoy.yaml:ro",
-    'envoyproxy/envoy:v1.31.0'
+    'docker.io/envoyproxy/envoy:v1.31.0'
   )
   $envoyRunExit = $LASTEXITCODE
   if ($envoyRunExit -ne 0) {
     Write-Host "docker run (envoy) failed. Last container logs (if any):" -ForegroundColor Yellow
     Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'envoy') -CaptureOutput | ForEach-Object { Write-Host "  $_" }
-    throw "Failed to start envoy container (docker run exited $envoyRunExit). Check that ports 4317/4318 are free."
+    throw "Failed to start envoy container ($ContainerCli run exited $envoyRunExit). Check that ports 4317/4318 are free."
   }
 
   $deadline = (Get-Date).AddSeconds(30)
@@ -614,63 +625,16 @@ function Get-JaegerDeliveryCounters {
 
 function Get-ServiceNameForVariant {
   param([string]$Variant)
-  if ($Variant -eq 'baseline' -or $Variant -eq 'k-perf') { return $null }
+  if ($Variant -eq 'baseline') { return $null }
   return "comparison-$Variant"
 }
 
-# k-perf writes `trace_<platform>_<random>.txt` and `symbols_<platform>_<random>.txt`
-# to cwd. On the first measurement iteration of each k-perf variant we move
-# the trace to <resultsDir>/traces/<exe-safe-name>.txt and count lines/2/StepCount
-# to derive methods_per_step. Subsequent iterations delete trace/symbol files.
+# Remove stray trace/symbol files an instrumented binary may have written to
+# cwd (defensive leftover from the removed k-perf variant; harmless no-op for
+# the OTel variants).
 function Invoke-PostRunCleanup {
-  param(
-    [string]$ExeName,
-    [bool]$IsMeasurement
-  )
-
-  $traceFiles  = @(Get-ChildItem -Path "." -Filter "trace*.txt"  -ErrorAction SilentlyContinue)
-  $symbolFiles = @(Get-ChildItem -Path "." -Filter "symbols*.txt" -ErrorAction SilentlyContinue)
-
-  $isKperf = $ExeName -match 'k-perf'
-  $vp = Get-VariantAndPlatform -ExeName $ExeName
-  $shouldPreserve = $IsMeasurement -and $isKperf -and (-not $tracePreserved.ContainsKey($ExeName)) -and ($traceFiles.Count -gt 0)
-
-  if ($shouldPreserve) {
-    if (-not (Test-Path $tracesDir)) {
-      New-Item -ItemType Directory -Path $tracesDir -Force | Out-Null
-    }
-    $safeName = ($ExeName -replace '[^A-Za-z0-9._-]+', '_').Trim('_')
-    $targetTrace = Join-Path $tracesDir "$safeName.txt"
-    Move-Item -Path $traceFiles[0].FullName -Destination $targetTrace -Force
-
-    $lineCount = (Get-Content $targetTrace | Measure-Object -Line).Lines
-    if ($lineCount % 2 -ne 0) {
-      Write-Host "  WARN: trace for $ExeName has odd line count $lineCount; truncating to even" -ForegroundColor Yellow
-      $lineCount = $lineCount - 1
-    }
-    if ($StepCount -gt 0) {
-      $mpsFromTrace = [Math]::Floor($lineCount / 2 / $StepCount)
-      $methodsPerStepFromTrace[$vp.Platform] = $mpsFromTrace
-      $formulaVal = $methodsPerStep[$vp.Platform]
-      $deltaPct = if ($formulaVal -gt 0) { 100.0 * [Math]::Abs($mpsFromTrace - $formulaVal) / $formulaVal } else { 0.0 }
-      $colour = if ($deltaPct -gt 1.0) { 'Yellow' } else { 'Cyan' }
-      Write-Host ("  Preserved trace $safeName.txt ($lineCount lines) -> methods/step from trace = {0:N0}; formula = {1:N0}; delta = {2:N2}%" -f $mpsFromTrace, $formulaVal, $deltaPct) -ForegroundColor $colour
-      if ($deltaPct -gt 1.0) {
-        Write-Host ("  WARN: k-perf trace methods/step ({0}) diverges from formula ({1}) by {2:N2}% on $($vp.Platform). Investigate before trusting the overhead numbers." -f $mpsFromTrace, $formulaVal, $deltaPct) -ForegroundColor Yellow
-      }
-    }
-    $tracePreserved[$ExeName] = $true
-
-    # Remove any remaining trace files plus all symbol files
-    if ($traceFiles.Count -gt 1) {
-      $traceFiles | Select-Object -Skip 1 | ForEach-Object { Remove-Item -Force $_.FullName }
-    }
-  }
-  else {
-    $traceFiles | ForEach-Object { Remove-Item -Force -ErrorAction SilentlyContinue $_.FullName }
-  }
-
-  $symbolFiles | ForEach-Object { Remove-Item -Force -ErrorAction SilentlyContinue $_.FullName }
+  Get-ChildItem -Path "." -Filter "trace*.txt"   -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+  Get-ChildItem -Path "." -Filter "symbols*.txt" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 }
 
 $nonOtelExecutables = $executables | Where-Object { $_.Name -notmatch 'otel' }
@@ -724,10 +688,7 @@ foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
     $output = Invoke-WithTimeout -Command $invocation -TimeoutSeconds $RunTimeoutSeconds
     $outputStr = $output -join "`n"
 
-    # Cleanup runs *before* parsing so a k-perf trace from a successful run is
-    # preserved by Invoke-PostRunCleanup. Parsing only consumes stdout, not
-    # the trace file, so the order is correct.
-    Invoke-PostRunCleanup -ExeName $exe.Name -IsMeasurement $true
+    Invoke-PostRunCleanup
 
     $parsed = Get-ElapsedFromOutput -OutputStr $outputStr
     if ($null -ne $parsed.TotalNanos) {
@@ -832,7 +793,7 @@ Write-Host "=========================================="
 Write-Host "Processing Results & System Info"
 Write-Host "=========================================="
 
-$machineInfo = Get-MachineInfo -GradleProjectPath "./kmp-examples/comparison-k-perf"
+$machineInfo = Get-MachineInfo -GradleProjectPath "./kmp-examples/comparison-baseline"
 
 if (-Not (Test-Path $resultsDir)) {
   New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null
@@ -994,16 +955,15 @@ $markdown = @"
 
 ## Methods per step
 
-Closed-form: ``fib_call_count(fibDepth) + 2`` with ``fibDepth=$WorkloadFibDepth`` (i.e. ``2 * Fibonacci(fibDepth+1) - 1`` recursive calls plus 1 for ``bubbleSort`` plus 1 for ``workload`` itself). The k-perf trace column is empirical (``lines / 2 / StepCount``) and serves as a sanity check.
+Closed-form: ``fib_call_count(fibDepth) + 2`` with ``fibDepth=$WorkloadFibDepth`` (i.e. ``2 * Fibonacci(fibDepth+1) - 1`` recursive calls plus 1 for ``bubbleSort`` plus 1 for ``workload`` itself).
 
-| Platform | methods_per_step (formula, used) | methods_per_step (k-perf trace, check) |
-|---|---:|---:|
+| Platform | methods_per_step (formula) |
+|---|---:|
 "@
 
 foreach ($plat in @('JVM','JS','Native')) {
   $formulaVal = if ($methodsPerStep.ContainsKey($plat)) { "$($methodsPerStep[$plat])" } else { 'N/A' }
-  $traceVal   = if ($methodsPerStepFromTrace.ContainsKey($plat)) { "$($methodsPerStepFromTrace[$plat])" } else { 'N/A' }
-  $markdown += "`n| $plat | $formulaVal | $traceVal |"
+  $markdown += "`n| $plat | $formulaVal |"
 }
 
 $markdown += @"
@@ -1058,7 +1018,7 @@ Expected = ``methods/step × StepCount × RunCount`` = $expectedTotal × $StepCo
 $exportErrorNotes = @()
 foreach ($res in $allResults) {
   $vp = Get-VariantAndPlatform -ExeName $res.Executable
-  if ($vp.Variant -eq 'baseline' -or $vp.Variant -eq 'k-perf') { continue }
+  if ($vp.Variant -eq 'baseline') { continue }
   $expected = [long]$expectedTotal * [long]$StepCount * [long]$res.Count
   $expFmt = "{0:N0}" -f $expected
 
@@ -1169,7 +1129,6 @@ Write-Host "Measurements and stats saved successfully to folder: `n -> $resultsD
 Write-Host "  results.json          (raw + statistics)"
 Write-Host "  results.md            (summary tables + per-step curve)"
 Write-Host "  per_step_medians.csv  (long-form per-step medians for plotting)"
-Write-Host "  traces/               (k-perf trace per platform, one preserved per variant)"
 Write-Host "Benchmark evaluation finished."
 
 Write-Host ""
@@ -1183,7 +1142,7 @@ Write-Host "  - Verify zero drops at: http://localhost:14269/metrics" -Foregroun
 Write-Host "    (jaeger_collector_spans_dropped_total should be 0)" -ForegroundColor Green
 Write-Host "  - gRPC traffic flows through the Envoy gRPC-Web proxy on :4317" -ForegroundColor Green
 Write-Host "    (required for the Kotlin/JS gRPC-Web client to reach Jaeger)" -ForegroundColor Green
-Write-Host "  - Shut everything down with: docker stop jaeger envoy" -ForegroundColor Green
+Write-Host "  - Shut everything down with: $ContainerCli stop jaeger envoy" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
 
 Pop-Location

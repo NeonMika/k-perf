@@ -127,7 +127,7 @@ The PAT only needs `read:packages`; no other scopes. A preflight check at the to
 
 Linux-specific prerequisites beyond the table above:
 
-- **Docker engine** (no Docker Desktop needed); the daemon must be running and your user able to run `docker` without sudo (`docker` group).
+- **Docker engine or Podman.** For Docker, the daemon must be running and your user able to run `docker` without sudo (`docker` group). Rootless Podman works as a drop-in replacement — the runner auto-detects whichever CLI is present (Docker preferred if both) and all images are fully qualified so Podman's short-name prompt never triggers. Rootless Podman needs cgroups v2 for the `--memory` limits (the default on Debian 12+) and Podman 4+ for container-name DNS on the `otel-net` network (Envoy reaches Jaeger by the name `jaeger`).
 - **mavenLocal is per-machine.** The `otel-proto-fastbatch` variant forces the locally patched SDK `io.opentelemetry.kotlin.*:1.0.570-fastbatch`, which is **not** on GitHub Packages — it must be published from the `opentelemetry-kotlin-fork` checkout (lives next to this repo on the thesis machine) via `./gradlew publishToMavenLocal` **on the Linux machine**. The fork's build enables only the current OS's native target when `idea.active` is set (that is why the Windows mavenLocal has `-mingwx64` but no `-linuxx64` artifacts); publish it the same way on Linux to get the `-linuxx64` klibs. Without this, run the script with `-Variants` excluding `otel-proto-fastbatch`.
 - Clone the repo fresh on Linux (or use `core.autocrlf=input`) so the per-subproject `gradlew` shell scripts keep LF line endings; the script invokes them via `sh gradlew`, so a missing executable bit is fine but CRLF is not.
 
