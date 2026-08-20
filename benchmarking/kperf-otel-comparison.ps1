@@ -415,10 +415,10 @@ $failuresDir = Join-Path $resultsDir "failures"
 # removed from this benchmark.
 #
 # Workload (in each comparison-*/src/commonMain/kotlin/Main.kt):
-#   workload() = fibonacci(20) + bubbleSort(15-element array)
+#   workload() = fibonacci(20)   (bubbleSort removed 2026-08-20)
 #   per workload() invocation = per step:
-#       fib_call_count(20) + 1 (bubbleSort) + 1 (workload itself)
-#       = 21891 + 2 = 21893
+#       fib_call_count(20) + 1 (workload itself)
+#       = 21891 + 1 = 21892
 #
 # fib_call_count(n) = 2*F(n+1) - 1 where F is the Fibonacci sequence.
 $WorkloadFibDepth = 20    # hard-coded in each Main.kt's workload()
@@ -432,7 +432,7 @@ function Get-FibCallCount {
   return 2L * $a - 1L
 }
 
-$staticMethodsPerStep = (Get-FibCallCount -N $WorkloadFibDepth) + 2L
+$staticMethodsPerStep = (Get-FibCallCount -N $WorkloadFibDepth) + 1L
 $methodsPerStep = @{ 'JVM' = $staticMethodsPerStep; 'JS' = $staticMethodsPerStep; 'Native' = $staticMethodsPerStep }
 Write-Host ("methods/step (from formula: fibDepth={0}): {1:N0}" -f $WorkloadFibDepth, $staticMethodsPerStep) -ForegroundColor Cyan
 
@@ -485,9 +485,12 @@ function Start-Jaeger {
   Invoke-Docker -DockerArgs @(
     'run', '-d', '--name', 'jaeger',
     '--network', 'otel-net',
-    '--memory=12g',
+    '--memory=24g',
     '-e', 'COLLECTOR_OTLP_ENABLED=true',
-    '-e', 'COLLECTOR_QUEUE_SIZE=5000000',
+    # Queue slots hold whole spans in memory; 5M slots blew the previous 12g
+    # cap when a fast host (Ryzen 9950X) outran storage: Jaeger was OOM-killed
+    # during the fastbatch/combined JVM variants (run 2026-08-20).
+    '-e', 'COLLECTOR_QUEUE_SIZE=2000000',
     '-e', 'COLLECTOR_NUM_WORKERS=100',
     '-e', 'MEMORY_MAX_TRACES=100',
     '-p', '16686:16686', '-p', '14269:14269',
@@ -872,7 +875,6 @@ foreach ($res in $allResults) {
 $overheadRows = @()
 foreach ($res in $allResults) {
   $vp = Get-VariantAndPlatform -ExeName $res.Executable
-  if ($vp.Variant -eq 'baseline') { continue }
 
   $mps         = $methodsPerStep[$vp.Platform]
   $stepMean    = $res.StepMeanNanos
@@ -882,8 +884,10 @@ foreach ($res in $allResults) {
   if ($null -ne $stepMean -and $null -ne $mps -and $mps -gt 0) {
     $perMethodTotal = $stepMean / $mps
   }
+  # Baseline rows report the pure per-call workload cost; their overhead
+  # column stays empty (Δ vs itself would be 0 by definition).
   $overheadPerMethod = $null
-  if ($null -ne $baselineRef -and $null -ne $stepMean -and $null -ne $mps -and $mps -gt 0) {
+  if ($vp.Variant -ne 'baseline' -and $null -ne $baselineRef -and $null -ne $stepMean -and $null -ne $mps -and $mps -gt 0) {
     $overheadPerMethod = ($stepMean - $baselineRef) / $mps
   }
 
@@ -933,6 +937,15 @@ $jsonOutput | ConvertTo-Json -Depth 10 | Out-File $jsonFile -Encoding utf8
 $markdown = @"
 # Benchmark Results ($timestamp)
 
+This document contains the results of one full execution of the k-perf/OTel comparison benchmark. The benchmark measures how much runtime overhead different tracing implementations add to a Kotlin Multiplatform program, on three platforms: JVM, JavaScript (Node.js), and a native binary.
+
+Terminology used throughout this document:
+
+- A **variant** is one tracing implementation. ``baseline`` is the identical program with no tracing at all.
+- A **step** is one call of the workload function (``fibonacci($WorkloadFibDepth)``). The duration of every step is measured individually.
+- A **run** is one complete program execution containing $StepCount steps. Every variant is executed $RunCount times, each time in a fresh process, so results do not depend on a single lucky or unlucky execution.
+- The first $WarmupCount steps of every run are **warmup** and excluded from all timing statistics.
+
 ## Parameters
 - **Warmup steps/run (discarded from stats):** $WarmupCount
 - **Run Iterations:** $RunCount
@@ -955,7 +968,7 @@ $markdown = @"
 
 ## Methods per step
 
-Closed-form: ``fib_call_count(fibDepth) + 2`` with ``fibDepth=$WorkloadFibDepth`` (i.e. ``2 * Fibonacci(fibDepth+1) - 1`` recursive calls plus 1 for ``bubbleSort`` plus 1 for ``workload`` itself).
+The workload is deterministic, so the exact number of traced function calls in one step is known in advance. The tables below divide step times by this value to get per-function-call times.
 
 | Platform | methods_per_step (formula) |
 |---|---:|
@@ -971,7 +984,12 @@ $markdown += @"
 
 ## Execution Summary
 
-``Mean step (µs)`` = mean of per-step medians from step index $WarmupCount to $($StepCount - 1) across $RunCount measured runs (first $WarmupCount step indices of each run discarded as warmup).
+Raw timing statistics for every (variant, platform) combination. Column meanings:
+
+- **Iterations**: how many of the $RunCount runs produced a valid measurement. A value below $RunCount means some runs failed. The raw output of failed runs is stored in the ``failures/`` folder.
+- **Total mean / Total median (ms)**: average and middle value of the whole-process duration. For OTel variants this includes waiting at the end of the process until all remaining tracing data has been exported. Because of that, do not compare totals across variants. Use the step columns for comparisons instead.
+- **Mean step (µs)**: the headline timing number, computed in two stages. First, for every step index, take the median of that step's duration across the $RunCount runs. Then average those medians over the measured region (step $WarmupCount to $($StepCount - 1)). The first $WarmupCount steps of every run are excluded as warmup.
+- **Step median / Step stddev (µs)**: the middle value and the spread of all measured (non-warmup) step durations. A large stddev means step times fluctuated strongly from step to step or run to run.
 
 | Executable | Iterations | Total mean (ms) | Total median (ms) | Mean step (µs) | Step median (µs) | Step stddev (µs) |
 |------------|-----------:|----------------:|------------------:|---------------:|-----------------:|-----------------:|
@@ -992,6 +1010,13 @@ $markdown += @"
 
 ## Per-method timings
 
+The step times from above, converted into the cost of one traced function call:
+
+- **Per-method (ns) = step / methods**: the mean step time divided by the $staticMethodsPerStep function calls in a step, i.e. the average total cost of one function call, including the workload's own computation.
+- **Overhead/method (ns) = Δ vs baseline**: the same value minus the baseline's value on the same platform, i.e. what tracing itself adds to every single function call. This column is the main result of the benchmark.
+
+Baseline rows only show the pure workload cost per call (no instrumentation).
+
 | Variant | Platform | Mean step (µs) | Methods/step | Per-method (ns) = step / methods | Overhead/method (ns) = Δ vs baseline |
 |---|---|---:|---:|---:|---:|
 "@
@@ -1008,11 +1033,24 @@ $expectedTotal = $methodsPerStep['JVM']  # all platforms share the formula value
 $markdown += @"
 
 
+## OTel span delivery verification
 
-Expected = ``methods/step × StepCount × RunCount`` = $expectedTotal × $StepCount × $RunCount = $($expectedTotal * $StepCount * $RunCount). Jaeger columns are per-variant deltas. **Delivered % = Stored (saved_ok) / Expected** (ground truth). Status: OK · LOSS · DUP · INVALID (Jaeger died — row untrustworthy) · OK (false-fail: N) (delivered, client threw on response read). `~` = client-side fallback when Jaeger metrics missing.
+Tracing data (spans, one per traced function call) is exported asynchronously in the background. A benchmark could therefore look fast simply because tracing data was silently thrown away instead of being processed. This table proves that did not happen: for every OTel variant, spans are counted at each step of the export pipeline (when they leave the plugin, when they arrive over the network, and when the Jaeger backend stores them), and all counts must match the number of spans the program generated. Unlike the timing statistics, span counts cover all $StepCount steps of every run: the warmup cutoff applies only to timings, because warmup steps still create and export spans.
 
-| Variant | Platform | Expected | Exported (attempted) | Failed (client) | Wire recv (Δ) | Stored saved_ok (Δ) | Dropped (Δ) | Delivered (%) | Dup | Status |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|:--|
+Column meanings:
+
+- **Expected**: the number of spans the program generates. It is ``methods/step × StepCount × RunCount`` = $expectedTotal × $StepCount × $RunCount = $($expectedTotal * $StepCount * $RunCount) spans per row.
+- **Exported**: spans the plugin handed to the network.
+- **Failed (client)**: spans whose export ended in an error on the program side.
+- **Stored (Jaeger)**: spans the Jaeger backend saved. This is the ground truth for delivery.
+- **Dropped (Jaeger)**: spans that reached Jaeger but were thrown away because the backend was overloaded.
+- **Delivered (%)**: Stored divided by Expected. 100.00 means every single span arrived.
+- **Status**: the verdict for the row. OK means everything arrived. LOSS means spans went missing somewhere. DUP means Jaeger received spans more than once. INVALID means the Jaeger backend crashed during this variant, so the whole row is untrustworthy. OK (false-fail: N) means everything arrived, but the plugin wrongly counted N spans as failed because it could not read the server's confirmation.
+
+More detailed counters (e.g. the raw network-level receive counts) are stored in ``results.json``.
+
+| Variant | Platform | Expected | Exported | Failed (client) | Stored (Jaeger) | Dropped (Jaeger) | Delivered (%) | Status |
+|---|---|---:|---:|---:|---:|---:|---:|:--|
 "@
 
 $exportErrorNotes = @()
@@ -1064,7 +1102,7 @@ foreach ($res in $allResults) {
     $status = 'OK'
   }
 
-  $markdown += "`n| $($vp.Variant) | $($vp.Platform) | $expFmt | $exportedFmt | $failedFmt | $recvFmt | $savedFmt | $dropFmt | $deliveredFmt | $dupFmt | $status |"
+  $markdown += "`n| $($vp.Variant) | $($vp.Platform) | $expFmt | $exportedFmt | $failedFmt | $savedFmt | $dropFmt | $deliveredFmt | $status |"
   if ($null -ne $res.FirstExportError) {
     $exportErrorNotes += "- **$($vp.Variant) $($vp.Platform)** first export error: ``$($res.FirstExportError)``"
   }
@@ -1095,7 +1133,7 @@ $markdown += @"
 
 ## Per-step median curve (µs)
 
-Sampled step indices across $RunCount runs. otel-* sawtooth = BSP flushes. Full data in ``per_step_medians.csv`` / ``results.json::Results[*].PerRunStepNanos``.
+How the duration of a step changes over the lifetime of a process. The column ``s0`` is the first step of a run, ``s1`` the second, and so on. Each cell shows the median of that step's duration across the $RunCount runs. For example, ``s0`` is the median duration of the very first step, taken over all $RunCount runs. Reading a row from left to right therefore shows one representative process over time. Only selected step indices are shown here. The full curves are in ``per_step_medians.csv`` and ``results.json::Results[*].PerRunStepNanos``.
 
 | Variant | Platform | $($curveHeaderCells -join ' | ') |
 |---|---|$curveDivider|
@@ -1120,7 +1158,6 @@ foreach ($res in $allResults) {
 
 $markdown += @"
 
-> Curve shape: JVM C1≈step 1-2, C2 hits later. JS V8 tiered. Native AOT (flat). otel-* drift + sawtooth = dcxp BSP/persistent-list interaction. Step indices < $WarmupCount are discarded from the per-method statistics above.
 "@
 
 $markdown | Out-File $mdFile -Encoding utf8

@@ -5,24 +5,11 @@ fun fibonacci(n: Int): Long {
     return fibonacci(n - 1) + fibonacci(n - 2)
 }
 
-fun bubbleSort(arr: IntArray) {
-    val n = arr.size
-    for (i in 0 until n - 1) {
-        for (j in 0 until n - i - 1) {
-            if (arr[j] > arr[j + 1]) {
-                val temp = arr[j]
-                arr[j] = arr[j + 1]
-                arr[j + 1] = temp
-            }
-        }
-    }
-}
-
 fun workload() {
     val fib = fibonacci(20)
-    val arr = intArrayOf(64, 34, 25, 12, 22, 11, 90, 88, 77, 66, 55, 44, 33, 22, 11)
-    bubbleSort(arr)
-    if (fib < 0) println("$fib ${arr[0]}")
+    // DCE black-hole: never fires (fib(20)=6765), but the compiler cannot prove
+    // that, so Kotlin/Native LLVM must keep the fibonacci call live.
+    if (fib < 0) println(fib)
 }
 
 fun main(args: Array<String>) {

@@ -59,7 +59,7 @@ Each JSON file contains:
 
 ## Comparison Benchmark (`kperf-otel-comparison.ps1`)
 
-A separate script in this folder, `kperf-otel-comparison.ps1`, benchmarks a deterministic CPU workload (`fibonacci(20) + bubbleSort(15 cells)`, one workload call per step) under six variants across three platforms (JVM / JS / Native) — 18 rows in total. The variants are:
+A separate script in this folder, `kperf-otel-comparison.ps1`, benchmarks a deterministic CPU workload (`fibonacci(20)`, one workload call per step) under eight variants across three platforms (JVM / JS / Native) — 24 rows in total. The variants are:
 
 - **baseline** — no plugin applied (reference for overhead delta)
 - **k-perf** — local file-sink timing plugin (sync trace flush)
@@ -92,12 +92,12 @@ cd benchmarking
 The `Per-method (ns)` and `Overhead/method (ns)` columns in `results.md` divide step time by `methods_per_step`. This denominator is computed from a closed-form formula:
 
 ```
-methods_per_step = fib_call_count(20) + 2
-                 = (2 × Fibonacci(21) − 1) + 2
-                 = 21,891 + 2 = 21,893
+methods_per_step = fib_call_count(20) + 1
+                 = (2 × Fibonacci(21) − 1) + 1
+                 = 21,891 + 1 = 21,892
 ```
 
-(The `+ 2` is the single `bubbleSort` call and the `workload` call itself.) The script also captures the empirical `lines / 2 / StepCount` from the k-perf trace as a sanity check; if the two diverge by more than 1 %, a warning is printed and both numbers appear in `results.md`.
+(The `+ 1` is the `workload` call itself. Before 2026-08-20 the workload also included a `bubbleSort` call, giving 21,893 — runs from before that date use the old denominator and are not directly comparable.)
 
 Results land under `measurements/comparison_run_<timestamp>/` as `results.json` + `results.md` + `per_step_medians.csv`. Any iteration whose stdout fails the timing-line regex is dumped under `measurements/comparison_run_<timestamp>/failures/<exe>-run-<NN>.txt` so the cause (node not found, container hang, runtime crash, wall-clock timeout) is one read away.
 

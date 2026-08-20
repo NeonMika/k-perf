@@ -1,0 +1,722 @@
+Downloading https://services.gradle.org/distributions/gradle-8.5-bin.zip
+............10%.............20%............30%.............40%.............50%............60%.............70%.............80%............90%.............100%
+
+Welcome to Gradle 8.5!
+
+Here are the highlights of this release:
+ - Support for running on Java 21
+ - Faster first use with Kotlin DSL
+ - Improved error and warning messages
+
+For more details see https://docs.gradle.org/8.5/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors
+> Task :buildSrc:generateExternalPluginSpecBuilders
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins
+> Task :buildSrc:compilePluginsBlocks
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors
+> Task :buildSrc:generateScriptPluginAdapters
+> Task :buildSrc:pluginDescriptors
+> Task :buildSrc:processResources
+> Task :buildSrc:compileKotlin
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:classes
+> Task :buildSrc:jar
+
+> Configure project :context
+
+Please wait while Kotlin/Native compiler 1.9.23 is being installed.
+Download https://download.jetbrains.com/kotlin/native/builds/releases/1.9.23/linux-x86_64/kotlin-native-prebuilt-linux-x86_64-1.9.23.tar.gz (198.18 MB)
+Download kotlin-native-prebuilt-linux-x86_64-1.9.23.tar.gz finished, took 18 s 529 ms
+Unpack Kotlin/Native compiler to /home/gitlab-runner/.konan/kotlin-native-prebuilt-linux-x86_64-1.9.23
+Unpack Kotlin/Native compiler to /home/gitlab-runner/.konan/kotlin-native-prebuilt-linux-x86_64-1.9.23 finished, took 990 ms
+w: The Default Kotlin Hierarchy Template was not applied to 'project ':context'':
+Explicit .dependsOn() edges were configured for the following source sets:
+[jsMain, jvmMain, linuxX64Main, nativeMain]
+
+Consider removing dependsOn-calls or disabling the default template by adding
+    'kotlin.mpp.applyDefaultHierarchyTemplate=false'
+to your gradle.properties
+
+Learn more about hierarchy templates: https://kotl.in/hierarchy-template
+
+
+> Task :sdk:sdk-common:jsProcessResources NO-SOURCE
+> Task :context:jsProcessResources NO-SOURCE
+> Task :sdk:sdk-testing:jsProcessResources NO-SOURCE
+> Task :sdk:sdk-trace:jsProcessResources NO-SOURCE
+> Task :api:metrics:jsProcessResources NO-SOURCE
+> Task :sdk:sdk-all:jsProcessResources NO-SOURCE
+> Task :sdk:sdk-metrics:jsProcessResources NO-SOURCE
+> Task :semconv:jsProcessResources NO-SOURCE
+> Task :api:all:jsProcessResources NO-SOURCE
+> Task :context:checkKotlinGradlePluginConfigurationErrors
+> Task :sdk:sdk-common:checkKotlinGradlePluginConfigurationErrors
+> Task :sdk:sdk-trace:checkKotlinGradlePluginConfigurationErrors
+> Task :api:metrics:checkKotlinGradlePluginConfigurationErrors
+> Task :sdk:sdk-testing:checkKotlinGradlePluginConfigurationErrors
+> Task :sdk:sdk-all:checkKotlinGradlePluginConfigurationErrors
+> Task :sdk:sdk-common:jvmProcessResources NO-SOURCE
+> Task :sdk:sdk-metrics:checkKotlinGradlePluginConfigurationErrors
+> Task :semconv:checkKotlinGradlePluginConfigurationErrors
+> Task :api:all:checkKotlinGradlePluginConfigurationErrors
+> Task :sdk:sdk-trace:jvmProcessResources NO-SOURCE
+> Task :kotlinNpmCachesSetup
+> Task :api:all:jvmProcessResources NO-SOURCE
+> Task :sdk:sdk-all:jsSourcesJar
+> Task :sdk:sdk-testing:jsSourcesJar
+> Task :semconv:jsSourcesJar
+> Task :api:metrics:jsSourcesJar
+> Task :sdk:sdk-metrics:jsSourcesJar
+> Task :api:all:generateProjectStructureMetadata
+> Task :sdk:sdk-common:generateProjectStructureMetadata
+> Task :sdk:sdk-trace:generateProjectStructureMetadata
+> Task :api:all:metadataCommonMainProcessResources NO-SOURCE
+> Task :sdk:sdk-trace:metadataCommonMainProcessResources NO-SOURCE
+> Task :sdk:sdk-common:metadataCommonMainProcessResources NO-SOURCE
+> Task :sdk:sdk-common:jsSourcesJar
+> Task :sdk:sdk-trace:jsSourcesJar
+> Task :api:all:jsSourcesJar
+> Task :semconv:generatePomFileForJsPublication
+> Task :sdk:sdk-common:generatePomFileForJsPublication
+> Task :semconv:jvmProcessResources NO-SOURCE
+> Task :sdk:sdk-common:jvmSourcesJar
+> Task :semconv:jvmSourcesJar
+> Task :sdk:sdk-testing:generatePomFileForJsPublication
+> Task :sdk:sdk-testing:jvmProcessResources NO-SOURCE
+> Task :sdk:sdk-testing:jvmSourcesJar
+> Task :api:all:generatePomFileForJsPublication
+> Task :sdk:sdk-metrics:generatePomFileForJsPublication
+> Task :sdk:sdk-metrics:jvmProcessResources NO-SOURCE
+> Task :api:all:jvmSourcesJar
+> Task :sdk:sdk-metrics:jvmSourcesJar
+> Task :api:all:generatePomFileForJvmPublication
+> Task :api:all:buildKotlinToolingMetadata
+> Task :sdk:sdk-all:generatePomFileForJsPublication
+> Task :sdk:sdk-all:jvmProcessResources NO-SOURCE
+> Task :sdk:sdk-all:jvmSourcesJar
+> Task :api:all:sourcesJar
+> Task :semconv:generatePomFileForJvmPublication
+> Task :semconv:generateProjectStructureMetadata
+> Task :semconv:metadataCommonMainProcessResources NO-SOURCE
+> Task :sdk:sdk-trace:generatePomFileForJsPublication
+> Task :semconv:buildKotlinToolingMetadata
+> Task :semconv:sourcesJar
+> Task :semconv:generatePomFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-trace:jvmSourcesJar
+> Task :semconv:linuxX64SourcesJar
+> Task :api:all:generatePomFileForKotlinMultiplatformPublication
+> Task :api:all:linuxX64SourcesJar
+> Task :api:metrics:generatePomFileForJsPublication
+> Task :api:metrics:jvmProcessResources NO-SOURCE
+> Task :api:metrics:jvmSourcesJar
+> Task :context:jsPackageJson
+> Task :context:jsPublicPackageJson
+> Task :context:jsSourcesJar
+> Task :context:generatePomFileForJsPublication
+> Task :context:jvmProcessResources NO-SOURCE
+> Task :context:jvmSourcesJar
+> Task :context:generatePomFileForJvmPublication
+> Task :semconv:generatePomFileForLinuxX64Publication
+> Task :api:all:generatePomFileForLinuxX64Publication
+> Task :sdk:sdk-metrics:generatePomFileForJvmPublication
+> Task :sdk:sdk-testing:generatePomFileForJvmPublication
+> Task :sdk:sdk-all:generatePomFileForJvmPublication
+> Task :sdk:sdk-testing:generateProjectStructureMetadata
+> Task :sdk:sdk-all:generateProjectStructureMetadata
+> Task :sdk:sdk-metrics:generateProjectStructureMetadata
+> Task :sdk:sdk-testing:metadataCommonMainProcessResources NO-SOURCE
+> Task :sdk:sdk-metrics:metadataCommonMainProcessResources NO-SOURCE
+> Task :sdk:sdk-all:metadataCommonMainProcessResources NO-SOURCE
+> Task :sdk:sdk-testing:buildKotlinToolingMetadata
+> Task :sdk:sdk-metrics:buildKotlinToolingMetadata
+> Task :sdk:sdk-all:buildKotlinToolingMetadata
+> Task :sdk:sdk-testing:sourcesJar
+> Task :sdk:sdk-testing:generatePomFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-all:sourcesJar
+> Task :sdk:sdk-testing:linuxX64SourcesJar
+> Task :api:all:jsPackageJson
+> Task :semconv:jsPackageJson
+> Task :api:all:jsPublicPackageJson
+> Task :semconv:jsPublicPackageJson
+> Task :sdk:sdk-metrics:sourcesJar
+> Task :api:metrics:generatePomFileForJvmPublication
+> Task :sdk:sdk-trace:generatePomFileForJvmPublication
+> Task :sdk:sdk-common:generatePomFileForJvmPublication
+> Task :sdk:sdk-trace:buildKotlinToolingMetadata
+> Task :api:metrics:jsPackageJson
+> Task :api:metrics:jsPublicPackageJson
+> Task :api:metrics:generateProjectStructureMetadata
+> Task :api:metrics:metadataCommonMainProcessResources NO-SOURCE
+> Task :sdk:sdk-trace:sourcesJar
+> Task :api:metrics:buildKotlinToolingMetadata
+> Task :api:metrics:sourcesJar
+> Task :api:metrics:generatePomFileForKotlinMultiplatformPublication
+> Task :api:metrics:linuxX64SourcesJar
+> Task :api:metrics:generatePomFileForLinuxX64Publication
+> Task :sdk:sdk-common:jsPackageJson
+> Task :sdk:sdk-common:jsPublicPackageJson
+> Task :sdk:sdk-common:buildKotlinToolingMetadata
+> Task :sdk:sdk-common:sourcesJar
+> Task :sdk:sdk-common:generatePomFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-common:linuxX64SourcesJar
+> Task :sdk:sdk-trace:generatePomFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-metrics:generatePomFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-trace:jsPackageJson
+> Task :sdk:sdk-metrics:jsPackageJson
+> Task :sdk:sdk-trace:jsPublicPackageJson
+> Task :sdk:sdk-metrics:jsPublicPackageJson
+> Task :sdk:sdk-trace:linuxX64SourcesJar
+> Task :sdk:sdk-all:generatePomFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-metrics:linuxX64SourcesJar
+> Task :sdk:sdk-all:jsPackageJson
+> Task :sdk:sdk-all:jsPublicPackageJson
+> Task :sdk:sdk-all:linuxX64SourcesJar
+> Task :sdk:sdk-testing:generatePomFileForLinuxX64Publication
+> Task :sdk:sdk-common:generatePomFileForLinuxX64Publication
+> Task :sdk:sdk-testing:jsPackageJson
+> Task :sdk:sdk-trace:generatePomFileForLinuxX64Publication
+> Task :sdk:sdk-metrics:generatePomFileForLinuxX64Publication
+> Task :sdk:sdk-testing:jsPublicPackageJson
+> Task :sdk:sdk-all:generatePomFileForLinuxX64Publication
+> Task :context:transformCommonMainDependenciesMetadata
+> Task :context:generateProjectStructureMetadata
+> Task :context:metadataCommonMainProcessResources NO-SOURCE
+> Task :context:buildKotlinToolingMetadata
+> Task :context:sourcesJar
+> Task :context:generatePomFileForKotlinMultiplatformPublication
+
+> Task :context:compileCommonMainKotlinMetadata
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/commonMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:3:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/commonMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:4:15 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+
+> Task :context:compileKotlinJs
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/commonMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:3:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/commonMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:4:15 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/jsMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:3:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/jsMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:4:5 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+
+> Task :context:compileKotlinJvm
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/commonMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:3:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/commonMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:4:15 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/jvmMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:3:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/context/src/jvmMain/kotlin/io/opentelemetry/kotlin/KotlinTarget.kt:4:5 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. You can use -Xexpect-actual-classes flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+
+> Task :context:compileKotlinLinuxX64
+Downloading native dependencies (LLVM, sysroot etc). This is a one-time action performed only on the first run of the compiler.
+
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (0/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (11741086/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (23459378/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (35145008/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (46864144/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (58562878/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (70289082/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (81989566/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (93715892/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (105423854/109668457). 
+(KonanProperties) Downloading dependency: https://download.jetbrains.com/kotlin/native/llvm-11.1.0-linux-x64-essentials.tar.gz (109668457/109668457). Done.
+Extracting dependency: /home/gitlab-runner/.konan/dependencies/cache/llvm-11.1.0-linux-x64-essentials.tar.gz into /home/gitlab-runner/.konan/dependencies
+
+> Task :context:jsMainClasses
+> Task :context:transformJsMainAtomicfu
+> Task :context:jsJar
+> Task :context:generateMetadataFileForJsPublication
+> Task :context:publishJsPublicationToMavenLocal
+> Task :context:compileJava NO-SOURCE
+> Task :context:jvmMainClasses
+> Task :context:transformJvmMainAtomicfu
+> Task :context:jvmJar
+> Task :context:generateMetadataFileForJvmPublication
+> Task :context:publishJvmPublicationToMavenLocal
+> Task :context:metadataCommonMainClasses
+> Task :context:allMetadataJar
+> Task :context:generateMetadataFileForKotlinMultiplatformPublication
+> Task :context:publishKotlinMultiplatformPublicationToMavenLocal
+> Task :context:linuxX64SourcesJar
+> Task :context:generateMetadataFileForLinuxX64Publication
+> Task :context:generatePomFileForLinuxX64Publication
+> Task :context:publishLinuxX64PublicationToMavenLocal
+> Task :context:publishToMavenLocal
+> Task :api:all:compileKotlinLinuxX64
+> Task :api:all:transformCommonMainDependenciesMetadata
+> Task :api:all:generateMetadataFileForLinuxX64Publication
+> Task :api:all:publishLinuxX64PublicationToMavenLocal
+> Task :api:metrics:compileKotlinLinuxX64
+> Task :api:metrics:generateMetadataFileForLinuxX64Publication
+> Task :api:metrics:publishLinuxX64PublicationToMavenLocal
+> Task :semconv:compileKotlinLinuxX64
+> Task :semconv:generateMetadataFileForLinuxX64Publication
+> Task :semconv:publishLinuxX64PublicationToMavenLocal
+> Task :sdk:sdk-common:compileKotlinLinuxX64
+> Task :sdk:sdk-common:generateMetadataFileForLinuxX64Publication
+> Task :sdk:sdk-common:publishLinuxX64PublicationToMavenLocal
+> Task :api:all:compileCommonMainKotlinMetadata
+> Task :api:all:metadataCommonMainClasses
+> Task :api:all:allMetadataJar
+> Task :api:all:generateMetadataFileForKotlinMultiplatformPublication
+> Task :api:all:publishKotlinMultiplatformPublicationToMavenLocal
+> Task :semconv:transformCommonMainDependenciesMetadata
+> Task :api:metrics:transformCommonMainDependenciesMetadata
+> Task :api:metrics:compileCommonMainKotlinMetadata
+> Task :api:metrics:metadataCommonMainClasses
+> Task :api:metrics:allMetadataJar
+> Task :api:metrics:generateMetadataFileForKotlinMultiplatformPublication
+> Task :api:metrics:publishKotlinMultiplatformPublicationToMavenLocal
+> Task :semconv:compileCommonMainKotlinMetadata
+> Task :semconv:metadataCommonMainClasses
+> Task :semconv:allMetadataJar
+> Task :semconv:generateMetadataFileForKotlinMultiplatformPublication
+> Task :semconv:publishKotlinMultiplatformPublicationToMavenLocal
+> Task :sdk:sdk-common:transformCommonMainDependenciesMetadata
+> Task :api:all:compileKotlinJs
+> Task :api:all:jsMainClasses
+> Task :api:all:transformJsMainAtomicfu
+> Task :api:all:jsJar
+> Task :api:all:generateMetadataFileForJsPublication
+> Task :api:all:publishJsPublicationToMavenLocal
+> Task :sdk:sdk-common:compileCommonMainKotlinMetadata
+> Task :sdk:sdk-common:metadataCommonMainClasses
+> Task :sdk:sdk-common:allMetadataJar
+> Task :sdk:sdk-common:generateMetadataFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-common:publishKotlinMultiplatformPublicationToMavenLocal
+> Task :api:metrics:compileKotlinJs
+> Task :api:metrics:jsMainClasses
+> Task :api:metrics:transformJsMainAtomicfu
+> Task :api:metrics:jsJar
+> Task :api:metrics:generateMetadataFileForJsPublication
+> Task :api:metrics:publishJsPublicationToMavenLocal
+> Task :semconv:compileKotlinJs
+> Task :semconv:jsMainClasses
+> Task :semconv:transformJsMainAtomicfu
+> Task :semconv:jsJar
+> Task :semconv:generateMetadataFileForJsPublication
+> Task :semconv:publishJsPublicationToMavenLocal
+
+> Task :sdk:sdk-trace:compileKotlinLinuxX64
+
+> Task :api:all:compileKotlinJvm
+> Task :api:all:compileJava NO-SOURCE
+> Task :api:all:jvmMainClasses
+> Task :sdk:sdk-trace:transformCommonMainDependenciesMetadata
+> Task :sdk:sdk-all:compileKotlinLinuxX64
+> Task :api:all:transformJvmMainAtomicfu
+> Task :api:all:jvmJar
+> Task :sdk:sdk-all:generateMetadataFileForLinuxX64Publication
+> Task :api:all:generateMetadataFileForJvmPublication
+> Task :sdk:sdk-all:publishLinuxX64PublicationToMavenLocal
+> Task :api:all:publishJvmPublicationToMavenLocal
+> Task :api:all:publishToMavenLocal
+> Task :sdk:sdk-trace:generateMetadataFileForLinuxX64Publication
+> Task :sdk:sdk-trace:publishLinuxX64PublicationToMavenLocal
+> Task :sdk:sdk-common:compileKotlinJs
+> Task :sdk:sdk-common:jsMainClasses
+> Task :sdk:sdk-common:transformJsMainAtomicfu
+> Task :sdk:sdk-common:jsJar
+> Task :sdk:sdk-common:generateMetadataFileForJsPublication
+> Task :sdk:sdk-common:publishJsPublicationToMavenLocal
+> Task :sdk:sdk-testing:compileKotlinLinuxX64
+> Task :sdk:sdk-testing:generateMetadataFileForLinuxX64Publication
+> Task :sdk:sdk-testing:publishLinuxX64PublicationToMavenLocal
+> Task :api:metrics:compileKotlinJvm
+> Task :api:metrics:compileJava NO-SOURCE
+> Task :api:metrics:jvmMainClasses
+> Task :api:metrics:transformJvmMainAtomicfu
+> Task :semconv:compileKotlinJvm
+> Task :semconv:compileJava NO-SOURCE
+> Task :semconv:jvmMainClasses
+> Task :api:metrics:jvmJar
+> Task :api:metrics:generateMetadataFileForJvmPublication
+> Task :api:metrics:publishJvmPublicationToMavenLocal
+> Task :api:metrics:publishToMavenLocal
+> Task :semconv:transformJvmMainAtomicfu
+> Task :semconv:jvmJar
+> Task :semconv:generateMetadataFileForJvmPublication
+> Task :semconv:publishJvmPublicationToMavenLocal
+> Task :semconv:publishToMavenLocal
+
+> Task :sdk:sdk-metrics:compileKotlinLinuxX64
+
+> Task :sdk:sdk-metrics:transformCommonMainDependenciesMetadata
+
+> Task :sdk:sdk-trace:compileCommonMainKotlinMetadata
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributeUtil.kt:41:28 Unchecked cast: AttributeKey<*> to AttributeKey<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributeUtil.kt:49:35 Unchecked cast: Any to List<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributeUtil.kt:74:32 Unchecked cast: Any to List<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributesMap.kt:49:22 Unchecked cast: Any to T
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/MultiSpanProcessor.kt:22:50 The corresponding parameter in the supertype 'SpanProcessor' is named 'span'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/MultiSpanProcessor.kt:32:24 The corresponding parameter in the supertype 'SpanProcessor' is named 'span'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/SdkSpanBuilder.kt:173:36 Unchecked cast: AttributeKey<*> to AttributeKey<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/SdkTracer.kt:26:13 Name shadowed: spanName
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/SdkTracerProvider.kt:63:13 Name shadowed: instrumentationName
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/data/DelegatingSpanData.kt:24:25 The corresponding parameter in the supertype 'SpanData' is named 'other'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt:174:31 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt:185:27 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+
+> Task :sdk:sdk-trace:metadataCommonMainClasses
+> Task :sdk:sdk-trace:allMetadataJar
+> Task :sdk:sdk-metrics:generateMetadataFileForLinuxX64Publication
+> Task :sdk:sdk-trace:generateMetadataFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-metrics:publishLinuxX64PublicationToMavenLocal
+> Task :sdk:sdk-trace:publishKotlinMultiplatformPublicationToMavenLocal
+> Task :sdk:sdk-all:transformCommonMainDependenciesMetadata
+> Task :sdk:sdk-all:compileCommonMainKotlinMetadata
+> Task :sdk:sdk-all:metadataCommonMainClasses
+> Task :sdk:sdk-all:allMetadataJar
+> Task :sdk:sdk-all:generateMetadataFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-all:publishKotlinMultiplatformPublicationToMavenLocal
+> Task :sdk:sdk-testing:transformCommonMainDependenciesMetadata
+> Task :sdk:sdk-testing:compileCommonMainKotlinMetadata
+> Task :sdk:sdk-testing:metadataCommonMainClasses
+> Task :sdk:sdk-testing:allMetadataJar
+> Task :sdk:sdk-testing:generateMetadataFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-testing:publishKotlinMultiplatformPublicationToMavenLocal
+> Task :sdk:sdk-common:compileKotlinJvm
+> Task :sdk:sdk-common:compileJava NO-SOURCE
+> Task :sdk:sdk-common:jvmMainClasses
+> Task :sdk:sdk-common:transformJvmMainAtomicfu
+> Task :sdk:sdk-common:jvmJar
+> Task :sdk:sdk-common:generateMetadataFileForJvmPublication
+> Task :sdk:sdk-common:publishJvmPublicationToMavenLocal
+> Task :sdk:sdk-common:publishToMavenLocal
+
+> Task :sdk:sdk-trace:compileKotlinJs
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributeUtil.kt:41:28 Unchecked cast: AttributeKey<*> to AttributeKey<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributeUtil.kt:49:35 Unchecked cast: Any to List<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributeUtil.kt:74:32 Unchecked cast: Any to List<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributesMap.kt:49:22 Unchecked cast: Any to T
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/MultiSpanProcessor.kt:22:50 The corresponding parameter in the supertype 'SpanProcessor' is named 'span'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/MultiSpanProcessor.kt:32:24 The corresponding parameter in the supertype 'SpanProcessor' is named 'span'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/SdkSpanBuilder.kt:173:36 Unchecked cast: AttributeKey<*> to AttributeKey<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/SdkTracer.kt:26:13 Name shadowed: spanName
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/SdkTracerProvider.kt:63:13 Name shadowed: instrumentationName
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/data/DelegatingSpanData.kt:24:25 The corresponding parameter in the supertype 'SpanData' is named 'other'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt:174:31 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt:185:27 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+
+> Task :sdk:sdk-trace:jsMainClasses
+> Task :sdk:sdk-trace:transformJsMainAtomicfu
+> Task :sdk:sdk-trace:jsJar
+> Task :sdk:sdk-trace:generateMetadataFileForJsPublication
+> Task :sdk:sdk-trace:publishJsPublicationToMavenLocal
+> Task :sdk:sdk-all:compileKotlinJs
+> Task :sdk:sdk-all:jsMainClasses
+> Task :sdk:sdk-all:transformJsMainAtomicfu
+> Task :sdk:sdk-all:jsJar
+> Task :sdk:sdk-all:generateMetadataFileForJsPublication
+> Task :sdk:sdk-all:publishJsPublicationToMavenLocal
+> Task :sdk:sdk-testing:compileKotlinJs
+> Task :sdk:sdk-testing:jsMainClasses
+> Task :sdk:sdk-testing:transformJsMainAtomicfu
+> Task :sdk:sdk-testing:jsJar
+> Task :sdk:sdk-testing:generateMetadataFileForJsPublication
+> Task :sdk:sdk-testing:publishJsPublicationToMavenLocal
+
+> Task :sdk:sdk-metrics:compileCommonMainKotlinMetadata
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:31:22 The corresponding parameter in the supertype 'DoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:41:22 The corresponding parameter in the supertype 'DoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:45:22 The corresponding parameter in the supertype 'DoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:63:26 The corresponding parameter in the supertype 'BoundDoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:68:26 The corresponding parameter in the supertype 'BoundDoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleGaugeBuilder.kt:36:9 Visibility modifiers are redundant in getter
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:31:22 The corresponding parameter in the supertype 'DoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:35:22 The corresponding parameter in the supertype 'DoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:39:22 The corresponding parameter in the supertype 'DoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:57:26 The corresponding parameter in the supertype 'BoundDoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:61:26 The corresponding parameter in the supertype 'BoundDoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:31:22 The corresponding parameter in the supertype 'LongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:36:22 The corresponding parameter in the supertype 'LongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:40:22 The corresponding parameter in the supertype 'LongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:58:26 The corresponding parameter in the supertype 'BoundLongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:63:26 The corresponding parameter in the supertype 'BoundLongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongGaugeBuilder.kt:30:9 Visibility modifiers are redundant in getter
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongHistogram.kt:85:13 Visibility modifiers are redundant in getter
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:31:22 The corresponding parameter in the supertype 'LongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:35:22 The corresponding parameter in the supertype 'LongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:39:22 The corresponding parameter in the supertype 'LongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:57:26 The corresponding parameter in the supertype 'BoundLongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:61:26 The corresponding parameter in the supertype 'BoundLongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/AbstractMinMaxSumCountAggregator.kt:19:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/AbstractMinMaxSumCountAggregator.kt:20:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:26:24 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:26:52 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:30:23 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:30:51 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramAggregator.kt:37:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramBuckets.kt:164:13 Name shadowed: newStart
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramBuckets.kt:165:13 Name shadowed: newEnd
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramBuckets.kt:179:13 Name shadowed: other
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:44:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:45:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:60:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:61:9 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:77:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:39:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:40:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:46:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:47:9 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:54:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:55:9 The corresponding parameter in the supertype 'Aggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:59:9 The corresponding parameter in the supertype 'Aggregator' is named 'lastCollectionEpoch'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:46:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:47:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:56:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:57:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:67:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:68:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:29:24 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:29:52 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:31:23 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:31:51 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:35:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:36:9 The corresponding parameter in the supertype 'Aggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:41:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:42:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:48:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:49:9 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:56:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:57:9 The corresponding parameter in the supertype 'Aggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:41:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:42:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:51:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:52:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:62:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:63:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/state/DefaultSynchronousMetricStorage.kt:57:13 Name shadowed: attributes
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/state/DefaultSynchronousMetricStorage.kt:69:13 Name shadowed: attributes
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/state/DeltaMetricStorage.kt:59:17 Condition 'boundAggregatorHandle != null' is always 'true'
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/math.kt:4:15 Parameter 'd' is never used
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/math.kt:4:26 Parameter 'n' is never used
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/DefaultAggregation.kt:45:13 Unreachable code
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/LastValueAggregation.kt:26:71 Unchecked cast: LongLastValueAggregator to Aggregator<T>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/LastValueAggregation.kt:28:73 Unchecked cast: DoubleLastValueAggregator to Aggregator<T>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/LastValueAggregation.kt:29:13 'when' is exhaustive so 'else' is redundant here
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/NoAggregation.kt:17:35 Unchecked cast: Aggregator<Unit> to Aggregator<T>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/SumAggregation.kt:43:13 'when' is exhaustive so 'else' is redundant here
+
+> Task :sdk:sdk-metrics:metadataCommonMainClasses
+> Task :sdk:sdk-metrics:allMetadataJar
+> Task :sdk:sdk-metrics:generateMetadataFileForKotlinMultiplatformPublication
+> Task :sdk:sdk-metrics:publishKotlinMultiplatformPublicationToMavenLocal
+
+> Task :sdk:sdk-trace:compileKotlinJvm
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributeUtil.kt:41:28 Unchecked cast: AttributeKey<*> to AttributeKey<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributeUtil.kt:49:35 Unchecked cast: Any to List<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributeUtil.kt:74:32 Unchecked cast: Any to List<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/AttributesMap.kt:49:22 Unchecked cast: Any to T
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/MultiSpanProcessor.kt:22:50 The corresponding parameter in the supertype 'SpanProcessor' is named 'span'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/MultiSpanProcessor.kt:32:24 The corresponding parameter in the supertype 'SpanProcessor' is named 'span'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/SdkSpanBuilder.kt:173:36 Unchecked cast: AttributeKey<*> to AttributeKey<Any>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/SdkTracer.kt:26:13 Name shadowed: spanName
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/SdkTracerProvider.kt:63:13 Name shadowed: instrumentationName
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/data/DelegatingSpanData.kt:24:25 The corresponding parameter in the supertype 'SpanData' is named 'other'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt:174:31 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-trace/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/trace/export/BatchSpanProcessor.kt:185:27 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+
+> Task :sdk:sdk-trace:compileJava NO-SOURCE
+> Task :sdk:sdk-trace:jvmMainClasses
+
+> Task :sdk:sdk-metrics:compileKotlinJs
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:31:22 The corresponding parameter in the supertype 'DoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:41:22 The corresponding parameter in the supertype 'DoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:45:22 The corresponding parameter in the supertype 'DoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:63:26 The corresponding parameter in the supertype 'BoundDoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:68:26 The corresponding parameter in the supertype 'BoundDoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleGaugeBuilder.kt:36:9 Visibility modifiers are redundant in getter
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:31:22 The corresponding parameter in the supertype 'DoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:35:22 The corresponding parameter in the supertype 'DoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:39:22 The corresponding parameter in the supertype 'DoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:57:26 The corresponding parameter in the supertype 'BoundDoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:61:26 The corresponding parameter in the supertype 'BoundDoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:31:22 The corresponding parameter in the supertype 'LongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:36:22 The corresponding parameter in the supertype 'LongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:40:22 The corresponding parameter in the supertype 'LongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:58:26 The corresponding parameter in the supertype 'BoundLongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:63:26 The corresponding parameter in the supertype 'BoundLongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongGaugeBuilder.kt:30:9 Visibility modifiers are redundant in getter
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongHistogram.kt:85:13 Visibility modifiers are redundant in getter
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:31:22 The corresponding parameter in the supertype 'LongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:35:22 The corresponding parameter in the supertype 'LongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:39:22 The corresponding parameter in the supertype 'LongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:57:26 The corresponding parameter in the supertype 'BoundLongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:61:26 The corresponding parameter in the supertype 'BoundLongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/AbstractMinMaxSumCountAggregator.kt:19:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/AbstractMinMaxSumCountAggregator.kt:20:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:26:24 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:26:52 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:30:23 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:30:51 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramAggregator.kt:37:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramBuckets.kt:164:13 Name shadowed: newStart
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramBuckets.kt:165:13 Name shadowed: newEnd
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramBuckets.kt:179:13 Name shadowed: other
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:44:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:45:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:60:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:61:9 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:77:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:39:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:40:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:46:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:47:9 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:54:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:55:9 The corresponding parameter in the supertype 'Aggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:59:9 The corresponding parameter in the supertype 'Aggregator' is named 'lastCollectionEpoch'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:46:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:47:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:56:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:57:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:67:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:68:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:29:24 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:29:52 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:31:23 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:31:51 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:35:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:36:9 The corresponding parameter in the supertype 'Aggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:41:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:42:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:48:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:49:9 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:56:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:57:9 The corresponding parameter in the supertype 'Aggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:41:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:42:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:51:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:52:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:62:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:63:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/state/DefaultSynchronousMetricStorage.kt:57:13 Name shadowed: attributes
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/state/DefaultSynchronousMetricStorage.kt:69:13 Name shadowed: attributes
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/state/DeltaMetricStorage.kt:59:17 Condition 'boundAggregatorHandle != null' is always 'true'
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/math.kt:4:15 Parameter 'd' is never used
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/math.kt:4:26 Parameter 'n' is never used
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/DefaultAggregation.kt:45:13 Unreachable code
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/LastValueAggregation.kt:26:71 Unchecked cast: LongLastValueAggregator to Aggregator<T>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/LastValueAggregation.kt:28:73 Unchecked cast: DoubleLastValueAggregator to Aggregator<T>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/LastValueAggregation.kt:29:13 'when' is exhaustive so 'else' is redundant here
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/NoAggregation.kt:17:35 Unchecked cast: Aggregator<Unit> to Aggregator<T>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/SumAggregation.kt:43:13 'when' is exhaustive so 'else' is redundant here
+
+> Task :sdk:sdk-metrics:jsMainClasses
+> Task :sdk:sdk-metrics:transformJsMainAtomicfu
+> Task :sdk:sdk-trace:transformJvmMainAtomicfu
+> Task :sdk:sdk-trace:jvmJar
+> Task :sdk:sdk-trace:generateMetadataFileForJvmPublication
+> Task :sdk:sdk-trace:publishJvmPublicationToMavenLocal
+> Task :sdk:sdk-trace:publishToMavenLocal
+> Task :sdk:sdk-metrics:jsJar
+> Task :sdk:sdk-metrics:generateMetadataFileForJsPublication
+> Task :sdk:sdk-metrics:publishJsPublicationToMavenLocal
+> Task :sdk:sdk-all:compileKotlinJvm
+> Task :sdk:sdk-all:compileJava NO-SOURCE
+> Task :sdk:sdk-all:jvmMainClasses
+> Task :sdk:sdk-all:transformJvmMainAtomicfu
+> Task :sdk:sdk-all:jvmJar
+> Task :sdk:sdk-all:generateMetadataFileForJvmPublication
+> Task :sdk:sdk-all:publishJvmPublicationToMavenLocal
+> Task :sdk:sdk-all:publishToMavenLocal
+> Task :sdk:sdk-testing:compileKotlinJvm
+> Task :sdk:sdk-testing:compileJava NO-SOURCE
+> Task :sdk:sdk-testing:jvmMainClasses
+> Task :sdk:sdk-testing:transformJvmMainAtomicfu
+> Task :sdk:sdk-testing:jvmJar
+> Task :sdk:sdk-testing:generateMetadataFileForJvmPublication
+> Task :sdk:sdk-testing:publishJvmPublicationToMavenLocal
+> Task :sdk:sdk-testing:publishToMavenLocal
+
+> Task :sdk:sdk-metrics:compileKotlinJvm
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:31:22 The corresponding parameter in the supertype 'DoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:41:22 The corresponding parameter in the supertype 'DoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:45:22 The corresponding parameter in the supertype 'DoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:63:26 The corresponding parameter in the supertype 'BoundDoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleCounter.kt:68:26 The corresponding parameter in the supertype 'BoundDoubleCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleGaugeBuilder.kt:36:9 Visibility modifiers are redundant in getter
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:31:22 The corresponding parameter in the supertype 'DoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:35:22 The corresponding parameter in the supertype 'DoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:39:22 The corresponding parameter in the supertype 'DoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:57:26 The corresponding parameter in the supertype 'BoundDoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkDoubleUpDownCounter.kt:61:26 The corresponding parameter in the supertype 'BoundDoubleUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:31:22 The corresponding parameter in the supertype 'LongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:36:22 The corresponding parameter in the supertype 'LongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:40:22 The corresponding parameter in the supertype 'LongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:58:26 The corresponding parameter in the supertype 'BoundLongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongCounter.kt:63:26 The corresponding parameter in the supertype 'BoundLongCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongGaugeBuilder.kt:30:9 Visibility modifiers are redundant in getter
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongHistogram.kt:85:13 Visibility modifiers are redundant in getter
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:31:22 The corresponding parameter in the supertype 'LongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:35:22 The corresponding parameter in the supertype 'LongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:39:22 The corresponding parameter in the supertype 'LongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:57:26 The corresponding parameter in the supertype 'BoundLongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/SdkLongUpDownCounter.kt:61:26 The corresponding parameter in the supertype 'BoundLongUpDownCounter' is named 'value'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/AbstractMinMaxSumCountAggregator.kt:19:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/AbstractMinMaxSumCountAggregator.kt:20:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:26:24 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:26:52 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:30:23 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/CountAggregator.kt:30:51 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramAggregator.kt:37:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramBuckets.kt:164:13 Name shadowed: newStart
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramBuckets.kt:165:13 Name shadowed: newEnd
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleExponentialHistogramBuckets.kt:179:13 Name shadowed: other
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:44:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:45:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:60:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:61:9 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleHistogramAggregator.kt:77:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:39:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:40:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:46:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:47:9 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:54:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:55:9 The corresponding parameter in the supertype 'Aggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleLastValueAggregator.kt:59:9 The corresponding parameter in the supertype 'Aggregator' is named 'lastCollectionEpoch'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:46:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:47:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:56:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:57:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:67:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/DoubleSumAggregator.kt:68:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:29:24 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:29:52 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:31:23 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:31:51 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:35:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/EmptyAggregator.kt:36:9 The corresponding parameter in the supertype 'Aggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:41:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:42:9 The corresponding parameter in the supertype 'Aggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:48:9 The corresponding parameter in the supertype 'Aggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:49:9 The corresponding parameter in the supertype 'Aggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:56:9 The corresponding parameter in the supertype 'Aggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongLastValueAggregator.kt:57:9 The corresponding parameter in the supertype 'Aggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:41:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:42:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'delta'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:51:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'previousCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:52:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'currentCumulative'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:62:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'instrumentationLibrary'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/aggregator/LongSumAggregator.kt:63:9 The corresponding parameter in the supertype 'AbstractSumAggregator' is named 'metricDescriptor'. This may cause problems when calling this function with named arguments.
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/state/DefaultSynchronousMetricStorage.kt:57:13 Name shadowed: attributes
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/state/DefaultSynchronousMetricStorage.kt:69:13 Name shadowed: attributes
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/internal/state/DeltaMetricStorage.kt:59:17 Condition 'boundAggregatorHandle != null' is always 'true'
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/math.kt:4:15 Parameter 'd' is never used
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/math.kt:4:26 Parameter 'n' is never used
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/DefaultAggregation.kt:45:13 Unreachable code
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/LastValueAggregation.kt:26:71 Unchecked cast: LongLastValueAggregator to Aggregator<T>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/LastValueAggregation.kt:28:73 Unchecked cast: DoubleLastValueAggregator to Aggregator<T>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/LastValueAggregation.kt:29:13 'when' is exhaustive so 'else' is redundant here
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/NoAggregation.kt:17:35 Unchecked cast: Aggregator<Unit> to Aggregator<T>
+w: file:///home/gitlab-runner/builds/W7ZuJq9-q/0/ssw/mw/k-perf-otel-improvements/.ci-tools/31012/opentelemetry-kotlin-fork/sdk/sdk-metrics/src/commonMain/kotlin/io/opentelemetry/kotlin/sdk/metrics/view/SumAggregation.kt:43:13 'when' is exhaustive so 'else' is redundant here
+
+> Task :sdk:sdk-metrics:compileJava NO-SOURCE
+> Task :sdk:sdk-metrics:jvmMainClasses
+> Task :sdk:sdk-metrics:transformJvmMainAtomicfu
+> Task :sdk:sdk-metrics:jvmJar
+> Task :sdk:sdk-metrics:generateMetadataFileForJvmPublication
+> Task :sdk:sdk-metrics:publishJvmPublicationToMavenLocal
+> Task :sdk:sdk-metrics:publishToMavenLocal
+
+BUILD SUCCESSFUL in 1m 55s
+290 actionable tasks: 290 executed
