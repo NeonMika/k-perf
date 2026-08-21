@@ -2,46 +2,46 @@
 
 Usage::
 
-    python ioa.py <folder> [<folder> ...] [options]
+    python ioa.py <folder> [<folder> ...] [--only-kind KIND ...]
 
 Arguments:
     folder   One or more measurement folders containing per-executable JSON files.
-             Every specified folder contributes JVM, JS, and Native outputs.
-
-Options:
-    --transformation NAME   Transformation to apply to cell values (default: runtime).
-                            Available: runtime, function_runtime, function_overhead_mean,
-                            function_overhead_mean_stddev, function_overhead_median,
-                            function_overhead_median_stddev
-    --steps-until N         Only consider the first N steps of each run (mutually
-                            exclusive with --steps-skip).
-    --steps-skip N          Skip the first N steps of each run (mutually exclusive
-                            with --steps-until).
-    --ignore-kinds KIND ... Exclude listed kinds from output rows.
-    --only-kind KIND ...    Include only listed kinds in output rows.
-    --function-overhead-yellow-threshold-us N
-                            Yellow threshold for function_overhead_* colouring (default: 0.0075 µs = 7.5 ns).
-    --function-overhead-red-threshold-us N
-                            Red threshold for function_overhead_* colouring (default: 0.03 µs = 30 ns).
-    --ignore-for-paper      Apply paper ignore-kind preset.
-    --fixed-ns              Always display cell values as bare nanosecond figures (3 significant
-                            figures, no unit suffix), instead of auto-selecting s/ms/µs/ns units.
+             Each folder contributes its own JVM, JS, and Native outputs, grouped
+             as one measurement (column group) in the output table.
+    --only-kind KIND ...   Include only listed kinds in output rows. Accepts
+                            space-separated kinds and/or comma-separated chunks.
 
 Output::
 
-    {first_folder}/latex-{transformation}-{steps|full}.tex
+    {first_folder}/latex-overhead.tex
 
 Example::
 
-    python ioa.py ../../measurements/2026_04_23_13_54_53_... --transformation function_runtime
-    python ioa.py ../../measurements/2026_04_23_13_54_53_... --steps-skip 1 --transformation function_overhead_mean
+    python ioa.py ../../measurements/2026_04_23_13_54_53_...
+    python ioa.py ../../measurements/2026_04_23_13_54_53_... --only-kind addtolist,timeclock
 
 Per-step JSON files loaded (inside the folder):
     commonmain-ioa-kind-{kind}-{target}.json
     commonmain-plain-{target}.json
 
-Each such JSON has a ``stepTimes`` array: one entry per run, each entry is an
+Each such JSON has a ``stepTimes`` array: one entry per run, each entry an
 array of per-step times (in microseconds).
+
+Statistics (fixed, not configurable):
+    The first WARMUP_STEPS steps of every run are dropped as warm-up. Let R be
+    the number of (post-warm-up) runs, S the number of post-warm-up steps per
+    run, and F = FUNCTION_CALLS_PER_STEP the fixed number of traced function
+    calls per step. For an operation X:
+
+        For each run r:  X_r = (1 / (S*F)) * sum_{s=1}^{S} T_r,s^(X)
+        mu_X    = (1/R) * sum_r X_r
+        sigma_X = sqrt( (1/(R-1)) * sum_r (X_r - mu_X)^2 )
+
+    The plain/reference row reports (mu_B, sigma_B) directly. Each operation's
+    overhead row reports:
+
+        mu_O    = mu_I - mu_B
+        sigma_O = sqrt(sigma_I^2 + sigma_B^2)
 """
 
 from __future__ import annotations
@@ -53,7 +53,18 @@ import re
 import statistics
 import sys
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Iterable
+
+
+# ---------------------------------------------------------------------------
+# Fixed statistics parameters
+# ---------------------------------------------------------------------------
+
+WARMUP_STEPS = 150
+FUNCTION_CALLS_PER_STEP = 4001
+
+YELLOW_THRESHOLD_US = 0.0075
+RED_THRESHOLD_US = 0.03
 
 
 # ---------------------------------------------------------------------------
@@ -88,18 +99,6 @@ _KIND_LABELS: dict[str, str] = {
     "poctryfinallyincrementint":                "Proof of Concept",
 }
 
-_TARGET_LABELS: dict[str, str] = {
-    "jar":         "JVM",
-    "node":        "JS (Node)",
-    "native":      "Native",
-    "linux-exe":   "Native (Linux)",
-    "windows-exe": "Native (Windows)",
-    "win-exe":     "Native (Windows)",
-    "macos-exe":   "Native (macOS)",
-    "mac-exe":     "Native (macOS)",
-    "exe":         "Native",
-}
-
 # Canonical kind order matching IoaKind.kt, plain reference first
 KIND_ORDER: list[str] = [
     "plain",
@@ -121,6 +120,21 @@ KIND_ORDER: list[str] = [
     "addtolist", "addduplicatestoset", "adduniquetoset",
 ]
 
+STATIC_OPERATION_LABELS: dict[str, str] = {
+    "timemonotonicfunction": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function\end{tabular}",
+    "timemonotonicfunctioninwholemilliseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function (ms)\end{tabular}",
+    "timemonotonicfunctioninwholemicroseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function ($\mu$s)\end{tabular}",
+    "timemonotonicfunctioninwholenanoseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function (ns)\end{tabular}",
+    "timemonotonicglobal": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global\end{tabular}",
+    "timemonotonicglobalinwholemilliseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (ms)\end{tabular}",
+    "timemonotonicglobalinwholemicroseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global ($\mu$s)\end{tabular}",
+    "timemonotonicglobalinwholenanoseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (ns)\end{tabular}",
+    "timemonotonicglobalreducedobjects": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (reduced obj.)\end{tabular}",
+    "incrementatomicintcounter": r"\begin{tabular}[c]{@{}l@{}}Increment Atomic\\Int Counter\end{tabular}",
+    "appendtostringbuilder": r"\begin{tabular}[c]{@{}l@{}}Append to\\String Builder\end{tabular}",
+}
+
+
 def kind_label(kind: str) -> str:
     """Return a human-readable display name for an IOA kind token."""
     label = _KIND_LABELS.get(kind.lower())
@@ -130,14 +144,12 @@ def kind_label(kind: str) -> str:
     return " ".join(w.capitalize() for w in re.split(r"[\s_\-]+", spaced))
 
 
-def target_label(target: str) -> str:
-    """Return a human-readable display name for a target token."""
-    if target in _TARGET_LABELS:
-        return _TARGET_LABELS[target]
-    if target.endswith("-exe"):
-        os_part = target[:-4].replace("-", " ").title()
-        return f"Native ({os_part})"
-    return target.title()
+def _operation_label_cell(kind: str) -> str:
+    """Return statically configured operation labels with fixed line breaks."""
+    kind_norm = kind.lower()
+    if kind_norm in STATIC_OPERATION_LABELS:
+        return STATIC_OPERATION_LABELS[kind_norm]
+    return kind_label(kind)
 
 
 # ---------------------------------------------------------------------------
@@ -174,13 +186,8 @@ def _parse_executable(name: str) -> dict | None:
 def load_entries(folder: Path) -> list[dict]:
     """Load all per-executable JSON files from a measurement folder.
 
-    Each returned entry dict contains:
-        kind, target, is_reference          — from the filename
-        overall_mean_us, overall_median_us,
-        overall_stddev_us                   — from statistics block
-        times_all_runs                      — list[float], overall µs per repetition
-        step_times_all_runs                 — list[list[float]], µs per step per run
-        step_count                          — steps per run (from first run)
+    Each returned entry dict contains kind, target, is_reference (from the
+    filename) and step_times_all_runs — list[list[float]], µs per step per run.
     """
     entries: list[dict] = []
     for json_file in sorted(folder.glob("commonmain-*.json")):
@@ -189,19 +196,7 @@ def load_entries(folder: Path) -> list[dict]:
             continue
         with json_file.open(encoding="utf-8") as f:
             data = json.load(f)
-
-        stats = data.get("statistics", {})
-        step_times_all_runs: list[list[float]] = data.get("stepTimes", [])
-
-        entries.append({
-            **parsed,
-            "overall_mean_us":   stats.get("mean",   0.0),
-            "overall_median_us": stats.get("median", 0.0),
-            "overall_stddev_us": stats.get("stddev", 0.0),
-            "times_all_runs": data.get("times", []),
-            "step_times_all_runs": step_times_all_runs,
-            "step_count": len(step_times_all_runs[0]) if step_times_all_runs else 0,
-        })
+        entries.append({**parsed, "step_times_all_runs": data.get("stepTimes", [])})
 
     return entries
 
@@ -288,392 +283,104 @@ def load_entries_for_measurements(folders: list[Path]) -> tuple[list[dict], list
     return measurements, all_entries
 
 
-def _filter_step_runs(
-    entry: dict,
-    steps_until: int,
-    steps_skip: int,
-) -> tuple[list[list[float]], int]:
-    """Apply --steps-until/--steps-skip to an entry's per-step runs.
+# ---------------------------------------------------------------------------
+# Statistics
+# ---------------------------------------------------------------------------
 
-    Exactly one of steps_until/steps_skip is expected to be non-None (the
-    other None) — enforced by main()'s mutually-exclusive argument group.
-    Returns (filtered_runs, effective_step_count).
+def per_run_function_time_us(entry: dict) -> list[float]:
+    """Per-run mean per-function-call time (µs), after dropping WARMUP_STEPS.
+
+    One sample per run: X_r = (1 / (S*F)) * sum_{s=1}^{S} T_r,s, where S is
+    that run's post-warm-up step count and F = FUNCTION_CALLS_PER_STEP.
     """
-    raw_step_count: int = entry["step_count"]
-    step_times_all_runs: list[list[float]] = entry["step_times_all_runs"]
-
-    if steps_until is not None:
-        filtered_runs = [run[:steps_until] for run in step_times_all_runs]
-        effective_steps = min(steps_until, raw_step_count)
-    else:  # steps_skip
-        filtered_runs = [run[steps_skip:] for run in step_times_all_runs]
-        effective_steps = max(0, raw_step_count - steps_skip)
-
-    return filtered_runs, effective_steps
+    return [
+        statistics.mean(run[WARMUP_STEPS:]) / FUNCTION_CALLS_PER_STEP
+        for run in entry["step_times_all_runs"]
+        if len(run) > WARMUP_STEPS
+    ]
 
 
-def compute_stats(
-    entry: dict,
-    steps_until: int | None,
-    steps_skip: int | None,
-) -> dict:
-    """Compute {mean_us, median_us, step_count, is_step_avg} for an entry.
+def mean_stddev(values: list[float]) -> tuple[float, float]:
+    """(mu, sigma): sample mean and sample stddev (ddof=1); sigma=0 for <2 values."""
+    if not values:
+        return 0.0, 0.0
+    mean = statistics.mean(values)
+    stddev = statistics.stdev(values) if len(values) > 1 else 0.0
+    return mean, stddev
 
-    If neither filter is set, returns the overall mean/median (from the
-    statistics block) and is_step_avg=False. Otherwise computes the
-    mean/median of per-step times after applying the filter, and returns
-    is_step_avg=True.
+
+def overhead_mean_stddev(kind_entry: dict, baseline_entry: dict) -> tuple[float, float]:
+    """(mu_O, sigma_O) per-function-call overhead of kind_entry vs baseline_entry.
+
+    mu_O = mu_I - mu_B; sigma_O = sqrt(sigma_I^2 + sigma_B^2), combining each
+    side's own run-to-run variance under independence.
     """
-    raw_step_count: int = entry["step_count"]
-
-    if steps_until is None and steps_skip is None:
-        return {
-            "mean_us": entry["overall_mean_us"],
-            "median_us": entry["overall_median_us"],
-            "step_count": raw_step_count,
-            "is_step_avg": False,
-        }
-
-    step_times_all_runs: list[list[float]] = entry["step_times_all_runs"]
-    if not step_times_all_runs:
-        return {"mean_us": 0.0, "median_us": 0.0, "step_count": 0, "is_step_avg": True}
-
-    filtered_runs, effective_steps = _filter_step_runs(entry, steps_until, steps_skip)
-    all_step_times = [t for run in filtered_runs for t in run]
-    if not all_step_times:
-        return {"mean_us": 0.0, "median_us": 0.0, "step_count": effective_steps, "is_step_avg": True}
-
-    return {
-        "mean_us": sum(all_step_times) / len(all_step_times),
-        "median_us": statistics.median(all_step_times),
-        "step_count": effective_steps,
-        "is_step_avg": True,
-    }
-
-
-def _per_repetition_function_times_us(
-    entry: dict,
-    steps_until: int | None,
-    steps_skip: int | None,
-) -> list[float]:
-    """Return one per-function-call time (µs) sample per repetition.
-
-    Granularity matches compute_stats(): for the overall (unfiltered) case
-    each repetition's total run time is divided by its call count; for the
-    filtered case each repetition's own mean per-step time is divided by the
-    per-step call count, so that the mean of these samples reproduces
-    compute_stats()'s mean_us for the same entry/filter.
-    """
-    raw_step_count: int = entry["step_count"]
-
-    if steps_until is None and steps_skip is None:
-        times_all_runs: list[float] = entry["times_all_runs"]
-        n = _func_call_count(False, raw_step_count)
-        return [t / n for t in times_all_runs] if n > 0 else []
-
-    step_times_all_runs: list[list[float]] = entry["step_times_all_runs"]
-    if not step_times_all_runs:
-        return []
-
-    filtered_runs, effective_steps = _filter_step_runs(entry, steps_until, steps_skip)
-    n = _func_call_count(True, effective_steps)
-    if n <= 0:
-        return []
-    return [statistics.mean(run) / n for run in filtered_runs if run]
-
-
-def _paired_overhead_stddev_us(
-    value_entry: dict,
-    baseline_entry: dict,
-    steps_until: int | None,
-    steps_skip: int | None,
-) -> float:
-    """Stddev of per-repetition (value - baseline) per-function-call overhead.
-
-    Repetitions are paired by index; if the two entries have differing
-    repetition counts, pairing is truncated to the shorter one.
-    """
-    value_samples = _per_repetition_function_times_us(value_entry, steps_until, steps_skip)
-    baseline_samples = _per_repetition_function_times_us(baseline_entry, steps_until, steps_skip)
-    diffs = [v - b for v, b in zip(value_samples, baseline_samples)]
-    return statistics.stdev(diffs) if len(diffs) > 1 else 0.0
+    mu_i, sigma_i = mean_stddev(per_run_function_time_us(kind_entry))
+    mu_b, sigma_b = mean_stddev(per_run_function_time_us(baseline_entry))
+    return mu_i - mu_b, math.sqrt(sigma_i**2 + sigma_b**2)
 
 
 # ---------------------------------------------------------------------------
-# Transformations
+# Formatting
 # ---------------------------------------------------------------------------
 
-TransformFn = Callable[[dict, dict, bool, float], tuple[str, str | None]]
-"""Signature: (baseline_stats, value_stats, is_baseline, overhead_stddev_us) -> (latex_text, color_or_none)
+def _decimals_for_magnitude(magnitude: float) -> int:
+    """Decimal places for a non-negative ns value, by its integer-digit count.
 
-baseline_stats, value_stats : dicts from compute_stats() — {mean_us, median_us,
-               step_count, is_step_avg} — for the plain/reference run and the
-               measured kind, respectively, under the same conditions
-is_baseline  : True when this row is the plain/reference baseline itself
-overhead_stddev_us : stddev of per-repetition (value - baseline) per-function-call
-               overhead (0.0 when is_baseline, or when there is no baseline to
-               pair against); only consumed by the "_stddev" transforms
-color_or_none: xcolor name (e.g. "yellow!50", "red!30") or None for no highlight
-"""
-
-DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US = 0.0075
-DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US = 0.03
-
-IGNORE_KINDS_FOR_PAPER = {
-    "timemonotonicfunctioninwholemicroseconds",
-    "timemonotonicfunctioninwholenanoseconds",
-    "timemonotonicglobalinwholemilliseconds",
-    "timemonotonicglobalinwholemicroseconds",
-    "timemonotonicglobalinwholenanoseconds",
-    "timemonotonicglobalreducedobjects",
-    "poctryfinallyincrementint",
-}
-
-# Set by main() when --fixed-ns is passed. Overrides _fmt_us()'s automatic
-# unit selection: every value is shown as a bare (unitless) nanosecond figure.
-_fixed_ns_mode: bool = False
-
-
-def _fmt_sig3(value: float) -> str:
-    """Format value to 3 significant figures in fixed (non-scientific) notation.
-
-    E.g. 23.14 -> "23.1", 345.2 -> "345", 1.234 -> "1.23", 0.1428 -> "0.143",
-    58942140 -> "58900000" (trailing zeros stand in for the digits that fixed
-    notation, without scientific notation, has no other way to drop).
+    3+ integer digits -> 0 decimals, 2 -> 1 decimal, else (0 or 1) -> 2 decimals.
     """
-    if value == 0:
-        return "0"
-
-    sign = "-" if value < 0 else ""
-    magnitude_value = abs(value)
-
-    magnitude = math.floor(math.log10(magnitude_value))
-    decimals = 2 - magnitude  # may go negative for values >= 1000
-    rounded = round(magnitude_value, decimals)
-
-    # Rounding can carry into the next order of magnitude (e.g. 9.996 -> 10.0),
-    # which would leave one digit too many/few after the decimal point.
-    if rounded != 0:
-        new_magnitude = math.floor(math.log10(rounded))
-        if new_magnitude != magnitude:
-            decimals = 2 - new_magnitude
-            rounded = round(rounded, decimals)
-
-    return f"{sign}{rounded:.{max(decimals, 0)}f}"
+    digits_before_decimal = 1 if magnitude < 1 else math.floor(math.log10(magnitude)) + 1
+    if digits_before_decimal >= 3:
+        return 0
+    if digits_before_decimal == 2:
+        return 1
+    return 2
 
 
-def _fmt_us(us: float, target: str | None = None) -> str:
-    """Format a µs value as a compact string suitable for LaTeX cells.
+def _fmt_ns(value_ns: float) -> str:
+    """Format a ns value (no unit suffix — every value is ns): '-' prefix for
+    negatives only (never '+' for positives), with decimal places fixed by
+    _decimals_for_magnitude.
 
-    Without an explicit target unit, this chooses the largest fitting unit
-    (s/ms/µs/ns), so 1000 ns is rendered as 1 µs; values below 1 µs are
-    rendered in ns to avoid a rounded-to-zero "0 µs".
-
-    When _fixed_ns_mode is set (--fixed-ns), always renders as a bare
-    (unitless) nanosecond figure, ignoring `target` and automatic unit
-    selection entirely.
+    E.g. 123.4 -> "123", 12.34 -> "12.3", 1.234 -> "1.23", -1.234 -> "-1.23".
     """
-    if _fixed_ns_mode:
-        return _fmt_sig3(us * 1000.0)
+    sign = "-" if value_ns < 0 else ""
+    magnitude = abs(value_ns)
 
-    ms = us / 1000.0
-    s = ms / 1000.0
-    ns = us * 1000.0
+    decimals = _decimals_for_magnitude(magnitude)
+    rounded = round(magnitude, decimals)
 
-    if (s >= 1 and target is None) or target == "s":
-        return f"{_fmt_sig3(s)}\\,s"
+    # Rounding can carry into a new digit-count bracket (e.g. 9.996 -> 10.00),
+    # which would leave the decimal count for the bracket it just left.
+    new_decimals = _decimals_for_magnitude(rounded)
+    if new_decimals != decimals:
+        rounded = round(rounded, new_decimals)
+        decimals = new_decimals
 
-    if (ms >= 1 and target is None) or target == "ms":
-        return f"{_fmt_sig3(ms)}\\,ms"
+    if rounded == 0:
+        sign = ""  # avoid a misleading "-0.00" for negatives that round to zero
 
-    if (us >= 1 and target is None) or target == "µs":
-        return f"{_fmt_sig3(us)}\\,$\\mu$s"
-
-    # For values below 1 µs in auto mode, render in ns to avoid 0.00 µs.
-    if target == "ns" or target is None:
-        return f"{_fmt_sig3(ns)}\\,ns"
-
-    return f"{_fmt_sig3(us)}\\,$\\mu$s"
+    return f"{sign}{rounded:.{decimals}f}"
 
 
-def _pick_auto_unit(magnitude_us: float) -> str:
-    """Return the unit _fmt_us(..., target=None) would auto-select for a magnitude (in µs)."""
-    ms = magnitude_us / 1000.0
-    s = ms / 1000.0
-    if s >= 1:
-        return "s"
-    if ms >= 1:
-        return "ms"
-    if magnitude_us >= 1:
-        return "µs"
-    return "ns"
-
-
-def _func_call_count(is_step_avg: bool, step_count: int) -> int:
-    """Number of traced function calls for the given measurement mode.
-
-    For step-filtered mode (`--steps-skip`/`--steps-until`), the input value is
-    already a per-step mean, so use only 4001 calls.
-    For full-run mode, use total traced calls: 4001 * step_count + 14.
-    """
-    if is_step_avg:
-        return 4001
-
-    return 4001 * step_count + 14
-
-
-def _func_time_us(value_us: float, is_step_avg: bool, step_count: int) -> float:
-    """Return the per-function-call time in µs."""
-    n = _func_call_count(is_step_avg, step_count)
-    return value_us / n if n > 0 else 0.0
-
-
-def _transform_runtime(
-    baseline_stats: dict, value_stats: dict, is_baseline: bool, overhead_stddev_us: float
-) -> tuple[str, str | None]:
-    """Show the raw runtime value; no cell colouring."""
-    return _fmt_us(value_stats["mean_us"], "ms"), None
-
-
-def _transform_function_runtime(
-    baseline_stats: dict, value_stats: dict, is_baseline: bool, overhead_stddev_us: float
-) -> tuple[str, str | None]:
-    """Show per-function-call time (runtime / number of traced calls); no colouring."""
-    ft = _func_time_us(value_stats["mean_us"], value_stats["is_step_avg"], value_stats["step_count"])
-    return _fmt_us(ft), None
-
-
-def _overhead_color(overhead_us: float, yellow_threshold_us: float, red_threshold_us: float) -> str | None:
-    """Yellow/red cell colour for a function-overhead value, based on configurable thresholds."""
-    if overhead_us >= red_threshold_us:
+def _overhead_color(overhead_us: float) -> str | None:
+    """Yellow/red cell colour for a function-overhead value, based on fixed thresholds."""
+    if overhead_us >= RED_THRESHOLD_US:
         return "red!30"
-    if overhead_us >= yellow_threshold_us:
+    if overhead_us >= YELLOW_THRESHOLD_US:
         return "yellow!30"
     return None
 
 
-def _function_overhead_text(
-    baseline_ft_us: float,
-    value_ft_us: float,
-    overhead_stddev_us: float | None,
-    yellow_threshold_us: float,
-    red_threshold_us: float,
-) -> tuple[str, str | None]:
-    """Build the overhead cell text (auto unit) and its threshold colour.
-
-    overhead_stddev_us, when given, is rendered in the same unit as the
-    overhead point estimate as a trailing '$\\pm$ ...' suffix.
-    """
-    overhead = value_ft_us - baseline_ft_us
-    unit = _pick_auto_unit(abs(overhead))
-
-    if overhead > 0:
-        text = "+" + _fmt_us(overhead, unit)
-    elif overhead < 0:
-        text = "-" + _fmt_us(abs(overhead), unit)
-    else:
-        text = _fmt_us(0.0, "ns")
-
-    if overhead_stddev_us is not None:
-        text += r" $\pm$ " + _fmt_us(overhead_stddev_us, unit)
-
-    color = _overhead_color(overhead, yellow_threshold_us, red_threshold_us)
-    return text, color
+def _baseline_cell(mu_b_us: float, sigma_b_us: float) -> str:
+    """'123 $\\pm$ 4.50' (ns, unitless) cell text for the plain/reference row (no colour)."""
+    return f"{_fmt_ns(mu_b_us * 1000)} $\\pm$ {_fmt_ns(sigma_b_us * 1000)}"
 
 
-def _transform_function_overhead_mean(
-    baseline_stats: dict,
-    value_stats: dict,
-    is_baseline: bool,
-    overhead_stddev_us: float,
-    *,
-    yellow_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US,
-    red_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US,
-) -> tuple[str, str | None]:
-    """Show per-function overhead vs plain baseline, using each side's mean.
-
-    For the baseline row itself the plain function runtime is shown (no colour).
-    Coloured yellow/red based on configurable thresholds. Values are formatted
-    with automatic unit selection (ns/µs/ms/s).
-    """
-    if is_baseline:
-        ft = _func_time_us(value_stats["mean_us"], value_stats["is_step_avg"], value_stats["step_count"])
-        return _fmt_us(ft), None
-
-    baseline_ft = _func_time_us(baseline_stats["mean_us"], baseline_stats["is_step_avg"], baseline_stats["step_count"])
-    value_ft    = _func_time_us(value_stats["mean_us"],    value_stats["is_step_avg"],    value_stats["step_count"])
-    return _function_overhead_text(baseline_ft, value_ft, None, yellow_threshold_us, red_threshold_us)
-
-
-def _transform_function_overhead_mean_stddev(
-    baseline_stats: dict,
-    value_stats: dict,
-    is_baseline: bool,
-    overhead_stddev_us: float,
-    *,
-    yellow_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US,
-    red_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US,
-) -> tuple[str, str | None]:
-    """Like function_overhead_mean, plus the stddev of per-repetition overheads."""
-    if is_baseline:
-        ft = _func_time_us(value_stats["mean_us"], value_stats["is_step_avg"], value_stats["step_count"])
-        return _fmt_us(ft), None
-
-    baseline_ft = _func_time_us(baseline_stats["mean_us"], baseline_stats["is_step_avg"], baseline_stats["step_count"])
-    value_ft    = _func_time_us(value_stats["mean_us"],    value_stats["is_step_avg"],    value_stats["step_count"])
-    return _function_overhead_text(baseline_ft, value_ft, overhead_stddev_us, yellow_threshold_us, red_threshold_us)
-
-
-def _transform_function_overhead_median(
-    baseline_stats: dict,
-    value_stats: dict,
-    is_baseline: bool,
-    overhead_stddev_us: float,
-    *,
-    yellow_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US,
-    red_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US,
-) -> tuple[str, str | None]:
-    """Show per-function overhead vs plain baseline, using each side's median.
-
-    For the baseline row itself the plain function runtime is shown (no colour).
-    Coloured yellow/red based on configurable thresholds.
-    """
-    if is_baseline:
-        ft = _func_time_us(value_stats["median_us"], value_stats["is_step_avg"], value_stats["step_count"])
-        return _fmt_us(ft), None
-
-    baseline_ft = _func_time_us(baseline_stats["median_us"], baseline_stats["is_step_avg"], baseline_stats["step_count"])
-    value_ft    = _func_time_us(value_stats["median_us"],    value_stats["is_step_avg"],    value_stats["step_count"])
-    return _function_overhead_text(baseline_ft, value_ft, None, yellow_threshold_us, red_threshold_us)
-
-
-def _transform_function_overhead_median_stddev(
-    baseline_stats: dict,
-    value_stats: dict,
-    is_baseline: bool,
-    overhead_stddev_us: float,
-    *,
-    yellow_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US,
-    red_threshold_us: float = DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US,
-) -> tuple[str, str | None]:
-    """Like function_overhead_median, plus the stddev of per-repetition overheads."""
-    if is_baseline:
-        ft = _func_time_us(value_stats["median_us"], value_stats["is_step_avg"], value_stats["step_count"])
-        return _fmt_us(ft), None
-
-    baseline_ft = _func_time_us(baseline_stats["median_us"], baseline_stats["is_step_avg"], baseline_stats["step_count"])
-    value_ft    = _func_time_us(value_stats["median_us"],    value_stats["is_step_avg"],    value_stats["step_count"])
-    return _function_overhead_text(baseline_ft, value_ft, overhead_stddev_us, yellow_threshold_us, red_threshold_us)
-
-
-TRANSFORMATIONS: dict[str, TransformFn] = {
-    "runtime":                          _transform_runtime,
-    "function_runtime":                 _transform_function_runtime,
-    "function_overhead_mean":           _transform_function_overhead_mean,
-    "function_overhead_mean_stddev":    _transform_function_overhead_mean_stddev,
-    "function_overhead_median":         _transform_function_overhead_median,
-    "function_overhead_median_stddev":  _transform_function_overhead_median_stddev,
-}
+def _overhead_cell(mu_o_us: float, sigma_o_us: float) -> tuple[str, str | None]:
+    """'123 $\\pm$ 4.50' (ns, unitless) cell text and its yellow/red threshold colour."""
+    text = f"{_fmt_ns(mu_o_us * 1000)} $\\pm$ {_fmt_ns(sigma_o_us * 1000)}"
+    return text, _overhead_color(mu_o_us)
 
 
 # ---------------------------------------------------------------------------
@@ -712,29 +419,6 @@ def _parse_kind_list(values: Iterable[str] | None) -> set[str]:
     return parsed
 
 
-STATIC_OPERATION_LABELS: dict[str, str] = {
-    "timemonotonicfunction": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function\end{tabular}",
-    "timemonotonicfunctioninwholemilliseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function (ms)\end{tabular}",
-    "timemonotonicfunctioninwholemicroseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function ($\mu$s)\end{tabular}",
-    "timemonotonicfunctioninwholenanoseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function (ns)\end{tabular}",
-    "timemonotonicglobal": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global\end{tabular}",
-    "timemonotonicglobalinwholemilliseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (ms)\end{tabular}",
-    "timemonotonicglobalinwholemicroseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global ($\mu$s)\end{tabular}",
-    "timemonotonicglobalinwholenanoseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (ns)\end{tabular}",
-    "timemonotonicglobalreducedobjects": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (reduced obj.)\end{tabular}",
-    "incrementatomicintcounter": r"\begin{tabular}[c]{@{}l@{}}Increment Atomic\\Int Counter\end{tabular}",
-    "appendtostringbuilder": r"\begin{tabular}[c]{@{}l@{}}Append to\\String Builder\end{tabular}",
-}
-
-
-def _operation_label_cell(kind: str) -> str:
-    """Return statically configured operation labels with fixed line breaks."""
-    kind_norm = kind.lower()
-    if kind_norm in STATIC_OPERATION_LABELS:
-        return STATIC_OPERATION_LABELS[kind_norm]
-    return kind_label(kind)
-
-
 # ---------------------------------------------------------------------------
 # LaTeX table generation
 # ---------------------------------------------------------------------------
@@ -742,10 +426,6 @@ def _operation_label_cell(kind: str) -> str:
 def generate_latex_table(
     measurements: list[dict],
     entries: list[dict],
-    steps_until: int | None,
-    steps_skip: int | None,
-    transform: TransformFn,
-    ignore_kinds: set[str],
     only_kinds: set[str],
 ) -> str:
     """Return a LaTeX ``tabular`` snippet for the overhead table.
@@ -758,25 +438,15 @@ def generate_latex_table(
         \\usepackage{booktabs}
         \\usepackage[table]{xcolor}
     """
-    # Build (measurement, kind, target_group) -> entry lookup
     entry_map: dict[tuple[str, str, str], dict] = {
         (e["measurement_id"], e["kind"], e["target_group"]): e for e in entries
     }
 
     def include_kind(kind: str) -> bool:
-        kind_norm = kind.lower()
-        if only_kinds:
-            return kind_norm in only_kinds
-        if ignore_kinds:
-            return kind_norm not in ignore_kinds
-        return True
+        return not only_kinds or kind.lower() in only_kinds
 
     target_groups = ["jvm", "js", "native"]
-    target_group_labels = {
-        "jvm": "JVM",
-        "js": "JS",
-        "native": "Native",
-    }
+    target_group_labels = {"jvm": "JVM", "js": "JS", "native": "Native"}
 
     # Ordered kinds (excluding plain — plain gets its own header row)
     all_kinds_set = {
@@ -815,24 +485,22 @@ def generate_latex_table(
         lines.append(rf"\cmidrule(lr){{{start}-{end}}}")
     lines.append(r"\midrule")
 
-    # Plain reference row — passed through the transform with is_baseline=True
+    # Plain reference row — mu_B ± sigma_B, no colouring
     if show_plain:
         plain_cells = [r"\textit{Plain (reference)}"]
         for measurement in measurements:
             for group in target_groups:
                 plain_entry = entry_map.get((measurement["id"], "plain", group))
-                if plain_entry:
-                    plain_stats = compute_stats(plain_entry, steps_until, steps_skip)
-                    text, color = transform(plain_stats, plain_stats, True, 0.0)
-                    cell = (r"\cellcolor{" + color + r"}" + text) if color else text
-                    plain_cells.append(cell)
-                else:
+                if plain_entry is None:
                     plain_cells.append("--")
+                    continue
+                mu_b, sigma_b = mean_stddev(per_run_function_time_us(plain_entry))
+                plain_cells.append(_baseline_cell(mu_b, sigma_b))
         lines.append(" & ".join(plain_cells) + r" \\")
         if ordered_kinds:
             lines.append(r"\midrule")
 
-    # One row per kind
+    # One row per kind — mu_O ± sigma_O vs the plain baseline, threshold-coloured
     for kind in ordered_kinds:
         row_cells = [_operation_label_cell(kind)]
         for measurement in measurements:
@@ -840,24 +508,13 @@ def generate_latex_table(
                 kind_entry = entry_map.get((measurement["id"], kind, group))
                 plain_entry = entry_map.get((measurement["id"], "plain", group))
 
-                if kind_entry is None:
+                if kind_entry is None or plain_entry is None:
                     row_cells.append("--")
                     continue
 
-                kind_stats = compute_stats(kind_entry, steps_until, steps_skip)
-                baseline_stats = kind_stats  # fallback: no colouring
-                overhead_stddev_us = 0.0
-                if plain_entry is not None:
-                    baseline_stats = compute_stats(plain_entry, steps_until, steps_skip)
-                    overhead_stddev_us = _paired_overhead_stddev_us(kind_entry, plain_entry, steps_until, steps_skip)
-
-                text, color = transform(baseline_stats, kind_stats, False, overhead_stddev_us)
-
-                if color:
-                    cell = r"\cellcolor{" + color + r"}" + text
-                else:
-                    cell = text
-                row_cells.append(cell)
+                mu_o, sigma_o = overhead_mean_stddev(kind_entry, plain_entry)
+                text, color = _overhead_cell(mu_o, sigma_o)
+                row_cells.append(r"\cellcolor{" + color + r"}" + text if color else text)
 
         lines.append(" & ".join(row_cells) + r" \\")
 
@@ -884,36 +541,6 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "--transformation",
-        choices=list(TRANSFORMATIONS),
-        default="runtime",
-        help="Cell value transformation (default: runtime)",
-    )
-
-    steps_group = parser.add_mutually_exclusive_group()
-    steps_group.add_argument(
-        "--steps-until",
-        metavar="N",
-        type=int,
-        help="Only consider the first N steps of each run",
-    )
-    steps_group.add_argument(
-        "--steps-skip",
-        metavar="N",
-        type=int,
-        help="Skip the first N steps of each run",
-    )
-    kind_filter_group = parser.add_mutually_exclusive_group()
-    kind_filter_group.add_argument(
-        "--ignore-kinds",
-        nargs="+",
-        metavar="KIND",
-        help=(
-            "Kinds to exclude from output rows. "
-            "Accepts space-separated kinds and/or comma-separated chunks."
-        ),
-    )
-    kind_filter_group.add_argument(
         "--only-kind",
         nargs="+",
         metavar="KIND",
@@ -922,57 +549,7 @@ def main() -> None:
             "Accepts space-separated kinds and/or comma-separated chunks."
         ),
     )
-    parser.add_argument(
-        "--ignore-for-paper",
-        action="store_true",
-        help="Apply preset ignore list for paper tables.",
-    )
-    parser.add_argument(
-        "--function-overhead-yellow-threshold-us",
-        type=float,
-        default=None,
-        metavar="N",
-        help=(
-            "Yellow threshold (in µs) for --transformation function_overhead_* "
-            f"(default: {DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US})."
-        ),
-    )
-    parser.add_argument(
-        "--function-overhead-red-threshold-us",
-        type=float,
-        default=None,
-        metavar="N",
-        help=(
-            "Red threshold (in µs) for --transformation function_overhead_* "
-            f"(default: {DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US})."
-        ),
-    )
-    parser.add_argument(
-        "--fixed-ns",
-        action="store_true",
-        help=(
-            "Always display cell values as bare (unitless) nanosecond figures at 3 "
-            "significant figures, instead of auto-selecting s/ms/µs/ns units."
-        ),
-    )
     args = parser.parse_args()
-
-    yellow_threshold_us = DEFAULT_FUNCTION_OVERHEAD_YELLOW_THRESHOLD_US
-    red_threshold_us = DEFAULT_FUNCTION_OVERHEAD_RED_THRESHOLD_US
-    if args.function_overhead_yellow_threshold_us is not None:
-        yellow_threshold_us = args.function_overhead_yellow_threshold_us
-    if args.function_overhead_red_threshold_us is not None:
-        red_threshold_us = args.function_overhead_red_threshold_us
-
-    if yellow_threshold_us < 0 or red_threshold_us < 0:
-        print("Error: function_overhead_* thresholds must be >= 0", file=sys.stderr)
-        sys.exit(1)
-    if red_threshold_us < yellow_threshold_us:
-        print("Error: red threshold must be >= yellow threshold", file=sys.stderr)
-        sys.exit(1)
-
-    global _fixed_ns_mode
-    _fixed_ns_mode = args.fixed_ns
 
     folders = [Path(folder_arg) for folder_arg in args.folders]
     for folder in folders:
@@ -986,45 +563,10 @@ def main() -> None:
         print(f"No recognised JSON files found in: {joined}", file=sys.stderr)
         sys.exit(1)
 
-    transform_fn = TRANSFORMATIONS[args.transformation]
-    if args.transformation.startswith("function_overhead"):
-        base_transform_fn = transform_fn
-
-        def transform_fn(
-            baseline_stats: dict,
-            value_stats: dict,
-            is_baseline: bool,
-            overhead_stddev_us: float,
-        ) -> tuple[str, str | None]:
-            return base_transform_fn(
-                baseline_stats,
-                value_stats,
-                is_baseline,
-                overhead_stddev_us,
-                yellow_threshold_us=yellow_threshold_us,
-                red_threshold_us=red_threshold_us,
-            )
-    ignore_kinds = _parse_kind_list(args.ignore_kinds)
-    if args.ignore_for_paper:
-        ignore_kinds.update(IGNORE_KINDS_FOR_PAPER)
     only_kinds = _parse_kind_list(args.only_kind)
-    latex = generate_latex_table(
-        measurements,
-        entries,
-        args.steps_until,
-        args.steps_skip,
-        transform_fn,
-        ignore_kinds,
-        only_kinds,
-    )
+    latex = generate_latex_table(measurements, entries, only_kinds)
 
-    steps_suffix = "full"
-    if args.steps_until is not None:
-        steps_suffix = f"steps"
-    elif args.steps_skip is not None:
-        steps_suffix = f"steps"
-
-    out_path = folders[0] / f"latex-{args.transformation}-{steps_suffix}.tex"
+    out_path = folders[0] / "latex-overhead.tex"
     out_path.write_text(latex, encoding="utf-8")
     print(f"Saved: {out_path}")
 
