@@ -38,10 +38,14 @@ Statistics (fixed, not configurable):
         sigma_X = sqrt( (1/(R-1)) * sum_r (X_r - mu_X)^2 )
 
     The plain/reference row reports (mu_B, sigma_B) directly. Each operation's
-    overhead row reports:
+    overhead row reports the difference of means with a Welch two-sample 95%
+    confidence interval (unequal variances, Welch-Satterthwaite dof):
 
-        mu_O    = mu_I - mu_B
-        sigma_O = sqrt(sigma_I^2 + sigma_B^2)
+        mu_O = mu_I - mu_B
+        SE   = sqrt(sigma_I^2/R_I + sigma_B^2/R_B)
+        v    = (sigma_I^2/R_I + sigma_B^2/R_B)^2 /
+               ( (sigma_I^2/R_I)^2/(R_I-1) + (sigma_B^2/R_B)^2/(R_B-1) )
+        CI95 = mu_O +- t_{0.975,v} * SE
 """
 
 from __future__ import annotations
@@ -65,6 +69,8 @@ FUNCTION_CALLS_PER_STEP = 4001
 
 YELLOW_THRESHOLD_US = 0.0075
 RED_THRESHOLD_US = 0.03
+
+CONFIDENCE_LEVEL = 0.95
 
 
 # ---------------------------------------------------------------------------
@@ -309,15 +315,124 @@ def mean_stddev(values: list[float]) -> tuple[float, float]:
     return mean, stddev
 
 
-def overhead_mean_stddev(kind_entry: dict, baseline_entry: dict) -> tuple[float, float]:
-    """(mu_O, sigma_O) per-function-call overhead of kind_entry vs baseline_entry.
+def _log_beta(a: float, b: float) -> float:
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
 
-    mu_O = mu_I - mu_B; sigma_O = sqrt(sigma_I^2 + sigma_B^2), combining each
-    side's own run-to-run variance under independence.
+
+def _betacf(a: float, b: float, x: float) -> float:
+    """Continued fraction for the incomplete beta function (Lentz's algorithm)."""
+    max_iterations = 200
+    epsilon = 3e-16
+    min_float = 1e-300
+
+    qab = a + b
+    qap = a + 1.0
+    qam = a - 1.0
+    c = 1.0
+    d = 1.0 - qab * x / qap
+    if abs(d) < min_float:
+        d = min_float
+    d = 1.0 / d
+    h = d
+
+    for m in range(1, max_iterations + 1):
+        m2 = 2 * m
+        aa = m * (b - m) * x / ((qam + m2) * (a + m2))
+        d = 1.0 + aa * d
+        if abs(d) < min_float:
+            d = min_float
+        c = 1.0 + aa / c
+        if abs(c) < min_float:
+            c = min_float
+        d = 1.0 / d
+        h *= d * c
+
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2))
+        d = 1.0 + aa * d
+        if abs(d) < min_float:
+            d = min_float
+        c = 1.0 + aa / c
+        if abs(c) < min_float:
+            c = min_float
+        d = 1.0 / d
+        delta = d * c
+        h *= delta
+        if abs(delta - 1.0) < epsilon:
+            break
+
+    return h
+
+
+def _regularized_incomplete_beta(a: float, b: float, x: float) -> float:
+    """I_x(a, b): regularized incomplete beta function, for x in [0, 1]."""
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+
+    front = math.exp(a * math.log(x) + b * math.log(1.0 - x) - _log_beta(a, b))
+    if x < (a + 1.0) / (a + b + 2.0):
+        return front * _betacf(a, b, x) / a
+    return 1.0 - front * _betacf(b, a, 1.0 - x) / b
+
+
+def _student_t_cdf(t: float, dof: float) -> float:
+    """CDF of Student's t distribution with (possibly fractional) dof degrees of freedom."""
+    x = dof / (dof + t * t)
+    tail = 0.5 * _regularized_incomplete_beta(dof / 2.0, 0.5, x)
+    return 1.0 - tail if t > 0 else tail
+
+
+def _student_t_quantile(p: float, dof: float) -> float:
+    """t such that P(T <= t) = p, for Student's t with dof degrees of freedom.
+
+    Solved by bisection over the CDF above (monotone increasing in t).
     """
-    mu_i, sigma_i = mean_stddev(per_run_function_time_us(kind_entry))
-    mu_b, sigma_b = mean_stddev(per_run_function_time_us(baseline_entry))
-    return mu_i - mu_b, math.sqrt(sigma_i**2 + sigma_b**2)
+    lo, hi = 0.0, 1.0
+    while _student_t_cdf(hi, dof) < p:
+        hi *= 2.0
+    for _ in range(200):
+        mid = (lo + hi) / 2.0
+        if _student_t_cdf(mid, dof) < p:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
+
+
+def _welch_degrees_of_freedom(s_a2: float, n_a: int, s_b2: float, n_b: int) -> float:
+    """Welch-Satterthwaite approximate degrees of freedom for two independent samples."""
+    term_a = s_a2 / n_a
+    term_b = s_b2 / n_b
+    denominator = term_a**2 / (n_a - 1) + term_b**2 / (n_b - 1)
+    if denominator == 0:
+        return n_a + n_b - 2
+    return (term_a + term_b) ** 2 / denominator
+
+
+def overhead_mean_ci95(kind_entry: dict, baseline_entry: dict) -> tuple[float, float]:
+    """(mu_O, ci95) per-function-call overhead of kind_entry vs baseline_entry.
+
+    mu_O = mu_I - mu_B. ci95 is the Welch two-sample 95% confidence-interval
+    half-width for that difference: t_{0.975,v} * SE, with
+    SE = sqrt(sigma_I^2/R_I + sigma_B^2/R_B) and v the Welch-Satterthwaite dof.
+    Falls back to ci95 = 0 when either side has fewer than 2 runs.
+    """
+    values_i = per_run_function_time_us(kind_entry)
+    values_b = per_run_function_time_us(baseline_entry)
+
+    mu_i, sigma_i = mean_stddev(values_i)
+    mu_b, sigma_b = mean_stddev(values_b)
+    n_i, n_b = len(values_i), len(values_b)
+
+    mu_o = mu_i - mu_b
+    if n_i < 2 or n_b < 2:
+        return mu_o, 0.0
+
+    se = math.sqrt(sigma_i**2 / n_i + sigma_b**2 / n_b)
+    dof = _welch_degrees_of_freedom(sigma_i**2, n_i, sigma_b**2, n_b)
+    t_crit = _student_t_quantile(1.0 - (1.0 - CONFIDENCE_LEVEL) / 2.0, dof)
+    return mu_o, t_crit * se
 
 
 # ---------------------------------------------------------------------------
@@ -377,9 +492,11 @@ def _baseline_cell(mu_b_us: float, sigma_b_us: float) -> str:
     return f"{_fmt_ns(mu_b_us * 1000)} $\\pm$ {_fmt_ns(sigma_b_us * 1000)}"
 
 
-def _overhead_cell(mu_o_us: float, sigma_o_us: float) -> tuple[str, str | None]:
-    """'123 $\\pm$ 4.50' (ns, unitless) cell text and its yellow/red threshold colour."""
-    text = f"{_fmt_ns(mu_o_us * 1000)} $\\pm$ {_fmt_ns(sigma_o_us * 1000)}"
+def _overhead_cell(mu_o_us: float, ci95_us: float) -> tuple[str, str | None]:
+    """'123 $\\pm$ 4.50' (ns, unitless) cell text — mean overhead and its 95%
+    Welch CI half-width — and its yellow/red threshold colour.
+    """
+    text = f"{_fmt_ns(mu_o_us * 1000)} $\\pm$ {_fmt_ns(ci95_us * 1000)}"
     return text, _overhead_color(mu_o_us)
 
 
@@ -512,8 +629,8 @@ def generate_latex_table(
                     row_cells.append("--")
                     continue
 
-                mu_o, sigma_o = overhead_mean_stddev(kind_entry, plain_entry)
-                text, color = _overhead_cell(mu_o, sigma_o)
+                mu_o, ci95_o = overhead_mean_ci95(kind_entry, plain_entry)
+                text, color = _overhead_cell(mu_o, ci95_o)
                 row_cells.append(r"\cellcolor{" + color + r"}" + text if color else text)
 
         lines.append(" & ".join(row_cells) + r" \\")
