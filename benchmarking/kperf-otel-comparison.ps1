@@ -485,12 +485,17 @@ function Start-Jaeger {
   Invoke-Docker -DockerArgs @(
     'run', '-d', '--name', 'jaeger',
     '--network', 'otel-net',
-    '--memory=24g',
+    '--memory=44g',
     '-e', 'COLLECTOR_OTLP_ENABLED=true',
-    # Queue slots hold whole spans in memory; 5M slots blew the previous 12g
-    # cap when a fast host (Ryzen 9950X) outran storage: Jaeger was OOM-killed
-    # during the fastbatch/combined JVM variants (run 2026-08-20).
-    '-e', 'COLLECTOR_QUEUE_SIZE=2000000',
+    # Queue slots hold whole spans in memory, so queue size and the container
+    # memory cap must be tuned together: 5M slots blew a 12g cap (Jaeger
+    # OOM-killed, run 2026-08-20), while 2M slots survived but overflowed
+    # (~35% queue-full drops on fastbatch/combined JVM, runs 2026-08-23/24)
+    # because storage writes serialize behind a single lock and a fast host
+    # produces ~2.5M spans/s. 4M slots hold well over one run's ~2.19M spans,
+    # and Wait-JaegerDrain empties the queue between runs, so backlog can
+    # never exceed a single run.
+    '-e', 'COLLECTOR_QUEUE_SIZE=4000000',
     '-e', 'COLLECTOR_NUM_WORKERS=100',
     '-e', 'MEMORY_MAX_TRACES=100',
     '-p', '16686:16686', '-p', '14269:14269',
@@ -626,6 +631,52 @@ function Get-JaegerDeliveryCounters {
   return @{ Received = $received; Saved = $saved; Dropped = $dropped }
 }
 
+# Block until Jaeger's collector queue is empty and no more spans are arriving,
+# i.e., Received == Saved + Dropped and Received has stopped growing. Called
+# between runs so backlog from one run can never carry over into the next: a
+# single run produces ~2.19M spans, which fits the 4M-slot queue with room to
+# spare, but 10 back-to-back runs at fastbatch-JVM speed (~2.5M spans/s on a
+# Ryzen 9950X) outrun the storage write rate and overflow it (runs 2026-08-23/24
+# lost ~35% of JVM fastbatch/combined spans to queue-full drops).
+# The wait happens between processes, so measured timings are unaffected.
+function Wait-JaegerDrain {
+  param(
+    [string]$ServiceName,
+    [int]$TimeoutSeconds = 600
+  )
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  $prevReceived = -1L
+  $stablePolls = 0
+  $waited = 0
+  while ((Get-Date) -lt $deadline) {
+    $c = Get-JaegerDeliveryCounters -ServiceName $ServiceName
+    if ($null -eq $c) {
+      Write-Host "  Drain wait: Jaeger /metrics unreachable — aborting wait (end-of-variant check will flag the row)." -ForegroundColor Yellow
+      return $false
+    }
+    $backlog = $c.Received - $c.Saved - $c.Dropped
+    if ($backlog -le 0 -and $c.Received -eq $prevReceived) {
+      $stablePolls++
+      # Two consecutive stable polls: queue empty AND nothing new arrived for
+      # ~2s, so in-flight batches (client -> Envoy -> Jaeger) have landed too.
+      if ($stablePolls -ge 2) {
+        if ($waited -gt 4) {
+          Write-Host ("  Drained after ~{0}s (received={1:N0} saved={2:N0} dropped={3:N0})" -f $waited, $c.Received, $c.Saved, $c.Dropped) -ForegroundColor DarkGray
+        }
+        return $true
+      }
+    }
+    else {
+      $stablePolls = 0
+    }
+    $prevReceived = $c.Received
+    Start-Sleep -Seconds 1
+    $waited++
+  }
+  Write-Host "  Drain wait TIMED OUT after ${TimeoutSeconds}s — continuing; delivery table will show any resulting loss." -ForegroundColor Yellow
+  return $false
+}
+
 function Get-ServiceNameForVariant {
   param([string]$Variant)
   if ($Variant -eq 'baseline') { return $null }
@@ -721,6 +772,10 @@ foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
     else {
       Write-Host "  Run $($i+1): Failed to parse time" -ForegroundColor Red
       Save-FailureOutput -Phase "run" -ExeName $exe.Name -Iteration ($i + 1) -RawOutput $outputStr
+    }
+
+    if ($exe.Name -match 'otel' -and $null -ne $svcForJaeger) {
+      [void](Wait-JaegerDrain -ServiceName $svcForJaeger)
     }
   }
 

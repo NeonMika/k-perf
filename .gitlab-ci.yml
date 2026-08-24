@@ -8,8 +8,8 @@
 #
 # Runner prerequisites (once per machine, cannot be installed from CI):
 #   - ASDF installed for the gitlab-runner user (same as the other SSW projects)
-#     (the benchmark boots Jaeger + Envoy containers; Jaeger is capped at 24 GB,
-#     so the machine needs ~32 GB+ RAM)
+#     (the benchmark boots Jaeger + Envoy containers; Jaeger is capped at 44 GB,
+#     so the machine needs ~48 GB+ RAM)
 #   - x86_64 host (the comparison projects target linuxX64 only)
 #
 # Required CI/CD variables (Settings -> CI/CD -> Variables, masked):
