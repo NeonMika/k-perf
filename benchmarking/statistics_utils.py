@@ -100,7 +100,7 @@ def merge_dict(target: dict, source: dict) -> dict:
 def _run_cmd(*args: str) -> str:
     """Run a command and return stdout, or empty string on failure."""
     try:
-        result = subprocess.run(list(args), capture_output=True, text=True)
+        result = subprocess.run(list(args), capture_output=True, text=True, encoding="utf-8")
         return result.stdout.strip()
     except Exception:
         return ""

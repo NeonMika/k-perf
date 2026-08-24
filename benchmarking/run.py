@@ -133,7 +133,7 @@ def invoke_benchmark_suite(
 
             try:
                 cmd = _build_command(file_type, file_path, step_count)
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
                 output_text = result.stdout
                 execution_success = result.returncode == 0
             except Exception as e:

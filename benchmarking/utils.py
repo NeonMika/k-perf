@@ -95,9 +95,9 @@ def invoke_gradle_task_if_present(task: Optional[str], title: str):
 
     # execute ./gradlew <task> and check return code
     if platform.system() == "Windows":
-        result = subprocess.run(['./gradlew.bat', task], capture_output=True, text=True)
+        result = subprocess.run(['./gradlew.bat', task], capture_output=True, text=True, encoding="utf-8")
     else:
-        result = subprocess.run(['./gradlew', task], capture_output=True, text=True)
+        result = subprocess.run(['./gradlew', task], capture_output=True, text=True, encoding="utf-8")
 
     if result.returncode != 0:
         raise Exception(f"Failed to execute task {task} with exit code {result.returncode}: {result.stderr}")
@@ -113,11 +113,11 @@ def invoke_kmp_build(title: str, path: str, clean_build: bool = True):
 
     with in_dir(path):
         if clean_build:
-            result = subprocess.run(['./gradlew', 'clean'], capture_output=True, text=True)
+            result = subprocess.run(['./gradlew', 'clean'], capture_output=True, text=True, encoding="utf-8")
             if result.returncode != 0:
                 raise Exception(f"{title} clean failed with exit code {result.returncode}: {result.stderr}")
 
-        result = subprocess.run(['./gradlew', '-q', 'tasks', '--all'], capture_output=True, text=True)
+        result = subprocess.run(['./gradlew', '-q', 'tasks', '--all'], capture_output=True, text=True, encoding="utf-8")
         if result.returncode != 0:
             raise Exception(f"{title} tasks discovery failed with exit code {result.returncode}: {result.stderr}")
 

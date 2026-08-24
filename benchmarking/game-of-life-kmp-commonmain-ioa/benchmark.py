@@ -192,7 +192,6 @@ def main() -> None:
         print("==========================================")
         print("# Cleaning IOA benchmark dependencies...")
         print("==========================================")
-        invoke_gradle_clean(_REPO_ROOT / "KIRHelperKit", "KIRHelperKit")
         invoke_gradle_clean(
             _REPO_ROOT / "plugins" / "instrumentation-overhead-analyzer",
             "instrumentation-overhead-analyzer",
@@ -222,7 +221,6 @@ def main() -> None:
     print("# Building IOA benchmark dependencies...")
     print("==========================================")
 
-    build_times = merge_dict(build_times, build_kir_helper_kit())
     build_times = merge_dict(build_times, build_instrumentation_overhead_analyzer_plugin())
 
     if args.reference:
