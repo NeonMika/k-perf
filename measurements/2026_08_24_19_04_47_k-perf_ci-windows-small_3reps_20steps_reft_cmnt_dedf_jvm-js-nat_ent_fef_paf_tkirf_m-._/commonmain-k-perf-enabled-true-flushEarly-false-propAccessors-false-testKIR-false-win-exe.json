@@ -1,0 +1,162 @@
+{
+    "parameters": {
+        "CILabel": "ci-windows-small",
+        "RepetitionCount": 3,
+        "CleanBuild": false,
+        "StepCount": 20,
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ]
+    },
+    "machineInfo": {
+        "DeviceManufacturer": "Microsoft Corporation",
+        "DeviceModel": "Virtual Machine",
+        "OS": "Microsoft Windows Server 2025 Datacenter 10.0.26100",
+        "OSArchitecture": "64-bit",
+        "WindowsBuildNumber": "26100",
+        "AvailableRAMGB": 13.08,
+        "SystemUptimeHours": "Not available",
+        "CPU": "AMD EPYC 9V74 80-Core Processor",
+        "CPUCores": 2,
+        "CPULogicalProcessors": 4,
+        "CPUMaxClockSpeedMHz": 2596,
+        "TotalRAMGB": 15.99,
+        "RAMModuleCount": 2,
+        "RAMManufacturer": "Microsoft Corporation",
+        "RAMPartNumber": "None",
+        "RAMModuleCapacitiesGB": "1.0 + 15.0",
+        "DiskModel": "Microsoft Virtual Disk",
+        "DiskSizeGB": 150.0,
+        "DiskMediaType": "Fixed hard disk media",
+        "DiskInterfaceType": "SCSI",
+        "SystemDriveFreeSpaceGB": 32.04,
+        "PowerPlan": "High performance",
+        "RunningProcessCount": 136,
+        "IsVirtualMachine": true,
+        "HyperVEnabled": false,
+        "SecureBootEnabled": false,
+        "WindowsDefenderEnabled": true,
+        "WindowsDefenderRealTimeProtection": false,
+        "TimeZone": "UTC",
+        "Username": "runneradmin",
+        "BIOSVersion": "Hyper-V UEFI Release v4.1",
+        "BIOSManufacturer": "Microsoft Corporation",
+        "PythonVersion": "3.12.10",
+        "JavaVersion": "21.0.12",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v22.23.2",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0",
+        "GitCommitHash": "af59898fec12dc918bacdd824904c974954bc01b",
+        "GitBranch": "HEAD",
+        "CollectionTimestamp": "2026-08-24 18:55:59"
+    },
+    "buildTimeMs": 101359.00000000004,
+    "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-win-exe",
+    "repetitions": 3,
+    "timeUnit": "microseconds",
+    "times": [
+        77055.0,
+        78501.0,
+        77870.0
+    ],
+    "stepTimes": [
+        [
+            4156.0,
+            4117.0,
+            4367.0,
+            4228.0,
+            4280.0,
+            4030.0,
+            3635.0,
+            4044.0,
+            3613.0,
+            4660.0,
+            3312.0,
+            3373.0,
+            3686.0,
+            3375.0,
+            3565.0,
+            3646.0,
+            3263.0,
+            3341.0,
+            3454.0,
+            3255.0
+        ],
+        [
+            4323.0,
+            4417.0,
+            4276.0,
+            4881.0,
+            4829.0,
+            4054.0,
+            4032.0,
+            3432.0,
+            3354.0,
+            4531.0,
+            3292.0,
+            3393.0,
+            3732.0,
+            3286.0,
+            3413.0,
+            3515.0,
+            3433.0,
+            3475.0,
+            3684.0,
+            3651.0
+        ],
+        [
+            4081.0,
+            4127.0,
+            4628.0,
+            4259.0,
+            4685.0,
+            4273.0,
+            3706.0,
+            3474.0,
+            3334.0,
+            4521.0,
+            3458.0,
+            3401.0,
+            3605.0,
+            3415.0,
+            3591.0,
+            3562.0,
+            3497.0,
+            3401.0,
+            3853.0,
+            3401.0
+        ]
+    ],
+    "statistics": {
+        "count": 3,
+        "mean": 77808.66666666667,
+        "median": 77870.0,
+        "stddev": 724.9485039182669,
+        "min": 77055.0,
+        "max": 78501.0,
+        "ci95": {
+            "lower": 76008.90504695762,
+            "upper": 79608.42828637573
+        }
+    },
+    "status": "ok"
+}
