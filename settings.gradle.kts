@@ -2,10 +2,9 @@ rootProject.name = "k-perf-masterproject"
 
 includeBuild("KIRHelperKit") { name = "KIRHelperKit" }
 
-includeBuild("otlp-exporter") { name = "otlp-exporter" }
-includeBuild("otlp-exporter-proto") { name = "otlp-exporter-proto" }
-includeBuild("plugins/otel-plugin/util") { name = "otel-util" }
-includeBuild("plugins/otel-plugin-proto/util") { name = "otel-util-proto" }
+includeBuild("plugin_dependencies/otlp-exporter") { name = "otlp-exporter" }
+includeBuild("plugin_dependencies/otlp-exporter-proto") { name = "otlp-exporter-proto" }
+includeBuild("plugin_dependencies/otel-utilities") { name = "otel-utilities" }
 
 includeBuild("plugins/k-perf") { name = "k-perf-plugin" }
 includeBuild("plugins/instrumentation-overhead-analyzer") { name = "ioa-plugin" }

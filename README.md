@@ -134,9 +134,14 @@ File I/O uses **[`kotlinx-io`](https://github.com/Kotlin/kotlinx-io)** for cross
 ```
 k-perf/
 ├── 🧰 KIRHelperKit/                          # IR utility library (published separately)
+├── 🔗 plugin_dependencies/                   # Projects required by selected plugins
+│   ├── otlp-exporter/                        # JSON OTLP exporter
+│   ├── otlp-exporter-proto/                  # Protobuf/gRPC OTLP exporter
+│   └── otel-utilities/                       # Shared utility sources; JSON + proto publications
 ├── 🔌 plugins/
 │   ├── k-perf/                               # Main performance tracing plugin
-│   └── instrumentation-overhead-analyzer/    # Plugin overhead measurement tool
+│   ├── instrumentation-overhead-analyzer/    # Plugin overhead measurement tool
+│   └── otel-*/                               # OpenTelemetry compiler plugin variants
 ├── 🎮 kmp-examples/
 │   ├── fibonacci/                            # Fibonacci baseline, k-perf, and OTel variants
 │   │   ├── fibonacci-baseline/
@@ -167,7 +172,7 @@ k-perf/
 └── buildAll.sh                               # 🐧 Linux/macOS full build script
 ```
 
-> **⚠️ Note:** This is **not** a single-root Gradle project. Each subproject (`KIRHelperKit`, `plugins/k-perf`, etc.) has its own `gradlew`. They must be built **in order** because each layer publishes to `mavenLocal` for the next to consume.
+> **⚠️ Note:** This is **not** a single-root Gradle project. Independent builds such as `KIRHelperKit`, `plugin_dependencies/*`, and `plugins/*/plugin` have their own Gradle wrappers. They must be built **in order** because each layer publishes to `mavenLocal` for the next to consume.
 
 ---
 
@@ -191,6 +196,9 @@ k-perf/
 
 # Skip clean for faster iteration
 .\buildAll.ps1 -CleanBuild $false
+
+# Build and publish every k-perf and OTel variant
+.\buildAllVariants.ps1
 ```
 
 The build runs in this mandatory order (each step publishes to `mavenLocal`):
@@ -199,7 +207,14 @@ The build runs in this mandatory order (each step publishes to `mavenLocal`):
 1. KIRHelperKit               → publishToMavenLocal
 2. instrumentation-overhead-analyzer → publishToMavenLocal
 3. k-perf plugin              → publishToMavenLocal
-4. kmp-examples (all 5)       → build only
+4. game-of-life examples (all 5) → build only
+```
+
+`buildAllVariants.ps1` additionally builds the OTel chain in this order:
+
+```
+plugin_dependencies/otlp-exporter* → plugin_dependencies/otel-utilities
+    → plugins/otel-* → kmp-examples/fibonacci/fibonacci-otel*
 ```
 
 ### Running Tests

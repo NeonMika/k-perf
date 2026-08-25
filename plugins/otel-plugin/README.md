@@ -34,7 +34,7 @@ otel {
 
 All required dependencies are automatically added to the common source set.  
 These dependencies include the plugin's utility library (providing essential functions), the [OTLP exporter](https://github.com/FabianSchoenberger/otlp-exporter), the [KMP OpenTelemetry port](https://github.com/dcxp/opentelemetry-kotlin), and Kotlin's coroutines.  
-Of these, the utility library and exporter need to be published locally.
+Of these, the utility library and exporter need to be published locally. Their source projects live at `plugin_dependencies/otel-utilities` (`util` for this JSON plugin) and `plugin_dependencies/otlp-exporter`.
 
 ## Tests
 

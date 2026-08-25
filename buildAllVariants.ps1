@@ -100,10 +100,9 @@ Write-Host "=========================================="
 
 Invoke-Publish -Title "KIRHelperKit" -Path ".\KIRHelperKit"
 
-Invoke-Publish -Title "otlp-exporter (JSON)"         -Path ".\otlp-exporter"
-Invoke-Publish -Title "otlp-exporter-proto"          -Path ".\otlp-exporter-proto"
-Invoke-Publish -Title "otel-plugin util (JSON)"      -Path ".\plugins\otel-plugin\util"
-Invoke-Publish -Title "otel-plugin util (proto)"     -Path ".\plugins\otel-plugin-proto\util"
+Invoke-Publish -Title "otlp-exporter (JSON)"         -Path ".\plugin_dependencies\otlp-exporter"
+Invoke-Publish -Title "otlp-exporter-proto"          -Path ".\plugin_dependencies\otlp-exporter-proto"
+Invoke-Publish -Title "OTel utilities"               -Path ".\plugin_dependencies\otel-utilities"
 
 Invoke-Publish -Title "k-perf plugin"                          -Path ".\plugins\k-perf"
 Invoke-Publish -Title "instrumentation-overhead-analyzer"      -Path ".\plugins\instrumentation-overhead-analyzer"
