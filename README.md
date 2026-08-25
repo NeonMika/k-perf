@@ -137,7 +137,8 @@ k-perf/
 ├── 🔗 plugin_dependencies/                   # Projects required by selected plugins
 │   ├── otlp-exporter/                        # JSON OTLP exporter
 │   ├── otlp-exporter-proto/                  # Protobuf/gRPC OTLP exporter
-│   └── otel-utilities/                       # Shared utility sources; JSON + proto publications
+│   ├── otel-utilities/                       # JSON exporter platform utilities
+│   └── otel-proto-utilities/                 # Protobuf exporter platform utilities
 ├── 🔌 plugins/
 │   ├── k-perf/                               # Main performance tracing plugin
 │   ├── instrumentation-overhead-analyzer/    # Plugin overhead measurement tool
@@ -213,8 +214,10 @@ The build runs in this mandatory order (each step publishes to `mavenLocal`):
 `buildAllVariants.ps1` additionally builds the OTel chain in this order:
 
 ```
-plugin_dependencies/otlp-exporter* → plugin_dependencies/otel-utilities
-    → plugins/otel-* → kmp-examples/fibonacci/fibonacci-otel*
+plugin_dependencies/otlp-exporter → plugin_dependencies/otel-utilities
+    → plugins/otel-plugin → kmp-examples/fibonacci/fibonacci-otel
+plugin_dependencies/otlp-exporter-proto → plugin_dependencies/otel-proto-utilities
+    → plugins/otel-plugin-proto* → kmp-examples/fibonacci/fibonacci-otel-proto*
 ```
 
 ### Running Tests

@@ -5,6 +5,7 @@ includeBuild("KIRHelperKit") { name = "KIRHelperKit" }
 includeBuild("plugin_dependencies/otlp-exporter") { name = "otlp-exporter" }
 includeBuild("plugin_dependencies/otlp-exporter-proto") { name = "otlp-exporter-proto" }
 includeBuild("plugin_dependencies/otel-utilities") { name = "otel-utilities" }
+includeBuild("plugin_dependencies/otel-proto-utilities") { name = "otel-proto-utilities" }
 
 includeBuild("plugins/k-perf") { name = "k-perf-plugin" }
 includeBuild("plugins/instrumentation-overhead-analyzer") { name = "ioa-plugin" }

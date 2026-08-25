@@ -102,7 +102,8 @@ Invoke-Publish -Title "KIRHelperKit" -Path ".\KIRHelperKit"
 
 Invoke-Publish -Title "otlp-exporter (JSON)"         -Path ".\plugin_dependencies\otlp-exporter"
 Invoke-Publish -Title "otlp-exporter-proto"          -Path ".\plugin_dependencies\otlp-exporter-proto"
-Invoke-Publish -Title "OTel utilities"               -Path ".\plugin_dependencies\otel-utilities"
+Invoke-Publish -Title "OTel utilities (JSON)"        -Path ".\plugin_dependencies\otel-utilities"
+Invoke-Publish -Title "OTel utilities (proto)"        -Path ".\plugin_dependencies\otel-proto-utilities"
 
 Invoke-Publish -Title "k-perf plugin"                          -Path ".\plugins\k-perf"
 Invoke-Publish -Title "instrumentation-overhead-analyzer"      -Path ".\plugins\instrumentation-overhead-analyzer"

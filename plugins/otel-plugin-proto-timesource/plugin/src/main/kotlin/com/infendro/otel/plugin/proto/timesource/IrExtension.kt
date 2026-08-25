@@ -347,21 +347,21 @@ class IrExtension(
         val TracerProviderBuilder_addSpanProcessor = TracerProviderBuilder.getFunction("addSpanProcessor")
         val TracerProviderBuilder_build = TracerProviderBuilder.getFunction("build")
 
-        //2.5 exporter and utils (otlp-exporter-proto, package com.infendro.otlp.proto, com.infendro.otel.util)
+        //2.5 exporter and utilities (otlp-exporter-proto, package com.infendro.otlp.proto, com.infendro.otel.proto.utilities)
 
         val Exporter = getClass("com.infendro.otlp.proto", "OtlpProtoExporter")
         val Exporter_constructor = Exporter.getConstructor()
 
-        val await = getFunction("com.infendro.otel.util", "await") {
+        val await = getFunction("com.infendro.otel.proto.utilities", "await") {
             it.regularParams.size == 1
                 && it.regularParams[0].type == Exporter.type()
         }
-        val await_debug = getFunction("com.infendro.otel.util", "await") {
+        val await_debug = getFunction("com.infendro.otel.proto.utilities", "await") {
             it.regularParams.size == 2
                 && it.regularParams[0].type == Exporter.type()
                 && it.regularParams[1].type == Instant.type()
         }
-        val env = getFunction("com.infendro.otel.util", "env")
+        val env = getFunction("com.infendro.otel.proto.utilities", "env")
 
         // 3. Static fields
 
@@ -711,7 +711,7 @@ class IrExtension(
         fun IrFunction.modify() {
             body {
                 // Capture a wall-clock Instant at main entry ONLY for the debug
-                // await call (util-proto's await(exporter, start: Instant) logs
+                // await call (otel-proto-utilities' await(exporter, start: Instant) logs
                 // "elapsed since start"). Not used per-span; not in the hot path.
                 var start: IrVariable? = null
                 if (isMain() && debug) {

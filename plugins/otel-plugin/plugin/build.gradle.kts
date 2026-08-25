@@ -32,7 +32,7 @@ dependencies {
     testImplementation("io.opentelemetry.kotlin.api:all:1.0.570")
     testImplementation("io.opentelemetry.kotlin.sdk:sdk-trace:1.0.570")
     testImplementation("com.infendro.otel:otlp-exporter:1.0.1")
-    testImplementation("com.infendro.otel:util:1.0.1")
+    testImplementation("com.infendro.otel:otel-utilities:1.0.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(platform("org.junit:junit-bom:5.11.4"))

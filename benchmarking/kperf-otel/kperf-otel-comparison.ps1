@@ -278,13 +278,13 @@ Write-Host "=========================================="
 
 if ($Variants -contains 'otel') {
   Invoke-GradleBuild -Title "OTel OTLP Exporter" -Path ".\plugin_dependencies\otlp-exporter" -Tasks @("publishToMavenLocal")
-  Invoke-GradleBuild -Title "OTel Utilities (JSON)" -Path ".\plugin_dependencies\otel-utilities" -Tasks @(":util:publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Utilities (JSON)" -Path ".\plugin_dependencies\otel-utilities" -Tasks @("publishToMavenLocal")
   Invoke-GradleBuild -Title "OTel Plugin" -Path ".\plugins\otel-plugin\plugin" -Tasks @("publishToMavenLocal")
 }
 
 if ($AnyProtoVariant) {
   Invoke-GradleBuild -Title "OTel OTLP Exporter (proto)" -Path ".\plugin_dependencies\otlp-exporter-proto" -Tasks @("publishToMavenLocal")
-  Invoke-GradleBuild -Title "OTel Utilities (proto)" -Path ".\plugin_dependencies\otel-utilities" -Tasks @(":util-proto:publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Utilities (proto)" -Path ".\plugin_dependencies\otel-proto-utilities" -Tasks @("publishToMavenLocal")
 }
 if ($Variants -contains 'otel-proto') {
   Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")

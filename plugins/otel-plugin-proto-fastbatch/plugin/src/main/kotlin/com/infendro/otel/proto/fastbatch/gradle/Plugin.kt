@@ -41,7 +41,7 @@ class Plugin : KotlinCompilerPluginSupportPlugin {
             implementation("io.opentelemetry.kotlin.api:all:1.0.570-fastbatch")
             implementation("io.opentelemetry.kotlin.sdk:sdk-trace:1.0.570-fastbatch")
             implementation("com.infendro.otel:otlp-exporter-proto:1.0.1")
-            implementation("com.infendro.otel:util-proto:1.0.1")
+            implementation("com.infendro.otel:otel-proto-utilities:1.0.1")
         }
     }
 
