@@ -719,8 +719,7 @@ foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
 
   # No discarded warmup runs — $WarmupCount is now applied per-run as a
   # step-index cutoff (the first $WarmupCount step indices of every measured
-  # run are excluded from per-step statistics in Get-PerStepMedians/Mean
-  # below).
+  # run are excluded from the flattened per-step statistics below).
 
   $vpForJaeger = Get-VariantAndPlatform -ExeName $exe.Name
   $svcForJaeger = Get-ServiceNameForVariant -Variant $vpForJaeger.Variant
@@ -859,9 +858,8 @@ if (-Not (Test-Path $resultsDir)) {
 
 # --- Per-step median curve ------------------------------------------------
 # For each (variant, platform), compute the per-step median across runs
-# (one median per step index, shape: StepCount). Then average the medians
-# from index $WarmupCount to end as the headline "Step mean" — replaces
-# the old opaque "first step ≤ 2× tail-median" steady-state detector.
+# (one median per step index, shape: StepCount). This curve is diagnostic
+# output only; headline step statistics use all non-warmup measurements.
 
 function Get-PerStepMedians {
   param([object[]]$PerRunStepValues)
@@ -886,28 +884,12 @@ function Get-PerStepMedians {
   return ,$medians
 }
 
-# Mean of $Values[$Start..end] (inclusive), ignoring nulls.
-function Get-MeanFromIndex {
-  param([object[]]$Values, [int]$Start)
-  $acc = 0.0; $n = 0
-  for ($i = $Start; $i -lt $Values.Count; $i++) {
-    if ($null -ne $Values[$i]) { $acc += [double]$Values[$i]; $n++ }
-  }
-  if ($n -eq 0) { return $null }
-  return $acc / $n
-}
-
-# Build a per-(variant,platform) summary: per-step medians + mean step time
-# computed over steps $WarmupCount..end. All values in ns; convert at
-# display time.
+# Add the diagnostic per-step median curve to each result. StepMeanNanos,
+# StepMedianNanos, and StepStdDevNanos remain the statistics calculated above
+# from the same flattened set of all non-warmup measurements.
 foreach ($res in $allResults) {
   $medians = Get-PerStepMedians -PerRunStepValues $res.PerRunStepNanos
   $res['PerStepMedianNanos'] = $medians
-  # Override the previously-flat StepMeanNanos (which already excludes
-  # warmup step indices, see the flat slice above) with the
-  # WarmupCount..end mean of the per-step median curve. Aligns with what
-  # the Per-step median CSV emits as the "measured" region.
-  $res['StepMeanNanos'] = Get-MeanFromIndex -Values $medians -Start $WarmupCount
 }
 
 # --- Per-method calculation -----------------------------------------------
@@ -1043,8 +1025,7 @@ Raw timing statistics for every (variant, platform) combination. Column meanings
 
 - **Iterations**: how many of the $RunCount runs produced a valid measurement. A value below $RunCount means some runs failed. The raw output of failed runs is stored in the ``failures/`` folder.
 - **Total mean / Total median (ms)**: average and middle value of the whole-process duration. For OTel variants this includes waiting at the end of the process until all remaining tracing data has been exported. Because of that, do not compare totals across variants. Use the step columns for comparisons instead.
-- **Mean step (µs)**: the headline timing number, computed in two stages. First, for every step index, take the median of that step's duration across the $RunCount runs. Then average those medians over the measured region (step $WarmupCount to $($StepCount - 1)). The first $WarmupCount steps of every run are excluded as warmup.
-- **Step median / Step stddev (µs)**: the middle value and the spread of all measured (non-warmup) step durations. A large stddev means step times fluctuated strongly from step to step or run to run.
+- **Mean step / Step median / Step stddev (µs)**: the arithmetic mean, middle value, and sample standard deviation of the same pooled set of all measured step durations. With $RunCount successful runs, this set contains $RunCount × $($StepCount - $WarmupCount) = $($RunCount * ($StepCount - $WarmupCount)) observations. The first $WarmupCount steps of every run are excluded as warmup. A large stddev means step times fluctuated strongly from step to step or run to run.
 
 | Executable | Iterations | Total mean (ms) | Total median (ms) | Mean step (µs) | Step median (µs) | Step stddev (µs) |
 |------------|-----------:|----------------:|------------------:|---------------:|-----------------:|-----------------:|
