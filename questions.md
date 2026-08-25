@@ -1,5 +1,5 @@
 # Progress Summary
-- **Benchmarking Script Refactoring:** Consolidated, parameterized, and stabilized the comparison script (`benchmarking/kperf-otel-comparison.ps1`).
+- **Benchmarking Script Refactoring:** Consolidated, parameterized, and stabilized the comparison script (`benchmarking/kperf-otel/kperf-otel-comparison.ps1`).
 - **JS Target Execution Fixed:** Resolved Node.js/Yarn dependency resolution issues for the OpenTelemetry JS target (`@js-joda/core`).
 - **Scientific OS Isolation:** Implemented dynamic Jaeger Docker container toggling to entirely prevent "noisy neighbor" CPU/RAM interference during `k-perf` baseline runs.
 - **Asynchronous Telemetry Capture:** Enforced strict regex parsing to capture the exact OTel SDK asynchronous `Flush finished` hooks, guaranteeing complete network serialization overhead is included in the benchmarks.

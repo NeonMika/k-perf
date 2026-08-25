@@ -12,7 +12,7 @@
 # benchmark publishes THIS listener on host port 4317 and runs Jaeger behind
 # it on the otel-net docker network; all platforms keep using localhost:4317.
 #
-# Used by benchmarking/kperf-otel-comparison.ps1 (mounted to
+# Used by benchmarking/kperf-otel/kperf-otel-comparison.ps1 (mounted to
 # /etc/envoy/envoy.yaml in the envoy container).
 static_resources:
   listeners:

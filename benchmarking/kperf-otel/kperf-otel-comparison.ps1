@@ -40,6 +40,8 @@ $ContainerCli = if (Get-Command docker -ErrorAction SilentlyContinue) { 'docker'
 
 $ScriptRoot = $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($ScriptRoot)) { $ScriptRoot = '.' }
+$BenchmarkingRoot = Split-Path -Parent $ScriptRoot
+$RepoRoot = Split-Path -Parent $BenchmarkingRoot
 
 # Rebuild $env:PATH from the registry so tools installed after this PowerShell
 # (or its parent terminal) was started — e.g. node — are visible to the
@@ -56,8 +58,8 @@ if ($IsWindowsHost) {
   $env:PATH    = $pathEntries -join ';'
 }
 
-. "$ScriptRoot/types.ps1"
-. "$ScriptRoot/statistics_utils.ps1"
+. "$BenchmarkingRoot/types.ps1"
+. "$BenchmarkingRoot/statistics_utils.ps1"
 
 # Verify external prerequisites the script can't install itself.
 function Test-Prerequisites {
@@ -116,14 +118,14 @@ function Test-Prerequisites {
     Write-Host "Preflight failed: cannot run the comparison benchmark." -ForegroundColor Red
     foreach ($line in $missing) { Write-Host $line -ForegroundColor Red }
     Write-Host ""
-    Write-Host "See benchmarking/README.md `"Comparison Benchmark (kperf-otel-comparison.ps1)`" for setup details."
+    Write-Host "See benchmarking/README.md `"Comparison Benchmark (kperf-otel/kperf-otel-comparison.ps1)`" for setup details."
     throw "Preflight failed"
   }
 }
 
 Test-Prerequisites
 
-Push-Location "$ScriptRoot/.."
+Push-Location $RepoRoot
 
 # Per-step wall-clock budget scales with StepCount so long otel-JS runs at high
 # StepCount don't blow the timeout. Floor at 60s for tiny smoke runs.

@@ -147,7 +147,8 @@ k-perf/
 │   └── call_graph_visualizer/                # Python script → DOT/Graphviz call graphs
 ├── 📈 benchmarking/                          # PowerShell benchmark runners + shared utils
 │   ├── game-of-life-kmp-k-perf/             # k-perf overhead benchmark suite
-│   └── game-of-life-kmp-commonmain-ioa/     # IOA overhead benchmark suite
+│   ├── game-of-life-kmp-commonmain-ioa/      # IOA overhead benchmark suite
+│   └── kperf-otel/                           # k-perf / OpenTelemetry comparison suite
 ├── 📂 measurements/                          # Stored benchmark results (JSON + CSV)
 │   └── 2024_11_SSP/                         # SSP 2024 paper data
 ├── buildAll.ps1                              # 🪟 Windows full build script
@@ -377,7 +378,7 @@ A Jupyter Notebook version (`graph-visualizer.ipynb`) is also available for inte
 
 ## 📈 Benchmarking
 
-The `benchmarking/` folder contains two PowerShell benchmark suites. Both use shared infrastructure in `benchmarking/utils.ps1` (statistics) and `benchmarking/build.ps1` (Gradle helpers).
+The `benchmarking/` folder contains three PowerShell benchmark suites. Common infrastructure stays directly in `benchmarking/`, while suite-specific runners and resources live in their respective subfolders.
 
 Results land in `measurements/<timestamp>_<suite-name>/` as JSON files with full statistics: mean, median, stddev, min, max, and 95% confidence intervals (t-distribution).
 

@@ -4,7 +4,7 @@ This folder contains benchmarking scripts for evaluating the performance charact
 
 ## Overview
 
-The benchmarking suite measures the execution time of Game of Life simulations under two different instrumentation scenarios:
+The benchmarking suite measures execution time under three different instrumentation scenarios:
 
 1. **K-Perf Benchmark** (`game-of-life-kmp-k-perf/`)
    - Evaluates the performance impact of the K-Perf compiler plugin
@@ -17,6 +17,11 @@ The benchmarking suite measures the execution time of Game of Life simulations u
    - Compares instrumented vs non-instrumented versions
    - Focuses on CommonMain architecture
    - Produces measurements across the same target platforms (JVM, JavaScript, Native)
+
+3. **K-Perf / OpenTelemetry Comparison Benchmark** (`kperf-otel/`)
+   - Compares a deterministic CPU workload across baseline and OpenTelemetry variants
+   - Runs on JVM, JavaScript, and Native targets
+   - Keeps its Envoy configuration and patched SDK input alongside the suite runner
 
 ## Goals
 
@@ -57,9 +62,9 @@ Each JSON file contains:
   - `min`/`max`: Minimum and maximum times
   - `ci95`: 95% confidence interval using t-distribution
 
-## Comparison Benchmark (`kperf-otel-comparison.ps1`)
+## Comparison Benchmark (`kperf-otel/kperf-otel-comparison.ps1`)
 
-A separate script in this folder, `kperf-otel-comparison.ps1`, benchmarks a deterministic CPU workload (`fibonacci(20)`, one workload call per step) under eight variants across three platforms (JVM / JS / Native) — 24 rows in total. The variants are:
+The script in `kperf-otel/`, `kperf-otel-comparison.ps1`, benchmarks a deterministic CPU workload (`fibonacci(20)`, one workload call per step) under eight variants across three platforms (JVM / JS / Native) — 24 rows in total. The variants are:
 
 - **baseline** — no plugin applied (reference for overhead delta)
 - **k-perf** — local file-sink timing plugin (sync trace flush)
@@ -82,7 +87,7 @@ With the defaults each variant runs 10 × 100 = 1,000 steps total; the per-metho
 Run it with:
 
 ```powershell
-cd benchmarking
+cd benchmarking/kperf-otel
 .\kperf-otel-comparison.ps1                                              # defaults
 .\kperf-otel-comparison.ps1 -RunCount 3 -StepCount 10 -CleanBuild $false   # quick smoke test
 ```
@@ -123,7 +128,7 @@ The PAT only needs `read:packages`; no other scopes. A preflight check at the to
 
 ### Running on Linux
 
-`kperf-otel-comparison.ps1` is cross-platform: on Linux it runs under **PowerShell 7** (`sudo apt install powershell` or equivalent, then `pwsh benchmarking/kperf-otel-comparison.ps1`). The script auto-selects the host-specific pieces — `linkReleaseExecutableLinuxX64` instead of `linkReleaseExecutableMingwX64`, `.kexe` binaries under `build/bin/linuxX64/`, `/bin/sh` instead of `cmd.exe` for the timed child processes, and `Native (Linux)` row labels (the `Platform` column in `results.md`/CSV stays `Native`, so cross-OS results line up).
+`kperf-otel-comparison.ps1` is cross-platform: on Linux it runs under **PowerShell 7** (`sudo apt install powershell` or equivalent, then `pwsh benchmarking/kperf-otel/kperf-otel-comparison.ps1`). The script auto-selects the host-specific pieces — `linkReleaseExecutableLinuxX64` instead of `linkReleaseExecutableMingwX64`, `.kexe` binaries under `build/bin/linuxX64/`, `/bin/sh` instead of `cmd.exe` for the timed child processes, and `Native (Linux)` row labels (the `Platform` column in `results.md`/CSV stays `Native`, so cross-OS results line up).
 
 Linux-specific prerequisites beyond the table above:
 
@@ -133,7 +138,7 @@ Linux-specific prerequisites beyond the table above:
 
 The profile capture suite (`profiles/run-all-profiles.ps1`: JFR / PerfView) and the game-of-life `build.ps1`/`run.ps1` suite remain Windows-only.
 
-**GitLab CI:** `.gitlab-ci.yml` at the repo root runs this benchmark on the SSW Linux runners as a **manual** job (trigger via *Run pipeline*). It installs Java/Node via ASDF and pwsh from a tarball, publishes the patched fastbatch SDK to the runner's mavenLocal on first use (from `benchmarking/fastbatch-sdk.patch` applied onto upstream `dcxp/opentelemetry-kotlin@9c3186e`), runs the full benchmark, and uploads the new `measurements/comparison_run_*` directory as `ci-results/`. Requires masked CI/CD variables `GITHUB_USERNAME` / `GITHUB_PASSWORD` and a runner with Docker + x86_64.
+**GitLab CI:** `.gitlab-ci.yml` at the repo root runs this benchmark on the SSW Linux runners as a **manual** job (trigger via *Run pipeline*). It installs Java/Node via ASDF and pwsh from a tarball, publishes the patched fastbatch SDK to the runner's mavenLocal on first use (from `benchmarking/kperf-otel/fastbatch-sdk.patch` applied onto upstream `dcxp/opentelemetry-kotlin@9c3186e`), runs the full benchmark, and uploads the new `measurements/comparison_run_*` directory as `ci-results/`. Requires masked CI/CD variables `GITHUB_USERNAME` / `GITHUB_PASSWORD` and a runner with Docker + x86_64.
 
 ### Reading the output
 
