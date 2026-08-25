@@ -96,7 +96,7 @@ The plugin prints both filenames to stdout at the end of `main`, which is how be
 
 ## KMP Examples
 
-Five Kotlin Multiplatform projects under `kmp-examples/game-of-life/`, all targeting JVM + JS (Node.js) + mingwX64 + linuxX64 + macosX64. They implement Conway's Game of Life and serve as the subjects under test for the plugins. The `play(steps)` function in `commonMain/kotlin/game/gol/GameOfLife.kt` is shared across all five; only the `main()` location and applied plugins differ. Fibonacci benchmark variants live under `kmp-examples/fibonacci/`.
+All projects under `kmp-examples/` target JVM + JS (Node.js) + mingwX64 + linuxX64 + macosX64. Five projects under `kmp-examples/game-of-life/` implement Conway's Game of Life and serve as subjects under test for the plugins. The `play(steps)` function in `commonMain/kotlin/game/gol/GameOfLife.kt` is shared across all five; only the `main()` location and applied plugins differ. Fibonacci benchmark variants live under `kmp-examples/fibonacci/`.
 
 ### Output artifact naming
 

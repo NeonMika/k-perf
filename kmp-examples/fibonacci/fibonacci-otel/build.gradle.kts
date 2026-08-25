@@ -65,6 +65,12 @@ kotlin {
         useCommonJs()
         binaries.executable()
     }
+    macosX64 {
+        binaries.executable {
+            entryPoint = "main"
+            baseName = "main"
+        }
+    }
     linuxX64 {
         binaries.executable {
             entryPoint = "main"

@@ -45,10 +45,12 @@ kotlin {
     binaries.executable()
   }
 
+  val macosX64 = macosX64()
   val linuxX64 = linuxX64()
   val mingwX64 = mingwX64()
 
   listOf(
+    macosX64,
     linuxX64,
     mingwX64
   ).forEach { target ->
@@ -63,6 +65,7 @@ kotlin {
     val commonMain by getting
     val jvmMain by getting
     val jsMain by getting
+    val macosX64Main by getting
     val linuxX64Main by getting
     val mingwX64Main by getting
   }

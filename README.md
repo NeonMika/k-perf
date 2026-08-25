@@ -340,7 +340,7 @@ dependencyResolutionManagement {
 
 ## 🎮 KMP Examples
 
-The examples are grouped by workload: Fibonacci benchmark variants live in `kmp-examples/fibonacci/`, while five **Conway's Game of Life** variants live in `kmp-examples/game-of-life/`. The Game of Life projects target JVM, JavaScript (Node.js), and Native (mingwX64, linuxX64, macosX64).
+The examples are grouped by workload: Fibonacci benchmark variants live in `kmp-examples/fibonacci/`, while five **Conway's Game of Life** variants live in `kmp-examples/game-of-life/`. All KMP examples target JVM, JavaScript (Node.js), and Native (mingwX64, linuxX64, macosX64).
 
 | Project | Plugin | Architecture |
 |---|---|---|
