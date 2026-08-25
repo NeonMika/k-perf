@@ -169,9 +169,14 @@ k-perf/
 │   └── utils/                                # Shared build, execution, and statistics scripts
 ├── 📂 measurements/                          # Stored benchmark results (JSON + CSV)
 │   └── 2024_11_SSP/                         # SSP 2024 paper data
+├── 🔬 research/
+│   └── otel_overhead_investigation/          # OpenTelemetry overhead research
+│       └── profiles/                         # CPU profiles and analysis tooling
 ├── buildAll.ps1                              # 🪟 Windows full build script
 └── buildAll.sh                               # 🐧 Linux/macOS full build script
 ```
+
+The `research/otel_overhead_investigation/` folder contains research performed for the paper **“Understanding and Reducing OpenTelemetry Tracing Overhead in Kotlin Multiplatform”**, submitted to the Symposium on Software Performance 2026.
 
 > **⚠️ Note:** This is **not** a single-root Gradle project. Independent builds such as `KIRHelperKit`, `plugin_dependencies/*`, and `plugins/*/plugin` have their own Gradle wrappers. They must be built **in order** because each layer publishes to `mavenLocal` for the next to consume.
 

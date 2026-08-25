@@ -1,7 +1,7 @@
 'use strict';
 // Search a PerfView CPU-stacks XML zip for frames whose name matches a regex;
 // report aggregate self/total time, top callers, and heaviest call chains.
-// Mirror of profiles/find_frame.js for V8 / jvm_find_frame.js for JFR.
+// Mirror of find_frame.js for V8 / jvm_find_frame.js for JFR in this directory.
 //
 // Usage: node native_find_frame.js <profile.perfView.xml.zip> <regex> [topCallers=10]
 

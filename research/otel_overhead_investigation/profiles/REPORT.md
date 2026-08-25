@@ -198,7 +198,7 @@ After the `setMaxExportBatchSize` typo fix landed in `otel-plugin-proto` and
 The JSON `otel` baseline is unchanged on purpose — it still uses the
 unpatched plugin.
 
-Capture: `profiles/run-all-profiles.ps1 -StepCount 3000`. StepCount=3000 was
+Capture: `research/otel_overhead_investigation/profiles/run-all-profiles.ps1 -StepCount 3000`. StepCount=3000 was
 chosen because the post-fix otel-proto JVM workload now runs at ~0.2 ms per
 step (was ~2 ms pre-fix) and JFR's 10 ms sampling produced fewer than 10
 samples at the previous StepCount=1 default. Even at 3000 steps the

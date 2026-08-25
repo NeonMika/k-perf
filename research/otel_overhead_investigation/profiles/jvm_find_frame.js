@@ -1,7 +1,7 @@
 'use strict';
 // Search a JFR recording for execution-sample frames whose method name
 // matches a regex; report aggregate self/total time, top callers, and
-// heaviest call chains. Mirrors profiles/find_frame.js for JS profiles.
+// heaviest call chains. Mirrors find_frame.js in this directory for JS profiles.
 //
 // Usage: node jvm_find_frame.js <recording.jfr> <regex> [topCallers=10] [intervalMs=10]
 

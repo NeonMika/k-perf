@@ -1,6 +1,6 @@
 'use strict';
 // Reads a Java Flight Recorder (.jfr) file via the JDK's `jfr` CLI and prints
-// top frames by self-time and total-time, mirroring profiles/analyze.js.
+// top frames by self-time and total-time, mirroring analyze.js in this directory.
 //
 // Each `jdk.ExecutionSample` event in the recording is one stack snapshot of a
 // runnable thread. With the JFR `profile` settings the sample period is 10 ms,

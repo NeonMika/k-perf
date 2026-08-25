@@ -1,6 +1,6 @@
 ﻿# Profile Run Index
 
-Generated 2026-06-13 17:36:19 by `profiles/run-all-profiles.ps1`.
+Generated 2026-06-13 17:36:19 by `research/otel_overhead_investigation/profiles/run-all-profiles.ps1`.
 
 | Variant | Platform | Workload | Capture wall | Profile | Summary |
 |---|---|---:|---:|---|---|

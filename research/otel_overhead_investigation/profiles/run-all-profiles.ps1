@@ -5,11 +5,11 @@
 # + xperf (Windows ADK Performance Toolkit) for Native.
 #
 # Usage:
-#   .\profiles\run-all-profiles.ps1                           # all 12, fresh capture
-#   .\profiles\run-all-profiles.ps1 -Variants k-perf          # one variant only
-#   .\profiles\run-all-profiles.ps1 -Platforms jvm,js         # two platforms only
-#   .\profiles\run-all-profiles.ps1 -SkipCapture              # only re-render markdown from existing profiles
-#   .\profiles\run-all-profiles.ps1 -TopN 50                  # bigger top-N tables
+#   .\research\otel_overhead_investigation\profiles\run-all-profiles.ps1                           # all 12, fresh capture
+#   .\research\otel_overhead_investigation\profiles\run-all-profiles.ps1 -Variants k-perf          # one variant only
+#   .\research\otel_overhead_investigation\profiles\run-all-profiles.ps1 -Platforms jvm,js         # two platforms only
+#   .\research\otel_overhead_investigation\profiles\run-all-profiles.ps1 -SkipCapture              # only re-render markdown from existing profiles
+#   .\research\otel_overhead_investigation\profiles\run-all-profiles.ps1 -TopN 50                  # bigger top-N tables
 
 param(
   [string[]]$Variants  = @('k-perf','otel','otel-proto','otel-proto-sampler','otel-proto-timesource','otel-proto-anchored','otel-proto-fastbatch'),
@@ -25,8 +25,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Resolve project root (parent of profiles/)
-$ProjectRoot = Split-Path $PSScriptRoot -Parent
+# The script lives at research/otel_overhead_investigation/profiles/.
+$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+$ProfilesRoot = $PSScriptRoot
 Set-Location $ProjectRoot
 
 # Add tool dirs to PATH idempotently.
@@ -207,7 +208,7 @@ function Capture-Js {
   if (-not (Test-Path $ProfileDir)) { New-Item -ItemType Directory -Path $ProfileDir -Force | Out-Null }
   for ($i = 0; $i -lt $WarmupRuns; $i++) { $null = Invoke-Native { & node '--max-old-space-size=12288' $Spec.Js $StepCount 2>&1 } }
   $sw = [Diagnostics.Stopwatch]::StartNew()
-  # Absolute paths -- Node mangles relative paths under --cpu-prof (see profiles/REPORT.md section 8).
+  # Absolute paths -- Node mangles relative paths under --cpu-prof (see REPORT.md section 8).
   $absDir = (Resolve-Path $ProfileDir).Path
   $out = Invoke-Native { & node '--max-old-space-size=12288' '--cpu-prof' "--cpu-prof-dir=$absDir" "--cpu-prof-name=$ProfileName" $Spec.Js $StepCount 2>&1 }
   $sw.Stop()
@@ -403,8 +404,8 @@ if ('native' -in $Platforms -and -not $SkipCapture) {
         Write-Host "[warn] $vName native exe missing: $($spec.Exe) -- skipping native capture for it" -ForegroundColor Yellow
         continue
       }
-      $dir = "profiles\native-$vName"
-      $absDir = Join-Path $PWD $dir
+      $dir = Join-Path $ProfilesRoot "native-$vName"
+      $absDir = $dir
       $nativeJobs += [pscustomobject]@{
         Name    = $vName
         Exe     = (Resolve-Path $spec.Exe).Path
@@ -434,27 +435,27 @@ foreach ($vName in $Variants) {
     # Resolve dir + filename + analyzer per platform.
     switch ($p) {
       'jvm' {
-        $dir       = "profiles\jvm-$vName"
+        $dir       = Join-Path $ProfilesRoot "jvm-$vName"
         $profile   = "$dir\$vName.jfr"
-        $analyzer  = 'profiles\jvm_analyze.js'
-        $searcher  = 'profiles\jvm_find_frame.js'
+        $analyzer  = Join-Path $ProfilesRoot 'jvm_analyze.js'
+        $searcher  = Join-Path $ProfilesRoot 'jvm_find_frame.js'
       }
       'js' {
-        $dir       = "profiles\$($spec.JsDir)"
+        $dir       = Join-Path $ProfilesRoot $spec.JsDir
         $jsName    = if ($vName -eq 'k-perf') { 'kperf' } else { $vName }
         $profile   = "$dir\$jsName.cpuprofile"
-        $analyzer  = 'profiles\analyze.js'
-        $searcher  = 'profiles\find_frame.js'
+        $analyzer  = Join-Path $ProfilesRoot 'analyze.js'
+        $searcher  = Join-Path $ProfilesRoot 'find_frame.js'
       }
       'native' {
         # `$profile` is the file the *analyzer* reads (the XML stacks zip).
         # `$captureFile` is the raw ETL the *recorder* produces. Capture-Native
         # consumes the ETL and writes the XML next to it (PerfView's naming).
-        $dir         = "profiles\native-$vName"
+        $dir         = Join-Path $ProfilesRoot "native-$vName"
         $captureFile = "$dir\$vName.etl.zip"
         $profile     = "$dir\$vName.perfView.xml.zip"
-        $analyzer    = 'profiles\native_analyze.js'
-        $searcher    = 'profiles\native_find_frame.js'
+        $analyzer    = Join-Path $ProfilesRoot 'native_analyze.js'
+        $searcher    = Join-Path $ProfilesRoot 'native_find_frame.js'
       }
       default { Write-Host "[warn] unknown platform '$p' -- skipping" -ForegroundColor Yellow; continue }
     }
@@ -530,23 +531,19 @@ foreach ($vName in $Variants) {
 }
 
 # --- index file ---------------------------------------------------------------------------------
-$indexPath = 'profiles\INDEX.md'
+$indexPath = Join-Path $ProfilesRoot 'INDEX.md'
 $idx = [System.Text.StringBuilder]::new()
 [void]$idx.AppendLine('# Profile Run Index')
 [void]$idx.AppendLine('')
-[void]$idx.AppendLine("Generated $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') by ``profiles/run-all-profiles.ps1``.")
+[void]$idx.AppendLine("Generated $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') by ``research/otel_overhead_investigation/profiles/run-all-profiles.ps1``.")
 [void]$idx.AppendLine('')
 [void]$idx.AppendLine('| Variant | Platform | Workload | Capture wall | Profile | Summary |')
 [void]$idx.AppendLine('|---|---|---:|---:|---|---|')
 foreach ($s in $summaries) {
   $wl   = if ($null -ne $s.Workload) { "$($s.Workload) ms" } else { '--' }
   $wall = if ($null -ne $s.Wall)     { "$($s.Wall) ms"     } else { '--' }
-  $relProfile = (Resolve-Path -Relative $s.Profile) -replace '\\','/'
-  $relSummary = (Resolve-Path -Relative $s.Summary) -replace '\\','/'
-  # Strip both `./profiles/` (PS Resolve-Path style) and `profiles/` (raw) prefix
-  # so links resolve from INDEX.md, which sits inside profiles/.
-  $relProfile = $relProfile -replace '^\./profiles/','' -replace '^profiles/',''
-  $relSummary = $relSummary -replace '^\./profiles/','' -replace '^profiles/',''
+  $relProfile = [System.IO.Path]::GetRelativePath($ProfilesRoot, (Resolve-Path $s.Profile).Path) -replace '\\','/'
+  $relSummary = [System.IO.Path]::GetRelativePath($ProfilesRoot, (Resolve-Path $s.Summary).Path) -replace '\\','/'
   [void]$idx.AppendLine("| $($s.Variant) | $($s.Platform) | $wl | $wall | [$([System.IO.Path]::GetFileName($s.Profile))]($relProfile) | [SUMMARY.md]($relSummary) |")
 }
 [void]$idx.AppendLine('')
