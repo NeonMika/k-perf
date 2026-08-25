@@ -1,6 +1,5 @@
 package com.infendro.otel.util
 
-import com.infendro.otlp.OtlpExporter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -8,7 +7,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import node.process.process
 
-private fun printExportStats(exporter: OtlpExporter) {
+private fun printExportStats(exporter: UtilityExporter) {
     println("### exported_spans: ${exporter.totalSpansExported}")
     println("### export_batches: ${exporter.totalExportBatches}")
     println("### export_failures: ${exporter.failedExportBatches}")
@@ -17,7 +16,7 @@ private fun printExportStats(exporter: OtlpExporter) {
 }
 
 actual fun await(
-    exporter: OtlpExporter
+    exporter: UtilityExporter
 ) {
     CoroutineScope(Dispatchers.Default).launch {
         exporter.await()
@@ -27,7 +26,7 @@ actual fun await(
 }
 
 actual fun await(
-    exporter: OtlpExporter,
+    exporter: UtilityExporter,
     start: Instant
 ) {
     CoroutineScope(Dispatchers.Default).launch {

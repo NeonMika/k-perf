@@ -8,10 +8,10 @@ This Gradle multi-project contains the platform-specific helper functions inject
 
 The Kotlin implementation is shared from `src/`, but it is published as two modules:
 
-- `com.infendro.otel:util:1.0.1` compiles against `otlp-exporter` (JSON/HTTP).
-- `com.infendro.otel:util-proto:1.0.1` compiles against `otlp-exporter-proto` (protobuf/gRPC).
+- `com.infendro.otel:util:1.0.1` compiles against `com.infendro.otlp.json.OtlpJsonExporter` from `otlp-exporter` (JSON/HTTP).
+- `com.infendro.otel:util-proto:1.0.1` compiles against `com.infendro.otlp.proto.OtlpProtoExporter` from `otlp-exporter-proto` (protobuf/gRPC).
 
-Both exporters intentionally expose `com.infendro.otlp.OtlpExporter`, but they are alternative implementations and must not be placed on the same consumer classpath. Separate utility publications preserve the correct transitive exporter dependency while eliminating the previously duplicated utility sources.
+The exporters use distinct packages and class names, so both dependencies can be inspected without ambiguous or duplicate class identities. Separate utility publications preserve the correct transitive exporter dependency while eliminating the previously duplicated utility implementation.
 
 Publish both variants with:
 

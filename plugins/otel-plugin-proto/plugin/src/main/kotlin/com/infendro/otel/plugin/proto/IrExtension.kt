@@ -342,9 +342,9 @@ class IrExtension(
         val TracerProviderBuilder_addSpanProcessor = TracerProviderBuilder.getFunction("addSpanProcessor")
         val TracerProviderBuilder_build = TracerProviderBuilder.getFunction("build")
 
-        //2.5 exporter and utils (otlp-exporter-proto, package com.infendro.otlp, com.infendro.otel.util)
+        //2.5 exporter and utils (otlp-exporter-proto, package com.infendro.otlp.proto, com.infendro.otel.util)
 
-        val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
+        val Exporter = getClass("com.infendro.otlp.proto", "OtlpProtoExporter")
         val Exporter_constructor = Exporter.getConstructor()
 
         val await = getFunction("com.infendro.otel.util", "await") {
@@ -457,7 +457,7 @@ class IrExtension(
         }
 
         // IR ↓
-        //   private val _exporter = OtlpExporter(_host, _service)
+        //   private val _exporter = OtlpProtoExporter(_host, _service)
         val exporter = buildField(
             name = "_exporter",
             type = Exporter.type(),

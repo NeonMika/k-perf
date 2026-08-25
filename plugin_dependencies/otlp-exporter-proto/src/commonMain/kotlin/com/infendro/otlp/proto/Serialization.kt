@@ -1,4 +1,4 @@
-package com.infendro.otlp
+package com.infendro.otlp.proto
 
 import io.opentelemetry.kotlin.api.common.AttributeType
 import io.opentelemetry.kotlin.api.trace.SpanKind

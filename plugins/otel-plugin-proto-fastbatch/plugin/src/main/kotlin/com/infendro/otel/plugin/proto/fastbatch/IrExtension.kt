@@ -331,7 +331,7 @@ class IrExtension(
         val TracerProviderBuilder_build = TracerProviderBuilder.getFunction("build")
 
 
-        val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
+        val Exporter = getClass("com.infendro.otlp.proto", "OtlpProtoExporter")
         val Exporter_constructor = Exporter.getConstructor()
 
         val await = getFunction("com.infendro.otel.util", "await") {

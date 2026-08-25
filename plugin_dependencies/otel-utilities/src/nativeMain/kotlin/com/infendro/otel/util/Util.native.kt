@@ -1,6 +1,5 @@
 package com.infendro.otel.util
 
-import com.infendro.otlp.OtlpExporter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import kotlinx.coroutines.runBlocking
@@ -8,7 +7,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import platform.posix.getenv
 
-private fun printExportStats(exporter: OtlpExporter) {
+private fun printExportStats(exporter: UtilityExporter) {
     println("### exported_spans: ${exporter.totalSpansExported}")
     println("### export_batches: ${exporter.totalExportBatches}")
     println("### export_failures: ${exporter.failedExportBatches}")
@@ -17,14 +16,14 @@ private fun printExportStats(exporter: OtlpExporter) {
 }
 
 actual fun await(
-    exporter: OtlpExporter
+    exporter: UtilityExporter
 ) = runBlocking {
     exporter.await()
     printExportStats(exporter)
 }
 
 actual fun await(
-    exporter: OtlpExporter,
+    exporter: UtilityExporter,
     start: Instant
 ) = runBlocking {
     exporter.await()

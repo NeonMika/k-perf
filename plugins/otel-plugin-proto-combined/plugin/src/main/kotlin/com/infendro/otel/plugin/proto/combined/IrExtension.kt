@@ -336,7 +336,7 @@ class IrExtension(
         val SamplerCompanion_alwaysOn = SamplerCompanion.getFunction("alwaysOn")
 
 
-        val Exporter = getClass("com.infendro.otlp", "OtlpExporter")
+        val Exporter = getClass("com.infendro.otlp.proto", "OtlpProtoExporter")
         val Exporter_constructor = Exporter.getConstructor()
 
         val await = getFunction("com.infendro.otel.util", "await") {

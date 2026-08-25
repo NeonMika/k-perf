@@ -1,20 +1,32 @@
-package com.infendro.otlp
+package com.infendro.otlp.json
 
-import io.github.timortel.kmpgrpc.core.Channel
+import io.ktor.client.*
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.request.*
+import io.ktor.http.*
 import io.opentelemetry.kotlin.sdk.common.CompletableResultCode
 import io.opentelemetry.kotlin.sdk.trace.data.SpanData
 import io.opentelemetry.kotlin.sdk.trace.export.SpanExporter
-import io.opentelemetry.proto.collector.trace.v1.TraceServiceStub
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
-class OtlpExporter(
+class OtlpJsonExporter(
     val host: String,
     val service: String
 ) : SpanExporter {
-    private val channel: Channel
-    private val stub: TraceServiceStub
+    private val client = HttpClient {
+        install(HttpTimeout) {
+            requestTimeoutMillis = 600_000
+            connectTimeoutMillis = 10_000
+            socketTimeoutMillis = 600_000
+        }
+        expectSuccess = false
+    }
     private val scope = CoroutineScope(Dispatchers.Default)
     private val jobs: MutableList<Job> = mutableListOf()
+
+    private val sendGate = Semaphore(permits = 64)
 
     var totalSpansExported: Long = 0L
         private set
@@ -27,12 +39,6 @@ class OtlpExporter(
     var firstExportError: String? = null
         private set
 
-    init {
-        val (h, p) = parseHostPort(host, defaultPort = 4317)
-        channel = Channel.Builder.forAddress(h, p).usePlaintext().build()
-        stub = TraceServiceStub(channel)
-    }
-
     suspend fun await() {
         jobs.joinAll()
     }
@@ -44,8 +50,13 @@ class OtlpExporter(
         totalExportBatches += 1L
         val job = scope.launch {
             try {
-                val request = spans.toExportRequest(service)
-                stub.export(request = request)
+                val payload = spans.serialize(service)
+                sendGate.withPermit {
+                    client.post("http://$host/v1/traces") {
+                        contentType(ContentType.Application.Json)
+                        setBody(payload)
+                    }
+                }
             } catch (e: Exception) {
                 failedExportBatches += 1L
                 failedExportSpans += spans.size.toLong()
@@ -64,12 +75,4 @@ class OtlpExporter(
     }
 
     override fun shutdown() = flush()
-}
-
-private fun parseHostPort(host: String, defaultPort: Int): Pair<String, Int> {
-    val idx = host.lastIndexOf(':')
-    if (idx < 0) return host to defaultPort
-    val h = host.substring(0, idx)
-    val p = host.substring(idx + 1).toIntOrNull() ?: defaultPort
-    return h to p
 }

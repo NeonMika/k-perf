@@ -1,14 +1,13 @@
 package com.infendro.otel.util
 
-import com.infendro.otlp.OtlpExporter
 import kotlinx.datetime.Instant
 
 expect fun await(
-    exporter: OtlpExporter
+    exporter: UtilityExporter
 )
 
 expect fun await(
-    exporter: OtlpExporter,
+    exporter: UtilityExporter,
     start: Instant
 )
 

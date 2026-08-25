@@ -3,6 +3,8 @@
 This is an exporter for dcxp's [KMP OpenTelemetry port](https://github.com/dcxp/opentelemetry-kotlin).  
 It exports spans asynchronously (using Ktor) to an OpenTelemetry Collector using HTTP and JSON.
 
+The public exporter class is `com.infendro.otlp.json.OtlpJsonExporter`.
+
 Supported targets include JVM, JavaScript, and Native (Kotlin).
 
 ## Usage
@@ -11,7 +13,7 @@ Note: The library is not published in any maven repository, requiring a local pu
 
 Add the following to the dependencies in your `build.gradle.kts`.
 ```kotlin
-implementation("com.infendro.otel:otlp-exporter:1.0.0")
+implementation("com.infendro.otel:otlp-exporter:1.0.1")
 // the OpenTelemetry port
 implementation("io.opentelemetry.kotlin.api:all:1.0.570")
 implementation("io.opentelemetry.kotlin.sdk:sdk-trace:1.0.570")

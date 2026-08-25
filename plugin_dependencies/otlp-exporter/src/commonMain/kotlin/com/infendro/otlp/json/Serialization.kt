@@ -1,6 +1,6 @@
-package com.infendro.otlp
+package com.infendro.otlp.json
 
-import com.infendro.otlp.Value.*
+import com.infendro.otlp.json.Value.*
 import io.opentelemetry.kotlin.api.common.AttributeType
 import io.opentelemetry.kotlin.sdk.trace.data.SpanData
 import kotlinx.serialization.Serializable
