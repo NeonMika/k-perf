@@ -310,14 +310,14 @@ Write-Host "Compiling Comparison Projects"
 Write-Host "=========================================="
 
 $comparisonBuilds = @(
-  @{ Variant = 'baseline';              Title = "Comparison Project (baseline)";              Path = ".\kmp-examples\comparison-baseline";              RefreshDeps = $false },
-  @{ Variant = 'otel';                  Title = "Comparison Project (otel)";                  Path = ".\kmp-examples\comparison-otel";                  RefreshDeps = $true },
-  @{ Variant = 'otel-proto';            Title = "Comparison Project (otel-proto)";            Path = ".\kmp-examples\comparison-otel-proto";            RefreshDeps = $true },
-  @{ Variant = 'otel-proto-sampler';    Title = "Comparison Project (otel-proto-sampler)";    Path = ".\kmp-examples\comparison-otel-proto-sampler";    RefreshDeps = $true },
-  @{ Variant = 'otel-proto-timesource'; Title = "Comparison Project (otel-proto-timesource)"; Path = ".\kmp-examples\comparison-otel-proto-timesource"; RefreshDeps = $true },
-  @{ Variant = 'otel-proto-anchored';   Title = "Comparison Project (otel-proto-anchored)";   Path = ".\kmp-examples\comparison-otel-proto-anchored";   RefreshDeps = $true },
-  @{ Variant = 'otel-proto-fastbatch';  Title = "Comparison Project (otel-proto-fastbatch)";  Path = ".\kmp-examples\comparison-otel-proto-fastbatch";  RefreshDeps = $true },
-  @{ Variant = 'otel-proto-combined';   Title = "Comparison Project (otel-proto-combined)";   Path = ".\kmp-examples\comparison-otel-proto-combined";   RefreshDeps = $true }
+  @{ Variant = 'baseline';              Title = "Fibonacci Project (baseline)";              Path = ".\kmp-examples\fibonacci\fibonacci-baseline";              RefreshDeps = $false },
+  @{ Variant = 'otel';                  Title = "Fibonacci Project (otel)";                  Path = ".\kmp-examples\fibonacci\fibonacci-otel";                  RefreshDeps = $true },
+  @{ Variant = 'otel-proto';            Title = "Fibonacci Project (otel-proto)";            Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto";            RefreshDeps = $true },
+  @{ Variant = 'otel-proto-sampler';    Title = "Fibonacci Project (otel-proto-sampler)";    Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-sampler";    RefreshDeps = $true },
+  @{ Variant = 'otel-proto-timesource'; Title = "Fibonacci Project (otel-proto-timesource)"; Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-timesource"; RefreshDeps = $true },
+  @{ Variant = 'otel-proto-anchored';   Title = "Fibonacci Project (otel-proto-anchored)";   Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-anchored";   RefreshDeps = $true },
+  @{ Variant = 'otel-proto-fastbatch';  Title = "Fibonacci Project (otel-proto-fastbatch)";  Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-fastbatch";  RefreshDeps = $true },
+  @{ Variant = 'otel-proto-combined';   Title = "Fibonacci Project (otel-proto-combined)";   Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-combined";   RefreshDeps = $true }
 )
 $comparisonTasks = @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", $NativeLinkTask)
 foreach ($b in $comparisonBuilds) {
@@ -332,37 +332,37 @@ foreach ($b in $comparisonBuilds) {
 
 # Path resolving for execution. StepCount is appended at run time as the
 # positional argv[0] each Main.kt reads.
-$baselineJvm    = "java -jar .\kmp-examples\comparison-baseline\build\lib\comparison-baseline-jvm-0.1.0.jar"
-$baselineJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-baseline\build\js\packages\comparison-baseline\kotlin\comparison-baseline.js"
-$baselineNative = ".\kmp-examples\comparison-baseline\build\bin\mingwX64\releaseExecutable\comparison-baseline.exe"
+$baselineJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-baseline\build\lib\fibonacci-baseline-jvm-0.1.0.jar"
+$baselineJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-baseline\build\js\packages\fibonacci-baseline\kotlin\fibonacci-baseline.js"
+$baselineNative = ".\kmp-examples\fibonacci\fibonacci-baseline\build\bin\mingwX64\releaseExecutable\fibonacci-baseline.exe"
 
-$otelJvm    = "java -jar .\kmp-examples\comparison-otel\build\lib\comparison-otel-jvm-1.0.0.jar"
-$otelJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel\build\js\packages\comparison-otel\kotlin\comparison-otel.js"
-$otelNative = ".\kmp-examples\comparison-otel\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel\build\lib\fibonacci-otel-jvm-1.0.0.jar"
+$otelJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel\build\js\packages\fibonacci-otel\kotlin\fibonacci-otel.js"
+$otelNative = ".\kmp-examples\fibonacci\fibonacci-otel\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoJvm    = "java -jar .\kmp-examples\comparison-otel-proto\build\lib\comparison-otel-proto-jvm-1.0.0.jar"
-$otelProtoJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto\build\js\packages\comparison-otel-proto\kotlin\comparison-otel-proto.js"
-$otelProtoNative = ".\kmp-examples\comparison-otel-proto\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto\build\lib\fibonacci-otel-proto-jvm-1.0.0.jar"
+$otelProtoJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto\build\js\packages\fibonacci-otel-proto\kotlin\fibonacci-otel-proto.js"
+$otelProtoNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoSamplerJvm    = "java -jar .\kmp-examples\comparison-otel-proto-sampler\build\lib\comparison-otel-proto-sampler-jvm-1.0.0.jar"
-$otelProtoSamplerJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-sampler\build\js\packages\comparison-otel-proto-sampler\kotlin\comparison-otel-proto-sampler.js"
-$otelProtoSamplerNative = ".\kmp-examples\comparison-otel-proto-sampler\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoSamplerJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-sampler\build\lib\fibonacci-otel-proto-sampler-jvm-1.0.0.jar"
+$otelProtoSamplerJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-sampler\build\js\packages\fibonacci-otel-proto-sampler\kotlin\fibonacci-otel-proto-sampler.js"
+$otelProtoSamplerNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-sampler\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoTsJvm    = "java -jar .\kmp-examples\comparison-otel-proto-timesource\build\lib\comparison-otel-proto-timesource-jvm-1.0.0.jar"
-$otelProtoTsJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-timesource\build\js\packages\comparison-otel-proto-timesource\kotlin\comparison-otel-proto-timesource.js"
-$otelProtoTsNative = ".\kmp-examples\comparison-otel-proto-timesource\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoTsJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-timesource\build\lib\fibonacci-otel-proto-timesource-jvm-1.0.0.jar"
+$otelProtoTsJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-timesource\build\js\packages\fibonacci-otel-proto-timesource\kotlin\fibonacci-otel-proto-timesource.js"
+$otelProtoTsNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-timesource\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoAnchoredJvm    = "java -jar .\kmp-examples\comparison-otel-proto-anchored\build\lib\comparison-otel-proto-anchored-jvm-1.0.0.jar"
-$otelProtoAnchoredJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-anchored\build\js\packages\comparison-otel-proto-anchored\kotlin\comparison-otel-proto-anchored.js"
-$otelProtoAnchoredNative = ".\kmp-examples\comparison-otel-proto-anchored\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoAnchoredJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-anchored\build\lib\fibonacci-otel-proto-anchored-jvm-1.0.0.jar"
+$otelProtoAnchoredJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-anchored\build\js\packages\fibonacci-otel-proto-anchored\kotlin\fibonacci-otel-proto-anchored.js"
+$otelProtoAnchoredNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-anchored\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoFastbatchJvm    = "java -jar .\kmp-examples\comparison-otel-proto-fastbatch\build\lib\comparison-otel-proto-fastbatch-jvm-1.0.0.jar"
-$otelProtoFastbatchJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-fastbatch\build\js\packages\comparison-otel-proto-fastbatch\kotlin\comparison-otel-proto-fastbatch.js"
-$otelProtoFastbatchNative = ".\kmp-examples\comparison-otel-proto-fastbatch\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoFastbatchJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-fastbatch\build\lib\fibonacci-otel-proto-fastbatch-jvm-1.0.0.jar"
+$otelProtoFastbatchJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-fastbatch\build\js\packages\fibonacci-otel-proto-fastbatch\kotlin\fibonacci-otel-proto-fastbatch.js"
+$otelProtoFastbatchNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-fastbatch\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoCombinedJvm    = "java -jar .\kmp-examples\comparison-otel-proto-combined\build\lib\comparison-otel-proto-combined-jvm-1.0.0.jar"
-$otelProtoCombinedJs     = "node --max-old-space-size=16384 .\kmp-examples\comparison-otel-proto-combined\build\js\packages\comparison-otel-proto-combined\kotlin\comparison-otel-proto-combined.js"
-$otelProtoCombinedNative = ".\kmp-examples\comparison-otel-proto-combined\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoCombinedJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-combined\build\lib\fibonacci-otel-proto-combined-jvm-1.0.0.jar"
+$otelProtoCombinedJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-combined\build\js\packages\fibonacci-otel-proto-combined\kotlin\fibonacci-otel-proto-combined.js"
+$otelProtoCombinedNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-combined\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $executables = @(
   @{ Name = "baseline JVM";                       Command = $baselineJvm },
@@ -853,7 +853,7 @@ Write-Host "=========================================="
 Write-Host "Processing Results & System Info"
 Write-Host "=========================================="
 
-$machineInfo = Get-MachineInfo -GradleProjectPath "./kmp-examples/comparison-baseline"
+$machineInfo = Get-MachineInfo -GradleProjectPath "./kmp-examples/fibonacci/fibonacci-baseline"
 
 if (-Not (Test-Path $resultsDir)) {
   New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null

@@ -33,7 +33,7 @@ Write-Host "=========================================="
 Write-Host "# Collecting System Information..."
 Write-Host "=========================================="
 
-$machineInfo = Get-MachineInfo -GradleProjectPath "..\..\kmp-examples\game-of-life-kmp-commonmain"
+$machineInfo = Get-MachineInfo -GradleProjectPath "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline"
 
 Write-Host "System Information collected:"
 foreach ($key in $machineInfo.Keys) {
@@ -114,12 +114,12 @@ if ($CleanBuild) {
   Invoke-GradleClean -Path "..\..\KIRHelperKit"                                    -Name "KIRHelperKit"
   Invoke-GradleClean -Path "..\..\plugins\k-perf"                                  -Name "k-perf plugin"
   if ($Common) {
-    Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-commonmain"       -Name "game-of-life-kmp-commonmain"
-    Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf" -Name "game-of-life-kmp-commonmain-k-perf"
+    Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline"       -Name "game-of-life-kmp-commonmain-baseline"
+    Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-k-perf" -Name "game-of-life-kmp-commonmain-k-perf"
   }
   if ($Dedicated) {
-    Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-dedicatedmain"      -Name "game-of-life-kmp-dedicatedmain"
-    Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf" -Name "game-of-life-kmp-dedicatedmain-k-perf"
+    Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-dedicatedmain-baseline"      -Name "game-of-life-kmp-dedicatedmain-baseline"
+    Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-dedicatedmain-k-perf" -Name "game-of-life-kmp-dedicatedmain-k-perf"
   }
   Write-Host ""
 }

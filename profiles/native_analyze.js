@@ -167,7 +167,7 @@ table('TOTAL (inclusive) time', totalMs);
 // --- per-module attribution. Frame names are like:
 //   "c:\\windows\\system32\\ntdll!?"          ->  module "ntdll"
 //   "ntoskrnl!?"                              ->  module "ntoskrnl"
-//   "comparison-k-perf-flushearly-true!?"     ->  module "comparison-k-perf-flushearly-true"
+//   "fibonacci-k-perf-flushearly-true!?"     ->  module "fibonacci-k-perf-flushearly-true"
 //   "Process64 foo (1234) Args: ..."          ->  module "(process)"     (PerfView synthetic)
 //   "Thread (1234) CPU=Nms"                   ->  module "(thread)"      (PerfView synthetic)
 //   "ROOT"/"BROKEN"/"OVERHEAD"/"?!?"          ->  module "(unresolved)"  (PerfView sentinels)

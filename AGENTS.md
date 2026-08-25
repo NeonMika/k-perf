@@ -7,7 +7,7 @@ All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). There is no
 ### Build order (mandatory — each layer publishes to `mavenLocal` for the next to consume)
 
 ```
-KIRHelperKit → plugins/instrumentation-overhead-analyzer → plugins/k-perf → kmp-examples/*
+KIRHelperKit → plugins/instrumentation-overhead-analyzer → plugins/k-perf → kmp-examples/<workload>/*
 ```
 
 **Full build (all platforms):**
@@ -59,7 +59,7 @@ See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation
 KIRHelperKit  (io.github.neonmika:KIRHelperKit:0.2.1)
     └── consumed by ──▶  plugins/k-perf  (io.github.neonmika.k-perf-plugin)
                          plugins/instrumentation-overhead-analyzer
-                              └── applied to ──▶  kmp-examples/*
+                              └── applied to ──▶  kmp-examples/<workload>/*
 ```
 
 > ⚠️ **`plugins/instrumentation-overhead-analyzer` is currently work in progress.** The plugin builds, is applied to `game-of-life-kmp-commonmain-ioa`, and walks IR functions — but the synthetic overhead injection is **not yet implemented**. Treat it as a stub/prototype.
@@ -101,7 +101,7 @@ The plugin prints both filenames to stdout at the end of `main`, which is how be
 
 ## KMP Examples
 
-Five Kotlin Multiplatform projects under `kmp-examples/`, all targeting JVM + JS (Node.js) + mingwX64 + linuxX64 + macosX64. They implement Conway's Game of Life and serve as the subjects under test for the plugins. The `play(steps)` function in `commonMain/kotlin/game/gol/GameOfLife.kt` is shared across all five; only the `main()` location and applied plugins differ.
+Five Kotlin Multiplatform projects under `kmp-examples/game-of-life/`, all targeting JVM + JS (Node.js) + mingwX64 + linuxX64 + macosX64. They implement Conway's Game of Life and serve as the subjects under test for the plugins. The `play(steps)` function in `commonMain/kotlin/game/gol/GameOfLife.kt` is shared across all five; only the `main()` location and applied plugins differ. Fibonacci benchmark variants live under `kmp-examples/fibonacci/`.
 
 ### Output artifact naming
 
@@ -124,7 +124,7 @@ For example, a JAR built with `kperfEnabled=true` and `kperfFlushEarly=true` is 
 | `runReleaseExecutableMingwX64` | Native (Windows) |
 
 ```powershell
-cd kmp-examples\game-of-life-kmp-commonmain-k-perf
+cd kmp-examples\game-of-life\game-of-life-kmp-commonmain-k-perf
 .\gradlew jvmRun --info --stacktrace -PkperfEnabled=true -PkperfFlushEarly=false -PkperfMethods=.*
 ```
 
@@ -134,7 +134,7 @@ cd kmp-examples\game-of-life-kmp-commonmain-k-perf
 # JVM — <steps> is positional arg (default: 500)
 java -jar build\lib\<project>-jvm-<version>.jar <steps>
 # e.g.:
-java -jar build\lib\game-of-life-kmp-commonmain-jvm-0.2.1.jar 500
+java -jar build\lib\game-of-life-kmp-commonmain-baseline-jvm-0.2.1.jar 500
 java -jar build\lib\game-of-life-kmp-commonmain-k-perf-jvm-0.2.1-enabled-false-flushEarly-false-propAccessors-false-testKIR-false.jar 500
 
 # JS (Node.js)
@@ -195,7 +195,7 @@ Gradle properties (`-PkperfFlushEarly=true`, `-PkperfMethods=a\.b\..*`) override
 >
 > 1. `plugins/k-perf/src/main/kotlin/at/jku/ssw/gradle/KPerfGradlePlugin.kt` — extension class property defaults (`var flushEarly: Boolean = false`, etc.)
 > 2. `plugins/k-perf/src/main/kotlin/at/jku/ssw/compilerplugin/KPerfComponentRegistrar.kt` — compiler-side fallbacks (`configuration[KEY] ?: false`, etc.)
-> 3. `kmp-examples/game-of-life-kmp-*-k-perf/build.gradle.kts` — Gradle property fallbacks (`.getOrElse(false)`, etc.)
+> 3. `kmp-examples/game-of-life/game-of-life-kmp-*-k-perf/build.gradle.kts` — Gradle property fallbacks (`.getOrElse(false)`, etc.)
 
 ### Group, version, and artifact coordinates
 
@@ -215,7 +215,7 @@ When changing the Maven **group** of a compiler plugin, there are **four places*
 | `plugins/<name>/build.gradle.kts` | `group = "..."` |
 | `plugins/<name>/build.gradle.kts` | `coordinates(group, artifactId, version)` in `mavenPublishing {}` |
 | `plugins/<name>/src/main/kotlin/.../gradle/<Name>GradlePlugin.kt` | `groupId` in `getPluginArtifact()` |
-| `kmp-examples/<example>/build.gradle.kts` | `id("...") version "..."` in `plugins {}` |
+| `kmp-examples/<workload>/<example>/build.gradle.kts` | `id("...") version "..."` in `plugins {}` |
 
 > ⚠️ `getPluginArtifact()` is what the Kotlin Gradle plugin uses to add the compiler plugin JAR to the `:kotlinCompilerPluginClasspathXxx` configuration at build time. A stale `groupId` there makes Gradle look for the artifact under the wrong Maven coordinates — regardless of what is published to mavenLocal.
 
@@ -225,7 +225,7 @@ All synthetic IR fields and functions added by the plugin are attached to the **
 
 ### Adding a new KMP example
 
-1. Create the project under `kmp-examples/` following the existing structure
+1. Create the project under the appropriate `kmp-examples/<workload>/` folder following the existing structure
 2. Add it to `buildAll.ps1` via `Invoke-KmpBuild` and to `buildAll.sh` via `run_kmp_build`
 3. If it needs benchmarking, add executable entries to the relevant suite runner under `benchmarking/<suite>/`; update shared helpers in `benchmarking/utils/` only when required
 

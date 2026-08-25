@@ -57,67 +57,67 @@ jobs:
         working-directory: plugins/k-perf
         run: ./gradlew clean build publishToMavenLocal
 
-      # game-of-life-kmp-commonmain
-      - name: Build game-of-life-kmp-commonmain – JVM
-        working-directory: kmp-examples/game-of-life-kmp-commonmain
+      # game-of-life-kmp-commonmain-baseline
+      - name: Build game-of-life-kmp-commonmain-baseline – JVM
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-baseline
         run: ./gradlew clean jvmJar
 
-      - name: Build game-of-life-kmp-commonmain – JS
-        working-directory: kmp-examples/game-of-life-kmp-commonmain
+      - name: Build game-of-life-kmp-commonmain-baseline – JS
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-baseline
         run: ./gradlew jsProductionExecutableCompileSync
 
-      - name: Build game-of-life-kmp-commonmain – Linux native
-        working-directory: kmp-examples/game-of-life-kmp-commonmain
+      - name: Build game-of-life-kmp-commonmain-baseline – Linux native
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-baseline
         run: ./gradlew linkReleaseExecutableLinuxX64
 
       # game-of-life-kmp-commonmain-ioa
       - name: Build game-of-life-kmp-commonmain-ioa – JVM
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-ioa
         run: ./gradlew clean jvmJar
 
       - name: Build game-of-life-kmp-commonmain-ioa – JS
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-ioa
         run: ./gradlew jsProductionExecutableCompileSync
 
       - name: Build game-of-life-kmp-commonmain-ioa – Linux native
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-ioa
         run: ./gradlew linkReleaseExecutableLinuxX64
 
       # game-of-life-kmp-commonmain-k-perf
       - name: Build game-of-life-kmp-commonmain-k-perf – JVM
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-k-perf
         run: ./gradlew clean jvmJar
 
       - name: Build game-of-life-kmp-commonmain-k-perf – JS
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-k-perf
         run: ./gradlew jsProductionExecutableCompileSync
 
       - name: Build game-of-life-kmp-commonmain-k-perf – Linux native
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-k-perf
         run: ./gradlew linkReleaseExecutableLinuxX64
 
-      # game-of-life-kmp-dedicatedmain
-      - name: Build game-of-life-kmp-dedicatedmain – JVM
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
+      # game-of-life-kmp-dedicatedmain-baseline
+      - name: Build game-of-life-kmp-dedicatedmain-baseline – JVM
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-baseline
         run: ./gradlew clean jvmJar
 
-      - name: Build game-of-life-kmp-dedicatedmain – JS
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
+      - name: Build game-of-life-kmp-dedicatedmain-baseline – JS
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-baseline
         run: ./gradlew jsProductionExecutableCompileSync
 
-      - name: Build game-of-life-kmp-dedicatedmain – Linux native
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
+      - name: Build game-of-life-kmp-dedicatedmain-baseline – Linux native
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-baseline
         run: ./gradlew linkReleaseExecutableLinuxX64
 
       # game-of-life-kmp-dedicatedmain-k-perf
       - name: Build game-of-life-kmp-dedicatedmain-k-perf – JVM
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-k-perf
         run: ./gradlew clean jvmJar
 
       - name: Build game-of-life-kmp-dedicatedmain-k-perf – JS
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-k-perf
         run: ./gradlew jsProductionExecutableCompileSync
 
       - name: Build game-of-life-kmp-dedicatedmain-k-perf – Linux native
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-k-perf
         run: ./gradlew linkReleaseExecutableLinuxX64

@@ -137,12 +137,23 @@ k-perf/
 ├── 🔌 plugins/
 │   ├── k-perf/                               # Main performance tracing plugin
 │   └── instrumentation-overhead-analyzer/    # Plugin overhead measurement tool
-├── 🎮 kmp-examples/                          # 5 Game of Life KMP demo projects
-│   ├── game-of-life-kmp-commonmain/          # Baseline (no instrumentation)
-│   ├── game-of-life-kmp-commonmain-k-perf/   # k-perf instrumented (CommonMain)
-│   ├── game-of-life-kmp-commonmain-ioa/      # IOA instrumented
-│   ├── game-of-life-kmp-dedicatedmain/       # Baseline (per-platform main)
-│   └── game-of-life-kmp-dedicatedmain-k-perf/# k-perf instrumented (DedicatedMain)
+├── 🎮 kmp-examples/
+│   ├── fibonacci/                            # Fibonacci baseline, k-perf, and OTel variants
+│   │   ├── fibonacci-baseline/
+│   │   ├── fibonacci-k-perf/
+│   │   ├── fibonacci-otel/
+│   │   ├── fibonacci-otel-proto/
+│   │   ├── fibonacci-otel-proto-anchored/
+│   │   ├── fibonacci-otel-proto-combined/
+│   │   ├── fibonacci-otel-proto-fastbatch/
+│   │   ├── fibonacci-otel-proto-sampler/
+│   │   └── fibonacci-otel-proto-timesource/
+│   └── game-of-life/                         # Conway's Game of Life variants
+│       ├── game-of-life-kmp-commonmain-baseline/
+│       ├── game-of-life-kmp-commonmain-k-perf/
+│       ├── game-of-life-kmp-commonmain-ioa/
+│       ├── game-of-life-kmp-dedicatedmain-baseline/
+│       └── game-of-life-kmp-dedicatedmain-k-perf/
 ├── 📊 analyzers/
 │   └── call_graph_visualizer/                # Python script → DOT/Graphviz call graphs
 ├── 📈 benchmarking/                          # PowerShell benchmark runners + shared utils
@@ -329,14 +340,14 @@ dependencyResolutionManagement {
 
 ## 🎮 KMP Examples
 
-Five Kotlin Multiplatform projects demonstrate k-perf in action using **Conway's Game of Life**. They all target JVM, JavaScript (Node.js), and Native (mingwX64, linuxX64, macosX64).
+The examples are grouped by workload: Fibonacci benchmark variants live in `kmp-examples/fibonacci/`, while five **Conway's Game of Life** variants live in `kmp-examples/game-of-life/`. The Game of Life projects target JVM, JavaScript (Node.js), and Native (mingwX64, linuxX64, macosX64).
 
 | Project | Plugin | Architecture |
 |---|---|---|
-| `game-of-life-kmp-commonmain` | ❌ none | Single shared `main()` |
+| `game-of-life-kmp-commonmain-baseline` | ❌ none | Single shared `main()` |
 | `game-of-life-kmp-commonmain-k-perf` | ✅ k-perf | Single shared `main()` |
 | `game-of-life-kmp-commonmain-ioa` | 🚧 IOA *(work in progress)* | Single shared `main()` |
-| `game-of-life-kmp-dedicatedmain` | ❌ none | Per-platform `main()` |
+| `game-of-life-kmp-dedicatedmain-baseline` | ❌ none | Per-platform `main()` |
 | `game-of-life-kmp-dedicatedmain-k-perf` | ✅ k-perf | Per-platform `main()` |
 
 ### CommonMain vs DedicatedMain
@@ -347,7 +358,7 @@ Five Kotlin Multiplatform projects demonstrate k-perf in action using **Conway's
 ### Running an Example
 
 ```powershell
-cd kmp-examples\game-of-life-kmp-commonmain-k-perf
+cd kmp-examples\game-of-life\game-of-life-kmp-commonmain-k-perf
 
 # JVM
 .\gradlew jvmRun --args="500"

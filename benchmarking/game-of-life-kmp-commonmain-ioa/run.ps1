@@ -26,7 +26,7 @@ Write-Host "=========================================="
 Write-Host "# Collecting System Information..."
 Write-Host "=========================================="
 
-$machineInfo = Get-MachineInfo -GradleProjectPath "..\..\kmp-examples\game-of-life-kmp-commonmain"
+$machineInfo = Get-MachineInfo -GradleProjectPath "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline"
 
 Write-Host "System Information collected:"
 foreach ($key in $machineInfo.Keys) {
@@ -43,8 +43,8 @@ if ($CleanBuild) {
 
   Invoke-GradleClean -Path "..\..\KIRHelperKit"                                        -Name "KIRHelperKit"
   Invoke-GradleClean -Path "..\..\plugins\instrumentation-overhead-analyzer"           -Name "instrumentation-overhead-analyzer plugin"
-  Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-commonmain"            -Name "game-of-life-kmp-commonmain"
-  Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa"        -Name "game-of-life-kmp-commonmain-ioa"
+  Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline"            -Name "game-of-life-kmp-commonmain-baseline"
+  Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-ioa"        -Name "game-of-life-kmp-commonmain-ioa"
   Write-Host ""
 }
 else {
@@ -70,8 +70,8 @@ Write-Host "# Build phase completed successfully!"
 Write-Host "=========================================="
 
 # Define project dist directories for artifacts
-$commonMainDistRoot    = "..\..\kmp-examples\game-of-life-kmp-commonmain\dist"
-$commonMainIoaDistRoot = "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa\dist"
+$commonMainDistRoot    = "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline\dist"
+$commonMainIoaDistRoot = "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-ioa\dist"
 
 # Validate selection parameters
 if (-not ($Reference -or $IOA)) {
@@ -88,19 +88,19 @@ if (-not ($JVM -or $JS -or $Native)) {
 [BenchmarkExecutable[]]$executables = @()
 
 if ($Reference -and $JVM) {
-  $executables += [BenchmarkExecutable]::new("commonmain-plain-jar", "$commonMainDistRoot\game-of-life-kmp-commonmain-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
+  $executables += [BenchmarkExecutable]::new("commonmain-plain-jar", "$commonMainDistRoot\game-of-life-kmp-commonmain-baseline-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
 }
 if ($IOA -and $JVM) {
   $executables += [BenchmarkExecutable]::new("commonmain-ioa-jar", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa-jvm-0.2.1.jar", [ExecutableType]::Jar, $null)
 }
 if ($Reference -and $Native) {
-  $executables += [BenchmarkExecutable]::new("commonmain-plain-$nativePlatformLabel-exe", "$commonMainDistRoot\game-of-life-kmp-commonmain$nativeExt", [ExecutableType]::Exe, $null)
+  $executables += [BenchmarkExecutable]::new("commonmain-plain-$nativePlatformLabel-exe", "$commonMainDistRoot\game-of-life-kmp-commonmain-baseline$nativeExt", [ExecutableType]::Exe, $null)
 }
 if ($IOA -and $Native) {
   $executables += [BenchmarkExecutable]::new("commonmain-ioa-$nativePlatformLabel-exe", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa$nativeExt", [ExecutableType]::Exe, $null)
 }
 if ($Reference -and $JS) {
-  $executables += [BenchmarkExecutable]::new("commonmain-plain-node", "$commonMainDistRoot\game-of-life-kmp-commonmain.js", [ExecutableType]::Node, $null)
+  $executables += [BenchmarkExecutable]::new("commonmain-plain-node", "$commonMainDistRoot\game-of-life-kmp-commonmain-baseline.js", [ExecutableType]::Node, $null)
 }
 if ($IOA -and $JS) {
   $executables += [BenchmarkExecutable]::new("commonmain-ioa-node", "$commonMainIoaDistRoot\game-of-life-kmp-commonmain-ioa.js", [ExecutableType]::Node, $null)

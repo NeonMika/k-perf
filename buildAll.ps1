@@ -144,11 +144,11 @@ Invoke-GradleBuild -Title "Building instrumentation-overhead-analyzer plugin" -P
 Invoke-GradleBuild -Title "Building k-perf plugin" -Path ".\plugins\k-perf" -Tasks @("build", "publishToMavenLocal")
 
 # KMP examples
-Invoke-KmpBuild -Title "Building game-of-life-kmp-commonmain example" -Path ".\kmp-examples\game-of-life-kmp-commonmain"
-Invoke-KmpBuild -Title "Building game-of-life-kmp-commonmain-ioa example" -Path ".\kmp-examples\game-of-life-kmp-commonmain-ioa"
-Invoke-KmpBuild -Title "Building game-of-life-kmp-commonmain-k-perf example" -Path ".\kmp-examples\game-of-life-kmp-commonmain-k-perf"
-Invoke-KmpBuild -Title "Building game-of-life-kmp-dedicatedmain example" -Path ".\kmp-examples\game-of-life-kmp-dedicatedmain"
-Invoke-KmpBuild -Title "Building game-of-life-kmp-dedicatedmain-k-perf example" -Path ".\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf"
+Invoke-KmpBuild -Title "Building game-of-life-kmp-commonmain-baseline example" -Path ".\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline"
+Invoke-KmpBuild -Title "Building game-of-life-kmp-commonmain-ioa example" -Path ".\kmp-examples\game-of-life\game-of-life-kmp-commonmain-ioa"
+Invoke-KmpBuild -Title "Building game-of-life-kmp-commonmain-k-perf example" -Path ".\kmp-examples\game-of-life\game-of-life-kmp-commonmain-k-perf"
+Invoke-KmpBuild -Title "Building game-of-life-kmp-dedicatedmain-baseline example" -Path ".\kmp-examples\game-of-life\game-of-life-kmp-dedicatedmain-baseline"
+Invoke-KmpBuild -Title "Building game-of-life-kmp-dedicatedmain-k-perf example" -Path ".\kmp-examples\game-of-life\game-of-life-kmp-dedicatedmain-k-perf"
 
 Write-Host ""
 Write-Host "=========================================="

@@ -58,32 +58,32 @@ jobs:
         shell: pwsh
         run: .\gradlew clean build publishToMavenLocal
 
-      - name: Build game-of-life-kmp-commonmain
-        working-directory: kmp-examples/game-of-life-kmp-commonmain
+      - name: Build game-of-life-kmp-commonmain-baseline
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-baseline
         shell: pwsh
         run: |
           & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
 
       - name: Build game-of-life-kmp-commonmain-ioa
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-ioa
         shell: pwsh
         run: |
           & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
 
       - name: Build game-of-life-kmp-commonmain-k-perf
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-k-perf
         shell: pwsh
         run: |
           & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
 
-      - name: Build game-of-life-kmp-dedicatedmain
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
+      - name: Build game-of-life-kmp-dedicatedmain-baseline
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-baseline
         shell: pwsh
         run: |
           & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"
 
       - name: Build game-of-life-kmp-dedicatedmain-k-perf
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-k-perf
         shell: pwsh
         run: |
           & "$env:GITHUB_WORKSPACE\.github\scripts\Build-KmpExample.ps1"

@@ -126,11 +126,11 @@ run_gradle "Building instrumentation-overhead-analyzer plugin" "./plugins/instru
 run_gradle "Building k-perf plugin" "./plugins/k-perf" build publishToMavenLocal
 
 # KMP examples
-run_kmp_build "Building game-of-life-kmp-commonmain example" "./kmp-examples/game-of-life-kmp-commonmain"
-run_kmp_build "Building game-of-life-kmp-commonmain-ioa example" "./kmp-examples/game-of-life-kmp-commonmain-ioa"
-run_kmp_build "Building game-of-life-kmp-commonmain-k-perf example" "./kmp-examples/game-of-life-kmp-commonmain-k-perf"
-run_kmp_build "Building game-of-life-kmp-dedicatedmain example" "./kmp-examples/game-of-life-kmp-dedicatedmain"
-run_kmp_build "Building game-of-life-kmp-dedicatedmain-k-perf example" "./kmp-examples/game-of-life-kmp-dedicatedmain-k-perf"
+run_kmp_build "Building game-of-life-kmp-commonmain-baseline example" "./kmp-examples/game-of-life/game-of-life-kmp-commonmain-baseline"
+run_kmp_build "Building game-of-life-kmp-commonmain-ioa example" "./kmp-examples/game-of-life/game-of-life-kmp-commonmain-ioa"
+run_kmp_build "Building game-of-life-kmp-commonmain-k-perf example" "./kmp-examples/game-of-life/game-of-life-kmp-commonmain-k-perf"
+run_kmp_build "Building game-of-life-kmp-dedicatedmain-baseline example" "./kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-baseline"
+run_kmp_build "Building game-of-life-kmp-dedicatedmain-k-perf example" "./kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-k-perf"
 
 echo ""
 echo "=========================================="

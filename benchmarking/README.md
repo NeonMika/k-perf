@@ -1,6 +1,6 @@
-# Benchmarking Suite for Game of Life KMP
+# Benchmarking Suites for Kotlin Multiplatform Examples
 
-This folder contains benchmarking scripts for evaluating the performance characteristics of the Game of Life Kotlin Multiplatform (KMP) implementation across different architectural variants and compiler plugins.
+This folder contains benchmarking scripts for evaluating the Game of Life and Fibonacci Kotlin Multiplatform (KMP) examples across architectural variants and compiler plugins.
 
 ## Overview
 
@@ -18,8 +18,8 @@ The benchmarking suite measures execution time under three different instrumenta
    - Focuses on CommonMain architecture
    - Produces measurements across the same target platforms (JVM, JavaScript, Native)
 
-3. **K-Perf / OpenTelemetry Comparison Benchmark** (`kperf-otel/`)
-   - Compares a deterministic CPU workload across baseline and OpenTelemetry variants
+3. **Fibonacci K-Perf / OpenTelemetry Comparison Benchmark** (`kperf-otel/`)
+   - Compares the projects under `kmp-examples/fibonacci/` using a deterministic CPU workload across baseline and OpenTelemetry variants
    - Runs on JVM, JavaScript, and Native targets
    - Keeps its Envoy configuration and patched SDK input alongside the suite runner
 
@@ -62,7 +62,7 @@ Each JSON file contains:
   - `min`/`max`: Minimum and maximum times
   - `ci95`: 95% confidence interval using t-distribution
 
-## Comparison Benchmark (`kperf-otel/kperf-otel-comparison.ps1`)
+## Fibonacci Comparison Benchmark (`kperf-otel/kperf-otel-comparison.ps1`)
 
 The script in `kperf-otel/`, `kperf-otel-comparison.ps1`, benchmarks a deterministic CPU workload (`fibonacci(20)`, one workload call per step) under eight variants across three platforms (JVM / JS / Native) — 24 rows in total. The variants are:
 

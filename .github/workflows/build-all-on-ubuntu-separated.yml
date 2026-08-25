@@ -56,22 +56,22 @@ jobs:
         working-directory: plugins/k-perf
         run: ./gradlew clean build publishToMavenLocal
 
-      - name: Build game-of-life-kmp-commonmain
-        working-directory: kmp-examples/game-of-life-kmp-commonmain
+      - name: Build game-of-life-kmp-commonmain-baseline
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-baseline
         run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
 
       - name: Build game-of-life-kmp-commonmain-ioa
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-ioa
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-ioa
         run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
 
       - name: Build game-of-life-kmp-commonmain-k-perf
-        working-directory: kmp-examples/game-of-life-kmp-commonmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-commonmain-k-perf
         run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
 
-      - name: Build game-of-life-kmp-dedicatedmain
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain
+      - name: Build game-of-life-kmp-dedicatedmain-baseline
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-baseline
         run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"
 
       - name: Build game-of-life-kmp-dedicatedmain-k-perf
-        working-directory: kmp-examples/game-of-life-kmp-dedicatedmain-k-perf
+        working-directory: kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-k-perf
         run: "$GITHUB_WORKSPACE/.github/scripts/build-kmp-example.sh"

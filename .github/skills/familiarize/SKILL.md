@@ -63,7 +63,7 @@ belongs to:
 | `KIRHelperKit/` | Shared IR utility library consumed by both plugins |
 | `plugins/k-perf/` | Main performance-tracing compiler plugin |
 | `plugins/instrumentation-overhead-analyzer/` | Overhead-measurement companion plugin |
-| `kmp-examples/<variant>/` | Sample KMP apps that exercise the plugin |
+| `kmp-examples/<workload>/<variant>/` | Sample KMP apps that exercise the plugins |
 | `benchmarking/<suite>/` | PowerShell benchmark runners (not Gradle) |
 | `analyzers/<tool>/` | Standalone post-processing tools (Python/HTML) |
 
@@ -90,7 +90,7 @@ Based on the sub-project and file type, add the relevant architectural frame:
 | `KIRHelperKit` | Shared IR helpers (e.g. `IrBuilderExtension`); JVM 1.8; no tests; **must be published first** (`./gradlew publishToMavenLocal`) before either plugin compiles |
 | `plugins/k-perf` | `KPerfExtension : IrGenerationExtension` is the entry point; uses `IrElementTransformerVoidWithContext` to wrap eligible functions with `_enter_method`/`_exit_method` calls; synthetic fields/functions are attached to `moduleFragment.files[0]`; tests use kctfork for in-process compilation |
 | `plugins/instrumentation-overhead-analyzer` | `InstrumentationOverheadAnalyzerExtension`; same structural pattern as k-perf plugin; measures the overhead of instrumentation itself |
-| `kmp-examples/<variant>` | KMP Gradle project; consumes k-perf from mavenLocal; two architectures: `CommonMain` (single `fun main()` in `commonMain/`) and `DedicatedMain` (per-platform `main()` in each source set); `kotlinx-io-core` is injected by the plugin — do not add it to dependencies manually |
+| `kmp-examples/<workload>/<variant>` | KMP Gradle project; consumes its compiler plugin from mavenLocal; Game of Life has two architectures: `CommonMain` (single `fun main()` in `commonMain/`) and `DedicatedMain` (per-platform `main()` in each source set); `kotlinx-io-core` is injected by k-perf — do not add it to dependencies manually |
 | `benchmarking/<suite>` | PowerShell scripts (`run.ps1`); not Gradle; parse `### Elapsed time:` from stdout; per-run output: per-executable `.json`, `_results.csv`, `_results.json`, call graph `.png` (k-perf suite only) |
 | `analyzers/<tool>` | Standalone tools; no Gradle build; `call_graph_visualizer/graph-visualizer.py` reads `trace_*.txt` + `symbols_*.txt`; `measurements_plotter/index.html` reads `_results.json` |
 
@@ -195,4 +195,4 @@ If no task description was given, omit the "Watch-outs" section.
   whole module.
 - Always note the sub-project — it determines which build/test commands apply
   and which architectural constraints are relevant (`KIRHelperKit`, `plugins/*`,
-  `kmp-examples/*`, `benchmarking/*`, or `analyzers/*`).
+  `kmp-examples/*/*`, `benchmarking/*`, or `analyzers/*`).

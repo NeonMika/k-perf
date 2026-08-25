@@ -88,7 +88,7 @@ function Merge-Hashtable {
 
 function Get-MachineInfo {
   param(
-    [string]$GradleProjectPath = "..\..\kmp-examples\game-of-life-kmp-commonmain"
+    [string]$GradleProjectPath = "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline"
   )
 
   $machineInfo = [ordered]@{}

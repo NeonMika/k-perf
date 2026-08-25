@@ -81,32 +81,32 @@ function Build-InstrumentationOverheadAnalyzerPlugin {
 function Build-GameOfLifeCommonMainReference {
   Write-Host ""
   Write-Host "=========================================="
-  Write-Host "## Building game-of-life-kmp-commonmain reference application (without plugin)"
+  Write-Host "## Building game-of-life-kmp-commonmain-baseline reference application (without plugin)"
   Write-Host "=========================================="
-  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-commonmain reference application" -Path "..\..\kmp-examples\game-of-life-kmp-commonmain"
+  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-commonmain-baseline reference application" -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline"
   $buildTimes = [ordered]@{}
   if ($timings.Contains('jvm'))     { $buildTimes['commonmain-plain-jar']        = $timings.jvm }
   if ($timings.Contains('js'))      { $buildTimes['commonmain-plain-node']       = $timings.js }
   if ($timings.Contains('windows')) { $buildTimes['commonmain-plain-win-exe']    = $timings.windows }
   if ($timings.Contains('linux'))   { $buildTimes['commonmain-plain-linux-exe']  = $timings.linux }
   if ($timings.Contains('mac'))     { $buildTimes['commonmain-plain-mac-exe']    = $timings.mac }
-  Write-Host "game-of-life-kmp-commonmain reference application build completed successfully."
+  Write-Host "game-of-life-kmp-commonmain-baseline reference application build completed successfully."
   return $buildTimes
 }
 
 function Build-GameOfLifeDedicatedMainReference {
   Write-Host ""
   Write-Host "=========================================="
-  Write-Host "## Building game-of-life-kmp-dedicatedmain reference application (without plugin)"
+  Write-Host "## Building game-of-life-kmp-dedicatedmain-baseline reference application (without plugin)"
   Write-Host "=========================================="
-  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-dedicatedmain reference application" -Path "..\..\kmp-examples\game-of-life-kmp-dedicatedmain"
+  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-dedicatedmain-baseline reference application" -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-dedicatedmain-baseline"
   $buildTimes = [ordered]@{}
   if ($timings.Contains('jvm'))     { $buildTimes['dedicatedmain-plain-jar']       = $timings.jvm }
   if ($timings.Contains('js'))      { $buildTimes['dedicatedmain-plain-node']      = $timings.js }
   if ($timings.Contains('windows')) { $buildTimes['dedicatedmain-plain-win-exe']   = $timings.windows }
   if ($timings.Contains('linux'))   { $buildTimes['dedicatedmain-plain-linux-exe'] = $timings.linux }
   if ($timings.Contains('mac'))     { $buildTimes['dedicatedmain-plain-mac-exe']   = $timings.mac }
-  Write-Host "game-of-life-kmp-dedicatedmain reference application build completed successfully."
+  Write-Host "game-of-life-kmp-dedicatedmain-baseline reference application build completed successfully."
   return $buildTimes
 }
 
@@ -115,7 +115,7 @@ function Build-GameOfLifeCommonMainIoa {
   Write-Host "=========================================="
   Write-Host "## Building game-of-life-kmp-commonmain-ioa application"
   Write-Host "=========================================="
-  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-commonmain-ioa application" -Path "..\..\kmp-examples\game-of-life-kmp-commonmain-ioa"
+  $timings = Invoke-KmpBuildWithTimings -Title "game-of-life-kmp-commonmain-ioa application" -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-ioa"
   $buildTimes = [ordered]@{}
   if ($timings.Contains('jvm'))     { $buildTimes['commonmain-ioa-jar']        = $timings.jvm }
   if ($timings.Contains('js'))      { $buildTimes['commonmain-ioa-node']       = $timings.js }
@@ -133,7 +133,7 @@ function Build-GameOfLifeKPerfVariant {
   )
 
   $projectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-k-perf" } else { "game-of-life-kmp-dedicatedmain-k-perf" }
-  $projectPath = if ($GameType -eq [GameType]::CommonMain) { "..\..\kmp-examples\game-of-life-kmp-commonmain-k-perf" } else { "..\..\kmp-examples\game-of-life-kmp-dedicatedmain-k-perf" }
+  $projectPath = if ($GameType -eq [GameType]::CommonMain) { "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-k-perf" } else { "..\..\kmp-examples\game-of-life\game-of-life-kmp-dedicatedmain-k-perf" }
   $suffix = Get-KPerfSuffix -Config $Config
   $gradleArgs = @(
     "-PkperfEnabled=$($Config.Enabled)"
@@ -205,10 +205,10 @@ function Invoke-GetExecutables {
 
   foreach ($GameType in $GameTypes) {
     $gameTypeString   = Get-GameTypeString -GameType $GameType
-    $projectName      = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain"        } else { "game-of-life-kmp-dedicatedmain" }
+    $projectName      = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-baseline"        } else { "game-of-life-kmp-dedicatedmain-baseline" }
     $kPerfProjectName = if ($GameType -eq [GameType]::CommonMain) { "game-of-life-kmp-commonmain-k-perf" } else { "game-of-life-kmp-dedicatedmain-k-perf" }
-    $plainRoot        = "..\..\kmp-examples\$projectName"
-    $kPerfRoot        = "..\..\kmp-examples\$kPerfProjectName"
+    $plainRoot        = "..\..\kmp-examples\game-of-life\$projectName"
+    $kPerfRoot        = "..\..\kmp-examples\game-of-life\$kPerfProjectName"
 
     if ($Reference -and $JVM) {
       $executables += [BenchmarkExecutable]::new(
