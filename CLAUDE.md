@@ -39,12 +39,12 @@ Tests live only in the plugin projects (JUnit 5); there are no tests in `KIRHelp
 
 ### Benchmarking
 
-See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation on the two benchmark suites, parameters, and output format.
+See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation on the three benchmark suites, parameters, and output format.
 
 > ⚠️ **Keep benchmarking scripts in sync**: Any change to kperf plugin settings (names/defaults), KMP example project structure, or project version **must** be reflected in:
 >
-> - `benchmarking/build.ps1` (build-time key names, gradle args passed to KPerfConfig)
-> - `benchmarking/game-of-life-kmp-k-perf/run.ps1` (JAR version strings, suffix logic)
+> - `benchmarking/utils/build.ps1` (build-time key names, gradle args passed to KPerfConfig)
+> - `benchmarking/game-of-life-kmp-k-perf/benchmark.ps1` (JAR version strings, suffix logic, parameter defaults)
 > - `benchmarking/game-of-life-kmp-commonmain-ioa/run.ps1` (JAR version strings) — note: the IOA plugin itself is **work in progress**; this benchmark measures a mostly no-op plugin for now
 >
 > GitHub Actions benchmark workflows (all `workflow_dispatch`-only) are in `.github/workflows/benchmark-*.yml`. They run both suites and commit results to `measurements/` with a `[skip ci]` message to avoid triggering build workflows.
@@ -227,7 +227,7 @@ All synthetic IR fields and functions added by the plugin are attached to the **
 
 1. Create the project under `kmp-examples/` following the existing structure
 2. Add it to `buildAll.ps1` via `Invoke-KmpBuild` and to `buildAll.sh` via `run_kmp_build`
-3. If it needs benchmarking, add executable entries to `benchmarking/*/run.ps1` and `utils.ps1`
+3. If it needs benchmarking, add executable entries to the relevant suite runner under `benchmarking/<suite>/`; update shared helpers in `benchmarking/utils/` only when required
 
 ### Adding a new compiler plugin
 

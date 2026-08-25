@@ -41,6 +41,7 @@ $ContainerCli = if (Get-Command docker -ErrorAction SilentlyContinue) { 'docker'
 $ScriptRoot = $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($ScriptRoot)) { $ScriptRoot = '.' }
 $BenchmarkingRoot = Split-Path -Parent $ScriptRoot
+$UtilsRoot = Join-Path $BenchmarkingRoot 'utils'
 $RepoRoot = Split-Path -Parent $BenchmarkingRoot
 
 # Rebuild $env:PATH from the registry so tools installed after this PowerShell
@@ -58,8 +59,8 @@ if ($IsWindowsHost) {
   $env:PATH    = $pathEntries -join ';'
 }
 
-. "$BenchmarkingRoot/types.ps1"
-. "$BenchmarkingRoot/statistics_utils.ps1"
+. "$UtilsRoot/types.ps1"
+. "$UtilsRoot/statistics_utils.ps1"
 
 # Verify external prerequisites the script can't install itself.
 function Test-Prerequisites {

@@ -349,23 +349,21 @@ Each directory contains one JSON file per executable that was benchmarked, named
 
 ## Shared Infrastructure
 
-Both benchmarks use shared components located in the parent `benchmarking/` folder:
+The benchmark suites use shared components located in `benchmarking/utils/`:
 
-- **`utils.ps1`**: Common utility functions for:
-  - Statistical analysis (mean, median, standard deviation, confidence intervals)
-  - Gradle task discovery and execution
-  - Kotlin Multiplatform compilation automation
-
+- **`statistics_utils.ps1`** and **`types.ps1`**: Statistics, machine information, export helpers, and shared benchmark types
+- **`gradle_utils.ps1`**: Gradle task discovery and execution
 - **`build.ps1`**: Granular build functions for:
   - Building KIRHelperKit
   - Building compiler plugins (K-Perf, Instrumentation-Overhead-Analyzer)
   - Compiling Game of Life variants (CommonMain, DedicatedMain, with/without instrumentation)
+- **`run.ps1`**: Shared benchmark execution and result orchestration
 
-These are imported by both benchmark scripts via dot-sourcing:
+Suite runners import the utilities via dot-sourcing, for example:
 
 ```powershell
-. "$PSScriptRoot\utils.ps1"
-. "$PSScriptRoot\build.ps1"
+. "$PSScriptRoot\..\utils\build.ps1"
+. "$PSScriptRoot\..\utils\run.ps1"
 ```
 
 ## Troubleshooting

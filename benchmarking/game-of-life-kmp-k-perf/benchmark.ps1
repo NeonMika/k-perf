@@ -24,8 +24,8 @@ param(
   [string]$CILabel = "local"
 )
 
-. "$PSScriptRoot\..\build.ps1"
-. "$PSScriptRoot\..\run.ps1"
+. "$PSScriptRoot\..\utils\build.ps1"
+. "$PSScriptRoot\..\utils\run.ps1"
 
 $nativeExt = if ($IsWindows) { ".exe" } else { ".kexe" }
 

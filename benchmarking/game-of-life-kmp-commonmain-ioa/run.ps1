@@ -12,9 +12,9 @@ param(
 )
 
 # Import common utility functions
-. "$PSScriptRoot\..\types.ps1"
-. "$PSScriptRoot\..\statistics_utils.ps1"
-. "$PSScriptRoot\..\build.ps1"
+. "$PSScriptRoot\..\utils\types.ps1"
+. "$PSScriptRoot\..\utils\statistics_utils.ps1"
+. "$PSScriptRoot\..\utils\build.ps1"
 
 # Platform-specific native executable target and extension
 $nativeTarget        = if ($IsWindows) { "mingwX64" } elseif ($IsMacOS) { "macosX64" } else { "linuxX64" }
