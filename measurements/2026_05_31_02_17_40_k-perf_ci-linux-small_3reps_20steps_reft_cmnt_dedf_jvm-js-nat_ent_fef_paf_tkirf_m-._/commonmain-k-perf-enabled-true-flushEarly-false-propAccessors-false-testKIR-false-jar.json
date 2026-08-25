@@ -1,0 +1,147 @@
+{
+  "parameters": {
+    "CILabel": "ci-linux-small",
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "Reference": true,
+    "Common": true,
+    "Dedicated": false,
+    "JVM": true,
+    "JS": true,
+    "Native": true,
+    "Enabled": [
+      true
+    ],
+    "FlushEarly": [
+      false
+    ],
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ],
+    "Methods": [
+      ".*"
+    ]
+  },
+  "machineInfo": {
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "OS": "Ubuntu 24.04.4 LTS",
+    "OSArchitecture": "x86_64",
+    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "TotalRAMGB": 15.61,
+    "AvailableRAMGB": 13.8,
+    "DiskSizeGB": 145,
+    "SystemDriveFreeSpaceGB": 86,
+    "SystemUptimeHours": 0.08,
+    "TimeZone": "Etc/UTC",
+    "Username": "runner",
+    "RunningProcessCount": 158,
+    "IsVirtualMachine": true,
+    "PowerShellVersion": "7.4.16",
+    "JavaVersion": "21.0.11",
+    "JavaDistribution": "\"21.0.11\"",
+    "NodeVersion": "v22.22.3",
+    "PythonVersion": "Python 3.12.3",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0",
+    "GitCommitHash": "413fe2bd43cf15fa60a69b7f0925508c5fb7efbe",
+    "GitBranch": "main",
+    "CollectionTimestamp": "2026-05-31 02:14:50"
+  },
+  "buildTimeMs": 2224.6556,
+  "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-jar",
+  "repetitions": 3,
+  "timeUnit": "microseconds",
+  "times": [
+    108663.0,
+    82941.0,
+    118273.0
+  ],
+  "stepTimes": [
+    [
+      23313.0,
+      10239.0,
+      7417.0,
+      5009.0,
+      4691.0,
+      4167.0,
+      3328.0,
+      6588.0,
+      1859.0,
+      1934.0,
+      1868.0,
+      1965.0,
+      1833.0,
+      1756.0,
+      1729.0,
+      1658.0,
+      1680.0,
+      1696.0,
+      1598.0,
+      1557.0
+    ],
+    [
+      18295.0,
+      7047.0,
+      2942.0,
+      3125.0,
+      2888.0,
+      2636.0,
+      2156.0,
+      3472.0,
+      1827.0,
+      2007.0,
+      1766.0,
+      1773.0,
+      1448.0,
+      1574.0,
+      1783.0,
+      1424.0,
+      1408.0,
+      1427.0,
+      1619.0,
+      1354.0
+    ],
+    [
+      25333.0,
+      5707.0,
+      4174.0,
+      3413.0,
+      3057.0,
+      2800.0,
+      4475.0,
+      7318.0,
+      8991.0,
+      4809.0,
+      2607.0,
+      2573.0,
+      2632.0,
+      2516.0,
+      2573.0,
+      2348.0,
+      2379.0,
+      2365.0,
+      1622.0,
+      1414.0
+    ]
+  ],
+  "statistics": {
+    "count": 3,
+    "mean": 103292.33333333333,
+    "median": 118273.0,
+    "stddev": 18268.021275806892,
+    "min": 82941.0,
+    "max": 118273.0,
+    "ci95": {
+      "lower": 57940.031228392974,
+      "upper": 148644.6354382737
+    }
+  },
+  "status": "ok"
+}

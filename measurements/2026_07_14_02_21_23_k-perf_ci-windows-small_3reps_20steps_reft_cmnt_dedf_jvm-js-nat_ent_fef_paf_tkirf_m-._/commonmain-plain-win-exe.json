@@ -1,0 +1,163 @@
+{
+  "parameters": {
+    "CILabel": "ci-windows-small",
+    "RepetitionCount": 3,
+    "CleanBuild": false,
+    "StepCount": 20,
+    "Reference": true,
+    "Common": true,
+    "Dedicated": false,
+    "JVM": true,
+    "JS": true,
+    "Native": true,
+    "Enabled": [
+      true
+    ],
+    "FlushEarly": [
+      false
+    ],
+    "InstrumentPropertyAccessors": [
+      false
+    ],
+    "TestKIR": [
+      false
+    ],
+    "Methods": [
+      ".*"
+    ]
+  },
+  "machineInfo": {
+    "DeviceManufacturer": "Microsoft Corporation",
+    "DeviceModel": "Virtual Machine",
+    "OS": "Microsoft Windows Server 2025 Datacenter 10.0.26100",
+    "OSArchitecture": "64-bit",
+    "CPU": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+    "CPUCores": 2,
+    "CPULogicalProcessors": 4,
+    "CPUMaxClockSpeedMHz": 2793,
+    "TotalRAMGB": 15.99,
+    "RAMModuleCount": 2,
+    "RAMManufacturer": "Microsoft Corporation",
+    "RAMPartNumber": "None",
+    "RAMModuleCapacitiesGB": "1 + 15",
+    "DiskModel": "Microsoft Virtual Disk",
+    "DiskSizeGB": 150.0,
+    "DiskMediaType": "Fixed hard disk media",
+    "DiskInterfaceType": "SCSI",
+    "SystemDriveFreeSpaceGB": 30.46,
+    "AvailableRAMGB": 12.08,
+    "PowerPlan": "High performance",
+    "SystemUptimeHours": 0.63,
+    "WindowsBuildNumber": "26100",
+    "TimeZone": "UTC",
+    "Username": "runneradmin",
+    "BIOSVersion": "Hyper-V UEFI Release v4.1",
+    "BIOSManufacturer": "Microsoft Corporation",
+    "IsVirtualMachine": true,
+    "HyperVEnabled": true,
+    "SecureBootEnabled": false,
+    "RunningProcessCount": 129,
+    "WindowsDefenderEnabled": true,
+    "WindowsDefenderRealTimeProtection": false,
+    "PowerShellVersion": "7.6.3",
+    "JavaVersion": "21.0.11",
+    "JavaDistribution": "\"21.0.11\"",
+    "NodeVersion": "v22.23.1",
+    "PythonVersion": "Python 3.12.10",
+    "GradleVersion": "System.Object[]",
+    "KotlinVersion": "Kotlin:        2.2.0",
+    "GitCommitHash": "719f54730ee366af6664a6a24c92b60d870db736",
+    "GitBranch": "main",
+    "CollectionTimestamp": "2026-07-14 02:15:47"
+  },
+  "buildTimeMs": 104765.1604,
+  "executable": "commonmain-plain-win-exe",
+  "repetitions": 3,
+  "timeUnit": "microseconds",
+  "times": [
+    12688.0,
+    12683.0,
+    13281.0
+  ],
+  "stepTimes": [
+    [
+      596.0,
+      510.0,
+      570.0,
+      561.0,
+      504.0,
+      565.0,
+      499.0,
+      658.0,
+      538.0,
+      562.0,
+      604.0,
+      603.0,
+      603.0,
+      512.0,
+      583.0,
+      579.0,
+      535.0,
+      588.0,
+      576.0,
+      565.0
+    ],
+    [
+      551.0,
+      536.0,
+      601.0,
+      583.0,
+      545.0,
+      558.0,
+      518.0,
+      626.0,
+      563.0,
+      545.0,
+      621.0,
+      602.0,
+      582.0,
+      522.0,
+      540.0,
+      582.0,
+      487.0,
+      576.0,
+      628.0,
+      551.0
+    ],
+    [
+      588.0,
+      535.0,
+      558.0,
+      614.0,
+      527.0,
+      589.0,
+      533.0,
+      683.0,
+      596.0,
+      542.0,
+      629.0,
+      617.0,
+      587.0,
+      543.0,
+      580.0,
+      581.0,
+      533.0,
+      857.0,
+      607.0,
+      577.0
+    ]
+  ],
+  "statistics": {
+    "count": 3,
+    "mean": 12884.0,
+    "median": 13281.0,
+    "stddev": 343.8211744497421,
+    "min": 12683.0,
+    "max": 13281.0,
+    "ci95": {
+      "lower": 12030.427435226897,
+      "upper": 13737.572564773103
+    }
+  },
+  "status": "ok"
+}

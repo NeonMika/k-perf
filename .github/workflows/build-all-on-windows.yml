@@ -2,7 +2,8 @@ name: Build all on Windows
 
 on:
   push:
-  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
