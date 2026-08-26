@@ -43,6 +43,9 @@ if ([string]::IsNullOrWhiteSpace($ScriptRoot)) { $ScriptRoot = '.' }
 $BenchmarkingRoot = Split-Path -Parent $ScriptRoot
 $UtilsRoot = Join-Path $BenchmarkingRoot 'utils'
 $RepoRoot = Split-Path -Parent $BenchmarkingRoot
+$FastbatchSdkRepository = 'https://github.com/dcxp/opentelemetry-kotlin.git'
+$FastbatchSdkBaseCommit = '9c3186e26bd3ac78b650163be2c8f569096aaeec'
+$FastbatchSdkVersion = '1.0.570-fastbatch'
 
 # Rebuild $env:PATH from the registry so tools installed after this PowerShell
 # (or its parent terminal) was started — e.g. node — are visible to the
@@ -245,6 +248,59 @@ function Invoke-GradleBuild {
   Write-Host "$Title built successfully."
 }
 
+function Install-FastbatchSdkIfMissing {
+  $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+  $nativeArtifact = if ($IsWindowsHost) { 'sdk-trace-mingwx64' } else { 'sdk-trace-linuxx64' }
+  $sdkMarker = Join-Path $userProfile ".m2/repository/io/opentelemetry/kotlin/sdk/$nativeArtifact/$FastbatchSdkVersion"
+  if (Test-Path -LiteralPath $sdkMarker -PathType Container) {
+    Write-Host "Fastbatch SDK $FastbatchSdkVersion already exists in mavenLocal for $nativeArtifact; skipping publication."
+    return
+  }
+
+  Write-Host "Fastbatch SDK $FastbatchSdkVersion is missing for $nativeArtifact; publishing the patched SDK to mavenLocal."
+  $temporaryRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+  $forkDirectory = Join-Path $temporaryRoot ("kperf-fastbatch-sdk-" + [Guid]::NewGuid().ToString('N'))
+  $patchPath = Join-Path $ScriptRoot 'fastbatch-sdk.patch'
+  $previousPackageVersion = $env:PACKAGE_VERSION
+
+  try {
+    & git clone $FastbatchSdkRepository $forkDirectory
+    if ($LASTEXITCODE -ne 0) { throw "Failed to clone the fastbatch SDK repository." }
+
+    Push-Location $forkDirectory
+    try {
+      & git checkout --detach $FastbatchSdkBaseCommit
+      if ($LASTEXITCODE -ne 0) { throw "Failed to check out fastbatch SDK commit $FastbatchSdkBaseCommit." }
+      & git apply $patchPath
+      if ($LASTEXITCODE -ne 0) { throw "Failed to apply $patchPath." }
+
+      $env:PACKAGE_VERSION = $FastbatchSdkVersion
+      if ($IsWindowsHost) {
+        & .\gradlew.bat --no-daemon publishToMavenLocal
+      }
+      else {
+        & sh ./gradlew --no-daemon publishToMavenLocal
+      }
+      if ($LASTEXITCODE -ne 0) { throw "Failed to publish fastbatch SDK $FastbatchSdkVersion to mavenLocal." }
+    }
+    finally {
+      Pop-Location
+    }
+
+    if (-not (Test-Path -LiteralPath $sdkMarker -PathType Container)) {
+      throw "Fastbatch SDK publication completed without creating the expected artifact directory: $sdkMarker"
+    }
+  }
+  finally {
+    $env:PACKAGE_VERSION = $previousPackageVersion
+    $resolvedForkDirectory = [IO.Path]::GetFullPath($forkDirectory)
+    if ($resolvedForkDirectory.StartsWith($temporaryRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -and
+        (Test-Path -LiteralPath $resolvedForkDirectory)) {
+      Remove-Item -LiteralPath $resolvedForkDirectory -Recurse -Force
+    }
+  }
+}
+
 # Host-dependent pieces of the Kotlin/Native build: Gradle link task, artifact
 # directory, binary extension, and the display label used in row names.
 $NativeLinkTask = if ($IsWindowsHost) { 'linkReleaseExecutableMingwX64' } else { 'linkReleaseExecutableLinuxX64' }
@@ -275,6 +331,10 @@ function Get-VariantAndPlatform {
 Write-Host "=========================================="
 Write-Host "Compiling Required Plugins and Dependencies"
 Write-Host "=========================================="
+
+if (($Variants -contains 'otel-proto-fastbatch') -or ($Variants -contains 'otel-proto-combined')) {
+  Install-FastbatchSdkIfMissing
+}
 
 if ($Variants -contains 'otel') {
   Invoke-GradleBuild -Title "OTel OTLP Exporter" -Path ".\plugin_dependencies\otlp-exporter" -Tasks @("publishToMavenLocal")

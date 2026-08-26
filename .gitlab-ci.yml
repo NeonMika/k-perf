@@ -45,13 +45,6 @@ stages:
     WARMUP_COUNT: "20"
     BENCH_VARIANTS: ""
 
-    # The locally patched dcxp SDK consumed by the otel-proto-fastbatch variant.
-    # benchmarking/kperf-otel/fastbatch-sdk.patch is applied onto this upstream commit and
-    # published to the runner's mavenLocal (once; later jobs reuse it).
-    FASTBATCH_SDK_REPO: "https://github.com/dcxp/opentelemetry-kotlin.git"
-    FASTBATCH_SDK_BASE_COMMIT: "9c3186e26bd3ac78b650163be2c8f569096aaeec"
-    FASTBATCH_SDK_VERSION: "1.0.570-fastbatch"
-
   before_script:
     - |
       set -euo pipefail
@@ -164,25 +157,6 @@ stages:
       fi
 
       # ----------------------------------------------------------------------
-      # Publish the patched fastbatch SDK to mavenLocal (first run only)
-      # ----------------------------------------------------------------------
-      SDK_MARKER="$HOME/.m2/repository/io/opentelemetry/kotlin/sdk/sdk-trace-linuxx64/$FASTBATCH_SDK_VERSION"
-      if [ -d "$SDK_MARKER" ]; then
-        echo "fastbatch SDK $FASTBATCH_SDK_VERSION already in mavenLocal — skipping publish."
-      else
-        FORK_DIR="$CI_PROJECT_DIR/.ci-tools/$CI_JOB_ID/opentelemetry-kotlin-fork"
-        git clone "$FASTBATCH_SDK_REPO" "$FORK_DIR" | tee "$CI_PROJECT_DIR/sdk_publish_output.txt"
-        cd "$FORK_DIR"
-        git checkout "$FASTBATCH_SDK_BASE_COMMIT"
-        git apply "$CI_PROJECT_DIR/benchmarking/kperf-otel/fastbatch-sdk.patch"
-        # gradle.properties in the patch sets idea.active=true + compileNative=true,
-        # which restricts native targets to the host -> linuxX64 klibs here.
-        PACKAGE_VERSION="$FASTBATCH_SDK_VERSION" sh ./gradlew --no-daemon publishToMavenLocal \
-          | tee -a "$CI_PROJECT_DIR/sdk_publish_output.txt"
-        cd "$CI_PROJECT_DIR"
-      fi
-
-      # ----------------------------------------------------------------------
       # Run the comparison benchmark
       # ----------------------------------------------------------------------
       PWSH_CMD="& ./benchmarking/kperf-otel/kperf-otel-comparison.ps1 -RunCount $RUN_COUNT -StepCount $STEP_COUNT -WarmupCount $WARMUP_COUNT"
@@ -215,7 +189,6 @@ stages:
     paths:
       - ci-results/
       - benchmark_output.txt
-      - sdk_publish_output.txt
     # Preserve logs and partial results even when the job fails.
     when: always
     expire_in: never
