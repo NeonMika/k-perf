@@ -101,19 +101,27 @@ function Test-Prerequisites {
     $ErrorActionPreference = $prevEap
   }
 
-  $homeDir = if ($IsWindowsHost) { $env:USERPROFILE } else { $HOME }
-  $gradleUserHome = if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { [IO.Path]::Combine($homeDir, ".gradle") }
-  $gradleProps = [IO.Path]::Combine($gradleUserHome, "gradle.properties")
-  if (-not (Test-Path $gradleProps)) {
-    $missing += "  [missing] ${gradleProps}: Create it with GITHUB_USERNAME=<user> and GITHUB_PASSWORD=<PAT with read:packages scope>."
-  }
-  else {
-    $propsContent = Get-Content $gradleProps -Raw
-    if ($propsContent -notmatch '(?m)^\s*GITHUB_USERNAME\s*=') {
-      $missing += "  [missing] GITHUB_USERNAME in ${gradleProps}"
+  if ($AnyOtelVariant) {
+    $hasEnvironmentCredentials =
+      -not [string]::IsNullOrWhiteSpace($env:ORG_GRADLE_PROJECT_GITHUB_USERNAME) -and
+      -not [string]::IsNullOrWhiteSpace($env:ORG_GRADLE_PROJECT_GITHUB_PASSWORD)
+    $homeDir = if ($IsWindowsHost) { $env:USERPROFILE } else { $HOME }
+    $gradleUserHome = if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { [IO.Path]::Combine($homeDir, ".gradle") }
+    $gradleProps = [IO.Path]::Combine($gradleUserHome, "gradle.properties")
+    if ($hasEnvironmentCredentials) {
+      Write-Host "Using GitHub Packages credentials from Gradle project-property environment variables."
     }
-    if ($propsContent -notmatch '(?m)^\s*GITHUB_PASSWORD\s*=') {
-      $missing += "  [missing] GITHUB_PASSWORD in ${gradleProps} (a GitHub PAT with read:packages scope)"
+    elseif (-not (Test-Path $gradleProps)) {
+      $missing += "  [missing] GitHub Packages credentials: create ${gradleProps} with GITHUB_USERNAME/GITHUB_PASSWORD, or set ORG_GRADLE_PROJECT_GITHUB_USERNAME/ORG_GRADLE_PROJECT_GITHUB_PASSWORD."
+    }
+    else {
+      $propsContent = Get-Content $gradleProps -Raw
+      if ($propsContent -notmatch '(?m)^\s*GITHUB_USERNAME\s*=') {
+        $missing += "  [missing] GITHUB_USERNAME in ${gradleProps}"
+      }
+      if ($propsContent -notmatch '(?m)^\s*GITHUB_PASSWORD\s*=') {
+        $missing += "  [missing] GITHUB_PASSWORD in ${gradleProps} (a GitHub PAT with read:packages scope)"
+      }
     }
   }
 
@@ -383,9 +391,9 @@ $comparisonTasks = @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompil
 foreach ($b in $comparisonBuilds) {
   if ($Variants -notcontains $b.Variant) { continue }
   if ($b.RefreshDeps) {
-    Invoke-GradleBuild -Title $b.Title -Path $b.Path -Tasks $comparisonTasks -SkipClean $true -RefreshDeps
+    Invoke-GradleBuild -Title $b.Title -Path $b.Path -Tasks $comparisonTasks -RefreshDeps
   } else {
-    Invoke-GradleBuild -Title $b.Title -Path $b.Path -Tasks $comparisonTasks -SkipClean $true
+    Invoke-GradleBuild -Title $b.Title -Path $b.Path -Tasks $comparisonTasks
   }
 }
 
@@ -1267,18 +1275,20 @@ Write-Host "  results.md            (summary tables + per-step curve)"
 Write-Host "  per_step_medians.csv  (long-form per-step medians for plotting)"
 Write-Host "Benchmark evaluation finished."
 
-Write-Host ""
-Write-Host "=========================================="
-Write-Host "Jaeger is still running at http://localhost:16686" -ForegroundColor Green
-Write-Host "  - Every OTel variant produced StepCount x RunCount = $($StepCount * $RunCount) traces" -ForegroundColor Green
-Write-Host "    (one per step thanks to Main.kt's per-step Context.root() reset)" -ForegroundColor Green
-Write-Host "  - Each trace ~= 'methods/step' spans, fully renderable in the UI" -ForegroundColor Green
-Write-Host "  - Storage is in-memory, capped at the most recent 400 traces" -ForegroundColor Green
-Write-Host "  - Verify zero drops at: http://localhost:14269/metrics" -ForegroundColor Green
-Write-Host "    (jaeger_collector_spans_dropped_total should be 0)" -ForegroundColor Green
-Write-Host "  - gRPC traffic flows through the Envoy gRPC-Web proxy on :4317" -ForegroundColor Green
-Write-Host "    (required for the Kotlin/JS gRPC-Web client to reach Jaeger)" -ForegroundColor Green
-Write-Host "  - Shut everything down with: $ContainerCli stop jaeger envoy" -ForegroundColor Green
-Write-Host "==========================================" -ForegroundColor Green
+if ($AnyOtelVariant) {
+  Write-Host ""
+  Write-Host "=========================================="
+  Write-Host "Jaeger is still running at http://localhost:16686" -ForegroundColor Green
+  Write-Host "  - Every OTel variant produced StepCount x RunCount = $($StepCount * $RunCount) traces" -ForegroundColor Green
+  Write-Host "    (one per step thanks to Main.kt's per-step Context.root() reset)" -ForegroundColor Green
+  Write-Host "  - Each trace ~= 'methods/step' spans, fully renderable in the UI" -ForegroundColor Green
+  Write-Host "  - Storage is in-memory, capped at the most recent 400 traces" -ForegroundColor Green
+  Write-Host "  - Verify zero drops at: http://localhost:14269/metrics" -ForegroundColor Green
+  Write-Host "    (jaeger_collector_spans_dropped_total should be 0)" -ForegroundColor Green
+  Write-Host "  - gRPC traffic flows through the Envoy gRPC-Web proxy on :4317" -ForegroundColor Green
+  Write-Host "    (required for the Kotlin/JS gRPC-Web client to reach Jaeger)" -ForegroundColor Green
+  Write-Host "  - Shut everything down with: $ContainerCli stop jaeger envoy" -ForegroundColor Green
+  Write-Host "==========================================" -ForegroundColor Green
+}
 
 Pop-Location

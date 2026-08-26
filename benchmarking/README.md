@@ -126,6 +126,8 @@ GITHUB_USERNAME=<your github username>
 GITHUB_PASSWORD=<a GitHub PAT with read:packages scope>
 ```
 
+For ephemeral CI or local runs, use Gradle's standard project-property environment variables instead: `ORG_GRADLE_PROJECT_GITHUB_USERNAME` and `ORG_GRADLE_PROJECT_GITHUB_PASSWORD`. Credentials are required only when at least one OTel variant is selected; baseline-only runs do not need them.
+
 The PAT only needs `read:packages`; no other scopes. A preflight check at the top of the script verifies all of the above and exits with a clear message if anything is missing — so a misconfigured fresh machine fails in seconds, not after a 20-minute build.
 
 ### Running on Linux
