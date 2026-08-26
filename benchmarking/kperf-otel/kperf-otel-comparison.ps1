@@ -12,6 +12,12 @@
 
 $ErrorActionPreference = "Stop"
 
+if ($RunCount -le 0) { throw "RunCount must be greater than 0." }
+if ($StepCount -le 0) { throw "StepCount must be greater than 0." }
+if ($WarmupCount -lt 0 -or $WarmupCount -ge $StepCount) {
+  throw "WarmupCount must be at least 0 and less than StepCount ($StepCount)."
+}
+
 # $IsWindows/$IsLinux only exist on PowerShell Core 6+; Desktop edition 5.1 is
 # always Windows. On Linux/macOS this script requires PowerShell 7 (pwsh).
 $IsWindowsHost = ($PSVersionTable.PSEdition -eq 'Desktop') -or $IsWindows
@@ -478,6 +484,39 @@ $allResults = @()
 $timestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
 $resultsDir = "./measurements/comparison_run_$timestamp"
 $failuresDir = Join-Path $resultsDir "failures"
+$runsDir = Join-Path $resultsDir "runs"
+
+# Create the per-run raw timing files before measurement starts. Each file
+# combines the same numbered run across every selected variant/platform row.
+# Timings are appended immediately after a successful program execution so a
+# later failure does not discard measurements that were already collected.
+New-Item -ItemType Directory -Path $runsDir -Force | Out-Null
+for ($runNumber = 1; $runNumber -le $RunCount; $runNumber++) {
+  $runFile = Join-Path $runsDir ("steps_{0}.csv" -f $runNumber)
+  "executable,variant,platform,step,duration_ns,is_warmup" | Out-File -FilePath $runFile -Encoding utf8
+}
+
+function Save-RunStepTimings {
+  param(
+    [string]$ExeName,
+    [int]$RunNumber,
+    [object[]]$StepNanos
+  )
+
+  $vp = Get-VariantAndPlatform -ExeName $ExeName
+  $lines = @()
+  for ($stepIndex = 0; $stepIndex -lt $StepNanos.Count; $stepIndex++) {
+    $durationNanos = [double]$StepNanos[$stepIndex]
+    $durationText = $durationNanos.ToString('F0', [Globalization.CultureInfo]::InvariantCulture)
+    $isWarmup = if ($stepIndex -lt $WarmupCount) { 1 } else { 0 }
+    $lines += '"{0}",{1},{2},{3},{4},{5}' -f ($ExeName -replace '"', '""'), $vp.Variant, $vp.Platform, $stepIndex, $durationText, $isWarmup
+  }
+
+  if ($lines.Count -gt 0) {
+    $runFile = Join-Path $runsDir ("steps_{0}.csv" -f $RunNumber)
+    $lines | Out-File -FilePath $runFile -Encoding utf8 -Append
+  }
+}
 
 # methods_per_step keyed by platform name ("JVM"/"JS"/"Native"). Source is
 # the static formula below (workload is deterministic + all variants exclude
@@ -834,6 +873,7 @@ foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
       }
       $totalNanosList += [double]$parsed.TotalNanos
       $perRunStepNanos += , @($parsed.StepNanos)
+      Save-RunStepTimings -ExeName $exe.Name -RunNumber ($i + 1) -StepNanos $parsed.StepNanos
       if ($null -ne $parsed.ExportedSpans)  { $exportedSpansList  += [long]$parsed.ExportedSpans }
       if ($null -ne $parsed.ExportBatches)  { $exportBatchesList  += [long]$parsed.ExportBatches }
       if ($null -ne $parsed.ExportFailures) { $exportFailuresList += [long]$parsed.ExportFailures }
@@ -873,7 +913,9 @@ foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
   }
 
   # Flatten per-step times across all runs, EXCLUDING the first $WarmupCount
-  # step indices in each run (warmup steps per-run).
+  # step indices in each run (warmup steps per-run). Then trim the lowest and
+  # highest 1% (each rounded up) from this pooled population before calculating
+  # headline step statistics. Raw files and the median curve retain all steps.
   $flatStepNanos = @()
   foreach ($runSteps in $perRunStepNanos) {
     for ($s = $WarmupCount; $s -lt $runSteps.Count; $s++) {
@@ -881,8 +923,19 @@ foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
     }
   }
 
+  $sortedStepNanos = @($flatStepNanos | Sort-Object)
+  $outliersPerTail = if ($sortedStepNanos.Count -gt 0) { [int][Math]::Ceiling($sortedStepNanos.Count * 0.01) } else { 0 }
+  if ($sortedStepNanos.Count -le (2 * $outliersPerTail)) {
+    throw "Not enough non-warmup step timings for $($exe.Name) to remove $outliersPerTail value(s) from each 1% tail."
+  }
+  $analyzedStepNanos = if ($outliersPerTail -gt 0) {
+    @($sortedStepNanos[$outliersPerTail..($sortedStepNanos.Count - $outliersPerTail - 1)])
+  } else {
+    $sortedStepNanos
+  }
+
   $totalStats = Get-BenchmarkStatistics -Values $totalNanosList
-  $stepStats  = Get-BenchmarkStatistics -Values $flatStepNanos
+  $stepStats  = Get-BenchmarkStatistics -Values $analyzedStepNanos
 
   $exportedSpansSum  = ($exportedSpansList  | Measure-Object -Sum).Sum
   $exportBatchesSum  = ($exportBatchesList  | Measure-Object -Sum).Sum
@@ -902,6 +955,9 @@ foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
     StepStdDevNanos           = $stepStats.stddev
     StepMinNanos              = $stepStats.min
     StepMaxNanos              = $stepStats.max
+    StepNonWarmupCount        = $flatStepNanos.Count
+    StepOutliersPerTail       = $outliersPerTail
+    StepAnalyzedCount         = $analyzedStepNanos.Count
     TotalsNanos               = $totalNanosList
     PerRunStepNanos           = $perRunStepNanos
     ExportedSpansSum          = $exportedSpansSum
@@ -930,7 +986,7 @@ if (-Not (Test-Path $resultsDir)) {
 # --- Per-step median curve ------------------------------------------------
 # For each (variant, platform), compute the per-step median across runs
 # (one median per step index, shape: StepCount). This curve is diagnostic
-# output only; headline step statistics use all non-warmup measurements.
+# output only; headline step statistics use the trimmed non-warmup population.
 
 function Get-PerStepMedians {
   param([object[]]$PerRunStepValues)
@@ -955,9 +1011,9 @@ function Get-PerStepMedians {
   return ,$medians
 }
 
-# Add the diagnostic per-step median curve to each result. StepMeanNanos,
-# StepMedianNanos, and StepStdDevNanos remain the statistics calculated above
-# from the same flattened set of all non-warmup measurements.
+# Add the diagnostic per-step median curve to each result. It intentionally uses
+# every timing, including warmup steps and values trimmed as extreme outliers
+# from the headline statistics.
 foreach ($res in $allResults) {
   $medians = Get-PerStepMedians -PerRunStepValues $res.PerRunStepNanos
   $res['PerStepMedianNanos'] = $medians
@@ -1029,7 +1085,7 @@ foreach ($res in $allResults) {
 $csvLines | Out-File -FilePath $csvPath -Encoding utf8
 
 $jsonOutput = [ordered]@{
-  Parameters     = @{ WarmupCount = $WarmupCount; RunCount = $RunCount; StepCount = $StepCount; CleanBuild = $CleanBuild }
+  Parameters     = @{ WarmupCount = $WarmupCount; RunCount = $RunCount; StepCount = $StepCount; OutlierPercentagePerTail = 1; CleanBuild = $CleanBuild }
   MachineInfo    = $machineInfo
   MethodsPerStep = $methodsPerStep
   Results        = $allResults
@@ -1052,13 +1108,15 @@ Terminology used throughout this document:
 - A **variant** is one tracing implementation. ``baseline`` is the identical program with no tracing at all.
 - A **step** is one call of the workload function (``fibonacci($WorkloadFibDepth)``). The duration of every step is measured individually.
 - A **run** is one complete program execution containing $StepCount steps. Every variant is executed $RunCount times, each time in a fresh process, so results do not depend on a single lucky or unlucky execution.
-- The first $WarmupCount steps of every run are **warmup** and excluded from all timing statistics.
+- The first $WarmupCount steps of every run are **warmup**. This is a configurable cutoff (``-WarmupCount`` defaults to 20), not a fixed constant.
+- Headline step statistics first exclude warmup steps, then discard the lowest 1% and highest 1% of the pooled durations, rounding the number removed from each tail up. Raw run files and the median-curve analysis retain every step timing.
 
 ## Parameters
-- **Warmup steps/run (discarded from stats):** $WarmupCount
+- **Warmup steps/run (excluded from headline stats):** $WarmupCount
 - **Run Iterations:** $RunCount
 - **Step Count (workload calls per process):** $StepCount
 - **Measured steps per run:** $($StepCount - $WarmupCount)
+- **Outliers discarded from each tail of headline step statistics:** 1% (rounded up)
 - **Clean Build:** $CleanBuild
 - **Run timeout (s):** $RunTimeoutSeconds
 - **Variants:** $($Variants -join ', ')
@@ -1096,7 +1154,7 @@ Raw timing statistics for every (variant, platform) combination. Column meanings
 
 - **Iterations**: how many of the $RunCount runs produced a valid measurement. A value below $RunCount means some runs failed. The raw output of failed runs is stored in the ``failures/`` folder.
 - **Total mean / Total median (ms)**: average and middle value of the whole-process duration. For OTel variants this includes waiting at the end of the process until all remaining tracing data has been exported. Because of that, do not compare totals across variants. Use the step columns for comparisons instead.
-- **Mean step / Step median / Step stddev (µs)**: the arithmetic mean, middle value, and sample standard deviation of the same pooled set of all measured step durations. With $RunCount successful runs, this set contains $RunCount × $($StepCount - $WarmupCount) = $($RunCount * ($StepCount - $WarmupCount)) observations. The first $WarmupCount steps of every run are excluded as warmup. A large stddev means step times fluctuated strongly from step to step or run to run.
+- **Mean step / Step median / Step stddev (µs)**: the arithmetic mean, middle value, and sample standard deviation of the same trimmed population. For each row, the first $WarmupCount steps of every successful run are excluded, then the pooled durations are sorted and the lowest and highest 1% are discarded (the count per tail is rounded up). With all $RunCount default-size runs successful, $($RunCount * ($StepCount - $WarmupCount)) non-warmup observations become $($RunCount * ($StepCount - $WarmupCount) - 2 * [Math]::Ceiling($RunCount * ($StepCount - $WarmupCount) * 0.01)) analyzed observations. Exact counts are stored as ``StepNonWarmupCount``, ``StepOutliersPerTail``, and ``StepAnalyzedCount`` in ``results.json``. A large stddev means retained step times fluctuated strongly from step to step or run to run.
 
 | Executable | Iterations | Total mean (ms) | Total median (ms) | Mean step (µs) | Step median (µs) | Step stddev (µs) |
 |------------|-----------:|----------------:|------------------:|---------------:|-----------------:|-----------------:|
@@ -1142,7 +1200,7 @@ $markdown += @"
 
 ## OTel span delivery verification
 
-Tracing data (spans, one per traced function call) is exported asynchronously in the background. A benchmark could therefore look fast simply because tracing data was silently thrown away instead of being processed. This table proves that did not happen: for every OTel variant, spans are counted at each step of the export pipeline (when they leave the plugin, when they arrive over the network, and when the Jaeger backend stores them), and all counts must match the number of spans the program generated. Unlike the timing statistics, span counts cover all $StepCount steps of every run: the warmup cutoff applies only to timings, because warmup steps still create and export spans.
+Tracing data (spans, one per traced function call) is exported asynchronously in the background. A benchmark could therefore look fast simply because tracing data was silently thrown away instead of being processed. This table proves that did not happen: for every OTel variant, spans are counted at each step of the export pipeline (when they leave the plugin, when they arrive over the network, and when the Jaeger backend stores them), and all counts must match the number of spans the program generated. Unlike the headline timing statistics, span counts cover all $StepCount steps of every run: neither the warmup cutoff nor the 1% tail trimming applies to span delivery, because every step still creates and exports spans.
 
 Column meanings:
 
@@ -1240,7 +1298,7 @@ $markdown += @"
 
 ## Per-step median curve (µs)
 
-How the duration of a step changes over the lifetime of a process. The column ``s0`` is the first step of a run, ``s1`` the second, and so on. Each cell shows the median of that step's duration across the $RunCount runs. For example, ``s0`` is the median duration of the very first step, taken over all $RunCount runs. Reading a row from left to right therefore shows one representative process over time. Only selected step indices are shown here. The full curves are in ``per_step_medians.csv`` and ``results.json::Results[*].PerRunStepNanos``.
+How the duration of a step changes over the lifetime of a process. The column ``s0`` is the first step of a run, ``s1`` the second, and so on. Each cell shows the median of that step's duration across the $RunCount runs. For example, ``s0`` is the median duration of the very first step, taken over all $RunCount runs. Reading a row from left to right therefore shows one representative process over time. Warmup steps and the values excluded by the 1% tail trimming remain in this analysis because the curve is specifically used to inspect warmup behavior. Only selected step indices are shown here. The full curves are in ``per_step_medians.csv`` and ``results.json::Results[*].PerRunStepNanos``; every raw timing is also stored in ``runs/steps_X.csv``.
 
 | Variant | Platform | $($curveHeaderCells -join ' | ') |
 |---|---|$curveDivider|
@@ -1273,6 +1331,7 @@ Write-Host "Measurements and stats saved successfully to folder: `n -> $resultsD
 Write-Host "  results.json          (raw + statistics)"
 Write-Host "  results.md            (summary tables + per-step curve)"
 Write-Host "  per_step_medians.csv  (long-form per-step medians for plotting)"
+Write-Host "  runs/steps_X.csv      (all raw step timings, one file per run number)"
 Write-Host "Benchmark evaluation finished."
 
 if ($AnyOtelVariant) {

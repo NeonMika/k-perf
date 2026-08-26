@@ -470,14 +470,15 @@ Compares the Fibonacci baseline against seven OpenTelemetry strategies: JSON, pr
 ```powershell
 cd benchmarking\kperf-otel
 
-# Full comparison: 10 runs × 100 steps, discarding 20 warmup steps per run
+# Full comparison: 10 runs × 100 steps, excluding 20 warmup steps per run,
+# then trimming the lowest/highest 1% from headline step statistics
 .\kperf-otel-comparison.ps1
 
 # Quick smoke test without clean builds
 .\kperf-otel-comparison.ps1 -RunCount 3 -StepCount 10 -WarmupCount 2 -CleanBuild $false
 ```
 
-Results are written to `measurements/comparison_run_<timestamp>/` as `results.json`, `results.md`, and `per_step_medians.csv`. The benchmark requires an OTLP backend (Docker or Podman) and GitHub Packages credentials for the OpenTelemetry Kotlin dependencies. A manual GitLab CI job in `.gitlab-ci.yml` runs the Linux comparison on the SSW benchmark runner and uploads the new result directory as an artifact. See [`benchmarking/README.md`](benchmarking/README.md) for the variant definitions, prerequisites, and Linux setup.
+Results are written to `measurements/comparison_run_<timestamp>/` as `results.json`, `results.md`, `per_step_medians.csv`, and `runs/steps_X.csv` (all raw step timings, including warmup steps and trimmed outliers, one file per run number). The benchmark requires an OTLP backend (Docker or Podman) and GitHub Packages credentials for the OpenTelemetry Kotlin dependencies. A manual GitLab CI job in `.gitlab-ci.yml` runs the Linux comparison on the SSW benchmark runner and uploads the new result directory as an artifact. See [`benchmarking/README.md`](benchmarking/README.md) for the variant definitions, prerequisites, and Linux setup.
 
 ### Game of Life Suite Parameters
 

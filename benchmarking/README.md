@@ -80,11 +80,11 @@ The script in `kperf-otel/`, `kperf-otel-comparison.ps1`, benchmarks a determini
 | Param | Default | Meaning |
 |---|---:|---|
 | `-StepCount` | `100` | total step indices per measured run |
-| `-WarmupCount` | `20` | first N **step indices** of each measured run that are discarded from per-step statistics (replaces the previous opaque "first step ≤ 2× tail-median" steady-state detector) |
+| `-WarmupCount` | `20` | first N **step indices** of each measured run excluded from headline step statistics (configurable; replaces the previous opaque "first step ≤ 2× tail-median" steady-state detector) |
 | `-RunCount` | `10` | number of measured runs per variant per platform |
 | `-CleanBuild` | `$true` | whether to `gradle clean` before building |
 
-With the defaults each variant runs 10 × 100 = 1,000 steps total; the per-method statistics use the last 10 × 80 = 800 measured steps (steps 20–99 of each run).
+With the defaults each variant runs 10 × 100 = 1,000 steps total. After the configurable 20-step warmup cutoff, 10 × 80 = 800 timings remain (steps 20–99 of each run). For headline mean, median, standard deviation, min/max, and derived per-method statistics, the lowest 1% and highest 1% are discarded, rounding up per tail: 8 + 8 values are removed and 784 are analyzed. The per-step median curve does not apply this trimming because it is used to inspect warmup behavior.
 
 Run it with:
 
@@ -106,7 +106,7 @@ methods_per_step = fib_call_count(20) + 1
 
 (The `+ 1` is the `workload` call itself. Before 2026-08-20 the workload also included a `bubbleSort` call, giving 21,893 — runs from before that date use the old denominator and are not directly comparable.)
 
-Results land under `measurements/comparison_run_<timestamp>/` as `results.json` + `results.md` + `per_step_medians.csv`. Any iteration whose stdout fails the timing-line regex is dumped under `measurements/comparison_run_<timestamp>/failures/<exe>-run-<NN>.txt` so the cause (node not found, container hang, runtime crash, wall-clock timeout) is one read away.
+Results land under `measurements/comparison_run_<timestamp>/` as `results.json` + `results.md` + `per_step_medians.csv`. The `runs/` subfolder contains `steps_X.csv`, one file per run number, with every raw step timing from every selected variant/platform; warmup steps and statistical outliers are retained there. Any iteration whose stdout fails the timing-line regex is dumped under `measurements/comparison_run_<timestamp>/failures/<exe>-run-<NN>.txt` so the cause (node not found, container hang, runtime crash, wall-clock timeout) is one read away.
 
 ### Prerequisites
 
