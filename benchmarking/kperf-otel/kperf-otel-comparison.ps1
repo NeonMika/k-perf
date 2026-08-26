@@ -590,6 +590,24 @@ function Test-TcpPort {
   finally { $client.Close() }
 }
 
+# Return true for any HTTP response, including an error status. Unlike a TCP
+# connect, receiving an HTTP response proves that an Envoy worker is already
+# accepting and processing requests on the listener.
+function Test-HttpEndpoint {
+  param([string]$Uri, [int]$TimeoutMs = 1000)
+  $handler = [System.Net.Http.HttpClientHandler]::new()
+  $handler.UseProxy = $false
+  $client = [System.Net.Http.HttpClient]::new($handler)
+  $client.Timeout = [TimeSpan]::FromMilliseconds($TimeoutMs)
+  try {
+    $response = $client.GetAsync($Uri).GetAwaiter().GetResult()
+    $response.Dispose()
+    return $true
+  }
+  catch { return $false }
+  finally { $client.Dispose() }
+}
+
 function Start-Jaeger {
   Write-Host "--- Booting Jaeger + Envoy gRPC-Web proxy (in-memory storage capped at 400 traces) ---" -ForegroundColor Cyan
 
@@ -659,20 +677,22 @@ function Start-Jaeger {
 
   $deadline = (Get-Date).AddSeconds(30)
   $ready = $false
+  $probe4317 = $false
+  $probe4318 = $false
+  $http4318Ready = $false
   while ((Get-Date) -lt $deadline) {
     $probe4317 = Test-TcpPort -TargetHost '127.0.0.1' -Port 4317
     $probe4318 = Test-TcpPort -TargetHost '127.0.0.1' -Port 4318
-    # Envoy opens its listener sockets before its clusters and worker threads
-    # are initialized. Fast Native exporters can otherwise send their first
-    # batches into that gap and receive transport errors even though both TCP
-    # probes succeed. The image is pinned above, so its readiness log marker is
-    # a stable signal that requests can be forwarded to Jaeger.
-    $envoyLogs = (Invoke-Docker -DockerArgs @('logs', '--tail', '30', 'envoy') -CaptureOutput) -join "`n"
-    $workersReady = $envoyLogs -match 'all dependencies initialized\. starting workers'
-    if ($probe4317 -and $probe4318 -and $workersReady) { $ready = $true; break }
+    # Envoy opens its sockets before its clusters and worker threads finish
+    # initializing. An actual response from its HTTP listener closes that race
+    # without relying on container logs, whose delivery differs by runtime and
+    # logging configuration.
+    $http4318Ready = Test-HttpEndpoint -Uri 'http://127.0.0.1:4318/'
+    if ($probe4317 -and $probe4318 -and $http4318Ready) { $ready = $true; break }
     Start-Sleep -Milliseconds 500
   }
   if (-not $ready) {
+    Write-Host "Envoy readiness state: TCP:4317=$probe4317, TCP:4318=$probe4318, HTTP:4318=$http4318Ready" -ForegroundColor Yellow
     Write-Host "envoy logs:" -ForegroundColor Yellow
     Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'envoy') -CaptureOutput | ForEach-Object { Write-Host $_ }
     throw "envoy did not become ready on :4317 and :4318 within 30s."
