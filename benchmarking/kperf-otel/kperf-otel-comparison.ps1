@@ -484,17 +484,13 @@ $allResults = @()
 $timestamp = Get-Date -Format "yyyy_MM_dd_HH_mm_ss"
 $resultsDir = "./measurements/comparison_run_$timestamp"
 $failuresDir = Join-Path $resultsDir "failures"
-$runsDir = Join-Path $resultsDir "runs"
+$stepsFile = Join-Path $resultsDir "steps.csv"
 
-# Create the per-run raw timing files before measurement starts. Each file
-# combines the same numbered run across every selected variant/platform row.
+# Store every raw step timing in one CSV next to the generated analysis files.
 # Timings are appended immediately after a successful program execution so a
 # later failure does not discard measurements that were already collected.
-New-Item -ItemType Directory -Path $runsDir -Force | Out-Null
-for ($runNumber = 1; $runNumber -le $RunCount; $runNumber++) {
-  $runFile = Join-Path $runsDir ("steps_{0}.csv" -f $runNumber)
-  "executable,variant,platform,step,duration_ns,is_warmup" | Out-File -FilePath $runFile -Encoding utf8
-}
+New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null
+"executable,variant,platform,run,step,duration_ns,is_warmup" | Out-File -FilePath $stepsFile -Encoding utf8
 
 function Save-RunStepTimings {
   param(
@@ -509,12 +505,11 @@ function Save-RunStepTimings {
     $durationNanos = [double]$StepNanos[$stepIndex]
     $durationText = $durationNanos.ToString('F0', [Globalization.CultureInfo]::InvariantCulture)
     $isWarmup = if ($stepIndex -lt $WarmupCount) { 1 } else { 0 }
-    $lines += '"{0}",{1},{2},{3},{4},{5}' -f ($ExeName -replace '"', '""'), $vp.Variant, $vp.Platform, $stepIndex, $durationText, $isWarmup
+    $lines += '"{0}",{1},{2},{3},{4},{5},{6}' -f ($ExeName -replace '"', '""'), $vp.Variant, $vp.Platform, $RunNumber, $stepIndex, $durationText, $isWarmup
   }
 
   if ($lines.Count -gt 0) {
-    $runFile = Join-Path $runsDir ("steps_{0}.csv" -f $RunNumber)
-    $lines | Out-File -FilePath $runFile -Encoding utf8 -Append
+    $lines | Out-File -FilePath $stepsFile -Encoding utf8 -Append
   }
 }
 
@@ -1066,24 +1061,6 @@ foreach ($res in $allResults) {
   }
 }
 
-# --- Emit per-step median CSV ---------------------------------------------
-# One row per (variant, platform, step). Use this in Excel/Python to plot
-# the per-step curve. Values in nanoseconds (divide by 1000 for µs).
-# `is_warmup` flags the first WarmupCount step indices for clarity.
-$csvPath = Join-Path $resultsDir "per_step_medians.csv"
-$csvLines = @("variant,platform,step,median_ns,is_warmup")
-foreach ($res in $allResults) {
-  $vp = Get-VariantAndPlatform -ExeName $res.Executable
-  $medians = $res.PerStepMedianNanos
-  if ($null -eq $medians -or $medians.Count -eq 0) { continue }
-  for ($i = 0; $i -lt $medians.Count; $i++) {
-    $m = if ($null -ne $medians[$i]) { "{0:F0}" -f [double]$medians[$i] } else { "" }
-    $isWarmup = if ($i -lt $WarmupCount) { 1 } else { 0 }
-    $csvLines += "$($vp.Variant),$($vp.Platform),$i,$m,$isWarmup"
-  }
-}
-$csvLines | Out-File -FilePath $csvPath -Encoding utf8
-
 $jsonOutput = [ordered]@{
   Parameters     = @{ WarmupCount = $WarmupCount; RunCount = $RunCount; StepCount = $StepCount; OutlierPercentagePerTail = 1; CleanBuild = $CleanBuild }
   MachineInfo    = $machineInfo
@@ -1109,7 +1086,7 @@ Terminology used throughout this document:
 - A **step** is one call of the workload function (``fibonacci($WorkloadFibDepth)``). The duration of every step is measured individually.
 - A **run** is one complete program execution containing $StepCount steps. Every variant is executed $RunCount times, each time in a fresh process, so results do not depend on a single lucky or unlucky execution.
 - The first $WarmupCount steps of every run are **warmup**. This is a configurable cutoff (``-WarmupCount`` defaults to 20), not a fixed constant.
-- Headline step statistics first exclude warmup steps, then discard the lowest 1% and highest 1% of the pooled durations, rounding the number removed from each tail up. Raw run files and the median-curve analysis retain every step timing.
+- Headline step statistics first exclude warmup steps, then discard the lowest 1% and highest 1% of the pooled durations, rounding the number removed from each tail up. ``steps.csv`` and the median-curve analysis retain every step timing.
 
 ## Parameters
 - **Warmup steps/run (excluded from headline stats):** $WarmupCount
@@ -1298,7 +1275,7 @@ $markdown += @"
 
 ## Per-step median curve (µs)
 
-How the duration of a step changes over the lifetime of a process. The column ``s0`` is the first step of a run, ``s1`` the second, and so on. Each cell shows the median of that step's duration across the $RunCount runs. For example, ``s0`` is the median duration of the very first step, taken over all $RunCount runs. Reading a row from left to right therefore shows one representative process over time. Warmup steps and the values excluded by the 1% tail trimming remain in this analysis because the curve is specifically used to inspect warmup behavior. Only selected step indices are shown here. The full curves are in ``per_step_medians.csv`` and ``results.json::Results[*].PerRunStepNanos``; every raw timing is also stored in ``runs/steps_X.csv``.
+How the duration of a step changes over the lifetime of a process. The column ``s0`` is the first step of a run, ``s1`` the second, and so on. Each cell shows the median of that step's duration across the $RunCount runs. For example, ``s0`` is the median duration of the very first step, taken over all $RunCount runs. Reading a row from left to right therefore shows one representative process over time. Warmup steps and the values excluded by the 1% tail trimming remain in this analysis because the curve is specifically used to inspect warmup behavior. Only selected step indices are shown here. Every raw timing is stored in ``steps.csv``; the full per-run arrays and derived median curves are also in ``results.json::Results[*]``.
 
 | Variant | Platform | $($curveHeaderCells -join ' | ') |
 |---|---|$curveDivider|
@@ -1330,8 +1307,7 @@ $markdown | Out-File $mdFile -Encoding utf8
 Write-Host "Measurements and stats saved successfully to folder: `n -> $resultsDir"
 Write-Host "  results.json          (raw + statistics)"
 Write-Host "  results.md            (summary tables + per-step curve)"
-Write-Host "  per_step_medians.csv  (long-form per-step medians for plotting)"
-Write-Host "  runs/steps_X.csv      (all raw step timings, one file per run number)"
+Write-Host "  steps.csv             (all raw step timings from every run)"
 Write-Host "Benchmark evaluation finished."
 
 if ($AnyOtelVariant) {

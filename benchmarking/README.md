@@ -106,7 +106,7 @@ methods_per_step = fib_call_count(20) + 1
 
 (The `+ 1` is the `workload` call itself. Before 2026-08-20 the workload also included a `bubbleSort` call, giving 21,893 — runs from before that date use the old denominator and are not directly comparable.)
 
-Results land under `measurements/comparison_run_<timestamp>/` as `results.json` + `results.md` + `per_step_medians.csv`. The `runs/` subfolder contains `steps_X.csv`, one file per run number, with every raw step timing from every selected variant/platform; warmup steps and statistical outliers are retained there. Any iteration whose stdout fails the timing-line regex is dumped under `measurements/comparison_run_<timestamp>/failures/<exe>-run-<NN>.txt` so the cause (node not found, container hang, runtime crash, wall-clock timeout) is one read away.
+Results land under `measurements/comparison_run_<timestamp>/` as `results.json` + `results.md` + `steps.csv`. The single `steps.csv` contains every raw step timing from every run and selected variant/platform; its `run` column identifies the run number, and warmup steps and statistical outliers are retained. Any iteration whose stdout fails the timing-line regex is dumped under `measurements/comparison_run_<timestamp>/failures/<exe>-run-<NN>.txt` so the cause (node not found, container hang, runtime crash, wall-clock timeout) is one read away.
 
 ### Prerequisites
 
