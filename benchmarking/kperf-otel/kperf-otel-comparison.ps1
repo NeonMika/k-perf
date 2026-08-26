@@ -262,6 +262,16 @@ function Invoke-GradleBuild {
   Write-Host "$Title built successfully."
 }
 
+function Get-OutliersPerTail {
+  param([int]$ObservationCount)
+
+  if ($ObservationCount -le 0) { return 0 }
+
+  $requested = [int][Math]::Ceiling($ObservationCount * 0.01)
+  $maximumPreservingOne = [int][Math]::Floor(($ObservationCount - 1) / 2)
+  return [Math]::Min($requested, $maximumPreservingOne)
+}
+
 function Install-FastbatchSdkIfMissing {
   $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
   $nativeArtifact = if ($IsWindowsHost) { 'sdk-trace-mingwx64' } else { 'sdk-trace-linuxx64' }
@@ -652,13 +662,20 @@ function Start-Jaeger {
   while ((Get-Date) -lt $deadline) {
     $probe4317 = Test-TcpPort -TargetHost '127.0.0.1' -Port 4317
     $probe4318 = Test-TcpPort -TargetHost '127.0.0.1' -Port 4318
-    if ($probe4317 -and $probe4318) { $ready = $true; break }
+    # Envoy opens its listener sockets before its clusters and worker threads
+    # are initialized. Fast Native exporters can otherwise send their first
+    # batches into that gap and receive transport errors even though both TCP
+    # probes succeed. The image is pinned above, so its readiness log marker is
+    # a stable signal that requests can be forwarded to Jaeger.
+    $envoyLogs = (Invoke-Docker -DockerArgs @('logs', '--tail', '30', 'envoy') -CaptureOutput) -join "`n"
+    $workersReady = $envoyLogs -match 'all dependencies initialized\. starting workers'
+    if ($probe4317 -and $probe4318 -and $workersReady) { $ready = $true; break }
     Start-Sleep -Milliseconds 500
   }
   if (-not $ready) {
     Write-Host "envoy logs:" -ForegroundColor Yellow
     Invoke-Docker -DockerArgs @('logs', '--tail', '40', 'envoy') -CaptureOutput | ForEach-Object { Write-Host $_ }
-    throw "envoy did not start listening on :4317 and :4318 within 30s."
+    throw "envoy did not become ready on :4317 and :4318 within 30s."
   }
   Write-Host "Backend ready: Envoy gRPC[-Web] on :4317 -> jaeger:4317 | Envoy OTLP/HTTP on :4318 -> jaeger:4318 | UI http://localhost:16686 | metrics :14269." -ForegroundColor Cyan
 }
@@ -785,7 +802,9 @@ function Wait-JaegerDrain {
 function Get-ServiceNameForVariant {
   param([string]$Variant)
   if ($Variant -eq 'baseline') { return $null }
-  return "comparison-$Variant"
+  # Keep this aligned with the `service` value in every Fibonacci OTel
+  # consumer's build.gradle.kts so Jaeger's per-service metrics are queried.
+  return "fibonacci-$Variant"
 }
 
 # Remove stray trace/symbol files an instrumented binary may have written to
@@ -910,7 +929,8 @@ foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
   # Flatten per-step times across all runs, EXCLUDING the first $WarmupCount
   # step indices in each run (warmup steps per-run). Then trim the lowest and
   # highest 1% (each rounded up) from this pooled population before calculating
-  # headline step statistics. Raw files and the median curve retain all steps.
+  # headline step statistics. For tiny smoke runs the trim is capped so at least
+  # one observation remains. Raw files and the median curve retain all steps.
   $flatStepNanos = @()
   foreach ($runSteps in $perRunStepNanos) {
     for ($s = $WarmupCount; $s -lt $runSteps.Count; $s++) {
@@ -919,10 +939,7 @@ foreach ($exe in (@($nonOtelExecutables) + @($otelExecutables))) {
   }
 
   $sortedStepNanos = @($flatStepNanos | Sort-Object)
-  $outliersPerTail = if ($sortedStepNanos.Count -gt 0) { [int][Math]::Ceiling($sortedStepNanos.Count * 0.01) } else { 0 }
-  if ($sortedStepNanos.Count -le (2 * $outliersPerTail)) {
-    throw "Not enough non-warmup step timings for $($exe.Name) to remove $outliersPerTail value(s) from each 1% tail."
-  }
+  $outliersPerTail = Get-OutliersPerTail -ObservationCount $sortedStepNanos.Count
   $analyzedStepNanos = if ($outliersPerTail -gt 0) {
     @($sortedStepNanos[$outliersPerTail..($sortedStepNanos.Count - $outliersPerTail - 1)])
   } else {
@@ -1093,7 +1110,7 @@ Terminology used throughout this document:
 - **Run Iterations:** $RunCount
 - **Step Count (workload calls per process):** $StepCount
 - **Measured steps per run:** $($StepCount - $WarmupCount)
-- **Outliers discarded from each tail of headline step statistics:** 1% (rounded up)
+- **Outliers discarded from each tail of headline step statistics:** 1% (rounded up, capped to preserve at least one observation)
 - **Clean Build:** $CleanBuild
 - **Run timeout (s):** $RunTimeoutSeconds
 - **Variants:** $($Variants -join ', ')
@@ -1131,7 +1148,7 @@ Raw timing statistics for every (variant, platform) combination. Column meanings
 
 - **Iterations**: how many of the $RunCount runs produced a valid measurement. A value below $RunCount means some runs failed. The raw output of failed runs is stored in the ``failures/`` folder.
 - **Total mean / Total median (ms)**: average and middle value of the whole-process duration. For OTel variants this includes waiting at the end of the process until all remaining tracing data has been exported. Because of that, do not compare totals across variants. Use the step columns for comparisons instead.
-- **Mean step / Step median / Step stddev (µs)**: the arithmetic mean, middle value, and sample standard deviation of the same trimmed population. For each row, the first $WarmupCount steps of every successful run are excluded, then the pooled durations are sorted and the lowest and highest 1% are discarded (the count per tail is rounded up). With all $RunCount default-size runs successful, $($RunCount * ($StepCount - $WarmupCount)) non-warmup observations become $($RunCount * ($StepCount - $WarmupCount) - 2 * [Math]::Ceiling($RunCount * ($StepCount - $WarmupCount) * 0.01)) analyzed observations. Exact counts are stored as ``StepNonWarmupCount``, ``StepOutliersPerTail``, and ``StepAnalyzedCount`` in ``results.json``. A large stddev means retained step times fluctuated strongly from step to step or run to run.
+- **Mean step / Step median / Step stddev (µs)**: the arithmetic mean, middle value, and sample standard deviation of the same trimmed population. For each row, the first $WarmupCount steps of every successful run are excluded, then the pooled durations are sorted and the lowest and highest 1% are discarded (the count per tail is rounded up, but capped so at least one observation remains). With all $RunCount runs successful, $($RunCount * ($StepCount - $WarmupCount)) non-warmup observations become $($RunCount * ($StepCount - $WarmupCount) - 2 * (Get-OutliersPerTail -ObservationCount ($RunCount * ($StepCount - $WarmupCount)))) analyzed observations. Exact counts are stored as ``StepNonWarmupCount``, ``StepOutliersPerTail``, and ``StepAnalyzedCount`` in ``results.json``. A large stddev means retained step times fluctuated strongly from step to step or run to run.
 
 | Executable | Iterations | Total mean (ms) | Total median (ms) | Mean step (µs) | Step median (µs) | Step stddev (µs) |
 |------------|-----------:|----------------:|------------------:|---------------:|-----------------:|-----------------:|
@@ -1172,6 +1189,7 @@ foreach ($row in $overheadRows) {
 }
 
 $expectedTotal = $methodsPerStep['JVM']  # all platforms share the formula value
+$expectedPerRun = ([long]$expectedTotal * [long]$StepCount) + 1L # instrumented main()
 $markdown += @"
 
 
@@ -1181,7 +1199,7 @@ Tracing data (spans, one per traced function call) is exported asynchronously in
 
 Column meanings:
 
-- **Expected**: the number of spans the program generates. It is ``methods/step × StepCount × RunCount`` = $expectedTotal × $StepCount × $RunCount = $($expectedTotal * $StepCount * $RunCount) spans per row.
+- **Expected**: the number of spans the program generates. Each process creates ``methods/step × StepCount`` workload spans plus one span for the instrumented ``main`` function. With $RunCount run(s), that is ``(methods/step × StepCount + 1) × RunCount`` = ($expectedTotal × $StepCount + 1) × $RunCount = $($expectedPerRun * $RunCount) spans per row.
 - **Exported**: spans the plugin handed to the network.
 - **Failed (client)**: spans whose export ended in an error on the program side.
 - **Stored (Jaeger)**: spans the Jaeger backend saved. This is the ground truth for delivery.
@@ -1199,7 +1217,7 @@ $exportErrorNotes = @()
 foreach ($res in $allResults) {
   $vp = Get-VariantAndPlatform -ExeName $res.Executable
   if ($vp.Variant -eq 'baseline') { continue }
-  $expected = [long]$expectedTotal * [long]$StepCount * [long]$res.Count
+  $expected = $expectedPerRun * [long]$res.Count
   $expFmt = "{0:N0}" -f $expected
 
   $exportedNum    = $res.ExportedSpansSum
@@ -1314,9 +1332,9 @@ if ($AnyOtelVariant) {
   Write-Host ""
   Write-Host "=========================================="
   Write-Host "Jaeger is still running at http://localhost:16686" -ForegroundColor Green
-  Write-Host "  - Every OTel variant produced StepCount x RunCount = $($StepCount * $RunCount) traces" -ForegroundColor Green
-  Write-Host "    (one per step thanks to Main.kt's per-step Context.root() reset)" -ForegroundColor Green
-  Write-Host "  - Each trace ~= 'methods/step' spans, fully renderable in the UI" -ForegroundColor Green
+  Write-Host "  - Every OTel variant produced (StepCount + 1) x RunCount = $(($StepCount + 1) * $RunCount) traces" -ForegroundColor Green
+  Write-Host "    (one workload trace per step plus one separate main trace per process)" -ForegroundColor Green
+  Write-Host "  - Each workload trace has 'methods/step' spans; each main trace has one span" -ForegroundColor Green
   Write-Host "  - Storage is in-memory, capped at the most recent 400 traces" -ForegroundColor Green
   Write-Host "  - Verify zero drops at: http://localhost:14269/metrics" -ForegroundColor Green
   Write-Host "    (jaeger_collector_spans_dropped_total should be 0)" -ForegroundColor Green
