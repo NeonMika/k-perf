@@ -2,7 +2,7 @@
 
 ## Build System & Commands
 
-All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). There is no root-level Gradle project — each subproject has its own `gradlew`.
+All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). The root `settings.gradle.kts` indexes them as independent included builds and has a root wrapper for composite-build navigation; each included build still owns its Gradle configuration and wrapper.
 
 ### Build order (mandatory — each layer publishes to `mavenLocal` for the next to consume)
 
@@ -43,7 +43,7 @@ Tests live only in the plugin projects (JUnit 5); there are no tests in `KIRHelp
 
 ### Benchmarking
 
-See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation on the three benchmark suites, parameters, and output format.
+See [`benchmarking/README.md`](benchmarking/README.md) for full documentation on the three benchmark suites, parameters, and output format.
 
 > ⚠️ **Keep benchmarking scripts in sync**: Any change to kperf plugin settings (names/defaults), KMP example project structure, or project version **must** be reflected in:
 >
@@ -68,7 +68,7 @@ KIRHelperKit  (io.github.neonmika:KIRHelperKit:0.2.1)
 
 > ⚠️ **`plugins/instrumentation-overhead-analyzer` is currently work in progress.** The plugin builds, is applied to `game-of-life-kmp-commonmain-ioa`, and walks IR functions — but the synthetic overhead injection is **not yet implemented**. Treat it as a stub/prototype.
 
-See [`README.md`](../README.md) for a full overview of the repository structure.
+See [`README.md`](README.md) for a full overview of the repository structure.
 
 ### What the k-perf plugin does (IR level)
 

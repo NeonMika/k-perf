@@ -61,8 +61,10 @@ belongs to:
 | Sub-project path | Role |
 |---|---|
 | `KIRHelperKit/` | Shared IR utility library consumed by both plugins |
+| `plugin_dependencies/` | Independent OTLP exporter and platform-utility builds consumed by the OTel plugins |
 | `plugins/k-perf/` | Main performance-tracing compiler plugin |
 | `plugins/instrumentation-overhead-analyzer/` | Overhead-measurement companion plugin |
+| `plugins/otel-*/plugin/` | OpenTelemetry compiler-plugin variants |
 | `kmp-examples/<workload>/<variant>/` | Sample KMP apps that exercise the plugins |
 | `benchmarking/<suite>/` | PowerShell benchmark runners (not Gradle) |
 | `analyzers/<tool>/` | Standalone post-processing tools (Python/HTML) |
@@ -89,9 +91,11 @@ Based on the sub-project and file type, add the relevant architectural frame:
 |---|---|
 | `KIRHelperKit` | Shared IR helpers (e.g. `IrBuilderExtension`); JVM 1.8; no tests; **must be published first** (`./gradlew publishToMavenLocal`) before either plugin compiles |
 | `plugins/k-perf` | `KPerfExtension : IrGenerationExtension` is the entry point; uses `IrElementTransformerVoidWithContext` to wrap eligible functions with `_enter_method`/`_exit_method` calls; synthetic fields/functions are attached to `moduleFragment.files[0]`; tests use kctfork for in-process compilation |
-| `plugins/instrumentation-overhead-analyzer` | `InstrumentationOverheadAnalyzerExtension`; same structural pattern as k-perf plugin; measures the overhead of instrumentation itself |
+| `plugin_dependencies` | JSON and protobuf exporter chains are separate projects; publish the exporter before its matching utility project and plugin |
+| `plugins/instrumentation-overhead-analyzer` | `InstrumentationOverheadAnalyzerExtension`; same structural pattern as k-perf plugin; currently a stub that finds candidates but does not inject synthetic overhead |
+| `plugins/otel-*/plugin` | OTel IR plugins depend on their matching exporter and utility projects through `mavenLocal`; use `buildAllVariants.ps1` for complete ordered chains |
 | `kmp-examples/<workload>/<variant>` | KMP Gradle project; consumes its compiler plugin from mavenLocal; Game of Life has two architectures: `CommonMain` (single `fun main()` in `commonMain/`) and `DedicatedMain` (per-platform `main()` in each source set); `kotlinx-io-core` is injected by k-perf — do not add it to dependencies manually |
-| `benchmarking/<suite>` | PowerShell scripts (`run.ps1`); not Gradle; parse `### Elapsed time:` from stdout; per-run output: per-executable `.json`, `_results.csv`, `_results.json`, call graph `.png` (k-perf suite only) |
+| `benchmarking/<suite>` | PowerShell runners (`benchmark.ps1`, `run.ps1`, or `kperf-otel-comparison.ps1`); not Gradle; the two Game of Life suites and the Fibonacci OTel comparison have distinct output formats documented in `benchmarking/README.md` |
 | `analyzers/<tool>` | Standalone tools; no Gradle build; `call_graph_visualizer/graph-visualizer.py` reads `trace_*.txt` + `symbols_*.txt`; `measurements_plotter/index.html` reads `_results.json` |
 
 

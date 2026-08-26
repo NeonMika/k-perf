@@ -172,13 +172,17 @@ k-perf/
 ├── 🔬 research/
 │   └── otel_overhead_investigation/          # OpenTelemetry overhead research
 │       └── profiles/                         # CPU profiles and analysis tooling
+├── settings.gradle.kts                       # Composite-build index for all projects
+├── gradlew / gradlew.bat                     # Root composite-build wrapper
 ├── buildAll.ps1                              # 🪟 Windows full build script
-└── buildAll.sh                               # 🐧 Linux/macOS full build script
+├── buildAll.sh                               # 🐧 Linux/macOS full build script
+├── buildAllVariants.ps1                      # Complete k-perf + OTel build chains
+└── .gitlab-ci.yml                            # Manual Linux OTel comparison benchmark
 ```
 
 The `research/otel_overhead_investigation/` folder contains research performed for the paper **“Understanding and Reducing OpenTelemetry Tracing Overhead in Kotlin Multiplatform”**, submitted to the Symposium on Software Performance 2026.
 
-> **⚠️ Note:** This is **not** a single-root Gradle project. Independent builds such as `KIRHelperKit`, `plugin_dependencies/*`, and `plugins/*/plugin` have their own Gradle wrappers. They must be built **in order** because each layer publishes to `mavenLocal` for the next to consume.
+> **⚠️ Note:** The root `settings.gradle.kts` is a **composite-build index**, not a conventional multi-project build. Included builds such as `KIRHelperKit`, `plugin_dependencies/*`, and `plugins/*/plugin` remain independent and keep their own Gradle wrappers. Use the build scripts below when publication order matters, because each dependency layer publishes to `mavenLocal` for the next one to consume.
 
 ---
 
@@ -459,7 +463,23 @@ cd benchmarking\game-of-life-kmp-commonmain-ioa
 .\run.ps1 -Filters @("jar") -RepetitionCount 100
 ```
 
-### Common Parameters
+### Suite 3 — k-perf / OpenTelemetry Comparison
+
+Compares the Fibonacci baseline against seven OpenTelemetry strategies: JSON, protobuf, anchored-clock, sampler, time-source, fast-batch, and combined protobuf variants. The default run covers all eight variants on JVM, JavaScript, and Native.
+
+```powershell
+cd benchmarking\kperf-otel
+
+# Full comparison: 10 runs × 100 steps, discarding 20 warmup steps per run
+.\kperf-otel-comparison.ps1
+
+# Quick smoke test without clean builds
+.\kperf-otel-comparison.ps1 -RunCount 3 -StepCount 10 -WarmupCount 2 -CleanBuild $false
+```
+
+Results are written to `measurements/comparison_run_<timestamp>/` as `results.json`, `results.md`, and `per_step_medians.csv`. The benchmark requires an OTLP backend (Docker or Podman) and GitHub Packages credentials for the OpenTelemetry Kotlin dependencies. A manual GitLab CI job in `.gitlab-ci.yml` runs the Linux comparison on the SSW benchmark runner and uploads the new result directory as an artifact. See [`benchmarking/README.md`](benchmarking/README.md) for the variant definitions, prerequisites, and Linux setup.
+
+### Game of Life Suite Parameters
 
 | Parameter | Default | Description |
 |---|---|---|

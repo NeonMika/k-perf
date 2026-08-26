@@ -2,7 +2,7 @@
 
 ## Build System & Commands
 
-All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). There is no root-level Gradle project — each subproject has its own `gradlew`.
+All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). The root `settings.gradle.kts` indexes them as independent included builds and has a root wrapper for composite-build navigation; each included build still owns its Gradle configuration and wrapper.
 
 ### Build order (mandatory — each layer publishes to `mavenLocal` for the next to consume)
 
@@ -48,7 +48,7 @@ See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation
 > - `benchmarking/game-of-life-kmp-k-perf/benchmark.ps1` (JAR version strings, suffix logic, parameter defaults)
 > - `benchmarking/game-of-life-kmp-commonmain-ioa/run.ps1` (JAR version strings) — note: the IOA plugin itself is **work in progress**; this benchmark measures a mostly no-op plugin for now
 >
-> GitHub Actions benchmark workflows (all `workflow_dispatch`-only) are in `.github/workflows/benchmark-*.yml`. They run both suites and commit results to `measurements/` with a `[skip ci]` message to avoid triggering build workflows.
+> GitHub Actions benchmark workflows (all `workflow_dispatch`-only) are in `.github/workflows/benchmark-*.yml`. They run the k-perf benchmark suite and commit results to `measurements/` with a `[skip ci]` message to avoid triggering build workflows.
 
 ---
 
@@ -107,10 +107,10 @@ All projects under `kmp-examples/` target JVM + JS (Node.js) + mingwX64 + linuxX
 The k-perf variants use the active plugin configuration to tag their output artifacts. The `archiveClassifier` for JARs and `baseName` suffix for native binaries follow the pattern:
 
 ```
-flushEarly-<true|false>-propAccessors-<true|false>-testKIR-<true|false>
+enabled-<true|false>-flushEarly-<true|false>-propAccessors-<true|false>-testKIR-<true|false>
 ```
 
-For example, a JAR built with `kperfFlushEarly=true` is named `game-of-life-kmp-commonmain-k-perf-flushEarly-true-propAccessors-false-testKIR-false.jar`. The JS module name uses the same suffix via `outputModuleName`. Built JARs and their runtime dependencies are copied to `build/lib/` by the Gradle build.
+For example, a JAR built with `kperfEnabled=true` and `kperfFlushEarly=true` is named `game-of-life-kmp-commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false.jar`. The JS module name uses the same suffix via `outputModuleName`. Built JARs and their runtime dependencies are copied to `build/lib/` by the Gradle build.
 
 ### Running a KMP example
 
@@ -134,7 +134,7 @@ cd kmp-examples\game-of-life\game-of-life-kmp-commonmain-k-perf
 java -jar build\lib\<project>-jvm-<version>.jar <steps>
 # e.g.:
 java -jar build\lib\game-of-life-kmp-commonmain-baseline-jvm-0.2.1.jar 500
-java -jar build\lib\game-of-life-kmp-commonmain-k-perf-jvm-0.2.1-flushEarly-false-propAccessors-false-testKIR-false.jar 500
+java -jar build\lib\game-of-life-kmp-commonmain-k-perf-jvm-0.2.1-enabled-false-flushEarly-false-propAccessors-false-testKIR-false.jar 500
 
 # JS (Node.js)
 node build\js\packages\<project>\kotlin\<project>.js <steps>

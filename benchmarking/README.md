@@ -67,11 +67,13 @@ Each JSON file contains:
 The script in `kperf-otel/`, `kperf-otel-comparison.ps1`, benchmarks a deterministic CPU workload (`fibonacci(20)`, one workload call per step) under eight variants across three platforms (JVM / JS / Native) — 24 rows in total. The variants are:
 
 - **baseline** — no plugin applied (reference for overhead delta)
-- **k-perf** — local file-sink timing plugin (sync trace flush)
 - **otel** — OpenTelemetry spans exported via HTTP/JSON to Jaeger
 - **otel-proto** — OpenTelemetry spans via gRPC/protobuf
 - **otel-proto-anchored** — same as otel-proto but defers timestamping to the SDK's AnchoredClock (no explicit `setStartTimestamp` call)
+- **otel-proto-sampler** — protobuf exporter variant with deterministic trace sampling
 - **otel-proto-timesource** — same as otel-proto but feeds `setStartTimestamp(Long, NANOSECOND)` from a single module-load `TimeSource.Monotonic.markNow()` mark
+- **otel-proto-fastbatch** — protobuf exporter using the locally patched fast-batch OpenTelemetry Kotlin SDK
+- **otel-proto-combined** — protobuf variant combining the investigated overhead reductions
 
 ### Parameters
 
