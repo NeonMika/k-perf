@@ -1,9 +1,9 @@
 {
   "parameters": {
-    "CILabel": "ci-linux-large",
-    "RepetitionCount": 50,
+    "CILabel": "ci-linux-small",
+    "RepetitionCount": 3,
     "CleanBuild": false,
-    "StepCount": 500,
+    "StepCount": 20,
     "Reference": true,
     "Common": true,
     "Dedicated": false,
@@ -14,19 +14,16 @@
       true
     ],
     "FlushEarly": [
-      true,
       false
     ],
     "InstrumentPropertyAccessors": [
-      true,
       false
     ],
     "TestKIR": [
       false
     ],
     "Methods": [
-      ".*",
-      "step"
+      ".*"
     ]
   },
   "machineInfo": {
@@ -34,32 +31,32 @@
     "DeviceModel": "Virtual Machine",
     "OS": "Ubuntu 24.04.4 LTS",
     "OSArchitecture": "x86_64",
-    "CPU": "AMD EPYC 7763 64-Core Processor",
+    "CPU": "INTEL(R) XEON(R) PLATINUM 8573C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
-    "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.97,
+    "TotalRAMGB": 15.61,
+    "AvailableRAMGB": 14.33,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
+    "SystemUptimeHours": 0.03,
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "RunningProcessCount": 160,
+    "RunningProcessCount": 150,
     "IsVirtualMachine": true,
     "PowerShellVersion": "7.6.5",
-    "JavaVersion": "21.0.12",
-    "JavaDistribution": "\"21.0.12\"",
+    "JavaVersion": "21.0.12.1",
+    "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
     "PythonVersion": "Python 3.12.3",
     "GradleVersion": "System.Object[]",
     "KotlinVersion": "Kotlin:        2.2.0",
-    "GitCommitHash": "3f7f10a44b781ce62d15501154e442d11c93f0b3",
+    "GitCommitHash": "0ea6cb314bf1e9c7d58707a380c7a58df5e3ca05",
     "GitBranch": "main",
-    "CollectionTimestamp": "2026-08-26 01:25:08"
+    "CollectionTimestamp": "2026-08-27 05:36:06"
   },
-  "buildTimeMs": 5903.9981,
-  "executable": "commonmain-plain-node",
-  "repetitions": 50,
+  "buildTimeMs": 3601.7889,
+  "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
+  "repetitions": 3,
   "timeUnit": "microseconds",
   "times": null,
   "stepTimes": [],
