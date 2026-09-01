@@ -25,7 +25,7 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 
 ### Benchmarks
 
-> Benchmark workflows are triggered manually (`workflow_dispatch`) — badges show "no status" until a run is triggered.
+> Small benchmark workflows run on every branch push; large benchmark workflows run daily at midnight UTC. All benchmark workflows also support manual dispatch.
 
 [![Benchmark (Windows, Large)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-large.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-large.yml)
 [![Benchmark (Windows, Small)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-small.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-small.yml)
