@@ -13,12 +13,10 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 ### Build & Tests
 
 > Tests (JUnit 5 via kctfork) run inside the build workflows — there is no separate test workflow.
+> Complete builds are manual-only; highly separated builds run on every push to `main`.
 
 [![Build all on Windows](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows.yml)
 [![Build all on Ubuntu](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu.yml)
-
-[![Build all on Windows (separated)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows-separated.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows-separated.yml)
-[![Build all on Ubuntu (separated)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu-separated.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu-separated.yml)
 
 [![Build all on Windows (highly separated)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows-highly-separated.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-windows-highly-separated.yml)
 [![Build all on Ubuntu (highly separated)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu-highly-separated.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/build-all-on-ubuntu-highly-separated.yml)

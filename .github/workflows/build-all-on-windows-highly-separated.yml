@@ -4,8 +4,8 @@ name: Build all on Windows (highly separated)
 # maximum failure visibility.
 # ⚠️ The hardcoded task names (jvmJar, jsProductionExecutableCompileSync,
 #    linkReleaseExecutableMingwX64) reflect the #1-priority tasks from the discovery lists
-#    in buildAll.ps1 and .github/scripts/Build-KmpExample.ps1.
-#    Keep all four in sync when changing the build order, project list, or task priorities.
+#    in buildAll.ps1.
+#    Keep both in sync when changing the build order, project list, or task priorities.
 
 on:
   push:
