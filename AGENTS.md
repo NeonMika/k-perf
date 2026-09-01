@@ -47,7 +47,7 @@ See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation
 > - `benchmarking/game-of-life-kmp-k-perf/benchmark.ps1` (JAR version strings, suffix logic, parameter defaults)
 > - `benchmarking/game-of-life-kmp-commonmain-ioa/run.ps1` (JAR version strings) — note: the IOA plugin itself is **work in progress**; this benchmark measures a mostly no-op plugin for now
 >
-> GitHub Actions benchmark workflows are in `.github/workflows/benchmark-*.yml`. Small benchmarks run on every branch push; large benchmarks run daily at midnight UTC. All workflows also support `workflow_dispatch` and commit results to `measurements/` with a `[skip ci]` message to avoid triggering build workflows.
+> GitHub Actions benchmark workflows are in `.github/workflows/benchmark-*.yml`. Small benchmarks run on pushes to `main`; large benchmarks run daily at midnight UTC. All workflows also support `workflow_dispatch` and commit results to `measurements/` with a `[skip ci]` message to avoid triggering build workflows.
 
 ---
 
