@@ -1,44 +1,44 @@
 [
   {
-    "mean": 110599.36,
-    "median": 109360.0,
-    "stddev": 5327.566740826357,
-    "min": 103308.0,
-    "max": 123452.0,
-    "ci95_lower": 109122.6338406924,
-    "ci95_upper": 112076.0861593076,
+    "mean": 97805.76,
+    "median": 96597.5,
+    "stddev": 6426.131557816673,
+    "min": 88673.0,
+    "max": 117546.0,
+    "ci95_lower": 96024.52720907901,
+    "ci95_upper": 99586.99279092098,
     "executable": "commonmain-plain-jar",
-    "buildTimeMs": 1445.4271,
+    "buildTimeMs": 1383.9801,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -47,15 +47,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -73,37 +73,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-plain-node",
-    "buildTimeMs": 4823.8787,
+    "buildTimeMs": 4312.1415,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -112,15 +112,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -130,45 +130,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 114183.34,
-    "median": 113691.5,
-    "stddev": 4081.4974273405783,
-    "min": 109210.0,
-    "max": 134802.0,
-    "ci95_lower": 113052.00663275894,
-    "ci95_upper": 115314.67336724105,
+    "mean": 84325.8,
+    "median": 83971.5,
+    "stddev": 1825.4146076428553,
+    "min": 80466.0,
+    "max": 92201.0,
+    "ci95_lower": 83819.82088536384,
+    "ci95_upper": 84831.77911463617,
     "executable": "commonmain-plain-linux-exe",
-    "buildTimeMs": 13707.9061,
+    "buildTimeMs": 11253.764,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -177,15 +177,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -195,45 +195,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 110197.72,
-    "median": 109597.5,
-    "stddev": 4016.5794618133996,
-    "min": 103528.0,
-    "max": 118615.0,
-    "ci95_lower": 109084.38097474784,
-    "ci95_upper": 111311.05902525217,
+    "mean": 95100.96,
+    "median": 94153.0,
+    "stddev": 3161.6461739068136,
+    "min": 89756.0,
+    "max": 104161.0,
+    "ci95_lower": 94224.59639188145,
+    "ci95_upper": 95977.32360811856,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-jar",
-    "buildTimeMs": 1744.9527,
+    "buildTimeMs": 2217.6441,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -242,15 +242,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -268,37 +268,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-node",
-    "buildTimeMs": 2937.5355,
+    "buildTimeMs": 2773.0908,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -307,15 +307,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -325,45 +325,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 113323.12,
-    "median": 113301.5,
-    "stddev": 1987.1439318062207,
-    "min": 109369.0,
-    "max": 118455.0,
-    "ci95_lower": 112772.31180384544,
-    "ci95_upper": 113873.92819615455,
+    "mean": 85262.44,
+    "median": 84283.0,
+    "stddev": 3511.0047353184486,
+    "min": 80568.0,
+    "max": 95951.0,
+    "ci95_lower": 84289.23913920828,
+    "ci95_upper": 86235.64086079173,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-linux-exe",
-    "buildTimeMs": 27866.2089,
+    "buildTimeMs": 11674.7697,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -372,15 +372,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -390,45 +390,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 109474.46,
-    "median": 109664.0,
-    "stddev": 4318.575455836693,
-    "min": 100994.0,
-    "max": 117540.0,
-    "ci95_lower": 108277.41195596395,
-    "ci95_upper": 110671.50804403606,
+    "mean": 94827.62,
+    "median": 93750.5,
+    "stddev": 4754.270732677288,
+    "min": 88809.0,
+    "max": 113223.0,
+    "ci95_lower": 93509.80338672824,
+    "ci95_upper": 96145.43661327176,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-jar",
-    "buildTimeMs": 1744.9527,
+    "buildTimeMs": 2217.6441,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -437,15 +437,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -463,37 +463,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-node",
-    "buildTimeMs": 2937.5355,
+    "buildTimeMs": 2773.0908,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -502,15 +502,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -520,45 +520,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 113855.68,
-    "median": 113455.5,
-    "stddev": 3414.78673813443,
-    "min": 108810.0,
-    "max": 129101.0,
-    "ci95_lower": 112909.14940733442,
-    "ci95_upper": 114802.21059266556,
+    "mean": 84094.52,
+    "median": 83561.0,
+    "stddev": 2665.6719047312386,
+    "min": 81513.0,
+    "max": 96804.0,
+    "ci95_lower": 83355.63344534047,
+    "ci95_upper": 84833.40655465954,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-linux-exe",
-    "buildTimeMs": 27866.2089,
+    "buildTimeMs": 11674.7697,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -567,15 +567,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -585,45 +585,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 109410.54,
-    "median": 108750.0,
-    "stddev": 3912.71003849073,
-    "min": 101974.0,
-    "max": 121488.0,
-    "ci95_lower": 108325.99210999487,
-    "ci95_upper": 110495.08789000512,
+    "mean": 94580.98,
+    "median": 94163.5,
+    "stddev": 3197.590799017158,
+    "min": 89382.0,
+    "max": 103351.0,
+    "ci95_lower": 93694.65305012166,
+    "ci95_upper": 95467.30694987833,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-jar",
-    "buildTimeMs": 1717.7949,
+    "buildTimeMs": 4775.7782,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -632,15 +632,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -658,37 +658,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-node",
-    "buildTimeMs": 3153.0592,
+    "buildTimeMs": 4777.9248,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -697,15 +697,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -715,45 +715,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 113811.62,
-    "median": 113167.0,
-    "stddev": 2910.1993542065966,
-    "min": 109504.0,
-    "max": 124433.0,
-    "ci95_lower": 113004.95389439803,
-    "ci95_upper": 114618.28610560196,
+    "mean": 84880.84,
+    "median": 84097.0,
+    "stddev": 3191.9070773135113,
+    "min": 81300.0,
+    "max": 96814.0,
+    "ci95_lower": 83996.0884974,
+    "ci95_upper": 85765.5915026,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-linux-exe",
-    "buildTimeMs": 12166.3416,
+    "buildTimeMs": 10784.7646,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -762,15 +762,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -780,45 +780,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 109825.94,
-    "median": 109098.0,
-    "stddev": 3919.583585806335,
-    "min": 102785.0,
-    "max": 119746.0,
-    "ci95_lower": 108739.48685988315,
-    "ci95_upper": 110912.39314011685,
+    "mean": 94824.14,
+    "median": 94270.0,
+    "stddev": 4077.711918491065,
+    "min": 88797.0,
+    "max": 107217.0,
+    "ci95_lower": 93693.85592227822,
+    "ci95_upper": 95954.42407772178,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-jar",
-    "buildTimeMs": 1717.7949,
+    "buildTimeMs": 4775.7782,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -827,15 +827,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -853,37 +853,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-node",
-    "buildTimeMs": 3153.0592,
+    "buildTimeMs": 4777.9248,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -892,15 +892,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -910,45 +910,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 114103.12,
-    "median": 113898.5,
-    "stddev": 2404.9631558975057,
-    "min": 109722.0,
-    "max": 118539.0,
-    "ci95_lower": 113436.49822363273,
-    "ci95_upper": 114769.74177636726,
+    "mean": 83647.48,
+    "median": 83378.5,
+    "stddev": 1977.4659958891734,
+    "min": 81194.0,
+    "max": 94545.0,
+    "ci95_lower": 83099.35439081845,
+    "ci95_upper": 84195.60560918154,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-linux-exe",
-    "buildTimeMs": 12166.3416,
+    "buildTimeMs": 10784.7646,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -957,15 +957,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -975,45 +975,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 109129.94,
-    "median": 109602.0,
-    "stddev": 3367.452439916864,
-    "min": 102512.0,
-    "max": 115400.0,
-    "ci95_lower": 108196.52980540934,
-    "ci95_upper": 110063.35019459066,
+    "mean": 95261.1,
+    "median": 95463.5,
+    "stddev": 3183.838975584189,
+    "min": 89067.0,
+    "max": 102687.0,
+    "ci95_lower": 94378.58486110209,
+    "ci95_upper": 96143.61513889792,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-jar",
-    "buildTimeMs": 1732.1771,
+    "buildTimeMs": 1539.1691,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1022,15 +1022,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1048,37 +1048,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-node",
-    "buildTimeMs": 2472.5909,
+    "buildTimeMs": 2246.7165,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1087,15 +1087,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1105,45 +1105,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 113209.82,
-    "median": 112846.0,
-    "stddev": 1983.628932650706,
-    "min": 109847.0,
-    "max": 118776.0,
-    "ci95_lower": 112659.98611190302,
-    "ci95_upper": 113759.65388809699,
+    "mean": 84812.8,
+    "median": 83525.5,
+    "stddev": 3768.1448529287013,
+    "min": 81483.0,
+    "max": 97047.0,
+    "ci95_lower": 83768.32353502436,
+    "ci95_upper": 85857.27646497564,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-linux-exe",
-    "buildTimeMs": 11511.4064,
+    "buildTimeMs": 9587.3431,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1152,15 +1152,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1170,45 +1170,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 108910.4,
-    "median": 108626.0,
-    "stddev": 3704.0581385660716,
-    "min": 101804.0,
-    "max": 117318.0,
-    "ci95_lower": 107883.6874659458,
-    "ci95_upper": 109937.11253405419,
+    "mean": 94802.22,
+    "median": 94654.0,
+    "stddev": 3349.0505708517526,
+    "min": 89412.0,
+    "max": 111924.0,
+    "ci95_lower": 93873.91054327911,
+    "ci95_upper": 95730.52945672089,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-jar",
-    "buildTimeMs": 1732.1771,
+    "buildTimeMs": 1539.1691,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1217,15 +1217,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1243,37 +1243,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-node",
-    "buildTimeMs": 2472.5909,
+    "buildTimeMs": 2246.7165,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1282,15 +1282,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1300,45 +1300,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 113530.26,
-    "median": 112963.5,
-    "stddev": 3047.064628357553,
-    "min": 109019.0,
-    "max": 124469.0,
-    "ci95_lower": 112685.65677592128,
-    "ci95_upper": 114374.86322407871,
+    "mean": 85462.86,
+    "median": 84496.0,
+    "stddev": 4034.6897764567843,
+    "min": 80981.0,
+    "max": 97345.0,
+    "ci95_lower": 84344.50105164068,
+    "ci95_upper": 86581.21894835932,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-linux-exe",
-    "buildTimeMs": 11511.4064,
+    "buildTimeMs": 9587.3431,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1347,15 +1347,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1365,45 +1365,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 110621.6,
-    "median": 110330.0,
-    "stddev": 3701.0435373426935,
-    "min": 102637.0,
-    "max": 118255.0,
-    "ci95_lower": 109595.7230707731,
-    "ci95_upper": 111647.4769292269,
+    "mean": 94143.4,
+    "median": 93721.5,
+    "stddev": 2726.653477006836,
+    "min": 89007.0,
+    "max": 101387.0,
+    "ci95_lower": 93387.61021589334,
+    "ci95_upper": 94899.18978410665,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-jar",
-    "buildTimeMs": 1388.5233,
+    "buildTimeMs": 1317.4678,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1412,15 +1412,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1438,37 +1438,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-    "buildTimeMs": 2361.2162,
+    "buildTimeMs": 1928.2043,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1477,15 +1477,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1495,45 +1495,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 113693.5,
-    "median": 113275.5,
-    "stddev": 2318.0363457029744,
-    "min": 109372.0,
-    "max": 121538.0,
-    "ci95_lower": 113050.97310611929,
-    "ci95_upper": 114336.02689388071,
+    "mean": 84469.8,
+    "median": 83665.0,
+    "stddev": 3537.3493593078865,
+    "min": 81559.0,
+    "max": 101322.0,
+    "ci95_lower": 83489.29678199814,
+    "ci95_upper": 85450.30321800186,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-linux-exe",
-    "buildTimeMs": 11167.6325,
+    "buildTimeMs": 9380.9062,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1542,15 +1542,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1560,45 +1560,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 109820.32,
-    "median": 109808.0,
-    "stddev": 3943.497610714921,
-    "min": 102033.0,
-    "max": 122584.0,
-    "ci95_lower": 108727.23823036526,
-    "ci95_upper": 110913.40176963476,
+    "mean": 95595.84,
+    "median": 94920.0,
+    "stddev": 3115.356797202777,
+    "min": 89600.0,
+    "max": 107428.0,
+    "ci95_lower": 94732.30715248987,
+    "ci95_upper": 96459.37284751012,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-jar",
-    "buildTimeMs": 1388.5233,
+    "buildTimeMs": 1317.4678,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1607,15 +1607,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1633,37 +1633,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-    "buildTimeMs": 2361.2162,
+    "buildTimeMs": 1928.2043,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1672,15 +1672,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
@@ -1690,45 +1690,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 113755.36,
-    "median": 113603.5,
-    "stddev": 2677.234010950062,
-    "min": 108710.0,
-    "max": 122664.0,
-    "ci95_lower": 113013.26859300531,
-    "ci95_upper": 114497.45140699469,
+    "mean": 84908.24,
+    "median": 84005.5,
+    "stddev": 3272.9803590948127,
+    "min": 81310.0,
+    "max": 95886.0,
+    "ci95_lower": 84001.01613021032,
+    "ci95_upper": 85815.46386978969,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-linux-exe",
-    "buildTimeMs": 11167.6325,
+    "buildTimeMs": 9380.9062,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "Enabled": [
-      true
-    ],
-    "Native": true,
-    "Dedicated": false,
-    "JS": true,
-    "Reference": true,
     "TestKIR": [
       false
     ],
+    "Native": true,
     "Common": true,
-    "Methods": [
-      ".*",
-      "step"
-    ],
+    "JS": true,
+    "Reference": true,
     "FlushEarly": [
       true,
       false
     ],
-    "CILabel": "ci-linux-large",
-    "JVM": true,
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "CollectionTimestamp": "2026-09-06 03:33:30",
-    "GitCommitHash": "60bc741f0162fe9e094b32cf546fcfbaceb6c5fa",
+    "CILabel": "ci-linux-large",
+    "Methods": [
+      ".*",
+      "step"
+    ],
+    "Dedicated": false,
+    "JVM": true,
+    "Enabled": [
+      true
+    ],
+    "CollectionTimestamp": "2026-09-07 03:33:31",
+    "GitCommitHash": "1cd983680d31fa736bef085c1c2f3e50dc2577f4",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1737,15 +1737,15 @@
     "OSArchitecture": "x86_64",
     "TimeZone": "Etc/UTC",
     "Username": "runner",
-    "CPU": "AMD EPYC 9V74 80-Core Processor",
+    "CPU": "Intel(R) Xeon(R) 6973P-C",
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.61,
-    "AvailableRAMGB": 14.08,
+    "AvailableRAMGB": 14.01,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 83,
-    "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 162,
+    "SystemUptimeHours": 0.04,
+    "RunningProcessCount": 171,
     "PowerShellVersion": "7.6.5",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
