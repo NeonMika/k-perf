@@ -1,44 +1,44 @@
 [
   {
-    "mean": 155605.66,
-    "median": 154486.5,
-    "stddev": 6455.394724205958,
-    "min": 146976.0,
-    "max": 181343.0,
-    "ci95_lower": 153816.315873189,
-    "ci95_upper": 157395.004126811,
+    "mean": 158309.9,
+    "median": 156556.5,
+    "stddev": 9423.378975522872,
+    "min": 145754.0,
+    "max": 200471.0,
+    "ci95_lower": 155697.87261128906,
+    "ci95_upper": 160921.92738871093,
     "executable": "commonmain-plain-jar",
-    "buildTimeMs": 2005.7741,
+    "buildTimeMs": 2044.1318,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -51,12 +51,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -73,37 +73,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-plain-node",
-    "buildTimeMs": 6550.7527,
+    "buildTimeMs": 6537.9906,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -116,12 +116,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -130,45 +130,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 136162.96,
-    "median": 136095.5,
-    "stddev": 3245.4078134986935,
-    "min": 129813.0,
-    "max": 149958.0,
-    "ci95_lower": 135263.37884992483,
-    "ci95_upper": 137062.54115007515,
+    "mean": 136747.12,
+    "median": 136507.5,
+    "stddev": 3014.4478740403065,
+    "min": 131406.0,
+    "max": 145878.0,
+    "ci95_lower": 135911.55767895922,
+    "ci95_upper": 137582.68232104077,
     "executable": "commonmain-plain-linux-exe",
-    "buildTimeMs": 16964.6821,
+    "buildTimeMs": 17485.3555,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -181,12 +181,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -195,45 +195,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 154520.42,
-    "median": 153557.5,
-    "stddev": 5104.390063664886,
-    "min": 145249.0,
-    "max": 167322.0,
-    "ci95_lower": 153105.55525948724,
-    "ci95_upper": 155935.28474051278,
+    "mean": 154302.48,
+    "median": 153200.0,
+    "stddev": 5487.0391675404,
+    "min": 144318.0,
+    "max": 167216.0,
+    "ci95_lower": 152781.55033923045,
+    "ci95_upper": 155823.40966076957,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-jar",
-    "buildTimeMs": 2616.456,
+    "buildTimeMs": 2197.9846,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -246,12 +246,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -268,37 +268,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-node",
-    "buildTimeMs": 3669.4258,
+    "buildTimeMs": 4265.9874,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -311,12 +311,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -325,45 +325,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 136708.3,
-    "median": 136139.5,
-    "stddev": 3440.914082695149,
-    "min": 131533.0,
-    "max": 148205.0,
-    "ci95_lower": 135754.5272769092,
-    "ci95_upper": 137662.07272309077,
+    "mean": 136702.34,
+    "median": 135524.0,
+    "stddev": 4776.789048799905,
+    "min": 130094.0,
+    "max": 154750.0,
+    "ci95_lower": 135378.28162794802,
+    "ci95_upper": 138026.39837205198,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-linux-exe",
-    "buildTimeMs": 16444.7638,
+    "buildTimeMs": 20259.2928,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -376,12 +376,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -390,45 +390,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 155402.88,
-    "median": 154755.5,
-    "stddev": 4004.085947007183,
-    "min": 147960.0,
-    "max": 165332.0,
-    "ci95_lower": 154293.00400037164,
-    "ci95_upper": 156512.75599962837,
+    "mean": 152518.92,
+    "median": 152223.5,
+    "stddev": 4449.873686994281,
+    "min": 143820.0,
+    "max": 164176.0,
+    "ci95_lower": 151285.4779430771,
+    "ci95_upper": 153752.36205692292,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-jar",
-    "buildTimeMs": 2616.456,
+    "buildTimeMs": 2197.9846,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -441,12 +441,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -463,37 +463,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-node",
-    "buildTimeMs": 3669.4258,
+    "buildTimeMs": 4265.9874,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -506,12 +506,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -520,45 +520,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 135880.8,
-    "median": 135797.5,
-    "stddev": 3053.9745732205356,
-    "min": 130465.0,
-    "max": 144808.0,
-    "ci95_lower": 135034.28143692415,
-    "ci95_upper": 136727.31856307582,
+    "mean": 135513.68,
+    "median": 135128.0,
+    "stddev": 2931.120238866683,
+    "min": 128791.0,
+    "max": 144785.0,
+    "ci95_lower": 134701.2149210287,
+    "ci95_upper": 136326.14507897128,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-true-testKIR-false-linux-exe",
-    "buildTimeMs": 16444.7638,
+    "buildTimeMs": 20259.2928,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -571,12 +571,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -585,45 +585,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 154878.66,
-    "median": 154680.5,
-    "stddev": 6129.225285166677,
-    "min": 143810.0,
-    "max": 171045.0,
-    "ci95_lower": 153179.72542907594,
-    "ci95_upper": 156577.59457092406,
+    "mean": 152904.18,
+    "median": 152457.5,
+    "stddev": 5844.233843014562,
+    "min": 144644.0,
+    "max": 176371.0,
+    "ci95_lower": 151284.24102655568,
+    "ci95_upper": 154524.1189734443,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-jar",
-    "buildTimeMs": 1641.341,
+    "buildTimeMs": 2640.2899,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -636,12 +636,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -658,37 +658,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-node",
-    "buildTimeMs": 2921.087,
+    "buildTimeMs": 4404.8688,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -701,12 +701,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -715,45 +715,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 137537.52,
-    "median": 136569.0,
-    "stddev": 4456.652039092914,
-    "min": 130223.0,
-    "max": 153425.0,
-    "ci95_lower": 136302.19907973325,
-    "ci95_upper": 138772.84092026672,
+    "mean": 136251.98,
+    "median": 135835.0,
+    "stddev": 3471.938031340621,
+    "min": 130914.0,
+    "max": 145396.0,
+    "ci95_lower": 135289.6078770784,
+    "ci95_upper": 137214.3521229216,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-linux-exe",
-    "buildTimeMs": 15480.9656,
+    "buildTimeMs": 18132.26,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -766,12 +766,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -780,45 +780,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 155808.5,
-    "median": 154830.5,
-    "stddev": 5457.915170667649,
-    "min": 146824.0,
-    "max": 168133.0,
-    "ci95_lower": 154295.64309929856,
-    "ci95_upper": 157321.35690070144,
+    "mean": 152267.44,
+    "median": 152116.0,
+    "stddev": 4379.652638168969,
+    "min": 144181.0,
+    "max": 163979.0,
+    "ci95_lower": 151053.4622247612,
+    "ci95_upper": 153481.4177752388,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-jar",
-    "buildTimeMs": 1641.341,
+    "buildTimeMs": 2640.2899,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -831,12 +831,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -853,37 +853,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-node",
-    "buildTimeMs": 2921.087,
+    "buildTimeMs": 4404.8688,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -896,12 +896,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -910,45 +910,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 136218.3,
-    "median": 135535.0,
-    "stddev": 3502.2997590213226,
-    "min": 131541.0,
-    "max": 153969.0,
-    "ci95_lower": 135247.51203553402,
-    "ci95_upper": 137189.08796446596,
+    "mean": 137766.98,
+    "median": 136078.5,
+    "stddev": 7117.851233572201,
+    "min": 130679.0,
+    "max": 169848.0,
+    "ci95_lower": 135794.01229710353,
+    "ci95_upper": 139739.9477028965,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-true-propAccessors-false-testKIR-false-linux-exe",
-    "buildTimeMs": 15480.9656,
+    "buildTimeMs": 18132.26,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -961,12 +961,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -975,45 +975,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 153962.44,
-    "median": 153974.0,
-    "stddev": 4137.2664304749205,
-    "min": 146634.0,
-    "max": 167139.0,
-    "ci95_lower": 152815.6482537628,
-    "ci95_upper": 155109.2317462372,
+    "mean": 151616.12,
+    "median": 151424.5,
+    "stddev": 5254.8473740044665,
+    "min": 142825.0,
+    "max": 163686.0,
+    "ci95_lower": 150159.5506207945,
+    "ci95_upper": 153072.6893792055,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-jar",
-    "buildTimeMs": 1711.0708,
+    "buildTimeMs": 2571.1369,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1026,12 +1026,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1048,37 +1048,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-node",
-    "buildTimeMs": 2860.94,
+    "buildTimeMs": 4467.0895,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1091,12 +1091,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1105,45 +1105,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 136362.06,
-    "median": 135834.0,
-    "stddev": 3294.87679872488,
-    "min": 131057.0,
-    "max": 145593.0,
-    "ci95_lower": 135448.76674679937,
-    "ci95_upper": 137275.35325320062,
+    "mean": 136341.48,
+    "median": 136109.0,
+    "stddev": 2784.691169188264,
+    "min": 131137.0,
+    "max": 142731.0,
+    "ci95_lower": 135569.60298837663,
+    "ci95_upper": 137113.3570116234,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-linux-exe",
-    "buildTimeMs": 14626.8957,
+    "buildTimeMs": 17519.7511,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1156,12 +1156,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1170,45 +1170,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 153742.1,
-    "median": 153663.0,
-    "stddev": 4783.209554562412,
-    "min": 143898.0,
-    "max": 164772.0,
-    "ci95_lower": 152416.261954548,
-    "ci95_upper": 155067.938045452,
+    "mean": 152016.66,
+    "median": 150913.0,
+    "stddev": 5115.98335595097,
+    "min": 144766.0,
+    "max": 167692.0,
+    "ci95_lower": 150598.58176281527,
+    "ci95_upper": 153434.73823718473,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-jar",
-    "buildTimeMs": 1711.0708,
+    "buildTimeMs": 2571.1369,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1221,12 +1221,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1243,37 +1243,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-node",
-    "buildTimeMs": 2860.94,
+    "buildTimeMs": 4467.0895,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1286,12 +1286,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1300,45 +1300,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 137172.28,
-    "median": 136329.5,
-    "stddev": 4160.535783001109,
-    "min": 130375.0,
-    "max": 150683.0,
-    "ci95_lower": 136019.0383183125,
-    "ci95_upper": 138325.5216816875,
+    "mean": 135119.68,
+    "median": 135030.5,
+    "stddev": 2893.208955256345,
+    "min": 129382.0,
+    "max": 140612.0,
+    "ci95_lower": 134317.72339271265,
+    "ci95_upper": 135921.63660728734,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-true-testKIR-false-linux-exe",
-    "buildTimeMs": 14626.8957,
+    "buildTimeMs": 17519.7511,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1351,12 +1351,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1365,45 +1365,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 155219.62,
-    "median": 154204.0,
-    "stddev": 4867.763304367514,
-    "min": 147191.0,
-    "max": 169732.0,
-    "ci95_lower": 153870.3448508421,
-    "ci95_upper": 156568.89514915788,
+    "mean": 153911.5,
+    "median": 152669.0,
+    "stddev": 4844.329199998611,
+    "min": 146223.0,
+    "max": 166034.0,
+    "ci95_lower": 152568.72045317333,
+    "ci95_upper": 155254.27954682667,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-jar",
-    "buildTimeMs": 1349.5757,
+    "buildTimeMs": 1664.1849,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1416,12 +1416,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1438,37 +1438,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-    "buildTimeMs": 2708.3461,
+    "buildTimeMs": 2539.6946,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1481,12 +1481,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1495,45 +1495,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 136879.74,
-    "median": 135267.5,
-    "stddev": 7659.058056887643,
-    "min": 129361.0,
-    "max": 180551.0,
-    "ci95_lower": 134756.7574193055,
-    "ci95_upper": 139002.72258069448,
+    "mean": 135814.62,
+    "median": 136105.5,
+    "stddev": 2782.4553750020054,
+    "min": 130544.0,
+    "max": 142375.0,
+    "ci95_lower": 135043.36271890695,
+    "ci95_upper": 136585.87728109304,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-linux-exe",
-    "buildTimeMs": 14616.1493,
+    "buildTimeMs": 15223.8336,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1546,12 +1546,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1560,45 +1560,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 154233.82,
-    "median": 154552.5,
-    "stddev": 4194.526548603403,
-    "min": 145753.0,
-    "max": 163087.0,
-    "ci95_lower": 153071.1565587773,
-    "ci95_upper": 155396.48344122272,
+    "mean": 153518.84,
+    "median": 152816.5,
+    "stddev": 5483.51990470593,
+    "min": 143410.0,
+    "max": 171020.0,
+    "ci95_lower": 151998.8858291195,
+    "ci95_upper": 155038.7941708805,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-jar",
-    "buildTimeMs": 1349.5757,
+    "buildTimeMs": 1664.1849,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1611,12 +1611,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1633,37 +1633,37 @@
     "ci95_lower": null,
     "ci95_upper": null,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
-    "buildTimeMs": 2708.3461,
+    "buildTimeMs": 2539.6946,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1676,12 +1676,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
@@ -1690,45 +1690,45 @@
     "KotlinVersion": "Kotlin:        2.2.0"
   },
   {
-    "mean": 137179.4,
-    "median": 135142.5,
-    "stddev": 12488.254787305275,
-    "min": 128903.0,
-    "max": 221592.0,
-    "ci95_lower": 133717.83237904674,
-    "ci95_upper": 140640.96762095325,
+    "mean": 135762.98,
+    "median": 135730.0,
+    "stddev": 3230.359034130379,
+    "min": 129147.0,
+    "max": 141309.0,
+    "ci95_lower": 134867.5701587493,
+    "ci95_upper": 136658.38984125073,
     "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-linux-exe",
-    "buildTimeMs": 14616.1493,
+    "buildTimeMs": 15223.8336,
     "RepetitionCount": 50,
     "CleanBuild": false,
     "StepCount": 500,
-    "JVM": true,
-    "JS": true,
-    "Enabled": [
-      true
-    ],
-    "CILabel": "ci-linux-large",
-    "Common": true,
-    "FlushEarly": [
-      true,
-      false
+    "Methods": [
+      ".*",
+      "step"
     ],
     "InstrumentPropertyAccessors": [
       true,
       false
     ],
-    "Reference": true,
-    "Methods": [
-      ".*",
-      "step"
+    "Common": true,
+    "FlushEarly": [
+      true,
+      false
     ],
+    "Reference": true,
     "Dedicated": false,
+    "Enabled": [
+      true
+    ],
     "Native": true,
     "TestKIR": [
       false
     ],
-    "CollectionTimestamp": "2026-09-23 03:52:38",
-    "GitCommitHash": "cad11994015b7e9b0edb5244a56fe16cc9021fa9",
+    "JVM": true,
+    "JS": true,
+    "CILabel": "ci-linux-large",
+    "CollectionTimestamp": "2026-09-24 03:45:13",
+    "GitCommitHash": "8ba78c4cec2a90d9ad4af7ac51f299af81abaade",
     "GitBranch": "main",
     "DeviceManufacturer": "Microsoft Corporation",
     "DeviceModel": "Virtual Machine",
@@ -1741,12 +1741,12 @@
     "CPUCores": 2,
     "CPULogicalProcessors": 4,
     "TotalRAMGB": 15.62,
-    "AvailableRAMGB": 13.63,
+    "AvailableRAMGB": 13.78,
     "DiskSizeGB": 145,
     "SystemDriveFreeSpaceGB": 82,
     "SystemUptimeHours": 0.02,
-    "RunningProcessCount": 183,
-    "PowerShellVersion": "7.6.5",
+    "RunningProcessCount": 158,
+    "PowerShellVersion": "7.6.6",
     "JavaVersion": "21.0.12.1",
     "JavaDistribution": "\"21.0.12.1\"",
     "NodeVersion": "v22.23.2",
