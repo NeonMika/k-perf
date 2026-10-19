@@ -638,7 +638,6 @@ def generate_latex_table(
         start = 2 + measurement_idx * len(target_groups)
         end = start + len(target_groups) - 1
         lines.append(rf"\cmidrule(lr){{{start}-{end}}}")
-    lines.append(r"\midrule")
 
     # Plain reference row — mu_B ± 95% CI half-width, no colouring
     if show_plain:
