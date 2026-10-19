@@ -51,14 +51,6 @@ Statistics (fixed, not configurable):
         v    = (sigma_I^2/R_I + sigma_B^2/R_B)^2 /
                ( (sigma_I^2/R_I)^2/(R_I-1) + (sigma_B^2/R_B)^2/(R_B-1) )
         CI95 = mu_O +- t_{0.975,v} * SE
-
-    Overhead cells are coloured by effect size, Cohen's d with pooled stddev:
-
-        sigma_p = sqrt( ((R_I-1)*sigma_I^2 + (R_B-1)*sigma_B^2) / (R_I+R_B-2) )
-        d       = mu_O / sigma_p
-
-    yellow for a medium effect (d >= 0.5), red for a large effect (d >= 0.8).
-    Only slowdowns (d > 0) are coloured.
 """
 
 from __future__ import annotations
@@ -80,9 +72,8 @@ from typing import Iterable
 WARMUP_STEPS = 150
 FUNCTION_CALLS_PER_STEP = 4001
 
-# Cohen's d thresholds (Cohen 1988): 0.5 = medium effect, 0.8 = large effect
-YELLOW_THRESHOLD_COHENS_D = 0.5
-RED_THRESHOLD_COHENS_D = 0.8
+YELLOW_THRESHOLD_US = 0.0075
+RED_THRESHOLD_US = 0.03
 
 CONFIDENCE_LEVEL = 0.95
 
@@ -443,15 +434,13 @@ def baseline_mean_ci95(baseline_entry: dict) -> tuple[float, float]:
     return mu, _t_critical(n - 1) * sigma / math.sqrt(n)
 
 
-def overhead_stats(kind_entry: dict, baseline_entry: dict) -> tuple[float, float, float]:
-    """(mu_O, ci95, cohens_d) per-function-call overhead of kind_entry vs baseline_entry.
+def overhead_mean_ci95(kind_entry: dict, baseline_entry: dict) -> tuple[float, float]:
+    """(mu_O, ci95) per-function-call overhead of kind_entry vs baseline_entry.
 
     mu_O = mu_I - mu_B. ci95 is the Welch two-sample 95% confidence-interval
     half-width for that difference: t_{0.975,v} * SE, with
     SE = sqrt(sigma_I^2/R_I + sigma_B^2/R_B) and v the Welch-Satterthwaite dof.
-    cohens_d = mu_O / sigma_p with sigma_p the pooled stddev.
-    Falls back to ci95 = 0 and cohens_d = 0 when either side has fewer than 2
-    runs; cohens_d is +-inf when sigma_p = 0 and mu_O != 0.
+    Falls back to ci95 = 0 when either side has fewer than 2 runs.
     """
     values_i = per_run_function_time_us(kind_entry)
     values_b = per_run_function_time_us(baseline_entry)
@@ -462,18 +451,11 @@ def overhead_stats(kind_entry: dict, baseline_entry: dict) -> tuple[float, float
 
     mu_o = mu_i - mu_b
     if n_i < 2 or n_b < 2:
-        return mu_o, 0.0, 0.0
+        return mu_o, 0.0
 
     se = math.sqrt(sigma_i**2 / n_i + sigma_b**2 / n_b)
     dof = _welch_degrees_of_freedom(sigma_i**2, n_i, sigma_b**2, n_b)
-
-    sigma_p = math.sqrt(((n_i - 1) * sigma_i**2 + (n_b - 1) * sigma_b**2) / (n_i + n_b - 2))
-    if sigma_p > 0:
-        cohens_d = mu_o / sigma_p
-    else:
-        cohens_d = math.copysign(math.inf, mu_o) if mu_o != 0 else 0.0
-
-    return mu_o, _t_critical(dof) * se, cohens_d
+    return mu_o, _t_critical(dof) * se
 
 
 # ---------------------------------------------------------------------------
@@ -519,11 +501,11 @@ def _fmt_ns(value_ns: float) -> str:
     return f"{sign}{rounded:.{decimals}f}"
 
 
-def _overhead_color(cohens_d: float) -> str | None:
-    """Yellow/red cell colour for a medium/large Cohen's d effect (slowdowns only)."""
-    if cohens_d >= RED_THRESHOLD_COHENS_D:
+def _overhead_color(overhead_us: float) -> str | None:
+    """Yellow/red cell colour for a function-overhead value, based on fixed thresholds."""
+    if overhead_us >= RED_THRESHOLD_US:
         return "red!30"
-    if cohens_d >= YELLOW_THRESHOLD_COHENS_D:
+    if overhead_us >= YELLOW_THRESHOLD_US:
         return "yellow!30"
     return None
 
@@ -534,12 +516,12 @@ def _baseline_cell(mu_b_us: float, ci95_us: float) -> str:
     return f"{_fmt_ns(mu_b_us * 1000)} $\\pm$ {_fmt_ns(ci95_us * 1000)}"
 
 
-def _overhead_cell(mu_o_us: float, ci95_us: float, cohens_d: float) -> tuple[str, str | None]:
+def _overhead_cell(mu_o_us: float, ci95_us: float) -> tuple[str, str | None]:
     """'123 $\\pm$ 4.50' (ns, unitless) cell text — mean overhead and its 95%
-    Welch CI half-width — and its Cohen's d effect-size colour.
+    Welch CI half-width — and its yellow/red threshold colour.
     """
     text = f"{_fmt_ns(mu_o_us * 1000)} $\\pm$ {_fmt_ns(ci95_us * 1000)}"
-    return text, _overhead_color(cohens_d)
+    return text, _overhead_color(mu_o_us)
 
 
 # ---------------------------------------------------------------------------
@@ -659,7 +641,7 @@ def generate_latex_table(
         if ordered_kinds:
             lines.append(r"\midrule")
 
-    # One row per kind — mu_O ± 95% Welch CI vs the plain baseline, coloured by Cohen's d
+    # One row per kind — mu_O ± 95% Welch CI vs the plain baseline, threshold-coloured
     for kind in ordered_kinds:
         row_cells = [_operation_label_cell(kind)]
         for measurement in measurements:
@@ -671,8 +653,8 @@ def generate_latex_table(
                     row_cells.append("--")
                     continue
 
-                mu_o, ci95_o, cohens_d = overhead_stats(kind_entry, plain_entry)
-                text, color = _overhead_cell(mu_o, ci95_o, cohens_d)
+                mu_o, ci95_o = overhead_mean_ci95(kind_entry, plain_entry)
+                text, color = _overhead_cell(mu_o, ci95_o)
                 row_cells.append(r"\cellcolor{" + color + r"}" + text if color else text)
 
         lines.append(" & ".join(row_cells) + r" \\")
