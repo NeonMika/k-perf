@@ -597,12 +597,10 @@ def generate_latex_table(
     ordered_kinds += sorted(k for k in all_kinds_set if k not in KIND_ORDER)
     show_plain = include_kind("plain")
 
-    # Vertical lines separate the OS (measurement) column groups
-    col_spec = "l" + "|".join("r" * len(target_groups) for _ in measurements)
-
-    def os_separator(measurement_idx: int) -> str:
-        """'|' after every OS group but the last; \\multicolumn overrides the col_spec border."""
-        return "|" if measurement_idx < len(measurements) - 1 else ""
+    # Vertical lines frame the table and separate the label column and every OS
+    # (measurement) column group. \multicolumn overrides the col_spec border, so
+    # header cells ending an OS group repeat the trailing '|'.
+    col_spec = "|l|" + "".join("r" * len(target_groups) + "|" for _ in measurements)
 
     lines: list[str] = []
     lines.append(r"% Requires: \usepackage{booktabs}, \usepackage[table]{xcolor}, \usepackage{array}, \usepackage{multirow}")
@@ -616,18 +614,18 @@ def generate_latex_table(
 
     # Header row 1: OS per measurement (spanning JVM/JS/Native)
     header_os = [r"\multirow{2}{*}{\textbf{\shortstack[l]{Instrumentation\\Operation}}}"] + [
-        rf"\multicolumn{{{len(target_groups)}}}{{c{os_separator(idx)}}}{{\textbf{{"
+        rf"\multicolumn{{{len(target_groups)}}}{{c|}}{{\textbf{{"
         + _latex_escape(m["os_label"]) + r"}}"
-        for idx, m in enumerate(measurements)
+        for m in measurements
     ]
     lines.append(" & ".join(header_os) + r" \\")
 
     # Header row 2: centered target names per measurement
     header_targets = [""]
-    for measurement_idx in range(len(measurements)):
+    for _ in measurements:
         header_targets.extend(
             r"\multicolumn{1}{c"
-            + (os_separator(measurement_idx) if group == target_groups[-1] else "")
+            + ("|" if group == target_groups[-1] else "")
             + r"}{\textbf{" + target_group_labels[group] + r"}}"
             for group in target_groups
         )
