@@ -606,6 +606,12 @@ def generate_latex_table(
 
     lines: list[str] = []
     lines.append(r"% Requires: \usepackage{booktabs}, \usepackage[table]{xcolor}, \usepackage{array}, \usepackage{multirow}")
+    # booktabs pads its rules with \aboverulesep/\belowrulesep, which interrupts the
+    # vertical OS separators; drop the padding (locally) and restore row height instead.
+    lines.append(r"{%")
+    lines.append(r"\setlength{\aboverulesep}{0pt}%")
+    lines.append(r"\setlength{\belowrulesep}{0pt}%")
+    lines.append(r"\renewcommand{\arraystretch}{1.3}%")
     lines.append(r"\begin{tabular}{" + col_spec + r"}")
     lines.append(r"\toprule")
 
@@ -668,7 +674,8 @@ def generate_latex_table(
         lines.append(" & ".join(row_cells) + r" \\")
 
     lines.append(r"\bottomrule")
-    lines.append(r"\end{tabular}")
+    lines.append(r"\end{tabular}%")
+    lines.append(r"}")
     return "\n".join(lines)
 
 
