@@ -2,11 +2,69 @@ name: Benchmark (Linux, Large)
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * 1'
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      changed: ${{ steps.compare.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find previous successful run of this workflow
+        id: previous
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: current } = await github.rest.actions.getWorkflowRun({
+              ...context.repo,
+              run_id: context.runId,
+            });
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              ...context.repo,
+              workflow_id: current.workflow_id,
+              branch: current.head_branch,
+              status: 'success',
+              per_page: 1,
+            });
+            const previous = data.workflow_runs.find(run => run.id !== context.runId);
+            core.setOutput('sha', previous?.head_sha ?? '');
+
+      - name: Check for changes outside benchmark results
+        id: compare
+        shell: bash
+        env:
+          PREVIOUS_SHA: ${{ steps.previous.outputs.sha }}
+        run: |
+          if [[ -z "$PREVIOUS_SHA" ]]; then
+            echo "No previous successful run; running benchmarks."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif ! git cat-file -e "$PREVIOUS_SHA^{commit}" 2>/dev/null; then
+            echo "Previous commit is unavailable; running benchmarks."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            # Result commits must not cause another benchmark run.
+            if git diff --quiet "$PREVIOUS_SHA" HEAD -- . ':(exclude)measurements/**'; then
+              echo "No source changes since the previous successful run; skipping benchmarks."
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            else
+              status=$?
+              if [[ "$status" -ne 1 ]]; then exit "$status"; fi
+              echo "Source changes found; running benchmarks."
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
   benchmark-linux-large:
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
 
     permissions:
