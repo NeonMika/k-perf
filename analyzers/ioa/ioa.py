@@ -597,7 +597,12 @@ def generate_latex_table(
     ordered_kinds += sorted(k for k in all_kinds_set if k not in KIND_ORDER)
     show_plain = include_kind("plain")
 
-    col_spec = "l" + "r" * (len(measurements) * len(target_groups))
+    # Vertical lines separate the OS (measurement) column groups
+    col_spec = "l" + "|".join("r" * len(target_groups) for _ in measurements)
+
+    def os_separator(measurement_idx: int) -> str:
+        """'|' after every OS group but the last; \\multicolumn overrides the col_spec border."""
+        return "|" if measurement_idx < len(measurements) - 1 else ""
 
     lines: list[str] = []
     lines.append(r"% Requires: \usepackage{booktabs}, \usepackage[table]{xcolor}, \usepackage{array}, \usepackage{multirow}")
@@ -606,16 +611,19 @@ def generate_latex_table(
 
     # Header row 1: OS per measurement (spanning JVM/JS/Native)
     header_os = [r"\multirow{2}{*}{\textbf{\shortstack[l]{Instrumentation\\Operation}}}"] + [
-        r"\multicolumn{3}{c}{\textbf{" + _latex_escape(m["os_label"]) + r"}}"
-        for m in measurements
+        rf"\multicolumn{{{len(target_groups)}}}{{c{os_separator(idx)}}}{{\textbf{{"
+        + _latex_escape(m["os_label"]) + r"}}"
+        for idx, m in enumerate(measurements)
     ]
     lines.append(" & ".join(header_os) + r" \\")
 
     # Header row 2: centered target names per measurement
     header_targets = [""]
-    for _ in measurements:
+    for measurement_idx in range(len(measurements)):
         header_targets.extend(
-            r"\multicolumn{1}{c}{\textbf{" + target_group_labels[group] + r"}}"
+            r"\multicolumn{1}{c"
+            + (os_separator(measurement_idx) if group == target_groups[-1] else "")
+            + r"}{\textbf{" + target_group_labels[group] + r"}}"
             for group in target_groups
         )
     lines.append(" & ".join(header_targets) + r" \\")
