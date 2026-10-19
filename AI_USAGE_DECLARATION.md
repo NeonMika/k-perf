@@ -16,14 +16,7 @@ ChatGPT Codex was used as an assistant for the following tasks:
 - Code review and project understanding: reviewing, analyzing, and discussing existing code as well as student-submitted code to understand changes, suggest alternatives, and assess code quality.
 - Implementation: generating and modifying code.
 - Testing and benchmarking: writing scripts to benchmark and test the tool and its demo projects.
-- Writing: developing ideas for the paper, planning its structure and narrative flow, and proofreading and revising text to correct spelling and grammar and improve readability.
-
-### Human oversight
-
-AI-generated and AI-modified code underwent multiple human reviews to assess correctness and adherence to the repository's coding standards.
-All reported results come from the archived benchmarking pipeline and measurement data, and the authors checked the numbers in the paper against these data.
-
-Markus takes full responsibility for his contributions to the papers, code, and data.
+- Writing: developing ideas for papers, planning their structure and narrative flow, and proofreading and revising text to correct spelling and grammar and improve readability.
 
 ## Lorenz Bader
 
@@ -45,10 +38,10 @@ Claude Code was used as an assistant for the following tasks:
 - Profiling and data analysis: interpreting profiling output and analyzing benchmark results.
 - Writing: planning the paper's structure and the content of each section, and reformulating sentences in the paper.
 
-### Human oversight
+## Human oversight
 
-Lorenz made the final decisions on the design, experimental setup, interpretation of results, and conclusions.
+Humans made the final decisions on the design, experimental setup, interpretation of results, and conclusions.
 AI-generated and AI-modified code underwent multiple human reviews to assess correctness and adherence to the repository's coding standards.
-All reported results come from the archived benchmarking pipeline and measurement data, and the authors checked the numbers in the paper against these data.
+All reported results come from archived benchmarking pipelines and measurement data, and the authors checked the numbers in the papers against these data.
 
-Lorenz takes full responsibility for his contributions to the paper, code, and underlying data.
+All authors takes full responsibility for his contributions to the paper, code, and underlying data.
