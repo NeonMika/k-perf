@@ -53,6 +53,7 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 - [KMP Examples](#-kmp-examples)
 - [Analyzers](#-analyzers)
 - [Benchmarking](#-benchmarking)
+- [Publications & Tags](#-publications--tags)
 - [License](#-license)
 
 ---
@@ -449,6 +450,37 @@ cd benchmarking\game-of-life-kmp-commonmain-ioa
 ```
 
 > 📌 The `measurements/2024_11_SSP/` folder preserves the original data from the SSP 2024 paper.
+
+---
+
+## 📚 Publications & Tags
+
+Each paper based on this repository has a Git tag that marks the exact state of the code (and, where available, the measurement data) used for that paper. Check out a tag to reproduce or inspect the published results:
+
+```bash
+git checkout <tag>
+```
+
+| Tag | Venue | Paper | Merged into `main`? |
+|---|---|---|---|
+| [`SSP_2024`](https://github.com/NeonMika/k-perf/tree/SSP_2024) | SSP 2024 | M. Weninger. *Tracing Performance Metrics in Kotlin Multiplatform Projects via Compile-Time Code Instrumentation.* | ✅ Yes |
+| [`SSP_2025_KIRHelperKit`](https://github.com/NeonMika/k-perf/tree/SSP_2025_KIRHelperKit) | SSP 2025 | L. Bader and M. Weninger. *Simplifying Kotlin Compile-Time Code Instrumentation.* | ✅ Yes |
+| [`ssp26kmp`](https://github.com/NeonMika/k-perf/tree/ssp26kmp) | SSP 2026 | L. Hörschläger and M. Weninger. *Kotlin Multiplatform IR Instrumentation: A Cross-Platform Runtime Overhead Analysis.* | ⏳ Not yet |
+| [`ssp26otel`](https://github.com/NeonMika/k-perf/tree/ssp26otel) | SSP 2026 | L. Bader and M. Weninger. *Understanding and Reducing OpenTelemetry Tracing Overhead in Kotlin Multiplatform.* | ❌ No (by design) |
+
+Notes:
+
+- **`SSP_2024`** — the original k-perf paper. Its measurement data is also preserved on `main` in `measurements/2024_11_SSP/`.
+- **`SSP_2025_KIRHelperKit`** — introduces the KIRHelperKit library (see [KIRHelperKit](#-kirhelperkit)).
+- **`ssp26kmp`** — developed on the `ssp26kmp` branch. This work has not been merged into `main` yet.
+- **`ssp26otel`** — developed on the `LB_otel_analysis` branch. It is intentionally **not** merged into `main`: the paper compares several experimental OpenTelemetry compiler-plugin variants (gRPC, Anchored, Monotonic, Sampler, FastBatch, Combined) that would crowd the main branch. The tagged commit contains the data reported in the paper in `measurements/2026_08_26_SSP_CI-run-31310/`. Source code, benchmarking pipeline, and results are also archived at [doi:10.5281/zenodo.22087594](https://doi.org/10.5281/zenodo.22087594).
+
+Related papers without their own tag in this repository:
+
+- F. Schoenberger and M. Weninger. *OpenTelemetry Instrumentation using Kotlin Multiplatform Compiler Plugins.* SSP 2025. This paper introduced the original k-perf-otel plugin, which is included as the baseline (`plugins/otel-plugin`) in the `ssp26otel` tag.
+- J. Heinzlreiter, M. Weninger, and D. G. Reichelt. *MooBench X Kotlin: Kotlin Multiplatform Benchmarking.* SSP 2026.
+
+Programs: [SSP 2024](https://www.performance-symposium.org/ssp-2024/program/) · [SSP 2025](https://www.performance-symposium.org/ssp-2025/symposium-program/) · [SSP 2026](https://www.performance-symposium.org/ssp-2026/symposium-program/)
 
 ---
 
