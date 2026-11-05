@@ -1,1 +1,1 @@
-rootProject.name = "plugin-proto-anchored"
+rootProject.name = "k-perf-otel-proto-anchored"

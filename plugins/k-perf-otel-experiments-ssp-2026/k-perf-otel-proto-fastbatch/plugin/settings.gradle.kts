@@ -1,1 +1,1 @@
-rootProject.name = "plugin-proto-fastbatch"
+rootProject.name = "k-perf-otel-proto-fastbatch"

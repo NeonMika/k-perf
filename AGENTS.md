@@ -8,11 +8,11 @@ All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). The root `s
 
 ```
 KIRHelperKit → plugins/instrumentation-overhead-analyzer → plugins/k-perf → kmp-examples/<workload>/*
-plugin_dependencies/otlp-exporter → plugin_dependencies/otel-utilities → plugins/k-perf-otel → kmp-examples/fibonacci/fibonacci-otel
-plugin_dependencies/otlp-exporter-proto → plugin_dependencies/otel-proto-utilities → plugins/k-perf-otel-experiments-ssp-2026/k-perf-otel-proto* → kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-otel-proto*
+plugin_dependencies/k-perf-otlp-exporter → plugin_dependencies/k-perf-otel-utilities → plugins/k-perf-otel → kmp-examples/fibonacci/fibonacci-k-perf-otel
+plugin_dependencies/k-perf-otlp-exporter-proto → plugin_dependencies/k-perf-otel-proto-utilities → plugins/k-perf-otel-experiments-ssp-2026/k-perf-otel-proto* → kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-k-perf-otel-proto*
 ```
 
-Use `buildAllVariants.ps1` for the complete OTel chains. `plugin_dependencies/otel-utilities` and `plugin_dependencies/otel-proto-utilities` are independent projects with separate sources, packages, artifacts, and Gradle wrappers.
+Use `buildAllVariants.ps1` for the complete OTel chains. `plugin_dependencies/k-perf-otel-utilities` and `plugin_dependencies/k-perf-otel-proto-utilities` are independent projects with separate sources, packages, artifacts, and Gradle wrappers.
 
 **Full build (all platforms):**
 

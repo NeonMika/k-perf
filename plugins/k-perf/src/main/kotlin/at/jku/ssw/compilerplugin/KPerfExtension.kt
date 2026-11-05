@@ -119,7 +119,7 @@ class KPerfExtension(
 
     //1. IR-building helpers
     //
-    // Unlike the otel-plugin family this file does NOT define a DSL
+    // Unlike the k-perf-otel plugin family this file does NOT define a DSL
     // (buildField {}, call() etc.). All IR construction below uses the raw
     // pluginContext.irFactory and irCall(...) APIs.
 

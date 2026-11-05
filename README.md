@@ -134,10 +134,10 @@ File I/O uses **[`kotlinx-io`](https://github.com/Kotlin/kotlinx-io)** for cross
 k-perf/
 ├── 🧰 KIRHelperKit/                          # IR utility library (published separately)
 ├── 🔗 plugin_dependencies/                   # Projects required by selected plugins
-│   ├── otlp-exporter/                        # JSON OTLP exporter
-│   ├── otlp-exporter-proto/                  # Protobuf/gRPC OTLP exporter
-│   ├── otel-utilities/                       # JSON exporter platform utilities
-│   └── otel-proto-utilities/                 # Protobuf exporter platform utilities
+│   ├── k-perf-otlp-exporter/                 # JSON OTLP exporter
+│   ├── k-perf-otlp-exporter-proto/           # Protobuf/gRPC OTLP exporter
+│   ├── k-perf-otel-utilities/                # JSON exporter platform utilities
+│   └── k-perf-otel-proto-utilities/          # Protobuf exporter platform utilities
 ├── 🔌 plugins/
 │   ├── k-perf/                               # Main performance tracing plugin
 │   ├── instrumentation-overhead-analyzer/    # Plugin overhead measurement tool
@@ -149,14 +149,14 @@ k-perf/
 │   ├── fibonacci/                            # Fibonacci baseline, k-perf, and OTel variants
 │   │   ├── fibonacci-baseline/
 │   │   ├── fibonacci-k-perf/
-│   │   ├── fibonacci-otel/
+│   │   ├── fibonacci-k-perf-otel/
 │   │   └── k-perf-otel-experiments-ssp-2026/ # Workloads for the experimental OTel variants
-│   │       ├── fibonacci-otel-proto/
-│   │       ├── fibonacci-otel-proto-anchored/
-│   │       ├── fibonacci-otel-proto-combined/
-│   │       ├── fibonacci-otel-proto-fastbatch/
-│   │       ├── fibonacci-otel-proto-sampler/
-│   │       └── fibonacci-otel-proto-timesource/
+│   │       ├── fibonacci-k-perf-otel-proto/
+│   │       ├── fibonacci-k-perf-otel-proto-anchored/
+│   │       ├── fibonacci-k-perf-otel-proto-combined/
+│   │       ├── fibonacci-k-perf-otel-proto-fastbatch/
+│   │       ├── fibonacci-k-perf-otel-proto-sampler/
+│   │       └── fibonacci-k-perf-otel-proto-timesource/
 │   └── game-of-life/                         # Conway's Game of Life variants
 │       ├── game-of-life-kmp-commonmain-baseline/
 │       ├── game-of-life-kmp-commonmain-k-perf/
@@ -227,10 +227,10 @@ The build runs in this mandatory order (each step publishes to `mavenLocal`):
 `buildAllVariants.ps1` additionally builds the OTel chain in this order:
 
 ```
-plugin_dependencies/otlp-exporter → plugin_dependencies/otel-utilities
-    → plugins/k-perf-otel → kmp-examples/fibonacci/fibonacci-otel
-plugin_dependencies/otlp-exporter-proto → plugin_dependencies/otel-proto-utilities
-    → plugins/k-perf-otel-experiments-ssp-2026/k-perf-otel-proto* → kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-otel-proto*
+plugin_dependencies/k-perf-otlp-exporter → plugin_dependencies/k-perf-otel-utilities
+    → plugins/k-perf-otel → kmp-examples/fibonacci/fibonacci-k-perf-otel
+plugin_dependencies/k-perf-otlp-exporter-proto → plugin_dependencies/k-perf-otel-proto-utilities
+    → plugins/k-perf-otel-experiments-ssp-2026/k-perf-otel-proto* → kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-k-perf-otel-proto*
 ```
 
 ### Running Tests

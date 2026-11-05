@@ -11,12 +11,12 @@ Note: The plugin and its dependencies are not published in any maven repository,
 
 Add the following plugin to your `build.gradle.kts`.
 ```kotlin
-id("com.infendro.otel") version "1.0.0"
+id("io.github.neonmika.k-perf-otel-plugin") version "0.2.1"
 ```
 
 And configure the plugin using the following.
 ```kotlin
-otel {
+kperfOtel {
     // whether the plugin is applied
     // optional, default = true
     enabled = true
@@ -28,17 +28,17 @@ otel {
     host = "localhost:4318"
     // the OpenTelemetry service (used for identifying the source of spans)
     // required
-    service = "plugin"
+    service = "k-perf-otel"
 }
 ```
 
 All required dependencies are automatically added to the common source set.  
 These dependencies include the plugin's utility library (providing essential functions), the [OTLP exporter](https://github.com/FabianSchoenberger/otlp-exporter), the [KMP OpenTelemetry port](https://github.com/dcxp/opentelemetry-kotlin), and Kotlin's coroutines.  
-Of these, the utility library and exporter need to be published locally. Their source projects live at `plugin_dependencies/otel-utilities` and `plugin_dependencies/otlp-exporter`.
+Of these, the utility library and exporter need to be published locally. Their source projects live at `plugin_dependencies/k-perf-otel-utilities` and `plugin_dependencies/k-perf-otlp-exporter`.
 
 ## Tests
 
 The tests require the OpenTelemetry Collector to be running and accessible at `localhost:4318`.
 
 Run the tests using the following in the `plugin` module.  
-`./gradlew :test --tests "com.infendro.otel.plugin.PluginTest"`
+`./gradlew :test --tests "at.jku.ssw.kperfotel.plugin.PluginTest"`

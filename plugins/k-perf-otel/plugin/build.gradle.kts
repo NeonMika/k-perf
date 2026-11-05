@@ -6,8 +6,8 @@ plugins {
     `maven-publish`
 }
 
-group = "com.infendro.otel"
-version = "1.0.1"
+group = "io.github.neonmika"
+version = "0.2.1"
 
 repositories {
     maven {
@@ -31,8 +31,8 @@ dependencies {
 
     testImplementation("io.opentelemetry.kotlin.api:all:1.0.570")
     testImplementation("io.opentelemetry.kotlin.sdk:sdk-trace:1.0.570")
-    testImplementation("com.infendro.otel:otlp-exporter:1.0.1")
-    testImplementation("com.infendro.otel:otel-utilities:1.0.1")
+    testImplementation("io.github.neonmika:k-perf-otlp-exporter:0.2.1")
+    testImplementation("io.github.neonmika:k-perf-otel-utilities:0.2.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
@@ -46,9 +46,9 @@ tasks.test {
 
 gradlePlugin {
     plugins {
-        create("otel") {
-            id = "com.infendro.otel"
-            implementationClass = "com.infendro.otel.gradle.Plugin"
+        create("k-perf-otel") {
+            id = "io.github.neonmika.k-perf-otel-plugin"
+            implementationClass = "at.jku.ssw.kperfotel.gradle.Plugin"
         }
     }
 }

@@ -14,7 +14,7 @@
 **Question:** Does this isolated container toggling strategy align with your expectations for a scientifically plausible configuration?
 
 ## 2. Native Target Compatibility (Windows `mingwX64` vs Linux)
-**Context:** We want to compare the plugins completely natively. However, the current Kotlin Multiplatform port of the OpenTelemetry SDK (`dcxp/opentelemetry-kotlin`) and its underlying HTTP Ktor exporters do not natively compile or run on Windows Native (`mingwX64`) due to deep C++ SDK limitations and missing standard library sysroots. Because of this, the `otel-plugin` is currently restricted to JVM, JS, and `linuxX64`. 
+**Context:** We want to compare the plugins completely natively. However, the current Kotlin Multiplatform port of the OpenTelemetry SDK (`dcxp/opentelemetry-kotlin`) and its underlying HTTP Ktor exporters do not natively compile or run on Windows Native (`mingwX64`) due to deep C++ SDK limitations and missing standard library sysroots. Because of this, the `k-perf-otel` plugin is currently restricted to JVM, JS, and `linuxX64`. 
 **Question:** How should we proceed with benchmarking the Native implementation? Should we transition to a strictly Linux/WSL execution environment for Native comparisons, or should we temporarily drop Windows Native from the comparative scope?
 
 ## 3. Implementing the Protobuf Exporter

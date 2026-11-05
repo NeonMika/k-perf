@@ -1,1 +1,1 @@
-rootProject.name = "plugin-proto-sampler"
+rootProject.name = "k-perf-otel-proto-sampler"

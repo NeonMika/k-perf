@@ -1,1 +1,1 @@
-rootProject.name = "plugin-proto-timesource"
+rootProject.name = "k-perf-otel-proto-timesource"

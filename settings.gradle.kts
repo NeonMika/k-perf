@@ -2,10 +2,10 @@ rootProject.name = "k-perf-masterproject"
 
 includeBuild("KIRHelperKit") { name = "KIRHelperKit" }
 
-includeBuild("plugin_dependencies/otlp-exporter") { name = "otlp-exporter" }
-includeBuild("plugin_dependencies/otlp-exporter-proto") { name = "otlp-exporter-proto" }
-includeBuild("plugin_dependencies/otel-utilities") { name = "otel-utilities" }
-includeBuild("plugin_dependencies/otel-proto-utilities") { name = "otel-proto-utilities" }
+includeBuild("plugin_dependencies/k-perf-otlp-exporter") { name = "k-perf-otlp-exporter" }
+includeBuild("plugin_dependencies/k-perf-otlp-exporter-proto") { name = "k-perf-otlp-exporter-proto" }
+includeBuild("plugin_dependencies/k-perf-otel-utilities") { name = "k-perf-otel-utilities" }
+includeBuild("plugin_dependencies/k-perf-otel-proto-utilities") { name = "k-perf-otel-proto-utilities" }
 
 includeBuild("plugins/k-perf") { name = "k-perf-plugin" }
 includeBuild("plugins/instrumentation-overhead-analyzer") { name = "ioa-plugin" }
@@ -25,10 +25,10 @@ includeBuild("kmp-examples/game-of-life/game-of-life-kmp-dedicatedmain-k-perf") 
 
 includeBuild("kmp-examples/fibonacci/fibonacci-baseline") { name = "fibonacci-baseline" }
 includeBuild("kmp-examples/fibonacci/fibonacci-k-perf") { name = "fibonacci-k-perf" }
-includeBuild("kmp-examples/fibonacci/fibonacci-otel") { name = "fibonacci-otel" }
-includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-otel-proto") { name = "fibonacci-otel-proto" }
-includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-otel-proto-timesource") { name = "fibonacci-otel-proto-timesource" }
-includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-otel-proto-anchored") { name = "fibonacci-otel-proto-anchored" }
-includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-otel-proto-sampler") { name = "fibonacci-otel-proto-sampler" }
-includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-otel-proto-fastbatch") { name = "fibonacci-otel-proto-fastbatch" }
-includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-otel-proto-combined") { name = "fibonacci-otel-proto-combined" }
+includeBuild("kmp-examples/fibonacci/fibonacci-k-perf-otel") { name = "fibonacci-k-perf-otel" }
+includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-k-perf-otel-proto") { name = "fibonacci-k-perf-otel-proto" }
+includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-k-perf-otel-proto-timesource") { name = "fibonacci-k-perf-otel-proto-timesource" }
+includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-k-perf-otel-proto-anchored") { name = "fibonacci-k-perf-otel-proto-anchored" }
+includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-k-perf-otel-proto-sampler") { name = "fibonacci-k-perf-otel-proto-sampler" }
+includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-k-perf-otel-proto-fastbatch") { name = "fibonacci-k-perf-otel-proto-fastbatch" }
+includeBuild("kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-k-perf-otel-proto-combined") { name = "fibonacci-k-perf-otel-proto-combined" }
