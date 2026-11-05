@@ -133,27 +133,60 @@ File I/O uses **[`kotlinx-io`](https://github.com/Kotlin/kotlinx-io)** for cross
 ```
 k-perf/
 ├── 🧰 KIRHelperKit/                          # IR utility library (published separately)
+├── 🔗 plugin_dependencies/                   # Projects required by selected plugins
+│   ├── otlp-exporter/                        # JSON OTLP exporter
+│   ├── otlp-exporter-proto/                  # Protobuf/gRPC OTLP exporter
+│   ├── otel-utilities/                       # JSON exporter platform utilities
+│   └── otel-proto-utilities/                 # Protobuf exporter platform utilities
 ├── 🔌 plugins/
 │   ├── k-perf/                               # Main performance tracing plugin
-│   └── instrumentation-overhead-analyzer/    # Plugin overhead measurement tool
-├── 🎮 kmp-examples/                          # 5 Game of Life KMP demo projects
-│   ├── game-of-life-kmp-commonmain/          # Baseline (no instrumentation)
-│   ├── game-of-life-kmp-commonmain-k-perf/   # k-perf instrumented (CommonMain)
-│   ├── game-of-life-kmp-commonmain-ioa/      # IOA instrumented
-│   ├── game-of-life-kmp-dedicatedmain/       # Baseline (per-platform main)
-│   └── game-of-life-kmp-dedicatedmain-k-perf/# k-perf instrumented (DedicatedMain)
+│   ├── instrumentation-overhead-analyzer/    # Plugin overhead measurement tool
+│   ├── otel-plugin/                          # OpenTelemetry compiler plugin (k-perf-otel, SSP 2025)
+│   └── otel-experiments-ssp-2026/            # Experimental OTel plugin variants (SSP 2026 paper)
+│       ├── otel-plugin-proto/                # gRPC/Protobuf base variant
+│       └── otel-plugin-proto-*/              # anchored, timesource, sampler, fastbatch, combined
+├── 🎮 kmp-examples/
+│   ├── fibonacci/                            # Fibonacci baseline, k-perf, and OTel variants
+│   │   ├── fibonacci-baseline/
+│   │   ├── fibonacci-k-perf/
+│   │   ├── fibonacci-otel/
+│   │   └── otel-experiments-ssp-2026/        # Workloads for the experimental OTel variants
+│   │       ├── fibonacci-otel-proto/
+│   │       ├── fibonacci-otel-proto-anchored/
+│   │       ├── fibonacci-otel-proto-combined/
+│   │       ├── fibonacci-otel-proto-fastbatch/
+│   │       ├── fibonacci-otel-proto-sampler/
+│   │       └── fibonacci-otel-proto-timesource/
+│   └── game-of-life/                         # Conway's Game of Life variants
+│       ├── game-of-life-kmp-commonmain-baseline/
+│       ├── game-of-life-kmp-commonmain-k-perf/
+│       ├── game-of-life-kmp-commonmain-ioa/
+│       ├── game-of-life-kmp-dedicatedmain-baseline/
+│       └── game-of-life-kmp-dedicatedmain-k-perf/
 ├── 📊 analyzers/
 │   └── call_graph_visualizer/                # Python script → DOT/Graphviz call graphs
 ├── 📈 benchmarking/                          # PowerShell benchmark runners + shared utils
 │   ├── game-of-life-kmp-k-perf/             # k-perf overhead benchmark suite
-│   └── game-of-life-kmp-commonmain-ioa/     # IOA overhead benchmark suite
+│   ├── game-of-life-kmp-commonmain-ioa/      # IOA overhead benchmark suite
+│   ├── kperf-otel/                           # k-perf / OpenTelemetry comparison suite
+│   └── utils/                                # Shared build, execution, and statistics scripts
 ├── 📂 measurements/                          # Stored benchmark results (JSON + CSV)
-│   └── 2024_11_SSP/                         # SSP 2024 paper data
+│   ├── 2024_11_SSP/                         # SSP 2024 paper data
+│   └── 2026_08_26_SSP_CI-run-31310/          # SSP 2026 OpenTelemetry paper data (ssp26otel)
+├── 🔬 research/
+│   └── otel_overhead_investigation/          # OpenTelemetry overhead research
+│       └── profiles/                         # CPU profiles and analysis tooling
+├── settings.gradle.kts                       # Composite-build index for all projects
+├── gradlew / gradlew.bat                     # Root composite-build wrapper
 ├── buildAll.ps1                              # 🪟 Windows full build script
-└── buildAll.sh                               # 🐧 Linux/macOS full build script
+├── buildAll.sh                               # 🐧 Linux/macOS full build script
+├── buildAllVariants.ps1                      # Complete k-perf + OTel build chains
+└── .gitlab-ci.yml                            # Manual Linux OTel comparison benchmark
 ```
 
-> **⚠️ Note:** This is **not** a single-root Gradle project. Each subproject (`KIRHelperKit`, `plugins/k-perf`, etc.) has its own `gradlew`. They must be built **in order** because each layer publishes to `mavenLocal` for the next to consume.
+The `research/otel_overhead_investigation/` folder contains research performed for the paper **“Understanding and Reducing OpenTelemetry Tracing Overhead in Kotlin Multiplatform”**, submitted to the Symposium on Software Performance 2026.
+
+> **⚠️ Note:** The root `settings.gradle.kts` is a **composite-build index**, not a conventional multi-project build. Included builds such as `KIRHelperKit`, `plugin_dependencies/*`, and `plugins/*/plugin` remain independent and keep their own Gradle wrappers. Use the build scripts below when publication order matters, because each dependency layer publishes to `mavenLocal` for the next one to consume.
 
 ---
 
@@ -177,6 +210,9 @@ k-perf/
 
 # Skip clean for faster iteration
 .\buildAll.ps1 -CleanBuild $false
+
+# Build and publish every k-perf and OTel variant
+.\buildAllVariants.ps1
 ```
 
 The build runs in this mandatory order (each step publishes to `mavenLocal`):
@@ -185,7 +221,16 @@ The build runs in this mandatory order (each step publishes to `mavenLocal`):
 1. KIRHelperKit               → publishToMavenLocal
 2. instrumentation-overhead-analyzer → publishToMavenLocal
 3. k-perf plugin              → publishToMavenLocal
-4. kmp-examples (all 5)       → build only
+4. game-of-life examples (all 5) → build only
+```
+
+`buildAllVariants.ps1` additionally builds the OTel chain in this order:
+
+```
+plugin_dependencies/otlp-exporter → plugin_dependencies/otel-utilities
+    → plugins/otel-plugin → kmp-examples/fibonacci/fibonacci-otel
+plugin_dependencies/otlp-exporter-proto → plugin_dependencies/otel-proto-utilities
+    → plugins/otel-experiments-ssp-2026/otel-plugin-proto* → kmp-examples/fibonacci/otel-experiments-ssp-2026/fibonacci-otel-proto*
 ```
 
 ### Running Tests
@@ -326,14 +371,14 @@ dependencyResolutionManagement {
 
 ## 🎮 KMP Examples
 
-Five Kotlin Multiplatform projects demonstrate k-perf in action using **Conway's Game of Life**. They all target JVM, JavaScript (Node.js), and Native (mingwX64, linuxX64, macosX64).
+The examples are grouped by workload: Fibonacci benchmark variants live in `kmp-examples/fibonacci/`, while five **Conway's Game of Life** variants live in `kmp-examples/game-of-life/`. All KMP examples target JVM, JavaScript (Node.js), and Native (mingwX64, linuxX64, macosX64).
 
 | Project | Plugin | Architecture |
 |---|---|---|
-| `game-of-life-kmp-commonmain` | ❌ none | Single shared `main()` |
+| `game-of-life-kmp-commonmain-baseline` | ❌ none | Single shared `main()` |
 | `game-of-life-kmp-commonmain-k-perf` | ✅ k-perf | Single shared `main()` |
 | `game-of-life-kmp-commonmain-ioa` | 🚧 IOA *(work in progress)* | Single shared `main()` |
-| `game-of-life-kmp-dedicatedmain` | ❌ none | Per-platform `main()` |
+| `game-of-life-kmp-dedicatedmain-baseline` | ❌ none | Per-platform `main()` |
 | `game-of-life-kmp-dedicatedmain-k-perf` | ✅ k-perf | Per-platform `main()` |
 
 ### CommonMain vs DedicatedMain
@@ -344,7 +389,7 @@ Five Kotlin Multiplatform projects demonstrate k-perf in action using **Conway's
 ### Running an Example
 
 ```powershell
-cd kmp-examples\game-of-life-kmp-commonmain-k-perf
+cd kmp-examples\game-of-life\game-of-life-kmp-commonmain-k-perf
 
 # JVM
 .\gradlew jvmRun --args="500"
@@ -376,7 +421,7 @@ A Jupyter Notebook version (`graph-visualizer.ipynb`) is also available for inte
 
 ## 📈 Benchmarking
 
-The `benchmarking/` folder contains two PowerShell benchmark suites. Both use shared infrastructure in `benchmarking/utils.ps1` (statistics) and `benchmarking/build.ps1` (Gradle helpers).
+The `benchmarking/` folder contains three PowerShell benchmark suites. Common infrastructure lives in `benchmarking/utils/`, while suite-specific runners and resources live in their respective subfolders.
 
 Results land in `measurements/<timestamp>_<suite-name>/` as JSON files with full statistics: mean, median, stddev, min, max, and 95% confidence intervals (t-distribution).
 
@@ -422,7 +467,24 @@ cd benchmarking\game-of-life-kmp-commonmain-ioa
 .\run.ps1 -Filters @("jar") -RepetitionCount 100
 ```
 
-### Common Parameters
+### Suite 3 — k-perf / OpenTelemetry Comparison
+
+Compares the Fibonacci baseline against seven OpenTelemetry strategies: JSON, protobuf, anchored-clock, sampler, time-source, fast-batch, and combined protobuf variants. The default run covers all eight variants on JVM, JavaScript, and Native.
+
+```powershell
+cd benchmarking\kperf-otel
+
+# Full comparison: 10 runs × 100 steps, excluding 20 warmup steps per run,
+# then trimming the lowest/highest 1% from headline step statistics
+.\kperf-otel-comparison.ps1
+
+# Quick smoke test without clean builds
+.\kperf-otel-comparison.ps1 -RunCount 3 -StepCount 10 -WarmupCount 2 -CleanBuild $false
+```
+
+Results are written to `measurements/comparison_run_<timestamp>/` as `results.json`, `results.md`, and `steps.csv` (all raw step timings from every run and variant, including warmup steps and trimmed outliers). The benchmark requires an OTLP backend (Docker or Podman) and GitHub Packages credentials for the OpenTelemetry Kotlin dependencies. A manual GitLab CI job in `.gitlab-ci.yml` runs the Linux comparison on the SSW benchmark runner and uploads the new result directory as an artifact. See [`benchmarking/README.md`](benchmarking/README.md) for the variant definitions, prerequisites, and Linux setup.
+
+### Game of Life Suite Parameters
 
 | Parameter | Default | Description |
 |---|---|---|
@@ -466,18 +528,18 @@ git checkout <tag>
 | [`SSP_2024`](https://github.com/NeonMika/k-perf/tree/SSP_2024) | SSP 2024 | M. Weninger. *Tracing Performance Metrics in Kotlin Multiplatform Projects via Compile-Time Code Instrumentation.* | ✅ Yes |
 | [`SSP_2025_KIRHelperKit`](https://github.com/NeonMika/k-perf/tree/SSP_2025_KIRHelperKit) | SSP 2025 | L. Bader and M. Weninger. *Simplifying Kotlin Compile-Time Code Instrumentation.* | ✅ Yes |
 | [`ssp26kmp`](https://github.com/NeonMika/k-perf/tree/ssp26kmp) | SSP 2026 | L. Hörschläger and M. Weninger. *Kotlin Multiplatform IR Instrumentation: A Cross-Platform Runtime Overhead Analysis.* | ⏳ Not yet |
-| [`ssp26otel`](https://github.com/NeonMika/k-perf/tree/ssp26otel) | SSP 2026 | L. Bader and M. Weninger. *Understanding and Reducing OpenTelemetry Tracing Overhead in Kotlin Multiplatform.* | ❌ No (by design) |
+| [`ssp26otel`](https://github.com/NeonMika/k-perf/tree/ssp26otel) | SSP 2026 | L. Bader and M. Weninger. *Understanding and Reducing OpenTelemetry Tracing Overhead in Kotlin Multiplatform.* | ✅ Yes |
 
 Notes:
 
 - **`SSP_2024`** — the original k-perf paper. Its measurement data is also preserved on `main` in `measurements/2024_11_SSP/`.
 - **`SSP_2025_KIRHelperKit`** — introduces the KIRHelperKit library (see [KIRHelperKit](#-kirhelperkit)).
 - **`ssp26kmp`** — developed on the `ssp26kmp` branch. This work has not been merged into `main` yet.
-- **`ssp26otel`** — developed on the `LB_otel_analysis` branch. It is intentionally **not** merged into `main`: the paper compares several experimental OpenTelemetry compiler-plugin variants (gRPC, Anchored, Monotonic, Sampler, FastBatch, Combined) that would crowd the main branch. The tagged commit contains the data reported in the paper in `measurements/2026_08_26_SSP_CI-run-31310/`. Source code, benchmarking pipeline, and results are also archived at [doi:10.5281/zenodo.22087594](https://doi.org/10.5281/zenodo.22087594).
+- **`ssp26otel`** — developed on the `LB_otel_analysis` branch and merged into `main`. On `main`, the experimental OpenTelemetry compiler-plugin variants compared in the paper (gRPC, Anchored, Monotonic, Sampler, FastBatch, Combined) live in `plugins/otel-experiments-ssp-2026/` and their workloads in `kmp-examples/fibonacci/otel-experiments-ssp-2026/`. The tag itself still uses the original flat layout. The data reported in the paper is in `measurements/2026_08_26_SSP_CI-run-31310/`. Source code, benchmarking pipeline, and results are also archived at [doi:10.5281/zenodo.22087594](https://doi.org/10.5281/zenodo.22087594).
 
 Related papers without their own tag in this repository:
 
-- F. Schoenberger and M. Weninger. *OpenTelemetry Instrumentation using Kotlin Multiplatform Compiler Plugins.* SSP 2025. This paper introduced the original k-perf-otel plugin, originally implemented at [FabianSchoenberger/otel-plugin](https://github.com/FabianSchoenberger/otel-plugin). It has been merged into this repository as part of the `ssp26otel` tag (`plugins/otel-plugin`), where it serves as the baseline.
+- F. Schoenberger and M. Weninger. *OpenTelemetry Instrumentation using Kotlin Multiplatform Compiler Plugins.* SSP 2025. This paper introduced the original k-perf-otel plugin, originally implemented at [FabianSchoenberger/otel-plugin](https://github.com/FabianSchoenberger/otel-plugin). It has been merged into this repository as part of the `ssp26otel` work (`plugins/otel-plugin`), where it serves as the baseline.
 - J. Heinzlreiter, M. Weninger, and D. G. Reichelt. *MooBench X Kotlin: Kotlin Multiplatform Benchmarking.* SSP 2026. Implemented in [kieker-monitoring/moobench](https://github.com/kieker-monitoring/moobench).
 
 Programs: [SSP 2024](https://www.performance-symposium.org/ssp-2024/program/) · [SSP 2025](https://www.performance-symposium.org/ssp-2025/symposium-program/) · [SSP 2026](https://www.performance-symposium.org/ssp-2026/symposium-program/)

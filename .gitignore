@@ -84,9 +84,16 @@ fabric.properties
 /.idea/inspectionProfiles/Project_Default.xml
 symbols_*
 trace_*
+!**/proto/**/trace_service.proto
 *DEBUG*
 /.idea/vcs.xml
 *.hprof
 **/bin
+CLAUDE.md
+/.idea
+/.claude
+
+# Dynamically generated benchmarks & JS dependencies
+kotlin-js-store/
 **/dist
 .serena

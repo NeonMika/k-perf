@@ -1,7 +1,7 @@
 // Example: https://github.com/JetBrains/kotlin/tree/master/libraries/examples/kotlin-gradle-subplugin-example
 
 plugins {
-  kotlin("jvm") version "2.3.0" // we have a kotlin project
+  kotlin("jvm") version "2.3.10" // we have a kotlin project
 
   `java-gradle-plugin` // In this project, we generate a Gradle plugin (which is configured in the gradlePlugin section)
 
@@ -20,7 +20,7 @@ dependencies {
 
   // https://youtrack.jetbrains.com/issue/KT-47897/Official-Kotlin-Gradle-plugin-api
   // Use the appropriate version
-  implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0")
+  implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.10")
 
   implementation(gradleApi())
 

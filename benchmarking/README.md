@@ -1,10 +1,10 @@
-# Benchmarking Suite for Game of Life KMP
+# Benchmarking Suites for Kotlin Multiplatform Examples
 
-This folder contains benchmarking scripts for evaluating the performance characteristics of the Game of Life Kotlin Multiplatform (KMP) implementation across different architectural variants and compiler plugins.
+This folder contains benchmarking scripts for evaluating the Game of Life and Fibonacci Kotlin Multiplatform (KMP) examples across architectural variants and compiler plugins.
 
 ## Overview
 
-The benchmarking suite measures the execution time of Game of Life simulations under two different instrumentation scenarios:
+The benchmarking suite measures execution time under three different instrumentation scenarios:
 
 1. **K-Perf Benchmark** (`game-of-life-kmp-k-perf/`)
    - Evaluates the performance impact of the K-Perf compiler plugin
@@ -17,6 +17,11 @@ The benchmarking suite measures the execution time of Game of Life simulations u
    - Compares instrumented vs non-instrumented versions
    - Focuses on CommonMain architecture
    - Produces measurements across the same target platforms (JVM, JavaScript, Native)
+
+3. **Fibonacci K-Perf / OpenTelemetry Comparison Benchmark** (`kperf-otel/`)
+   - Compares the projects under `kmp-examples/fibonacci/` using a deterministic CPU workload across baseline and OpenTelemetry variants
+   - Runs on JVM, JavaScript, and Native targets
+   - Keeps its Envoy configuration and patched SDK input alongside the suite runner
 
 ## Goals
 
@@ -56,6 +61,94 @@ Each JSON file contains:
   - `stddev`: Standard deviation
   - `min`/`max`: Minimum and maximum times
   - `ci95`: 95% confidence interval using t-distribution
+
+## Fibonacci Comparison Benchmark (`kperf-otel/kperf-otel-comparison.ps1`)
+
+The script in `kperf-otel/`, `kperf-otel-comparison.ps1`, benchmarks a deterministic CPU workload (`fibonacci(20)`, one workload call per step) under eight variants across three platforms (JVM / JS / Native) — 24 rows in total. The variants are:
+
+- **baseline** — no plugin applied (reference for overhead delta)
+- **otel** — OpenTelemetry spans exported via HTTP/JSON to Jaeger
+- **otel-proto** — OpenTelemetry spans via gRPC/protobuf
+- **otel-proto-anchored** — same as otel-proto but defers timestamping to the SDK's AnchoredClock (no explicit `setStartTimestamp` call)
+- **otel-proto-sampler** — protobuf exporter variant with deterministic trace sampling
+- **otel-proto-timesource** — same as otel-proto but feeds `setStartTimestamp(Long, NANOSECOND)` from a single module-load `TimeSource.Monotonic.markNow()` mark
+- **otel-proto-fastbatch** — protobuf exporter using the locally patched fast-batch OpenTelemetry Kotlin SDK
+- **otel-proto-combined** — protobuf variant combining the investigated overhead reductions
+
+### Parameters
+
+| Param | Default | Meaning |
+|---|---:|---|
+| `-StepCount` | `100` | total step indices per measured run |
+| `-WarmupCount` | `20` | first N **step indices** of each measured run excluded from headline step statistics (configurable; replaces the previous opaque "first step ≤ 2× tail-median" steady-state detector) |
+| `-RunCount` | `10` | number of measured runs per variant per platform |
+| `-CleanBuild` | `$true` | whether to `gradle clean` before building |
+
+With the defaults each variant runs 10 × 100 = 1,000 steps total. After the configurable 20-step warmup cutoff, 10 × 80 = 800 timings remain (steps 20–99 of each run). For headline mean, median, standard deviation, min/max, and derived per-method statistics, the lowest 1% and highest 1% are discarded, rounding up per tail: 8 + 8 values are removed and 784 are analyzed. The per-step median curve does not apply this trimming because it is used to inspect warmup behavior.
+
+Run it with:
+
+```powershell
+cd benchmarking/kperf-otel
+.\kperf-otel-comparison.ps1                                              # defaults
+.\kperf-otel-comparison.ps1 -RunCount 3 -StepCount 10 -CleanBuild $false   # quick smoke test
+```
+
+### `methods_per_step` denominator
+
+The `Per-method (ns)` and `Overhead/method (ns)` columns in `results.md` divide step time by `methods_per_step`. This denominator is computed from a closed-form formula:
+
+```
+methods_per_step = fib_call_count(20) + 1
+                 = (2 × Fibonacci(21) − 1) + 1
+                 = 21,891 + 1 = 21,892
+```
+
+(The `+ 1` is the `workload` call itself. Before 2026-08-20 the workload also included a `bubbleSort` call, giving 21,893 — runs from before that date use the old denominator and are not directly comparable.)
+
+Results land under `measurements/comparison_run_<timestamp>/` as `results.json` + `results.md` + `steps.csv`. The single `steps.csv` contains every raw step timing from every run and selected variant/platform; its `run` column identifies the run number, and warmup steps and statistical outliers are retained. Any iteration whose stdout fails the timing-line regex is dumped under `measurements/comparison_run_<timestamp>/failures/<exe>-run-<NN>.txt` so the cause (node not found, container hang, runtime crash, wall-clock timeout) is one read away.
+
+### Prerequisites
+
+The script bootstraps Gradle, the Kotlin/Native compiler, the bundled Yarn/Node used by the Kotlin Gradle plugin, npm packages (`@js-joda/core` etc.), and the OTel collector Docker container. It cannot install OS-level tooling — these must already be present on PATH:
+
+| Tool | Why | Notes |
+|---|---|---|
+| **JDK 17+** | Gradle 9.0 + Kotlin 2.3.10 | Temurin / Adoptium recommended |
+| **Node.js LTS** | JS variants run on `node` | A stale shell that predates the install is OK — the script refreshes PATH from the registry on startup |
+| **Docker Desktop** | OTLP collector container | Daemon must be running, not just installed (`docker info` must succeed) |
+| **Git** | Commit-hash + branch in `results.md` | Standard Git for Windows |
+
+You also need GitHub Packages credentials for the private `dcxp/opentelemetry-kotlin` Maven repo that hosts `io.opentelemetry.kotlin.*`. Put them in `~/.gradle/gradle.properties`:
+
+```properties
+GITHUB_USERNAME=<your github username>
+GITHUB_PASSWORD=<a GitHub PAT with read:packages scope>
+```
+
+For ephemeral CI or local runs, use Gradle's standard project-property environment variables instead: `ORG_GRADLE_PROJECT_GITHUB_USERNAME` and `ORG_GRADLE_PROJECT_GITHUB_PASSWORD`. Credentials are required only when at least one OTel variant is selected; baseline-only runs do not need them.
+
+The PAT only needs `read:packages`; no other scopes. A preflight check at the top of the script verifies all of the above and exits with a clear message if anything is missing — so a misconfigured fresh machine fails in seconds, not after a 20-minute build.
+
+### Running on Linux
+
+`kperf-otel-comparison.ps1` is cross-platform: on Linux it runs under **PowerShell 7** (`sudo apt install powershell` or equivalent, then `pwsh benchmarking/kperf-otel/kperf-otel-comparison.ps1`). The script auto-selects the host-specific pieces — `linkReleaseExecutableLinuxX64` instead of `linkReleaseExecutableMingwX64`, `.kexe` binaries under `build/bin/linuxX64/`, `/bin/sh` instead of `cmd.exe` for the timed child processes, and `Native (Linux)` row labels (the `Platform` column in `results.md`/CSV stays `Native`, so cross-OS results line up).
+
+Linux-specific prerequisites beyond the table above:
+
+- **Docker engine or Podman.** For Docker, the daemon must be running and your user able to run `docker` without sudo (`docker` group). Rootless Podman works as a drop-in replacement — the runner auto-detects whichever CLI is present (Docker preferred if both) and all images are fully qualified so Podman's short-name prompt never triggers. Rootless Podman needs cgroups v2 for the `--memory` limits (the default on Debian 12+) and Podman 4+ for container-name DNS on the `otel-net` network (Envoy reaches Jaeger by the name `jaeger`).
+- **mavenLocal is per-machine.** The `otel-proto-fastbatch` and `otel-proto-combined` variants force the locally patched SDK `io.opentelemetry.kotlin.*:1.0.570-fastbatch`, which is **not** on GitHub Packages. When either variant is selected and the host-native artifact is missing, the benchmark script clones the pinned upstream SDK revision into a temporary directory, applies `fastbatch-sdk.patch`, and publishes it to `mavenLocal`. Later runs reuse that publication.
+- Clone the repo fresh on Linux (or use `core.autocrlf=input`) so the per-subproject `gradlew` shell scripts keep LF line endings; the script invokes them via `sh gradlew`, so a missing executable bit is fine but CRLF is not.
+
+The profile capture suite (`research/otel_overhead_investigation/profiles/run-all-profiles.ps1`: JFR / PerfView) and the game-of-life `build.ps1`/`run.ps1` suite remain Windows-only.
+
+**GitLab CI:** `.gitlab-ci.yml` at the repo root runs this benchmark on the SSW Linux runners as a **manual** job (trigger via *Run pipeline*). It installs Java/Node via ASDF and pwsh from a tarball, invokes the benchmark script (which bootstraps the patched fastbatch SDK when needed), and uploads the new `measurements/comparison_run_*` directory as `ci-results/`. Requires masked CI/CD variables `GITHUB_USERNAME` / `GITHUB_PASSWORD` and a runner with Docker + x86_64.
+
+### Reading the output
+
+`results.md` shows iteration count per row. A healthy run has `Iterations = <RunCount>` for all 18 rows. If any row shows fewer (or 0), check the matching files in `failures/` to see what each affected iteration printed.
+
+The `Total mean (ms)` column for `otel` / `otel-proto*` rows includes the time spent flushing spans to Jaeger at process exit (the `await()` helper blocks on the exporter); the `baseline` and `k-perf` rows do not, which makes the absolute totals across variants slightly non-comparable. The `Per-method (ns)` and `Overhead/method (ns)` columns are computed from the per-step time (which excludes the exit flush), so they ARE comparable across variants.
 
 ## Running the Benchmarks
 
@@ -260,23 +353,21 @@ Each directory contains one JSON file per executable that was benchmarked, named
 
 ## Shared Infrastructure
 
-Both benchmarks use shared components located in the parent `benchmarking/` folder:
+The benchmark suites use shared components located in `benchmarking/utils/`:
 
-- **`utils.ps1`**: Common utility functions for:
-  - Statistical analysis (mean, median, standard deviation, confidence intervals)
-  - Gradle task discovery and execution
-  - Kotlin Multiplatform compilation automation
-
+- **`statistics_utils.ps1`** and **`types.ps1`**: Statistics, machine information, export helpers, and shared benchmark types
+- **`gradle_utils.ps1`**: Gradle task discovery and execution
 - **`build.ps1`**: Granular build functions for:
   - Building KIRHelperKit
   - Building compiler plugins (K-Perf, Instrumentation-Overhead-Analyzer)
   - Compiling Game of Life variants (CommonMain, DedicatedMain, with/without instrumentation)
+- **`run.ps1`**: Shared benchmark execution and result orchestration
 
-These are imported by both benchmark scripts via dot-sourcing:
+Suite runners import the utilities via dot-sourcing, for example:
 
 ```powershell
-. "$PSScriptRoot\utils.ps1"
-. "$PSScriptRoot\build.ps1"
+. "$PSScriptRoot\..\utils\build.ps1"
+. "$PSScriptRoot\..\utils\run.ps1"
 ```
 
 ## Troubleshooting
