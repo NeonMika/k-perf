@@ -15,6 +15,7 @@ plugin_dependencies/otlp-exporter-proto → plugin_dependencies/otel-proto-utili
 Use `buildAllVariants.ps1` for the complete OTel chains. `plugin_dependencies/otel-utilities` and `plugin_dependencies/otel-proto-utilities` are independent projects with separate sources, packages, artifacts, and Gradle wrappers.
 
 **Full build (all platforms):**
+
 ```powershell
 # Windows
 .\buildAll.ps1
@@ -27,6 +28,7 @@ Use `buildAllVariants.ps1` for the complete OTel chains. `plugin_dependencies/ot
 ```
 
 **Per-subproject build + publish:**
+
 ```powershell
 cd KIRHelperKit
 .\gradlew build publishToMavenLocal
@@ -44,11 +46,12 @@ Tests live only in the plugin projects (JUnit 5); there are no tests in `KIRHelp
 See [`benchmarking/README.md`](../benchmarking/README.md) for full documentation on the three benchmark suites, parameters, and output format.
 
 > ⚠️ **Keep benchmarking scripts in sync**: Any change to kperf plugin settings (names/defaults), KMP example project structure, or project version **must** be reflected in:
+>
 > - `benchmarking/utils/build.ps1` (build-time key names, gradle args passed to KPerfConfig)
 > - `benchmarking/game-of-life-kmp-k-perf/benchmark.ps1` (JAR version strings, suffix logic, parameter defaults)
 > - `benchmarking/game-of-life-kmp-commonmain-ioa/run.ps1` (JAR version strings) — note: the IOA plugin itself is **work in progress**; this benchmark measures a mostly no-op plugin for now
 >
-> GitHub Actions benchmark workflows (all `workflow_dispatch`-only) are in `.github/workflows/benchmark-*.yml`. They run the k-perf benchmark suite and commit results to `measurements/` with a `[skip ci]` message to avoid triggering build workflows.
+> GitHub Actions benchmark workflows are in `.github/workflows/benchmark-*.yml`. Small benchmarks run on pushes to `main`; large benchmarks run daily at midnight UTC. All workflows also support `workflow_dispatch` and commit results to `measurements/` with a `[skip ci]` message to avoid triggering build workflows.
 
 ---
 
@@ -82,6 +85,7 @@ File I/O uses **`kotlinx-io`** for cross-platform compatibility (same API on JVM
 ### Output file formats
 
 **Trace file** (`./trace_<platform>_<random>.txt`):
+
 ```
 >;0          # enter method id=0
 >;1          # enter method id=1
@@ -90,6 +94,7 @@ File I/O uses **`kotlinx-io`** for cross-platform compatibility (same API on JVM
 ```
 
 **Symbols file** (`./symbols_<platform>_<random>.txt`) — JSON object:
+
 ```json
 { "0": "main", "1": "game.gol.GameOfLife.step", ... }
 ```
@@ -154,6 +159,7 @@ build\bin\mingwX64\releaseExecutable\<project>-<suffix>.exe <steps>
 ## KIRHelperKit
 
 Utility library for writing Kotlin IR compiler plugins. Key packages:
+
 - `at.jku.ssw.kir.find` — locate symbols: `findClass`, `findFunction`, `findProperty`, extension methods on `IrPluginContext`, `IrClassSymbol`, `IrPropertySymbol`
 - `at.jku.ssw.kir.call` — DSL for building IR function call expressions
 - `at.jku.ssw.kir.general` — `IrStringBuilder`, `IrFileIOHandler` helpers
@@ -165,6 +171,7 @@ Utility library for writing Kotlin IR compiler plugins. Key packages:
 ### Functions excluded from instrumentation
 
 `KPerfExtension` skips a function if any of these are true:
+
 - Name is `_enter_method`, `_exit_method`, or `_exit_main` (the injected helpers themselves)
 - Body is null
 - Origin is `ADAPTER_FOR_CALLABLE_REFERENCE`
@@ -184,11 +191,12 @@ Configured via the `kperf { }` block in the consumer's `build.gradle.kts`, backe
 | `flushEarly` | `false` | Flush trace sink after every write (safe but slower) |
 | `instrumentPropertyAccessors` | `false` | Also instrument property getters/setters |
 | `testKIR` | `false` | Enable `KIRHelperKitTestingExtension` for IR debugging |
-| `methods` | `".*"` | Comma-separated regexes matched against a function's FQN; only matching functions are instrumented (e.g., `"a\.b\..*;c\.d\.MyClass\.fun123"`) |
+| `methods` | `".*"` | Comma-separated regexes matched against a function's FQName; only matching functions are instrumented (e.g., `"a\.b\..*;c\.d\.MyClass\.fun123"`) |
 
 Gradle properties (`-PkperfFlushEarly=true`, `-PkperfMethods=a\.b\..*`) override defaults in the KMP example projects. `enabled` is also configurable via `-PkperfEnabled=false`.
 
 > ⚠️ **Defaults are defined in three separate places.** When changing a default value, update all three:
+>
 > 1. `plugins/k-perf/src/main/kotlin/at/jku/ssw/gradle/KPerfGradlePlugin.kt` — extension class property defaults (`var flushEarly: Boolean = false`, etc.)
 > 2. `plugins/k-perf/src/main/kotlin/at/jku/ssw/compilerplugin/KPerfComponentRegistrar.kt` — compiler-side fallbacks (`configuration[KEY] ?: false`, etc.)
 > 3. `kmp-examples/game-of-life/game-of-life-kmp-*-k-perf/build.gradle.kts` — Gradle property fallbacks (`.getOrElse(false)`, etc.)
@@ -196,6 +204,7 @@ Gradle properties (`-PkperfFlushEarly=true`, `-PkperfMethods=a\.b\..*`) override
 ### Group, version, and artifact coordinates
 
 All subprojects use:
+
 - `group = "io.github.neonmika"`
 - `version = "<current major version>.<current minor version>.<current patch version>"` (e.g., `0.2.1`)
 
