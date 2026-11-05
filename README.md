@@ -535,7 +535,7 @@ Notes:
 - **`SSP_2024`** — the original k-perf paper. Its measurement data is also preserved on `main` in `measurements/2024_11_SSP/`.
 - **`SSP_2025_KIRHelperKit`** — introduces the KIRHelperKit library (see [KIRHelperKit](#-kirhelperkit)).
 - **`ssp26kmp`** — developed on the `ssp26kmp` branch. This work has not been merged into `main` yet.
-- **`ssp26otel`** — developed on the `LB_otel_analysis` branch and merged into `main`. On `main`, the experimental OpenTelemetry compiler-plugin variants compared in the paper (gRPC, Anchored, Monotonic, Sampler, FastBatch, Combined) live in `plugins/otel-experiments-ssp-2026/` and their workloads in `kmp-examples/fibonacci/otel-experiments-ssp-2026/`. The tag itself still uses the original flat layout. The data reported in the paper is in `measurements/2026_08_26_SSP_CI-run-31310/`. Source code, benchmarking pipeline, and results are also archived at [doi:10.5281/zenodo.22087594](https://doi.org/10.5281/zenodo.22087594).
+- **`ssp26otel`** — developed on the `LB_otel_analysis` branch and merged into `main`. On `main`, the experimental OpenTelemetry compiler-plugin variants compared in the paper (gRPC, Anchored, Monotonic, Sampler, FastBatch, Combined) live in `plugins/otel-experiments-ssp-2026/` and their workloads in `kmp-examples/fibonacci/otel-experiments-ssp-2026/`. The data reported in the paper is in `measurements/2026_08_26_SSP_CI-run-31310/`. Source code, benchmarking pipeline, and results are also archived at [doi:10.5281/zenodo.22087594](https://doi.org/10.5281/zenodo.22087594).
 
 Related papers without their own tag in this repository:
 
