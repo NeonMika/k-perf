@@ -9,7 +9,7 @@ All subprojects use **Gradle with Kotlin DSL** (`build.gradle.kts`). The root `s
 ```
 KIRHelperKit → plugins/instrumentation-overhead-analyzer → plugins/k-perf → kmp-examples/<workload>/*
 plugin_dependencies/otlp-exporter → plugin_dependencies/otel-utilities → plugins/otel-plugin → kmp-examples/fibonacci/fibonacci-otel
-plugin_dependencies/otlp-exporter-proto → plugin_dependencies/otel-proto-utilities → plugins/otel-plugin-proto* → kmp-examples/fibonacci/fibonacci-otel-proto*
+plugin_dependencies/otlp-exporter-proto → plugin_dependencies/otel-proto-utilities → plugins/otel-experiments-ssp-2026/otel-plugin-proto* → kmp-examples/fibonacci/otel-experiments-ssp-2026/fibonacci-otel-proto*
 ```
 
 Use `buildAllVariants.ps1` for the complete OTel chains. `plugin_dependencies/otel-utilities` and `plugin_dependencies/otel-proto-utilities` are independent projects with separate sources, packages, artifacts, and Gradle wrappers.

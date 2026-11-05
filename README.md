@@ -142,18 +142,22 @@ k-perf/
 ├── 🔌 plugins/
 │   ├── k-perf/                               # Main performance tracing plugin
 │   ├── instrumentation-overhead-analyzer/    # Plugin overhead measurement tool
-│   └── otel-*/                               # OpenTelemetry compiler plugin variants
+│   ├── otel-plugin/                          # OpenTelemetry compiler plugin (k-perf-otel, SSP 2025)
+│   └── otel-experiments-ssp-2026/            # Experimental OTel plugin variants (SSP 2026 paper)
+│       ├── otel-plugin-proto/                # gRPC/Protobuf base variant
+│       └── otel-plugin-proto-*/              # anchored, timesource, sampler, fastbatch, combined
 ├── 🎮 kmp-examples/
 │   ├── fibonacci/                            # Fibonacci baseline, k-perf, and OTel variants
 │   │   ├── fibonacci-baseline/
 │   │   ├── fibonacci-k-perf/
 │   │   ├── fibonacci-otel/
-│   │   ├── fibonacci-otel-proto/
-│   │   ├── fibonacci-otel-proto-anchored/
-│   │   ├── fibonacci-otel-proto-combined/
-│   │   ├── fibonacci-otel-proto-fastbatch/
-│   │   ├── fibonacci-otel-proto-sampler/
-│   │   └── fibonacci-otel-proto-timesource/
+│   │   └── otel-experiments-ssp-2026/        # Workloads for the experimental OTel variants
+│   │       ├── fibonacci-otel-proto/
+│   │       ├── fibonacci-otel-proto-anchored/
+│   │       ├── fibonacci-otel-proto-combined/
+│   │       ├── fibonacci-otel-proto-fastbatch/
+│   │       ├── fibonacci-otel-proto-sampler/
+│   │       └── fibonacci-otel-proto-timesource/
 │   └── game-of-life/                         # Conway's Game of Life variants
 │       ├── game-of-life-kmp-commonmain-baseline/
 │       ├── game-of-life-kmp-commonmain-k-perf/
@@ -226,7 +230,7 @@ The build runs in this mandatory order (each step publishes to `mavenLocal`):
 plugin_dependencies/otlp-exporter → plugin_dependencies/otel-utilities
     → plugins/otel-plugin → kmp-examples/fibonacci/fibonacci-otel
 plugin_dependencies/otlp-exporter-proto → plugin_dependencies/otel-proto-utilities
-    → plugins/otel-plugin-proto* → kmp-examples/fibonacci/fibonacci-otel-proto*
+    → plugins/otel-experiments-ssp-2026/otel-plugin-proto* → kmp-examples/fibonacci/otel-experiments-ssp-2026/fibonacci-otel-proto*
 ```
 
 ### Running Tests

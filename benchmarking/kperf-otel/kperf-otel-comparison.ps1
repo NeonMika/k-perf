@@ -371,22 +371,22 @@ if ($AnyProtoVariant) {
   Invoke-GradleBuild -Title "OTel Utilities (proto)" -Path ".\plugin_dependencies\otel-proto-utilities" -Tasks @("publishToMavenLocal")
 }
 if ($Variants -contains 'otel-proto') {
-  Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Plugin (proto)" -Path ".\plugins\otel-experiments-ssp-2026\otel-plugin-proto\plugin" -Tasks @("publishToMavenLocal")
 }
 if ($Variants -contains 'otel-proto-sampler') {
-  Invoke-GradleBuild -Title "OTel Plugin (proto-sampler)" -Path ".\plugins\otel-plugin-proto-sampler\plugin" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Plugin (proto-sampler)" -Path ".\plugins\otel-experiments-ssp-2026\otel-plugin-proto-sampler\plugin" -Tasks @("publishToMavenLocal")
 }
 if ($Variants -contains 'otel-proto-timesource') {
-  Invoke-GradleBuild -Title "OTel Plugin (proto-timesource)" -Path ".\plugins\otel-plugin-proto-timesource\plugin" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Plugin (proto-timesource)" -Path ".\plugins\otel-experiments-ssp-2026\otel-plugin-proto-timesource\plugin" -Tasks @("publishToMavenLocal")
 }
 if ($Variants -contains 'otel-proto-anchored') {
-  Invoke-GradleBuild -Title "OTel Plugin (proto-anchored)" -Path ".\plugins\otel-plugin-proto-anchored\plugin" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Plugin (proto-anchored)" -Path ".\plugins\otel-experiments-ssp-2026\otel-plugin-proto-anchored\plugin" -Tasks @("publishToMavenLocal")
 }
 if ($Variants -contains 'otel-proto-fastbatch') {
-  Invoke-GradleBuild -Title "OTel Plugin (proto-fastbatch)" -Path ".\plugins\otel-plugin-proto-fastbatch\plugin" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Plugin (proto-fastbatch)" -Path ".\plugins\otel-experiments-ssp-2026\otel-plugin-proto-fastbatch\plugin" -Tasks @("publishToMavenLocal")
 }
 if ($Variants -contains 'otel-proto-combined') {
-  Invoke-GradleBuild -Title "OTel Plugin (proto-combined)" -Path ".\plugins\otel-plugin-proto-combined\plugin" -Tasks @("publishToMavenLocal")
+  Invoke-GradleBuild -Title "OTel Plugin (proto-combined)" -Path ".\plugins\otel-experiments-ssp-2026\otel-plugin-proto-combined\plugin" -Tasks @("publishToMavenLocal")
 }
 
 Write-Host "=========================================="
@@ -396,12 +396,12 @@ Write-Host "=========================================="
 $comparisonBuilds = @(
   @{ Variant = 'baseline';              Title = "Fibonacci Project (baseline)";              Path = ".\kmp-examples\fibonacci\fibonacci-baseline";              RefreshDeps = $false },
   @{ Variant = 'otel';                  Title = "Fibonacci Project (otel)";                  Path = ".\kmp-examples\fibonacci\fibonacci-otel";                  RefreshDeps = $true },
-  @{ Variant = 'otel-proto';            Title = "Fibonacci Project (otel-proto)";            Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto";            RefreshDeps = $true },
-  @{ Variant = 'otel-proto-sampler';    Title = "Fibonacci Project (otel-proto-sampler)";    Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-sampler";    RefreshDeps = $true },
-  @{ Variant = 'otel-proto-timesource'; Title = "Fibonacci Project (otel-proto-timesource)"; Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-timesource"; RefreshDeps = $true },
-  @{ Variant = 'otel-proto-anchored';   Title = "Fibonacci Project (otel-proto-anchored)";   Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-anchored";   RefreshDeps = $true },
-  @{ Variant = 'otel-proto-fastbatch';  Title = "Fibonacci Project (otel-proto-fastbatch)";  Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-fastbatch";  RefreshDeps = $true },
-  @{ Variant = 'otel-proto-combined';   Title = "Fibonacci Project (otel-proto-combined)";   Path = ".\kmp-examples\fibonacci\fibonacci-otel-proto-combined";   RefreshDeps = $true }
+  @{ Variant = 'otel-proto';            Title = "Fibonacci Project (otel-proto)";            Path = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto";            RefreshDeps = $true },
+  @{ Variant = 'otel-proto-sampler';    Title = "Fibonacci Project (otel-proto-sampler)";    Path = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-sampler";    RefreshDeps = $true },
+  @{ Variant = 'otel-proto-timesource'; Title = "Fibonacci Project (otel-proto-timesource)"; Path = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-timesource"; RefreshDeps = $true },
+  @{ Variant = 'otel-proto-anchored';   Title = "Fibonacci Project (otel-proto-anchored)";   Path = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-anchored";   RefreshDeps = $true },
+  @{ Variant = 'otel-proto-fastbatch';  Title = "Fibonacci Project (otel-proto-fastbatch)";  Path = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-fastbatch";  RefreshDeps = $true },
+  @{ Variant = 'otel-proto-combined';   Title = "Fibonacci Project (otel-proto-combined)";   Path = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-combined";   RefreshDeps = $true }
 )
 $comparisonTasks = @("jvmJar", "kotlinNpmInstall", "jsProductionExecutableCompileSync", $NativeLinkTask)
 foreach ($b in $comparisonBuilds) {
@@ -424,29 +424,29 @@ $otelJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel\build\lib\fibon
 $otelJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel\build\js\packages\fibonacci-otel\kotlin\fibonacci-otel.js"
 $otelNative = ".\kmp-examples\fibonacci\fibonacci-otel\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto\build\lib\fibonacci-otel-proto-jvm-1.0.0.jar"
-$otelProtoJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto\build\js\packages\fibonacci-otel-proto\kotlin\fibonacci-otel-proto.js"
-$otelProtoNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoJvm    = "java -jar .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto\build\lib\fibonacci-otel-proto-jvm-1.0.0.jar"
+$otelProtoJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto\build\js\packages\fibonacci-otel-proto\kotlin\fibonacci-otel-proto.js"
+$otelProtoNative = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoSamplerJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-sampler\build\lib\fibonacci-otel-proto-sampler-jvm-1.0.0.jar"
-$otelProtoSamplerJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-sampler\build\js\packages\fibonacci-otel-proto-sampler\kotlin\fibonacci-otel-proto-sampler.js"
-$otelProtoSamplerNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-sampler\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoSamplerJvm    = "java -jar .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-sampler\build\lib\fibonacci-otel-proto-sampler-jvm-1.0.0.jar"
+$otelProtoSamplerJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-sampler\build\js\packages\fibonacci-otel-proto-sampler\kotlin\fibonacci-otel-proto-sampler.js"
+$otelProtoSamplerNative = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-sampler\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoTsJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-timesource\build\lib\fibonacci-otel-proto-timesource-jvm-1.0.0.jar"
-$otelProtoTsJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-timesource\build\js\packages\fibonacci-otel-proto-timesource\kotlin\fibonacci-otel-proto-timesource.js"
-$otelProtoTsNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-timesource\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoTsJvm    = "java -jar .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-timesource\build\lib\fibonacci-otel-proto-timesource-jvm-1.0.0.jar"
+$otelProtoTsJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-timesource\build\js\packages\fibonacci-otel-proto-timesource\kotlin\fibonacci-otel-proto-timesource.js"
+$otelProtoTsNative = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-timesource\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoAnchoredJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-anchored\build\lib\fibonacci-otel-proto-anchored-jvm-1.0.0.jar"
-$otelProtoAnchoredJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-anchored\build\js\packages\fibonacci-otel-proto-anchored\kotlin\fibonacci-otel-proto-anchored.js"
-$otelProtoAnchoredNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-anchored\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoAnchoredJvm    = "java -jar .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-anchored\build\lib\fibonacci-otel-proto-anchored-jvm-1.0.0.jar"
+$otelProtoAnchoredJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-anchored\build\js\packages\fibonacci-otel-proto-anchored\kotlin\fibonacci-otel-proto-anchored.js"
+$otelProtoAnchoredNative = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-anchored\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoFastbatchJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-fastbatch\build\lib\fibonacci-otel-proto-fastbatch-jvm-1.0.0.jar"
-$otelProtoFastbatchJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-fastbatch\build\js\packages\fibonacci-otel-proto-fastbatch\kotlin\fibonacci-otel-proto-fastbatch.js"
-$otelProtoFastbatchNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-fastbatch\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoFastbatchJvm    = "java -jar .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-fastbatch\build\lib\fibonacci-otel-proto-fastbatch-jvm-1.0.0.jar"
+$otelProtoFastbatchJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-fastbatch\build\js\packages\fibonacci-otel-proto-fastbatch\kotlin\fibonacci-otel-proto-fastbatch.js"
+$otelProtoFastbatchNative = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-fastbatch\build\bin\mingwX64\releaseExecutable\main.exe"
 
-$otelProtoCombinedJvm    = "java -jar .\kmp-examples\fibonacci\fibonacci-otel-proto-combined\build\lib\fibonacci-otel-proto-combined-jvm-1.0.0.jar"
-$otelProtoCombinedJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\fibonacci-otel-proto-combined\build\js\packages\fibonacci-otel-proto-combined\kotlin\fibonacci-otel-proto-combined.js"
-$otelProtoCombinedNative = ".\kmp-examples\fibonacci\fibonacci-otel-proto-combined\build\bin\mingwX64\releaseExecutable\main.exe"
+$otelProtoCombinedJvm    = "java -jar .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-combined\build\lib\fibonacci-otel-proto-combined-jvm-1.0.0.jar"
+$otelProtoCombinedJs     = "node --max-old-space-size=16384 .\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-combined\build\js\packages\fibonacci-otel-proto-combined\kotlin\fibonacci-otel-proto-combined.js"
+$otelProtoCombinedNative = ".\kmp-examples\fibonacci\otel-experiments-ssp-2026\fibonacci-otel-proto-combined\build\bin\mingwX64\releaseExecutable\main.exe"
 
 $executables = @(
   @{ Name = "baseline JVM";                       Command = $baselineJvm },
