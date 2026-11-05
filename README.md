@@ -477,8 +477,8 @@ Notes:
 
 Related papers without their own tag in this repository:
 
-- F. Schoenberger and M. Weninger. *OpenTelemetry Instrumentation using Kotlin Multiplatform Compiler Plugins.* SSP 2025. This paper introduced the original k-perf-otel plugin, which is included as the baseline (`plugins/otel-plugin`) in the `ssp26otel` tag.
-- J. Heinzlreiter, M. Weninger, and D. G. Reichelt. *MooBench X Kotlin: Kotlin Multiplatform Benchmarking.* SSP 2026.
+- F. Schoenberger and M. Weninger. *OpenTelemetry Instrumentation using Kotlin Multiplatform Compiler Plugins.* SSP 2025. This paper introduced the original k-perf-otel plugin, originally implemented at [FabianSchoenberger/otel-plugin](https://github.com/FabianSchoenberger/otel-plugin). It has been merged into this repository as part of the `ssp26otel` tag (`plugins/otel-plugin`), where it serves as the baseline.
+- J. Heinzlreiter, M. Weninger, and D. G. Reichelt. *MooBench X Kotlin: Kotlin Multiplatform Benchmarking.* SSP 2026. Implemented in [kieker-monitoring/moobench](https://github.com/kieker-monitoring/moobench).
 
 Programs: [SSP 2024](https://www.performance-symposium.org/ssp-2024/program/) · [SSP 2025](https://www.performance-symposium.org/ssp-2025/symposium-program/) · [SSP 2026](https://www.performance-symposium.org/ssp-2026/symposium-program/)
 
