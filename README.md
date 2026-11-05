@@ -141,16 +141,16 @@ k-perf/
 ├── 🔌 plugins/
 │   ├── k-perf/                               # Main performance tracing plugin
 │   ├── instrumentation-overhead-analyzer/    # Plugin overhead measurement tool
-│   ├── otel-plugin/                          # OpenTelemetry compiler plugin (k-perf-otel, SSP 2025)
-│   └── otel-experiments-ssp-2026/            # Experimental OTel plugin variants (SSP 2026 paper)
-│       ├── otel-plugin-proto/                # gRPC/Protobuf base variant
-│       └── otel-plugin-proto-*/              # anchored, timesource, sampler, fastbatch, combined
+│   ├── k-perf-otel/                          # OpenTelemetry compiler plugin (k-perf-otel, SSP 2025)
+│   └── k-perf-otel-experiments-ssp-2026/     # Experimental OTel plugin variants (SSP 2026 paper)
+│       ├── k-perf-otel-proto/                # gRPC/Protobuf base variant
+│       └── k-perf-otel-proto-*/              # anchored, timesource, sampler, fastbatch, combined
 ├── 🎮 kmp-examples/
 │   ├── fibonacci/                            # Fibonacci baseline, k-perf, and OTel variants
 │   │   ├── fibonacci-baseline/
 │   │   ├── fibonacci-k-perf/
 │   │   ├── fibonacci-otel/
-│   │   └── otel-experiments-ssp-2026/        # Workloads for the experimental OTel variants
+│   │   └── k-perf-otel-experiments-ssp-2026/ # Workloads for the experimental OTel variants
 │   │       ├── fibonacci-otel-proto/
 │   │       ├── fibonacci-otel-proto-anchored/
 │   │       ├── fibonacci-otel-proto-combined/
@@ -228,9 +228,9 @@ The build runs in this mandatory order (each step publishes to `mavenLocal`):
 
 ```
 plugin_dependencies/otlp-exporter → plugin_dependencies/otel-utilities
-    → plugins/otel-plugin → kmp-examples/fibonacci/fibonacci-otel
+    → plugins/k-perf-otel → kmp-examples/fibonacci/fibonacci-otel
 plugin_dependencies/otlp-exporter-proto → plugin_dependencies/otel-proto-utilities
-    → plugins/otel-experiments-ssp-2026/otel-plugin-proto* → kmp-examples/fibonacci/otel-experiments-ssp-2026/fibonacci-otel-proto*
+    → plugins/k-perf-otel-experiments-ssp-2026/k-perf-otel-proto* → kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/fibonacci-otel-proto*
 ```
 
 ### Running Tests
@@ -535,11 +535,11 @@ Notes:
 - **`SSP_2024`** — the original k-perf paper. Its measurement data is also preserved on `main` in `measurements/2024_11_SSP/`.
 - **`SSP_2025_KIRHelperKit`** — introduces the KIRHelperKit library (see [KIRHelperKit](#-kirhelperkit)).
 - **`ssp26kmp`** — developed on the `ssp26kmp` branch. This work has not been merged into `main` yet.
-- **`ssp26otel`** — developed on the `LB_otel_analysis` branch and merged into `main`. On `main`, the experimental OpenTelemetry compiler-plugin variants compared in the paper (gRPC, Anchored, Monotonic, Sampler, FastBatch, Combined) live in `plugins/otel-experiments-ssp-2026/` and their workloads in `kmp-examples/fibonacci/otel-experiments-ssp-2026/`. The data reported in the paper is in `measurements/2026_08_26_SSP_CI-run-31310/`. Source code, benchmarking pipeline, and results are also archived at [doi:10.5281/zenodo.22087594](https://doi.org/10.5281/zenodo.22087594).
+- **`ssp26otel`** — developed on the `LB_otel_analysis` branch and merged into `main`. On `main`, the experimental OpenTelemetry compiler-plugin variants compared in the paper (gRPC, Anchored, Monotonic, Sampler, FastBatch, Combined) live in `plugins/k-perf-otel-experiments-ssp-2026/` and their workloads in `kmp-examples/fibonacci/k-perf-otel-experiments-ssp-2026/`. The data reported in the paper is in `measurements/2026_08_26_SSP_CI-run-31310/`. Source code, benchmarking pipeline, and results are also archived at [doi:10.5281/zenodo.22087594](https://doi.org/10.5281/zenodo.22087594).
 
 Related papers without their own tag in this repository:
 
-- F. Schoenberger and M. Weninger. *OpenTelemetry Instrumentation using Kotlin Multiplatform Compiler Plugins.* SSP 2025. This paper introduced the original k-perf-otel plugin, originally implemented at [FabianSchoenberger/otel-plugin](https://github.com/FabianSchoenberger/otel-plugin). It has been merged into this repository as part of the `ssp26otel` work (`plugins/otel-plugin`), where it serves as the baseline.
+- F. Schoenberger and M. Weninger. *OpenTelemetry Instrumentation using Kotlin Multiplatform Compiler Plugins.* SSP 2025. This paper introduced the original k-perf-otel plugin, originally implemented at [FabianSchoenberger/otel-plugin](https://github.com/FabianSchoenberger/otel-plugin). It has been merged into this repository as part of the `ssp26otel` work (`plugins/k-perf-otel`), where it serves as the baseline.
 - J. Heinzlreiter, M. Weninger, and D. G. Reichelt. *MooBench X Kotlin: Kotlin Multiplatform Benchmarking.* SSP 2026. Implemented in [kieker-monitoring/moobench](https://github.com/kieker-monitoring/moobench).
 
 Programs: [SSP 2024](https://www.performance-symposium.org/ssp-2024/program/) · [SSP 2025](https://www.performance-symposium.org/ssp-2025/symposium-program/) · [SSP 2026](https://www.performance-symposium.org/ssp-2026/symposium-program/)
