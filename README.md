@@ -23,7 +23,7 @@ This is a research project by the [SSW group at JKU Linz](https://ssw.jku.at/), 
 
 ### Benchmarks
 
-> Small benchmark workflows run on pushes to `main`; large benchmark workflows run daily at midnight UTC. All benchmark workflows also support manual dispatch.
+> Small benchmark workflows run daily and large benchmark workflows run weekly (Mondays), both at midnight UTC. All benchmark workflows also support manual dispatch. A run skips the benchmarks if nothing outside `measurements/` changed since the workflow's previous successful run.
 
 [![Benchmark (Windows, Large)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-large.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-large.yml)
 [![Benchmark (Windows, Small)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-small.yml/badge.svg)](https://github.com/NeonMika/k-perf/actions/workflows/benchmark-windows-small.yml)
