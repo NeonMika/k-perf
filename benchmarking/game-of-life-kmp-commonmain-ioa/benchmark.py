@@ -186,16 +186,33 @@ def main() -> None:
     for cfg in ioa_configs:
         print(f"- {cfg.suffix()}")
 
-    # --- Clean phase ---
+    # --- Plugin phase ---
+    # The plugin must be published to mavenLocal before the IOA example is
+    # touched by Gradle (even `clean` resolves its plugins {} block).
+    build_times: dict[str, float] = {}
+    print()
+    print("==========================================")
+    print("# Preparing IOA plugin...")
+    print("==========================================")
     if args.clean_build:
-        print()
-        print("==========================================")
-        print("# Cleaning IOA benchmark dependencies...")
-        print("==========================================")
         invoke_gradle_clean(
             _REPO_ROOT / "plugins" / "instrumentation-overhead-analyzer",
             "instrumentation-overhead-analyzer",
         )
+
+    build_times = merge_dict(build_times, build_instrumentation_overhead_analyzer_plugin())
+
+    print()
+    print("==========================================")
+    print("# Plugin phase completed successfully!")
+    print("==========================================")
+
+    # --- Benchmark application phase ---
+    print()
+    print("==========================================")
+    print("# Preparing benchmark dependencies...")
+    print("==========================================")
+    if args.clean_build:
         if args.reference:
             invoke_gradle_clean(
                 _REPO_ROOT / "kmp-examples" / "game-of-life-kmp-commonmain",
@@ -207,21 +224,6 @@ def main() -> None:
                 "game-of-life-kmp-commonmain-ioa",
             )
         print()
-    else:
-        print()
-        print("==========================================")
-        print("# Skipping clean phase (--clean-build false)...")
-        print("==========================================")
-        print()
-
-    # --- Build phase ---
-    build_times: dict[str, float] = {}
-    print()
-    print("==========================================")
-    print("# Building IOA benchmark dependencies...")
-    print("==========================================")
-
-    build_times = merge_dict(build_times, build_instrumentation_overhead_analyzer_plugin())
 
     if args.reference:
         build_times = merge_dict(build_times, build_game_of_life_commonmain_reference())
@@ -234,7 +236,7 @@ def main() -> None:
 
     print()
     print("==========================================")
-    print("# Build phase completed successfully!")
+    print("# Benchmark application phase completed successfully!")
     print("==========================================")
 
     # Collect executables
