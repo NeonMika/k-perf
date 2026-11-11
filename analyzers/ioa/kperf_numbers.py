@@ -17,10 +17,14 @@ Output::
 
     {first_folder}/numbers.{csv|json}
 
-Every value (plain and every k-perf variant) is computed exactly like the
-plain/reference row of ``ioa.py`` (see ``ioa.baseline_mean_ci95``): the mean
-per-function-call time in ns, after dropping ``ioa.WARMUP_STEPS`` warm-up
-steps, with its one-sample 95% confidence-interval half-width.
+One row per k-perf variant: the overhead per function call (ns) introduced by
+k-perf, mu_I - mu_B, where mu_I and mu_B are the k-perf and plain per-call
+means of the same measurement and target. Both means use exactly the same
+constraints as the plain/reference row of ``ioa.py`` (``ioa.baseline_mean_ci95``):
+drop ``ioa.WARMUP_STEPS`` warm-up steps, divide by
+``ioa.FUNCTION_CALLS_PER_STEP``, average per run, then across runs. No
+confidence interval is reported. A cell is left empty when the variant or the
+plain reference is missing.
 """
 
 from __future__ import annotations
@@ -53,7 +57,10 @@ def _parse_variant_target(name: str) -> dict | None:
 
     m = re.fullmatch(r"commonmain-k-perf-(.+)-" + target_re, name)
     if m:
-        return {"variant": m.group(1), "target": m.group(2)}
+        # Native executables carry an extra OS suffix (e.g. ...-testKIR-false-mac-exe);
+        # drop it so all targets of one configuration share a row.
+        variant = re.sub(r"-(linux|mac|macos|win|windows)$", "", m.group(1))
+        return {"variant": variant, "target": m.group(2)}
 
     return None
 
@@ -107,8 +114,16 @@ def _find_latest_kperf_folder(measurements_root: Path) -> Path:
     return max(candidates, key=lambda p: p.name)
 
 
+def _column_prefix(measurement: dict, measurements: list[dict]) -> str:
+    """OS label, numbered (macOS1, macOS2, ...) when several folders share it."""
+    same_os = [m for m in measurements if m["os_label"] == measurement["os_label"]]
+    if len(same_os) == 1:
+        return measurement["os_label"]
+    return f"{measurement['os_label']}{same_os.index(measurement) + 1}"
+
+
 def _column_keys(measurements: list[dict]) -> list[str]:
-    return [f"{m['os_label']}_{group}" for m in measurements for group in TARGET_GROUPS]
+    return [f"{_column_prefix(m, measurements)}_{group}" for m in measurements for group in TARGET_GROUPS]
 
 
 def build_number_rows(
@@ -125,32 +140,32 @@ def build_number_rows(
             return normalized in only_variants
         return normalized not in ignore_variants
 
-    all_variants = {e["variant"] for e in entries if include_variant(e["variant"])}
-    ordered_variants = ["plain"] if "plain" in all_variants else []
-    ordered_variants += sorted(v for v in all_variants if v != "plain")
+    ordered_variants = sorted(
+        {e["variant"] for e in entries if e["variant"] != "plain" and include_variant(e["variant"])}
+    )
+
+    def mean_ns(entry: dict) -> float:
+        return baseline_mean_ci95(entry)[0] * 1000.0
 
     rows: list[dict] = []
     for variant in ordered_variants:
         row: dict[str, float | str] = {"variant": variant}
         for measurement in measurements:
             for group in TARGET_GROUPS:
-                key = f"{measurement['os_label']}_{group}"
+                key = f"{_column_prefix(measurement, measurements)}_{group}"
                 entry = entry_map.get((measurement["id"], variant, group))
-                if entry is None:
-                    row[key] = row[f"{key}_ci95"] = ""
-                    continue
-                mean_us, ci95_us = baseline_mean_ci95(entry)
-                row[key] = mean_us * 1000.0  # ns
-                row[f"{key}_ci95"] = ci95_us * 1000.0  # ns
+                plain_entry = entry_map.get((measurement["id"], "plain", group))
+                row[key] = (
+                    "" if entry is None or plain_entry is None
+                    else mean_ns(entry) - mean_ns(plain_entry)
+                )
         rows.append(row)
 
     return rows
 
 
 def write_csv(path: Path, rows: list[dict], measurements: list[dict]) -> None:
-    fieldnames = ["variant"]
-    for key in _column_keys(measurements):
-        fieldnames += [key, f"{key}_ci95"]
+    fieldnames = ["variant", *_column_keys(measurements)]
 
     with path.open("w", encoding="utf-8", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
