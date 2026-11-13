@@ -139,20 +139,6 @@ KIND_ORDER: list[str] = [
     "addtolist", "addduplicatestoset", "adduniquetoset",
 ]
 
-STATIC_OPERATION_LABELS: dict[str, str] = {
-    "timemonotonicfunction": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function\end{tabular}",
-    "timemonotonicfunctioninwholemilliseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function (ms)\end{tabular}",
-    "timemonotonicfunctioninwholemicroseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function ($\mu$s)\end{tabular}",
-    "timemonotonicfunctioninwholenanoseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Function (ns)\end{tabular}",
-    "timemonotonicglobal": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global\end{tabular}",
-    "timemonotonicglobalinwholemilliseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (ms)\end{tabular}",
-    "timemonotonicglobalinwholemicroseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global ($\mu$s)\end{tabular}",
-    "timemonotonicglobalinwholenanoseconds": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (ns)\end{tabular}",
-    "timemonotonicglobalreducedobjects": r"\begin{tabular}[c]{@{}l@{}}Time -- Monotonic\\Global (reduced obj.)\end{tabular}",
-    "incrementatomicintcounter": r"\begin{tabular}[c]{@{}l@{}}Increment Atomic\\Int Counter\end{tabular}",
-    "appendtostringbuilder": r"\begin{tabular}[c]{@{}l@{}}Append to\\String Builder\end{tabular}",
-}
-
 
 def kind_label(kind: str) -> str:
     """Return a human-readable display name for an IOA kind token."""
@@ -164,10 +150,7 @@ def kind_label(kind: str) -> str:
 
 
 def _operation_label_cell(kind: str) -> str:
-    """Return statically configured operation labels with fixed line breaks."""
-    kind_norm = kind.lower()
-    if kind_norm in STATIC_OPERATION_LABELS:
-        return STATIC_OPERATION_LABELS[kind_norm]
+    """Return the operation label for a table row, always on a single line."""
     return kind_label(kind)
 
 
