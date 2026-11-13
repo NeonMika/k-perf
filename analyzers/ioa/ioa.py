@@ -11,9 +11,15 @@ Arguments:
     --only-kind KIND ...   Include only listed kinds in output rows. Accepts
                             space-separated kinds and/or comma-separated chunks.
 
-Output::
+Output (three tables, differing only in which steps of each run are used)::
 
     {first_folder}/latex-overhead.tex
+        reference and operations: skip the first WARMUP_STEPS steps
+    {first_folder}/latex-overhead-last100.tex
+        reference and operations: only the last LAST_STEPS steps
+    {first_folder}/latex-overhead-reflast100.tex
+        reference: only the last LAST_STEPS steps;
+        operations: skip the first WARMUP_STEPS steps
 
 Example::
 
@@ -28,8 +34,9 @@ Each such JSON has a ``stepTimes`` array: one entry per run, each entry an
 array of per-step times (in microseconds).
 
 Statistics (fixed, not configurable):
-    The first WARMUP_STEPS steps of every run are dropped as warm-up. Let R be
-    the number of (post-warm-up) runs, S the number of post-warm-up steps per
+    Each run is first reduced to the steps selected by the table's step window
+    (see Output; e.g. the first WARMUP_STEPS steps dropped as warm-up). Let R be
+    the number of runs, S the number of selected steps per
     run, and F = FUNCTION_CALLS_PER_STEP the fixed number of traced function
     calls per step. For an operation X:
 
@@ -70,6 +77,7 @@ from typing import Iterable
 # ---------------------------------------------------------------------------
 
 WARMUP_STEPS = 150
+LAST_STEPS = 100
 FUNCTION_CALLS_PER_STEP = 4001
 
 YELLOW_THRESHOLD_US = 0.0075
@@ -298,17 +306,32 @@ def load_entries_for_measurements(folders: list[Path]) -> tuple[list[dict], list
 # Statistics
 # ---------------------------------------------------------------------------
 
-def per_run_function_time_us(entry: dict) -> list[float]:
-    """Per-run mean per-function-call time (µs), after dropping WARMUP_STEPS.
+# A step window selects which steps of a run are used:
+#   n >= 0 -> skip the first n steps (run[n:])
+#   n <  0 -> keep only the last |n| steps (run[n:])
+SKIP_WARMUP: int = WARMUP_STEPS
+ONLY_LAST: int = -LAST_STEPS
+
+
+def _select_steps(run: list[float], window: int) -> list[float] | None:
+    """Return the steps of ``run`` selected by ``window``, or None if the run is too short."""
+    if window >= 0:
+        return run[window:] if len(run) > window else None
+    return run[window:] if len(run) >= -window else None
+
+
+def per_run_function_time_us(entry: dict, window: int) -> list[float]:
+    """Per-run mean per-function-call time (µs) over the steps selected by ``window``.
 
     One sample per run: X_r = (1 / (S*F)) * sum_{s=1}^{S} T_r,s, where S is
-    that run's post-warm-up step count and F = FUNCTION_CALLS_PER_STEP.
+    that run's selected step count and F = FUNCTION_CALLS_PER_STEP.
     """
-    return [
-        statistics.mean(run[WARMUP_STEPS:]) / FUNCTION_CALLS_PER_STEP
-        for run in entry["step_times_all_runs"]
-        if len(run) > WARMUP_STEPS
-    ]
+    samples: list[float] = []
+    for run in entry["step_times_all_runs"]:
+        steps = _select_steps(run, window)
+        if steps:
+            samples.append(statistics.mean(steps) / FUNCTION_CALLS_PER_STEP)
+    return samples
 
 
 def mean_stddev(values: list[float]) -> tuple[float, float]:
@@ -420,13 +443,13 @@ def _t_critical(dof: float) -> float:
     return _student_t_quantile(1.0 - (1.0 - CONFIDENCE_LEVEL) / 2.0, dof)
 
 
-def baseline_mean_ci95(baseline_entry: dict) -> tuple[float, float]:
+def baseline_mean_ci95(baseline_entry: dict, window: int) -> tuple[float, float]:
     """(mu_B, ci95) per-function-call time of the baseline.
 
     ci95 is the one-sample 95% confidence-interval half-width for the mean:
     t_{0.975,R-1} * sigma_B / sqrt(R). Falls back to ci95 = 0 for fewer than 2 runs.
     """
-    values = per_run_function_time_us(baseline_entry)
+    values = per_run_function_time_us(baseline_entry, window)
     mu, sigma = mean_stddev(values)
     n = len(values)
     if n < 2:
@@ -434,7 +457,12 @@ def baseline_mean_ci95(baseline_entry: dict) -> tuple[float, float]:
     return mu, _t_critical(n - 1) * sigma / math.sqrt(n)
 
 
-def overhead_mean_ci95(kind_entry: dict, baseline_entry: dict) -> tuple[float, float]:
+def overhead_mean_ci95(
+    kind_entry: dict,
+    baseline_entry: dict,
+    kind_window: int,
+    baseline_window: int,
+) -> tuple[float, float]:
     """(mu_O, ci95) per-function-call overhead of kind_entry vs baseline_entry.
 
     mu_O = mu_I - mu_B. ci95 is the Welch two-sample 95% confidence-interval
@@ -442,8 +470,8 @@ def overhead_mean_ci95(kind_entry: dict, baseline_entry: dict) -> tuple[float, f
     SE = sqrt(sigma_I^2/R_I + sigma_B^2/R_B) and v the Welch-Satterthwaite dof.
     Falls back to ci95 = 0 when either side has fewer than 2 runs.
     """
-    values_i = per_run_function_time_us(kind_entry)
-    values_b = per_run_function_time_us(baseline_entry)
+    values_i = per_run_function_time_us(kind_entry, kind_window)
+    values_b = per_run_function_time_us(baseline_entry, baseline_window)
 
     mu_i, sigma_i = mean_stddev(values_i)
     mu_b, sigma_b = mean_stddev(values_b)
@@ -568,8 +596,13 @@ def generate_latex_table(
     measurements: list[dict],
     entries: list[dict],
     only_kinds: set[str],
+    baseline_window: int = SKIP_WARMUP,
+    kind_window: int = SKIP_WARMUP,
 ) -> str:
     """Return a LaTeX ``tabular`` snippet for the overhead table.
+
+    ``baseline_window`` / ``kind_window`` select which steps of each run are
+    used for the plain reference and the instrumented kinds respectively.
 
     Rows  = IOA kinds (in canonical order, plain reference first)
     Cols  = for each measurement: JVM, JS, Native
@@ -641,7 +674,7 @@ def generate_latex_table(
                 if plain_entry is None:
                     plain_cells.append("--")
                     continue
-                mu_b, ci95_b = baseline_mean_ci95(plain_entry)
+                mu_b, ci95_b = baseline_mean_ci95(plain_entry, baseline_window)
                 plain_cells.append(_baseline_cell(mu_b, ci95_b))
         lines.append(" & ".join(plain_cells) + r" \\")
         if ordered_kinds:
@@ -659,7 +692,9 @@ def generate_latex_table(
                     row_cells.append("--")
                     continue
 
-                mu_o, ci95_o = overhead_mean_ci95(kind_entry, plain_entry)
+                mu_o, ci95_o = overhead_mean_ci95(
+                    kind_entry, plain_entry, kind_window, baseline_window
+                )
                 text, color = _overhead_cell(mu_o, ci95_o)
                 row_cells.append(r"\cellcolor{" + color + r"}" + text if color else text)
 
@@ -711,11 +746,19 @@ def main() -> None:
         sys.exit(1)
 
     only_kinds = _parse_kind_list(args.only_kind)
-    latex = generate_latex_table(measurements, entries, only_kinds)
-
-    out_path = folders[0] / "latex-overhead.tex"
-    out_path.write_text(latex, encoding="utf-8")
-    print(f"Saved: {out_path}")
+    # (file name, baseline window, kind window)
+    tables = [
+        ("latex-overhead.tex", SKIP_WARMUP, SKIP_WARMUP),
+        (f"latex-overhead-last{LAST_STEPS}.tex", ONLY_LAST, ONLY_LAST),
+        (f"latex-overhead-reflast{LAST_STEPS}.tex", ONLY_LAST, SKIP_WARMUP),
+    ]
+    for file_name, baseline_window, kind_window in tables:
+        latex = generate_latex_table(
+            measurements, entries, only_kinds, baseline_window, kind_window
+        )
+        out_path = folders[0] / file_name
+        out_path.write_text(latex, encoding="utf-8")
+        print(f"Saved: {out_path}")
 
 
 if __name__ == "__main__":
