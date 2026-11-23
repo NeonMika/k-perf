@@ -14,8 +14,7 @@ Arguments:
 Output::
 
     {first_folder}/latex-overhead.tex
-        reference: only the last LAST_STEPS steps of each run;
-        operations: skip the first WARMUP_STEPS steps of each run
+        reference and operations: skip the first WARMUP_STEPS steps of each run
 
 Example::
 
@@ -30,12 +29,11 @@ Each such JSON has a ``stepTimes`` array: one entry per run, each entry an
 array of per-step times (in microseconds).
 
 Statistics (fixed, not configurable):
-    Each run is first reduced to its selected steps (see Output: the last
-    LAST_STEPS steps for the reference, the steps after WARMUP_STEPS for the
-    operations). Let R be
-    the number of runs, S the number of selected steps per
-    run, and F = FUNCTION_CALLS_PER_STEP the fixed number of traced function
-    calls per step. For an operation X:
+    Each run is first reduced to the steps after the first WARMUP_STEPS
+    warm-up steps, for the reference and the operations alike. Let R be the
+    number of runs, S the number of selected steps per run, and
+    F = FUNCTION_CALLS_PER_STEP the fixed number of traced function calls per
+    step. For an operation X:
 
         For each run r:  X_r = (1 / (S*F)) * sum_{s=1}^{S} T_r,s^(X)
         mu_X    = (1/R) * sum_r X_r
@@ -73,8 +71,8 @@ from typing import Iterable
 # Fixed statistics parameters
 # ---------------------------------------------------------------------------
 
-WARMUP_STEPS = 150
-LAST_STEPS = 100
+# Skipped at the start of every run, for the plain reference and all operations.
+WARMUP_STEPS = 450
 FUNCTION_CALLS_PER_STEP = 4001
 
 YELLOW_THRESHOLD_US = 0.0075
@@ -290,7 +288,6 @@ def load_entries_for_measurements(folders: list[Path]) -> tuple[list[dict], list
 #   n >= 0 -> skip the first n steps (run[n:])
 #   n <  0 -> keep only the last |n| steps (run[n:])
 SKIP_WARMUP: int = WARMUP_STEPS
-ONLY_LAST: int = -LAST_STEPS
 
 
 def _select_steps(run: list[float], window: int) -> list[float] | None:
@@ -423,7 +420,7 @@ def _t_critical(dof: float) -> float:
     return _student_t_quantile(1.0 - (1.0 - CONFIDENCE_LEVEL) / 2.0, dof)
 
 
-def baseline_mean_ci95(baseline_entry: dict, window: int) -> tuple[float, float]:
+def baseline_mean_ci95(baseline_entry: dict, window: int = SKIP_WARMUP) -> tuple[float, float]:
     """(mu_B, ci95) per-function-call time of the baseline.
 
     ci95 is the one-sample 95% confidence-interval half-width for the mean:
@@ -440,8 +437,8 @@ def baseline_mean_ci95(baseline_entry: dict, window: int) -> tuple[float, float]
 def overhead_mean_ci95(
     kind_entry: dict,
     baseline_entry: dict,
-    kind_window: int,
-    baseline_window: int,
+    kind_window: int = SKIP_WARMUP,
+    baseline_window: int = SKIP_WARMUP,
 ) -> tuple[float, float]:
     """(mu_O, ci95) per-function-call overhead of kind_entry vs baseline_entry.
 
@@ -576,7 +573,7 @@ def generate_latex_table(
     measurements: list[dict],
     entries: list[dict],
     only_kinds: set[str],
-    baseline_window: int = ONLY_LAST,
+    baseline_window: int = SKIP_WARMUP,
     kind_window: int = SKIP_WARMUP,
 ) -> str:
     """Return a LaTeX ``tabular`` snippet for the overhead table.
@@ -728,7 +725,7 @@ def main() -> None:
     only_kinds = _parse_kind_list(args.only_kind)
     latex = generate_latex_table(
         measurements, entries, only_kinds,
-        baseline_window=ONLY_LAST, kind_window=SKIP_WARMUP,
+        baseline_window=SKIP_WARMUP, kind_window=SKIP_WARMUP,
     )
     out_path = folders[0] / "latex-overhead.tex"
     out_path.write_text(latex, encoding="utf-8")
