@@ -11,15 +11,11 @@ Arguments:
     --only-kind KIND ...   Include only listed kinds in output rows. Accepts
                             space-separated kinds and/or comma-separated chunks.
 
-Output (three tables, differing only in which steps of each run are used)::
+Output::
 
     {first_folder}/latex-overhead.tex
-        reference and operations: skip the first WARMUP_STEPS steps
-    {first_folder}/latex-overhead-last100.tex
-        reference and operations: only the last LAST_STEPS steps
-    {first_folder}/latex-overhead-reflast100.tex
-        reference: only the last LAST_STEPS steps;
-        operations: skip the first WARMUP_STEPS steps
+        reference: only the last LAST_STEPS steps of each run;
+        operations: skip the first WARMUP_STEPS steps of each run
 
 Example::
 
@@ -34,8 +30,9 @@ Each such JSON has a ``stepTimes`` array: one entry per run, each entry an
 array of per-step times (in microseconds).
 
 Statistics (fixed, not configurable):
-    Each run is first reduced to the steps selected by the table's step window
-    (see Output; e.g. the first WARMUP_STEPS steps dropped as warm-up). Let R be
+    Each run is first reduced to its selected steps (see Output: the last
+    LAST_STEPS steps for the reference, the steps after WARMUP_STEPS for the
+    operations). Let R be
     the number of runs, S the number of selected steps per
     run, and F = FUNCTION_CALLS_PER_STEP the fixed number of traced function
     calls per step. For an operation X:
@@ -579,7 +576,7 @@ def generate_latex_table(
     measurements: list[dict],
     entries: list[dict],
     only_kinds: set[str],
-    baseline_window: int = SKIP_WARMUP,
+    baseline_window: int = ONLY_LAST,
     kind_window: int = SKIP_WARMUP,
 ) -> str:
     """Return a LaTeX ``tabular`` snippet for the overhead table.
@@ -729,19 +726,13 @@ def main() -> None:
         sys.exit(1)
 
     only_kinds = _parse_kind_list(args.only_kind)
-    # (file name, baseline window, kind window)
-    tables = [
-        ("latex-overhead.tex", SKIP_WARMUP, SKIP_WARMUP),
-        (f"latex-overhead-last{LAST_STEPS}.tex", ONLY_LAST, ONLY_LAST),
-        (f"latex-overhead-reflast{LAST_STEPS}.tex", ONLY_LAST, SKIP_WARMUP),
-    ]
-    for file_name, baseline_window, kind_window in tables:
-        latex = generate_latex_table(
-            measurements, entries, only_kinds, baseline_window, kind_window
-        )
-        out_path = folders[0] / file_name
-        out_path.write_text(latex, encoding="utf-8")
-        print(f"Saved: {out_path}")
+    latex = generate_latex_table(
+        measurements, entries, only_kinds,
+        baseline_window=ONLY_LAST, kind_window=SKIP_WARMUP,
+    )
+    out_path = folders[0] / "latex-overhead.tex"
+    out_path.write_text(latex, encoding="utf-8")
+    print(f"Saved: {out_path}")
 
 
 if __name__ == "__main__":
