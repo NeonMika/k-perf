@@ -104,15 +104,33 @@ foreach ($config in $kPerfCombinations) {
   Write-Host "- $(Get-KPerfSuffix -Config $config)"
 }
 
-# Clean phase
+# --- Plugin phase (IOA is not part of this benchmark) ---
+# The k-perf plugin must be published to mavenLocal before the k-perf examples
+# are touched by Gradle (even `clean` resolves their plugins {} block).
+$buildTimes = @{}
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "# Preparing k-perf plugin..."
+Write-Host "=========================================="
 if ($CleanBuild) {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "# Cleaning k-perf benchmark dependencies..."
-  Write-Host "=========================================="
-
   Invoke-GradleClean -Path "..\..\KIRHelperKit"                                    -Name "KIRHelperKit"
   Invoke-GradleClean -Path "..\..\plugins\k-perf"                                  -Name "k-perf plugin"
+}
+
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KirHelperKit)
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KPerfPlugin)
+
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "# Plugin phase completed successfully!"
+Write-Host "=========================================="
+
+# --- Benchmark application phase ---
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "# Preparing benchmark dependencies..."
+Write-Host "=========================================="
+if ($CleanBuild) {
   if ($Common) {
     Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline"       -Name "game-of-life-kmp-commonmain-baseline"
     Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-k-perf" -Name "game-of-life-kmp-commonmain-k-perf"
@@ -123,23 +141,6 @@ if ($CleanBuild) {
   }
   Write-Host ""
 }
-else {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "# Skipping clean phase (CleanBuild = false)..."
-  Write-Host "=========================================="
-  Write-Host ""
-}
-
-# Build phase (IOA is not part of this benchmark)
-$buildTimes = @{}
-Write-Host ""
-Write-Host "=========================================="
-Write-Host "# Building k-perf benchmark dependencies..."
-Write-Host "=========================================="
-
-$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KirHelperKit)
-$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KPerfPlugin)
 
 if ($Common) {
   $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainReference)
@@ -159,7 +160,7 @@ foreach ($config in $kPerfCombinations) {
 
 Write-Host ""
 Write-Host "=========================================="
-Write-Host "# Build phase completed successfully!"
+Write-Host "# Benchmark application phase completed successfully!"
 Write-Host "=========================================="
 
 # Collect executables for the requested game types
