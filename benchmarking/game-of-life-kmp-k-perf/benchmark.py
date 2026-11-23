@@ -262,15 +262,32 @@ def main() -> None:
     for config in k_perf_combinations:
         print(f"- {get_k_perf_suffix(config)}")
 
-    # --- Clean phase ---
+    # --- Plugin phase ---
+    # The k-perf plugin must be published to mavenLocal before the k-perf
+    # examples are touched by Gradle (even `clean` resolves their plugins {} block).
+    build_times: dict[str, float] = {}
+    print()
+    print("==========================================")
+    print("# Preparing k-perf plugin...")
+    print("==========================================")
     if args.clean_build:
-        print()
-        print("==========================================")
-        print("# Cleaning k-perf benchmark dependencies...")
-        print("==========================================")
-
         invoke_gradle_clean(_REPO_ROOT / "KIRHelperKit", "KIRHelperKit")
         invoke_gradle_clean(_REPO_ROOT / "plugins" / "k-perf", "k-perf plugin")
+
+    build_times = merge_dict(build_times, build_kir_helper_kit())
+    build_times = merge_dict(build_times, build_k_perf_plugin())
+
+    print()
+    print("==========================================")
+    print("# Plugin phase completed successfully!")
+    print("==========================================")
+
+    # --- Benchmark application phase ---
+    print()
+    print("==========================================")
+    print("# Preparing benchmark dependencies...")
+    print("==========================================")
+    if args.clean_build:
         if args.common:
             invoke_gradle_clean(
                 _REPO_ROOT / "kmp-examples" / "game-of-life-kmp-commonmain",
@@ -290,22 +307,6 @@ def main() -> None:
                 "game-of-life-kmp-dedicatedmain-k-perf",
             )
         print()
-    else:
-        print()
-        print("==========================================")
-        print("# Skipping clean phase (--clean-build false)...")
-        print("==========================================")
-        print()
-
-    # --- Build phase ---
-    build_times: dict[str, float] = {}
-    print()
-    print("==========================================")
-    print("# Building k-perf benchmark dependencies...")
-    print("==========================================")
-
-    build_times = merge_dict(build_times, build_kir_helper_kit())
-    build_times = merge_dict(build_times, build_k_perf_plugin())
 
     if args.common:
         build_times = merge_dict(build_times, build_game_of_life_commonmain_reference())
@@ -326,7 +327,7 @@ def main() -> None:
 
     print()
     print("==========================================")
-    print("# Build phase completed successfully!")
+    print("# Benchmark application phase completed successfully!")
     print("==========================================")
 
     # Collect executables
