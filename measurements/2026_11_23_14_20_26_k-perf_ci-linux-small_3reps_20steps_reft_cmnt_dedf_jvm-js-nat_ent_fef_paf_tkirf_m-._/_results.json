@@ -1,0 +1,368 @@
+[
+    {
+        "mean": 37824.666666666664,
+        "median": 36780.0,
+        "stddev": 2458.514253229648,
+        "min": 36061.0,
+        "max": 40633.0,
+        "ci95_lower": 31721.144043259388,
+        "ci95_upper": 43928.18929007394,
+        "executable": "commonmain-plain-jar",
+        "buildTimeMs": 4871.521427999995,
+        "RepetitionCount": 3,
+        "CleanBuild": false,
+        "StepCount": 20,
+        "CILabel": "ci-linux-small",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-11-23 14:18:37",
+        "GitCommitHash": "b523e240557f14e15e75bb8f2e7c7b2a72d35be4",
+        "GitBranch": "BSC_IOA",
+        "DeviceManufacturer": "Amazon EC2",
+        "DeviceModel": "m8id.xlarge",
+        "IsVirtualMachine": false,
+        "OS": "Ubuntu 26.04.1 LTS",
+        "OSArchitecture": "x86_64",
+        "TimeZone": "Etc/UTC",
+        "Username": "runner",
+        "CPU": "Intel(R) Xeon(R) 6975P-C",
+        "CPUCores": 2,
+        "CPULogicalProcessors": 4,
+        "TotalRAMGB": 15.33,
+        "AvailableRAMGB": 14.15,
+        "DiskSizeGB": 145,
+        "SystemDriveFreeSpaceGB": 87,
+        "SystemUptimeHours": 0.08,
+        "RunningProcessCount": 193,
+        "PythonVersion": "3.14.4",
+        "JavaVersion": "21.0.13",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v22.23.5",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 133378.66666666666,
+        "median": 134174.0,
+        "stddev": 4635.458157866742,
+        "min": 128397.0,
+        "max": 137565.0,
+        "ci95_lower": 121870.64970104174,
+        "ci95_upper": 144886.6836322916,
+        "executable": "commonmain-plain-node",
+        "buildTimeMs": 4950.169814999981,
+        "RepetitionCount": 3,
+        "CleanBuild": false,
+        "StepCount": 20,
+        "CILabel": "ci-linux-small",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-11-23 14:18:37",
+        "GitCommitHash": "b523e240557f14e15e75bb8f2e7c7b2a72d35be4",
+        "GitBranch": "BSC_IOA",
+        "DeviceManufacturer": "Amazon EC2",
+        "DeviceModel": "m8id.xlarge",
+        "IsVirtualMachine": false,
+        "OS": "Ubuntu 26.04.1 LTS",
+        "OSArchitecture": "x86_64",
+        "TimeZone": "Etc/UTC",
+        "Username": "runner",
+        "CPU": "Intel(R) Xeon(R) 6975P-C",
+        "CPUCores": 2,
+        "CPULogicalProcessors": 4,
+        "TotalRAMGB": 15.33,
+        "AvailableRAMGB": 14.15,
+        "DiskSizeGB": 145,
+        "SystemDriveFreeSpaceGB": 87,
+        "SystemUptimeHours": 0.08,
+        "RunningProcessCount": 193,
+        "PythonVersion": "3.14.4",
+        "JavaVersion": "21.0.13",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v22.23.5",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 4359.0,
+        "median": 4484.0,
+        "stddev": 226.97797249953572,
+        "min": 4097.0,
+        "max": 4496.0,
+        "ci95_lower": 3795.503087852294,
+        "ci95_upper": 4922.496912147706,
+        "executable": "commonmain-plain-linux-exe",
+        "buildTimeMs": 30301.678613999968,
+        "RepetitionCount": 3,
+        "CleanBuild": false,
+        "StepCount": 20,
+        "CILabel": "ci-linux-small",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-11-23 14:18:37",
+        "GitCommitHash": "b523e240557f14e15e75bb8f2e7c7b2a72d35be4",
+        "GitBranch": "BSC_IOA",
+        "DeviceManufacturer": "Amazon EC2",
+        "DeviceModel": "m8id.xlarge",
+        "IsVirtualMachine": false,
+        "OS": "Ubuntu 26.04.1 LTS",
+        "OSArchitecture": "x86_64",
+        "TimeZone": "Etc/UTC",
+        "Username": "runner",
+        "CPU": "Intel(R) Xeon(R) 6975P-C",
+        "CPUCores": 2,
+        "CPULogicalProcessors": 4,
+        "TotalRAMGB": 15.33,
+        "AvailableRAMGB": 14.15,
+        "DiskSizeGB": 145,
+        "SystemDriveFreeSpaceGB": 87,
+        "SystemUptimeHours": 0.08,
+        "RunningProcessCount": 193,
+        "PythonVersion": "3.14.4",
+        "JavaVersion": "21.0.13",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v22.23.5",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 65674.33333333333,
+        "median": 66018.0,
+        "stddev": 4177.116509427686,
+        "min": 61336.0,
+        "max": 69669.0,
+        "ci95_lower": 55304.19816636896,
+        "ci95_upper": 76044.46850029769,
+        "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-jar",
+        "buildTimeMs": 2000.1793309999698,
+        "RepetitionCount": 3,
+        "CleanBuild": false,
+        "StepCount": 20,
+        "CILabel": "ci-linux-small",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-11-23 14:18:37",
+        "GitCommitHash": "b523e240557f14e15e75bb8f2e7c7b2a72d35be4",
+        "GitBranch": "BSC_IOA",
+        "DeviceManufacturer": "Amazon EC2",
+        "DeviceModel": "m8id.xlarge",
+        "IsVirtualMachine": false,
+        "OS": "Ubuntu 26.04.1 LTS",
+        "OSArchitecture": "x86_64",
+        "TimeZone": "Etc/UTC",
+        "Username": "runner",
+        "CPU": "Intel(R) Xeon(R) 6975P-C",
+        "CPUCores": 2,
+        "CPULogicalProcessors": 4,
+        "TotalRAMGB": 15.33,
+        "AvailableRAMGB": 14.15,
+        "DiskSizeGB": 145,
+        "SystemDriveFreeSpaceGB": 87,
+        "SystemUptimeHours": 0.08,
+        "RunningProcessCount": 193,
+        "PythonVersion": "3.14.4",
+        "JavaVersion": "21.0.13",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v22.23.5",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 2545797.3333333335,
+        "median": 2515189.0,
+        "stddev": 74483.00070709646,
+        "min": 2491495.0,
+        "max": 2630708.0,
+        "ci95_lower": 2360885.3771476727,
+        "ci95_upper": 2730709.2895189943,
+        "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-node",
+        "buildTimeMs": 3094.4180050000227,
+        "RepetitionCount": 3,
+        "CleanBuild": false,
+        "StepCount": 20,
+        "CILabel": "ci-linux-small",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-11-23 14:18:37",
+        "GitCommitHash": "b523e240557f14e15e75bb8f2e7c7b2a72d35be4",
+        "GitBranch": "BSC_IOA",
+        "DeviceManufacturer": "Amazon EC2",
+        "DeviceModel": "m8id.xlarge",
+        "IsVirtualMachine": false,
+        "OS": "Ubuntu 26.04.1 LTS",
+        "OSArchitecture": "x86_64",
+        "TimeZone": "Etc/UTC",
+        "Username": "runner",
+        "CPU": "Intel(R) Xeon(R) 6975P-C",
+        "CPUCores": 2,
+        "CPULogicalProcessors": 4,
+        "TotalRAMGB": 15.33,
+        "AvailableRAMGB": 14.15,
+        "DiskSizeGB": 145,
+        "SystemDriveFreeSpaceGB": 87,
+        "SystemUptimeHours": 0.08,
+        "RunningProcessCount": 193,
+        "PythonVersion": "3.14.4",
+        "JavaVersion": "21.0.13",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v22.23.5",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    },
+    {
+        "mean": 30178.333333333332,
+        "median": 30363.0,
+        "stddev": 517.339669205188,
+        "min": 29594.0,
+        "max": 30578.0,
+        "ci95_lower": 28893.982685037558,
+        "ci95_upper": 31462.683981629107,
+        "executable": "commonmain-k-perf-enabled-true-flushEarly-false-propAccessors-false-testKIR-false-linux-exe",
+        "buildTimeMs": 21195.31449499999,
+        "RepetitionCount": 3,
+        "CleanBuild": false,
+        "StepCount": 20,
+        "CILabel": "ci-linux-small",
+        "Reference": true,
+        "Common": true,
+        "Dedicated": false,
+        "JVM": true,
+        "JS": true,
+        "Native": true,
+        "Enabled": [
+            true
+        ],
+        "FlushEarly": [
+            false
+        ],
+        "InstrumentPropertyAccessors": [
+            false
+        ],
+        "TestKIR": [
+            false
+        ],
+        "Methods": [
+            ".*"
+        ],
+        "CollectionTimestamp": "2026-11-23 14:18:37",
+        "GitCommitHash": "b523e240557f14e15e75bb8f2e7c7b2a72d35be4",
+        "GitBranch": "BSC_IOA",
+        "DeviceManufacturer": "Amazon EC2",
+        "DeviceModel": "m8id.xlarge",
+        "IsVirtualMachine": false,
+        "OS": "Ubuntu 26.04.1 LTS",
+        "OSArchitecture": "x86_64",
+        "TimeZone": "Etc/UTC",
+        "Username": "runner",
+        "CPU": "Intel(R) Xeon(R) 6975P-C",
+        "CPUCores": 2,
+        "CPULogicalProcessors": 4,
+        "TotalRAMGB": 15.33,
+        "AvailableRAMGB": 14.15,
+        "DiskSizeGB": 145,
+        "SystemDriveFreeSpaceGB": 87,
+        "SystemUptimeHours": 0.08,
+        "RunningProcessCount": 193,
+        "PythonVersion": "3.14.4",
+        "JavaVersion": "21.0.13",
+        "JavaDistribution": "OpenJDK",
+        "NodeVersion": "v22.23.5",
+        "GradleVersion": "Gradle 9.0.0",
+        "KotlinVersion": "Kotlin:        2.2.0"
+    }
+]
