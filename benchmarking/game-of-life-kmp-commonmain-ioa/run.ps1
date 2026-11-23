@@ -34,39 +34,44 @@ foreach ($key in $machineInfo.Keys) {
 }
 Write-Host ""
 
-# Clean phase
+# --- Plugin phase ---
+# The plugin must be published to mavenLocal before the IOA example is
+# touched by Gradle (even `clean` resolves its plugins {} block).
+$buildTimes = @{}
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "# Preparing IOA plugin..."
+Write-Host "=========================================="
 if ($CleanBuild) {
-  Write-Host ""
-  Write-Host "=========================================="
-  Write-Host "# Cleaning IOA benchmark dependencies..."
-  Write-Host "=========================================="
-
   Invoke-GradleClean -Path "..\..\KIRHelperKit"                                        -Name "KIRHelperKit"
   Invoke-GradleClean -Path "..\..\plugins\instrumentation-overhead-analyzer"           -Name "instrumentation-overhead-analyzer plugin"
+}
+
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KirHelperKit)
+$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-InstrumentationOverheadAnalyzerPlugin)
+
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "# Plugin phase completed successfully!"
+Write-Host "=========================================="
+
+# --- Benchmark application phase ---
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "# Preparing benchmark dependencies..."
+Write-Host "=========================================="
+if ($CleanBuild) {
   Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-baseline"            -Name "game-of-life-kmp-commonmain-baseline"
   Invoke-GradleClean -Path "..\..\kmp-examples\game-of-life\game-of-life-kmp-commonmain-ioa"        -Name "game-of-life-kmp-commonmain-ioa"
   Write-Host ""
 }
-else {
-  Write-Host "Skipping clean phase (CleanBuild = false)"
-  Write-Host ""
-}
 
-# Build phase: Compile dependencies and the application
-$buildTimes = @{}
-Write-Host ""
-Write-Host "=========================================="
-Write-Host "# Building IOA benchmark dependencies..."
-Write-Host "=========================================="
-
-$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-KirHelperKit)
-$buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-InstrumentationOverheadAnalyzerPlugin)
 $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainReference)
 $buildTimes = Merge-Hashtable -Target $buildTimes -Source (Build-GameOfLifeCommonMainIoa)
 
 Write-Host ""
 Write-Host "=========================================="
-Write-Host "# Build phase completed successfully!"
+Write-Host "# Benchmark application phase completed successfully!"
 Write-Host "=========================================="
 
 # Define project dist directories for artifacts
